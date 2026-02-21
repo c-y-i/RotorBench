@@ -1,0 +1,13 @@
+fastapi>=0.104.0
+uvicorn>=0.24.0
+gunicorn>=21.2.0
+pydantic>=2.4.0
+email-validator>=2.0.0
+trimesh>=4.0.0
+pygltflib>=1.16.0
+numpy>=1.24.0
+networkx>=2.0.0
+# Optional: STEP/STP file support (install at least one):
+cascadio>=0.0.17  # Lightweight STEP support
+# pythonocc-core>=7.7.0  # Full STEP support (recommended, but larger install)
+# Note: If neither is installed, placeholder meshes will be created for STEP files

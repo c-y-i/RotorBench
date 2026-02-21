@@ -1,0 +1,22 @@
+[Unit]
+Description=RotorBench Backend API (Gunicorn + Uvicorn)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/RotorBench/backend
+Environment=APP_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8100
+Environment=ENABLE_DOCS=false
+# Set to your frontend origin. Team example: https://rotor.nori.fish
+Environment=CORS_ALLOWED_ORIGINS=https://YOUR_DOMAIN
+Environment=DATA_DIR=/home/ubuntu/RotorBench/backend/data
+ExecStart=/home/ubuntu/RotorBench/backend/.venv/bin/python3 -m gunicorn -k uvicorn.workers.UvicornWorker -w 3 -b 127.0.0.1:8100 main:app
+Restart=always
+RestartSec=3
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

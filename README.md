@@ -15,8 +15,8 @@ RotorBench helps FPV drone enthusiasts design, analyze, and optimize their drone
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/c-y-i/CIS5120-HCI.git
-cd CIS5120-HCI/CIS5120_Final_Project
+git clone https://github.com/c-y-i/RotorBench.git
+cd RotorBench
 ```
 
 ### 2. Backend Setup
@@ -54,7 +54,7 @@ yarn install
 ### Start the Backend Server
 
 ```bash
-cd CIS5120_Final_Project/backend
+cd backend
 
 # Make sure virtual environment is activated
 # Then start the server:
@@ -69,7 +69,7 @@ The backend will start at: **http://localhost:8000**
 In a **separate terminal**:
 
 ```bash
-cd CIS5120_Final_Project/rotorbench
+cd rotorbench
 
 # Start the development server
 npm start
@@ -99,11 +99,12 @@ The frontend will start at: **http://localhost:3000**
 Run the comprehensive test suite:
 
 ```bash
-cd CIS5120_Final_Project/backend
+cd backend
 python test_api.py
 ```
 
 
-## About
+## Legal Note
 
-App developed for CIS 5120 (Human-Computer Interaction) at the University of Pennsylvania.
+Many 3D models used by RotorBench are sourced from third-party creators. RotorBench maintainers do not claim ownership of those third-party models.  
+See the in-app **Legal & Disclaimer** page (`/legal`) for ownership, warranty, and liability terms.
