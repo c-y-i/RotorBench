@@ -215,6 +215,26 @@
   box-sizing: border-box;
 }
 
+@media (min-width: 992px) {
+  .saved-page .saved-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .saved-page .saved-card {
+    margin-bottom: 0;
+  }
+
+  .saved-page .component-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .saved-page .action-btn {
+    min-width: 0;
+  }
+}
+
 /* Mobile */
 @media (max-width: 480px) {
   .saved-page .saved-header {
@@ -230,4 +250,68 @@
   .saved-page .saved-tag {
     width: 100px;
   }
+}
+
+/* Refined saved builds look */
+.saved-page .saved-card {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);
+  box-shadow: var(--shadow-card);
+}
+
+.saved-page .saved-title {
+  color: var(--ink);
+}
+
+.saved-page .saved-subtitle,
+.saved-page .saved-note,
+.saved-page .saved-tag {
+  color: var(--ink-soft);
+}
+
+.saved-page .saved-val {
+  color: var(--ink);
+}
+
+.saved-page .saved-actions {
+  padding: 0 16px 12px;
+}
+
+.saved-page .action-btn {
+  font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+.saved-page .action-btn.analysis {
+  border: 0;
+  background: linear-gradient(135deg, var(--brand) 0%, #0e8a7f 100%);
+  color: #fff;
+}
+
+.saved-page .action-btn.secondary {
+  background: #fff;
+}
+
+.saved-page .action-btn.danger {
+  background: #fff4f4;
+  border-color: #f0c9c9;
+  color: #a72222;
+}
+
+.saved-page .component-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);
+  border: 1px solid var(--line);
+}
+
+.saved-page .component-label {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.saved-page .component-value {
+  color: var(--ink);
+  font-weight: 700;
 }

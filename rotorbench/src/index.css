@@ -1,28 +1,52 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap");
+
+:root {
+  --bg-shell: #f4f8fb;
+  --bg-mist: #dff0ea;
+  --bg-sand: #fff0dc;
+  --surface: #ffffff;
+  --surface-soft: #f7fbff;
+  --ink: #152231;
+  --ink-soft: #4d6077;
+  --line: #d5e3f0;
+  --line-strong: #b9ccdf;
+  --brand: #0f766e;
+  --brand-strong: #0b5f59;
+  --accent: #ea580c;
+  --accent-soft: #fff0e6;
+  --ok: #15803d;
+  --warn: #b45309;
+  --danger: #b91c1c;
+  --shadow-soft: 0 14px 34px rgba(19, 38, 57, 0.08);
+  --shadow-card: 0 8px 18px rgba(15, 32, 54, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: "Space Grotesk", "Segoe UI", "Helvetica Neue", sans-serif;
+  color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f0f0f0;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden; 
+  background:
+    radial-gradient(1300px 700px at 12% -8%, var(--bg-mist) 0%, transparent 62%),
+    radial-gradient(1100px 700px at 90% -18%, var(--bg-sand) 0%, transparent 58%),
+    var(--bg-shell);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
-.discharge-chart {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-family: "IBM Plex Mono", Menlo, Monaco, Consolas, monospace;
 }
 
 .app-shell {
@@ -34,17 +58,27 @@ code {
   right: 14px;
   bottom: 10px;
   z-index: 999;
-  background: rgba(0, 0, 0, 0.75);
   border-radius: 999px;
   padding: 6px 12px;
+  background: rgba(15, 34, 49, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
 }
 
 .legal-footer a {
   color: #fff;
   font-size: 12px;
+  letter-spacing: 0.02em;
   text-decoration: none;
 }
 
 .legal-footer a:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .legal-footer {
+    right: 10px;
+    bottom: 8px;
+  }
 }

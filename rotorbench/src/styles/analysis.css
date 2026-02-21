@@ -325,6 +325,44 @@
   font-weight: 700;
 }
 
+@media (min-width: 768px) {
+  .page-header {
+    padding: 18px 24px;
+  }
+
+  .section-header {
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+
+  .component-card,
+  .metric-card {
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+
+  .flight-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0 24px;
+  }
+
+  .flight-card.highlight {
+    grid-column: span 3;
+  }
+
+  .chart-section,
+  .validation-section,
+  .cost-section,
+  .error-message {
+    margin-left: 24px;
+    margin-right: 24px;
+  }
+
+  .discharge-chart {
+    padding: 20px;
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 360px) {
   .flight-grid {
@@ -336,3 +374,76 @@
   }
 }
 
+/* Refined analysis look */
+.page-title {
+  letter-spacing: 0.01em;
+}
+
+.section-header {
+  color: var(--ink);
+}
+
+.component-card,
+.metric-card,
+.flight-card,
+.cost-card,
+.validation-section {
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--line);
+  animation: rise-in 0.35s ease both;
+}
+
+.component-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+}
+
+.metric-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);
+}
+
+.metric-card.highlight {
+  background: linear-gradient(135deg, #0f766e 0%, #0e8a7f 100%);
+  border: 0;
+}
+
+.flight-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);
+}
+
+.flight-card.highlight {
+  background: linear-gradient(135deg, #ea580c 0%, #fb923c 100%);
+}
+
+.metric-label,
+.flight-label,
+.component-title,
+.metric-subtitle {
+  color: var(--ink-soft);
+}
+
+.metric-value,
+.component-value,
+.flight-value {
+  color: var(--ink);
+}
+
+.discharge-chart {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow: var(--shadow-card);
+}
+
+.validation-section.error {
+  background: #fff4f4;
+  border-color: #f0c9c9;
+}
+
+.validation-section.warning {
+  background: #fff7ec;
+  border-color: #f0d6a9;
+}
+
+.cost-card {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  border: 0;
+}

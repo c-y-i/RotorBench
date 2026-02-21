@@ -925,7 +925,17 @@ const BabylonViewer = ({
   }, [modelUrl, modelUrls, frameCornerPositions, motorUrl, motorMountingPoint, batteryUrl, batteryMountingPoint, fcUrl, fcMountingPoint, escUrl, escMountingPoint, receiverUrl, receiverMountingPoint, propellerUrl, propellerMountingPoint, groundClearance, resetKey, clearedComponents]);
 
   return (
-    <div style={{ width: "100%", height: "400px", border: "1px solid #222", borderRadius: 8, overflow: "hidden", background: "#111", position: 'relative' }}>
+    <div
+      style={{
+        width: "100%",
+        height: "clamp(320px, 52vh, 620px)",
+        border: "1px solid #222",
+        borderRadius: 8,
+        overflow: "hidden",
+        background: "#111",
+        position: "relative",
+      }}
+    >
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
       {debug && (
         <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(0,0,0,0.6)', padding: '6px 8px', fontSize: 11, color: '#eee', maxWidth: 260, overflowY: 'auto', maxHeight: 180 }}>

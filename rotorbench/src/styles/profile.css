@@ -46,6 +46,31 @@
   color: #333;
 }
 
+.profile-identity {
+  background: linear-gradient(135deg, var(--brand) 0%, #0e8a7f 100%);
+}
+
+.pref-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+
+.pref-label {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.pref-value {
+  color: var(--ink);
+}
+
+@media (min-width: 992px) {
+  .pref-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 360px) {
   .pref-grid { grid-template-columns: 1fr; }
 }
