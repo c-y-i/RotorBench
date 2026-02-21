@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
   Route,
   Link,
+  useLocation,
 } from "react-router-dom";
 import { BuildProvider } from "./context/BuildContext";
 import HomePage from "./components/HomePage";
@@ -13,10 +14,29 @@ import UserProfilePage from "./components/UserProfilePage";
 import SavedConfigsPage from "./components/SavedConfigsPage";
 import LegalPage from "./components/LegalPage";
 
+function AnalyticsTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (typeof window.gtag !== "function") {
+      return;
+    }
+
+    const pagePath = `${location.pathname}${location.search}${location.hash}`;
+    window.gtag("event", "page_view", {
+      page_path: pagePath,
+      page_title: document.title,
+    });
+  }, [location.pathname, location.search, location.hash]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <BuildProvider>
       <BrowserRouter>
+        <AnalyticsTracker />
         <div className="app-shell">
           <Routes>
             <Route path="/" element={<HomePage />} />
