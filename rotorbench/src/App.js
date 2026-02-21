@@ -1,7 +1,6 @@
 import React from "react";
 import {
   BrowserRouter,
-  HashRouter,
   Routes,
   Route,
   Link,
@@ -15,13 +14,9 @@ import SavedConfigsPage from "./components/SavedConfigsPage";
 import LegalPage from "./components/LegalPage";
 
 export default function App() {
-  const isGithubPagesHost =
-    typeof window !== "undefined" && window.location.hostname.endsWith("github.io");
-  const RouterComponent = isGithubPagesHost ? HashRouter : BrowserRouter;
-
   return (
     <BuildProvider>
-      <RouterComponent>
+      <BrowserRouter>
         <div className="app-shell">
           <Routes>
             <Route path="/" element={<HomePage />} />
@@ -35,7 +30,7 @@ export default function App() {
             <Link to="/legal">Legal & Disclaimer</Link>
           </footer>
         </div>
-      </RouterComponent>
+      </BrowserRouter>
     </BuildProvider>
   );
 }

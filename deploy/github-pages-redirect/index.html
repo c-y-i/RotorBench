@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="refresh"
+      content="0; url=https://rotor.nori.fish/"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redirecting to RotorBench</title>
+    <script>
+      (function () {
+        var targetOrigin = "https://rotor.nori.fish";
+        var repoBase = "/RotorBench";
+        var path = window.location.pathname || "/";
+
+        if (path.indexOf(repoBase) === 0) {
+          path = path.slice(repoBase.length) || "/";
+        }
+
+        if (path.charAt(0) !== "/") {
+          path = "/" + path;
+        }
+
+        var hashPath = "";
+        if (window.location.hash && window.location.hash.indexOf("#/") === 0) {
+          hashPath = window.location.hash.slice(1);
+        }
+
+        var finalPath = hashPath || path;
+        var query = window.location.search || "";
+        window.location.replace(targetOrigin + finalPath + query);
+      })();
+    </script>
+  </head>
+  <body>
+    <p>
+      Redirecting to <a href="https://rotor.nori.fish/">rotor.nori.fish</a>...
+    </p>
+  </body>
+</html>
