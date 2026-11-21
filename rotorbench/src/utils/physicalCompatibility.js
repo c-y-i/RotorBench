@@ -167,6 +167,23 @@ export function checkPowerConnector(battery, esc) {
   }
   const batteryConnector = String(battery.dischargeConnector || "").trim().toUpperCase();
   const escConnector = String(esc.includedPowerConnector || "").trim().toUpperCase();
+  const batteryLead = batteryConnector
+    ? `${battery.name} uses ${batteryConnector}`
+    : `${battery.name}'s connector is not catalogued`;
+  if (esc.powerConnection === "solder-pads") {
+    return check(
+      "unknown",
+      `${batteryLead}, and ${esc.name} supplies bare power pads. Solder the battery lead, then verify polarity and wire gauge.`,
+      "Battery to ESC connector",
+    );
+  }
+  if (esc.powerConnection === "supplied-cable") {
+    return check(
+      "unknown",
+      `${batteryLead}; ${esc.name} supplies a power cable but does not publish its connector type. Verify the delivered termination before connecting.`,
+      "Battery to ESC connector",
+    );
+  }
   if (!batteryConnector) {
     return check(
       "unknown",

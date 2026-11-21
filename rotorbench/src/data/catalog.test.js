@@ -148,7 +148,9 @@ test("expanded ESCs and flight controller preserve published limits", () => {
     weight: 15.8,
     mountingPatternMm: [30.5, 30.5],
     voltage: { min: 14.8, max: 25.2 },
+    powerConnection: "solder-pads",
     sourceUrl: expect.stringContaining("holybro.com"),
+    connectorSourceUrl: expect.stringContaining("holybro.com"),
   });
   expect(blitz).toMatchObject({
     currentRating: 55,
@@ -156,7 +158,9 @@ test("expanded ESCs and flight controller preserve published limits", () => {
     weight: 15.3,
     mountingPatternMm: [30.5, 30.5],
     voltage: { min: 7.4, max: 25.2 },
+    powerConnection: "supplied-cable",
     sourceUrl: expect.stringContaining("iflight.com"),
+    connectorSourceUrl: expect.stringContaining("shop.iflight.com"),
   });
   expect(kakute).toMatchObject({
     processor: "STM32H743",
@@ -197,10 +201,12 @@ test("source-backed fit metadata is not mislabeled as estimated", () => {
   });
   expect(speedyBeeEsc).toMatchObject({
     includedPowerConnector: "XT60",
+    powerConnection: "connector",
     connectorSourceUrl: expect.stringContaining("robu.in"),
   });
   expect(mambaEsc).toMatchObject({
     includedPowerConnector: "XT60",
+    powerConnection: "connector",
     connectorSourceUrl: expect.stringContaining("racedayquads.com"),
   });
 });

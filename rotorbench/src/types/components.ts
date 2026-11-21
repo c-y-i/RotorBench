@@ -68,6 +68,7 @@ export interface ESC extends ComponentCatalogMetadata {
   price: number;
   mountingPatternMm?: [number, number];
   includedPowerConnector?: string;
+  powerConnection?: "connector" | "solder-pads" | "supplied-cable";
 }
 
 export interface FlightController extends ComponentCatalogMetadata {

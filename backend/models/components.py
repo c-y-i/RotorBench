@@ -39,6 +39,9 @@ class ComponentCatalogMetadata(BaseModel):
     shaft_mm: Optional[float] = Field(None, alias="shaftMm")
     discharge_connector: Optional[str] = Field(None, alias="dischargeConnector")
     included_power_connector: Optional[str] = Field(None, alias="includedPowerConnector")
+    power_connection: Optional[
+        Literal["connector", "solder-pads", "supplied-cable"]
+    ] = Field(None, alias="powerConnection")
     model: Optional[str] = Field(None, description="Canonical 3D model filename")
     model_cw: Optional[str] = Field(None, alias="modelCW")
     model_ccw: Optional[str] = Field(None, alias="modelCCW")

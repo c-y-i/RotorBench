@@ -49,7 +49,11 @@ function getMeta(category, part) {
         `${part.weight} g`,
         part.includedPowerConnector
           ? `${part.includedPowerConnector} power lead`
-          : null,
+          : part.powerConnection === "solder-pads"
+            ? "Solder pads"
+            : part.powerConnection === "supplied-cable"
+              ? "Cable, connector unspecified"
+              : null,
       ].filter(Boolean);
     case "flight_controllers":
       return [part.processor, part.imu, `${part.weight} g`];

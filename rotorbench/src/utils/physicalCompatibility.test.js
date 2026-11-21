@@ -82,6 +82,23 @@ test("battery and ESC power connectors produce verified matches and conflicts", 
   )).toMatchObject({ status: "unknown" });
 });
 
+test("source-backed power termination remains manual when no connector is supplied", () => {
+  expect(checkPowerConnector(
+    { name: "Battery", dischargeConnector: "XT60" },
+    { name: "Solder-pad ESC", powerConnection: "solder-pads" },
+  )).toMatchObject({
+    status: "unknown",
+    message: expect.stringMatching(/bare power pads/i),
+  });
+  expect(checkPowerConnector(
+    { name: "Battery", dischargeConnector: "XT60" },
+    { name: "Cable ESC", powerConnection: "supplied-cable" },
+  )).toMatchObject({
+    status: "unknown",
+    message: expect.stringMatching(/does not publish its connector type/i),
+  });
+});
+
 test("battery envelopes only flag dimensions that exceed the complete frame footprint", () => {
   const smallFrame = {
     name: "Small frame",

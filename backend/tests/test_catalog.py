@@ -163,6 +163,19 @@ class CatalogContractTests(unittest.TestCase):
                 },
             )
 
+    def test_power_connection_metadata_matches_official_pack_contents(self):
+        escs = {esc.id: esc for esc in self.database.escs}
+        solder_pad = escs["esc-holybro-tekko32-f4-65a"]
+        supplied_cable = escs["esc-iflight-blitz-e55"]
+
+        self.assertEqual(solder_pad.power_connection, "solder-pads")
+        self.assertIsNone(solder_pad.included_power_connector)
+        self.assertIn("holybro.com", solder_pad.connector_source_url)
+
+        self.assertEqual(supplied_cable.power_connection, "supplied-cable")
+        self.assertIsNone(supplied_cable.included_power_connector)
+        self.assertIn("shop.iflight.com", supplied_cable.connector_source_url)
+
 
 if __name__ == "__main__":
     unittest.main()
