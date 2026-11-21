@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  BookOpenCheck,
   Clipboard,
   RadioTower,
   ShieldAlert,
@@ -98,6 +99,46 @@ export default function BenchRunbook({
             ))}
           </ul>
         </div>
+
+        {runbook.referenceValidation && (
+          <section
+            className="bench-reference-validation"
+            aria-labelledby="bench-reference-validation-title"
+          >
+            <div className="bench-reference-validation-heading">
+              <div>
+                <BookOpenCheck size={17} aria-hidden="true" />
+                <h2 id="bench-reference-validation-title">
+                  {runbook.referenceValidation.label}
+                </h2>
+              </div>
+              <span>Reference only</span>
+            </div>
+            <p>
+              {runbook.referenceValidation.environment}.{" "}
+              {runbook.referenceValidation.boundary}
+            </p>
+            <div className="bench-reference-validation-lists">
+              <div>
+                <h3>Observed on reference aircraft</h3>
+                <ul>
+                  {runbook.referenceValidation.observed.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3>Not tested</h3>
+                <ul>
+                  {runbook.referenceValidation.notTested.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <code>{runbook.referenceValidation.source}</code>
+          </section>
+        )}
 
         <BenchEvidenceReview
           expectedUid={expectedUid}

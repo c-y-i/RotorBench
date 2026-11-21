@@ -7,6 +7,27 @@ export const BENCH_SOURCE = Object.freeze({
   artifact: "9b48f01f522783d872b72f36c69c7171bcc851e2fcbfe5f60cb717efcb0331b4",
 });
 
+export const REAL_DRONE_REFERENCE = Object.freeze({
+  id: "aerialkit-rev-a3-betaflight-2026-11-20",
+  label: "Aerial Kit Rev A3 · Betaflight reference bench",
+  date: "2026-11-20",
+  source: "aerial-kit/docs/evidence/rev-a3-real-drone-bench-2026-11-20.md",
+  environment: "Rev A3 TX board A · Betaflight 2.4 GHz RX at 100 mW · ExpressLRS 4.1.0",
+  boundary: "Reference observation from another aircraft, not evidence for the current RotorBench plan or hardware.",
+  observed: [
+    "The receiver acquired the transmitter roughly 10-15 seconds after startup and its link LED became solid.",
+    "Live changing MSP RC frames confirmed that control reached the flight controller.",
+    "The three-second minimum-throttle arm completed on AUX1 / CRSF channel 5, followed by automatic disarm.",
+    "The beeper passed on AUX5 / CRSF channel 9 using the 1950-2050 range and play_sound 4: ARMING.",
+  ],
+  notTested: [
+    "Flight behavior",
+    "Range or attenuation",
+    "Power cycles 2-3",
+    "Production readiness",
+  ],
+});
+
 const FC_FAMILIES_WITH_CLI = new Set(["aerialkit", "betaflight"]);
 const STAGE_KIND_LABELS = Object.freeze({
   "read-only": "Read-only",
@@ -108,6 +129,9 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
   const txProfile = fcPlan?.firmwareFamily === "betaflight"
     ? "betaflight"
     : "aerial-kit";
+  const referenceValidation = revA3 && txProfile === "betaflight"
+    ? REAL_DRONE_REFERENCE
+    : null;
 
   if (
     revA3 &&
@@ -182,6 +206,15 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
     ]),
     "",
     "# RF PASS requires observed receiver RC and LINK_STATISTICS, not TX output alone.",
+    ...(referenceValidation
+      ? [
+          "",
+          `# Reference validation only: ${referenceValidation.label} (${referenceValidation.date})`,
+          `# ${referenceValidation.boundary}`,
+          ...referenceValidation.observed.map((item) => `# Observed: ${item}`),
+          ...referenceValidation.notTested.map((item) => `# Not tested: ${item}`),
+        ]
+      : []),
   ].join("\n");
   const readOnlyCopyText = [
     "# RotorBench read-only hardware discovery — prepared commands, not executed",
@@ -197,6 +230,11 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
     "The two-board bench must report RF PASS with receiver RC frames and link statistics observed.",
     "USB writes, a matching UID, or TX-only drive output do not prove that RF reached the receiver.",
     "If using the optional live-input stage, panic, Ctrl-C, and timeout must each report disarmed_at_end=true; the panic run must also report stop_reason=panic.",
+    ...(referenceValidation
+      ? [
+          "The 2026-11-20 Betaflight reference bench is historical context for a different aircraft. It does not verify the current receiver, wiring, channel map, arm path, beeper, RF link, or evidence bundle.",
+        ]
+      : []),
   ];
 
   return {
@@ -218,6 +256,7 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
       modelMatch: Boolean(radioPlan?.modelMatch),
     },
     executedByRotorBench: false,
+    referenceValidation,
     warnings,
     stages,
     copyText,

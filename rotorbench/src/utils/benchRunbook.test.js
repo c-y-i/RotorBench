@@ -78,6 +78,7 @@ test("Aerial Kit runbook uses read-only discovery and explicit mutations", () =>
   expect(runbook.evidenceRequirements.join(" ")).toMatch(/receiver RC frames and link statistics/i);
   expect(runbook.evidenceRequirements.join(" ")).toMatch(/disarmed_at_end=true/i);
   expect(runbook.warnings.join(" ")).toMatch(/sent arm request is not proof/i);
+  expect(runbook.referenceValidation).toBeNull();
   expect(runbook.copyText).toContain("replace-with-your-phrase");
   expect(runbook.copyText).not.toContain("do-not-copy-this-phrase");
   expect(runbook.expectedSettings).toMatchObject({
@@ -127,6 +128,21 @@ test("Aerial Kit log reads are not generated for a Betaflight MSP board", () => 
   expect(commands).not.toContain("ak fc logs --port /dev/ttyACM0");
   expect(runbook.stages.find((stage) => stage.id === "live-input").commands[0])
     .toContain("--profile betaflight");
+  expect(runbook.referenceValidation).toMatchObject({
+    id: "aerialkit-rev-a3-betaflight-2026-11-20",
+    date: "2026-11-20",
+    source: "aerial-kit/docs/evidence/rev-a3-real-drone-bench-2026-11-20.md",
+  });
+  expect(runbook.referenceValidation.observed.join(" ")).toMatch(/AUX1.*channel 5/i);
+  expect(runbook.referenceValidation.observed.join(" ")).toMatch(/AUX5.*channel 9/i);
+  expect(runbook.referenceValidation.notTested).toEqual(expect.arrayContaining([
+    "Flight behavior",
+    "Range or attenuation",
+    "Production readiness",
+  ]));
+  expect(runbook.copyText).toContain("# Reference validation only");
+  expect(runbook.copyText).toContain("not evidence for the current RotorBench plan");
+  expect(runbook.readOnlyCopyText).not.toContain("Reference validation only");
 });
 
 test("generic radio targets use baud placeholders instead of guessing", () => {
@@ -152,4 +168,5 @@ test("generic radio targets use baud placeholders instead of guessing", () => {
     commands: [],
   });
   expect(runbook.warnings.join(" ")).toMatch(/not the documented Rev A3 endpoint/i);
+  expect(runbook.referenceValidation).toBeNull();
 });

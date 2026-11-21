@@ -545,6 +545,99 @@
   border-radius: 5px;
 }
 
+.bench-reference-validation {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.bench-reference-validation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bench-reference-validation-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bench-reference-validation-heading svg {
+  flex: 0 0 auto;
+  color: var(--brand);
+}
+
+.bench-reference-validation-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.bench-reference-validation-heading > span {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.bench-reference-validation > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.bench-reference-validation-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bench-reference-validation-lists > div {
+  min-width: 0;
+  padding: 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.bench-reference-validation-lists h3 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.bench-reference-validation-lists ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 16px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.bench-reference-validation > code {
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
 .bench-runbook-warnings {
   display: grid;
   gap: 6px;
@@ -2655,6 +2748,10 @@
   .bench-runbook > summary em {
     grid-column: 2;
     width: max-content;
+  }
+
+  .bench-reference-validation-lists {
+    grid-template-columns: 1fr;
   }
 
   .serial-capture > summary {

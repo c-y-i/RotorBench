@@ -53,3 +53,28 @@ test("shows a copy-only source-backed bench runbook", async () => {
     expect(screen.getByRole("status")).toHaveTextContent(/Full runbook copied/i);
   });
 });
+
+test("shows the real Betaflight bench as reference-only context", async () => {
+  const betaflightRunbook = buildBenchRunbook(
+    {
+      ...createDefaultFlightControllerConfig(),
+      firmwareFamily: "betaflight",
+    },
+    DEFAULT_RADIO_CONFIG,
+  );
+  render(<BenchRunbook runbook={betaflightRunbook} />);
+
+  await userEvent.click(screen.getByText("Bench runbook"));
+  expect(screen.getByRole("heading", {
+    name: "Aerial Kit Rev A3 · Betaflight reference bench",
+  })).toBeInTheDocument();
+  expect(screen.getByText("Reference only")).toBeInTheDocument();
+  expect(screen.getByText(/not evidence for the current RotorBench plan/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/AUX1 \/ CRSF channel 5/i)).toBeInTheDocument();
+  expect(screen.getByText(/AUX5 \/ CRSF channel 9/i)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Not tested" })).toBeInTheDocument();
+  expect(screen.getByText("Production readiness")).toBeInTheDocument();
+  expect(screen.getByText(/rev-a3-real-drone-bench-2026-11-20\.md/i))
+    .toBeInTheDocument();
+});
