@@ -157,7 +157,8 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain("Receiver: CRSF / ExpressLRS");
   expect(summary).toContain("arm 6");
   expect(summary).toContain("velocity mode off");
-  expect(summary).toContain("arm, flight mode, velocity mode only");
+  expect(summary).toContain("mission off");
+  expect(summary).toContain("arm, flight mode, velocity mode, mission only");
   expect(summary).toContain("Motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW");
   expect(summary).toContain("Failsafe: Firmware-derived");
   expect(summary).toContain(
@@ -588,7 +589,7 @@ test("workspace Aerial Kit profiles expose manual, control, and system-ID roles"
   };
   expect(profile.notes.join(" ")).toMatch(/remains disarmed and refuses to arm/i);
   expect(buildFlightControllerSummary(config, profile).join("\n"))
-    .toContain("Aerial Kit control roles: arm, flight mode, manual, control, system ID only");
+    .toContain("Aerial Kit control roles: arm, flight mode, mission, manual, control, system ID only");
   expect(validateFlightControllerConfig({
     ...config,
     manualChannel: 7,

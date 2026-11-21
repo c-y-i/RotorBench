@@ -168,6 +168,15 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       nullWhen: (raw) => Number(raw) === 0,
     },
     {
+      key: "missionChannel",
+      source: "mission_channel",
+      snapshotKey: "mission_channel",
+      label: "Mission channel",
+      parse: optionalChannel,
+      allowNull: true,
+      nullWhen: (raw) => Number(raw) === 0,
+    },
+    {
       key: "manualChannel",
       source: "manual_channel",
       snapshotKey: "manual_channel",

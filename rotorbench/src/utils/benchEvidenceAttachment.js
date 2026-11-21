@@ -36,6 +36,7 @@ const FLIGHT_CONTROLLER_SCOPE_KEYS = [
   "modeChannel",
   "beeperChannel",
   "velocityChannel",
+  "missionChannel",
   "manualChannel",
   "ctrlChannel",
   "sysidChannel",

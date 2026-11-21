@@ -532,6 +532,7 @@ const PARAMETER_PLAN_KEYS = {
   arm_channel: "armChannel",
   mode_channel: "modeChannel",
   velocity_channel: "velocityChannel",
+  mission_channel: "missionChannel",
   manual_channel: "manualChannel",
   ctrl_channel: "ctrlChannel",
   sysid_channel: "sysidChannel",

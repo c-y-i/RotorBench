@@ -472,6 +472,28 @@ test("geofence settings reach the parent plan with trigger semantics", () => {
   expect(screen.getByText(/fused altitude estimate, not GPS alone/i)).toBeInTheDocument();
 });
 
+test("mission switch is optional, scoped to Aerial Kit, and lands in the channel map", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+
+  const mission = screen.getByLabelText("Mission channel");
+  expect(mission).toHaveValue(null);
+  fireEvent.change(mission, { target: { value: "7" } });
+  expect(onChange).toHaveBeenCalledWith(
+    expect.objectContaining({ missionChannel: 7 }),
+  );
+  expect(screen.getByText("Mission switch")).toBeInTheDocument();
+  expect(screen.getByText("CH 7")).toBeInTheDocument();
+  expect(screen.getByText(/high transition and ends when switched low/i))
+    .toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "betaflight" },
+  });
+  expect(screen.queryByLabelText("Mission channel")).not.toBeInTheDocument();
+  expect(onChange.mock.calls.at(-1)[0]).toMatchObject({ missionChannel: null });
+});
+
 test("board alignment order and angles reach the parent plan", () => {
   const onChange = jest.fn();
   render(<FlightControllerSetup onChange={onChange} />);

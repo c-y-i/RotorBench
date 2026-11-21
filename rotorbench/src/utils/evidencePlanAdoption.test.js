@@ -14,6 +14,7 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
         arm_channel: "5",
         mode_channel: "6",
         velocity_channel: "0",
+        mission_channel: "7",
         arm_hold_ms: "750",
         arm_max_tilt_deg: "30",
         throttle_low: "0.04",
@@ -47,6 +48,7 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
       armChannel: 5,
       modeChannel: 6,
       velocityChannel: null,
+      missionChannel: null,
       armHoldMs: 500,
       armMaxTiltDeg: 25,
       throttleLow: 0.05,
@@ -77,6 +79,7 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
   expect(patch.supported).toBe(true);
   expect(patch.matchedCount).toBe(8);
   expect(patch.fields).toEqual(expect.arrayContaining([
+    expect.objectContaining({ key: "missionChannel", observedValue: 7 }),
     expect.objectContaining({ key: "dshotKhz", observedValue: 600 }),
     expect.objectContaining({ key: "receiverProtocol", observedValue: "sbus" }),
     expect.objectContaining({ key: "vbatRatio", observedValue: 10.8 }),

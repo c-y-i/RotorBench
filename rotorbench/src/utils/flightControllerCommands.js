@@ -104,6 +104,7 @@ export function buildFlightControllerCommands(
     integer(config.rcMax) &&
     finite(config.rcDeadband) &&
     optionalInteger(config.velocityChannel) &&
+    optionalInteger(config.missionChannel) &&
     optionalInteger(config.manualChannel) &&
     optionalInteger(config.ctrlChannel) &&
     optionalInteger(config.sysidChannel) &&
@@ -155,6 +156,7 @@ export function buildFlightControllerCommands(
   } else {
     lines.push(`set velocity_channel ${Number(config.velocityChannel ?? 0)}`);
   }
+  lines.push(`set mission_channel ${Number(config.missionChannel ?? 0)}`);
   lines.push(
     `set arm_hold_ms ${Number(config.armHoldMs)}`,
     `set arm_max_tilt_deg ${Number(config.armMaxTiltDeg)}`,

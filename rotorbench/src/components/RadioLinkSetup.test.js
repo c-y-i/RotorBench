@@ -328,6 +328,17 @@ test("workspace FC roles replace velocity in the radio channel map", () => {
   expect(screen.getByLabelText("System ID channel")).toBeInTheDocument();
 });
 
+test("mission switch appears as an optional Aerial Kit radio role", () => {
+  render(
+    <RadioLinkSetup
+      channelLimit={8}
+      controlRoles={["arm", "flightMode", "velocity", "mission"]}
+    />,
+  );
+  expect(screen.getByLabelText("Mission switch channel")).toBeInTheDocument();
+  expect(screen.getByLabelText("Velocity mode channel")).toBeInTheDocument();
+});
+
 test("a parent-owned plan overrides stale standalone radio storage", () => {
   localStorage.setItem(RADIO_STORAGE_KEY, JSON.stringify({
     ...DEFAULT_RADIO_CONFIG,

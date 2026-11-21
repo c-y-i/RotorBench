@@ -238,6 +238,11 @@ export default function FlightControllerSetup({
       label: "Velocity mode",
       mode: "Optional; 0 disables",
     },
+    mission: {
+      id: "mission",
+      label: "Mission switch",
+      mode: "High starts, low ends; 0 disables",
+    },
     manual: {
       id: "manual",
       label: "Manual override",
@@ -398,6 +403,7 @@ export default function FlightControllerSetup({
       velocityChannel: aerialKit && roleKeys.has("velocity")
         ? config.velocityChannel ?? null
         : null,
+      missionChannel: aerialKit ? config.missionChannel ?? null : null,
       manualChannel: !aerialKit || roleKeys.has("manual")
         ? config.manualChannel ?? null
         : null,
@@ -1562,11 +1568,31 @@ export default function FlightControllerSetup({
                       onChange={(event) => update("gpsMinSats", numericInput(event.target.value))}
                     />
                   </Field>
+                  <Field
+                    label="Mission channel"
+                    htmlFor="fc-mission-channel"
+                    hint="Optional AUX 5–8; leave 0 or blank to disable"
+                  >
+                    <input
+                      id="fc-mission-channel"
+                      type="number"
+                      min={channelMinimum}
+                      max={channelMaximum}
+                      aria-invalid={channelIsInvalid(config.missionChannel)}
+                      value={config.missionChannel ?? ""}
+                      onChange={(event) => update(
+                        "missionChannel",
+                        optionalChannel(event.target.value),
+                      )}
+                    />
+                  </Field>
                 </div>
                 <p className="fc-alignment-note">
                   Set the radius wider than the aircraft's turn circle. At a
                   configured ceiling, the navigator holds 10 m below the lid.
                   The return floor uses the fused altitude estimate, not GPS alone.
+                  A mission switch starts only on its high transition and ends
+                  when switched low.
                 </p>
               </div>
             )}
@@ -1612,6 +1638,7 @@ export default function FlightControllerSetup({
                   mode: config.modeChannel,
                   arm: config.armChannel,
                   velocity: config.velocityChannel,
+                  mission: config.missionChannel,
                   beeper: config.beeperChannel,
                   manual: config.manualChannel,
                   control: config.ctrlChannel,
