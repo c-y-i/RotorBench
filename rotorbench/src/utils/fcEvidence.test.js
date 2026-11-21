@@ -249,6 +249,9 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "vbat_cells=0 status=0",
     "vbat_warn_cell=3.5 status=0",
     "vbat_min_cell=3.3 status=0",
+    "align_roll_deg=0 status=0",
+    "align_pitch_deg=0 status=0",
+    "align_yaw_deg=90 status=0",
     "rth_enable=0 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
@@ -260,6 +263,9 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     vbatCells: 0,
     vbatWarnCell: 3.5,
     vbatMinCell: 3.3,
+    alignRollDeg: 0,
+    alignPitchDeg: 0,
+    alignYawDeg: 0,
     rthEnabled: false,
   });
 
@@ -273,6 +279,8 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-vbat-cells").status)
     .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-align-yaw-deg").status)
+    .toBe("fail");
 });
 
 test("marks planned parameters missing from a partial snapshot as unverified", () => {

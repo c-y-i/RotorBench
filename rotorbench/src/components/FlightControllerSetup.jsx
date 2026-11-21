@@ -6,6 +6,7 @@ import {
   Check,
   CircleAlert,
   Clipboard,
+  Compass,
   Crosshair,
   Cpu,
   Database,
@@ -69,6 +70,9 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "vbat-warn-range": { id: "fc-vbat-warn", label: "battery warning" },
   "vbat-min-range": { id: "fc-vbat-min", label: "battery minimum" },
   "vbat-threshold-order": { id: "fc-vbat-min", label: "battery thresholds" },
+  "align-roll-range": { id: "fc-align-roll", label: "board alignment" },
+  "align-pitch-range": { id: "fc-align-pitch", label: "board alignment" },
+  "align-yaw-range": { id: "fc-align-yaw", label: "board alignment" },
   "channel-range": { id: "fc-arm-channel", label: "control channels" },
   "unsupported-control-role": { id: "fc-arm-channel", label: "control channels" },
   "mode-channel-unset": { id: "fc-mode-channel", label: "flight-mode channel" },
@@ -928,7 +932,107 @@ export default function FlightControllerSetup({
               </div>
             )}
 
-            {config.firmwareFamily === "aerialkit" && (
+            <fieldset className="fc-feature-list">
+              <legend>Enabled features</legend>
+              {FC_FEATURES.map((feature) => (
+                <label
+                  key={feature.id}
+                  className={profile.featureSupport?.[feature.id] === false ? "is-unavailable" : ""}
+                    title={profile.featureSupport?.[feature.id] === false
+                      ? feature.id === "blackbox" && config.firmwareFamily === "aerialkit"
+                        ? "Aerial Kit logs internally; this external blackbox field is not applicable"
+                        : "Not exposed by this documented board profile"
+                      : undefined}
+                >
+                  <input
+                    id={`fc-feature-${feature.id}`}
+                    type="checkbox"
+                    disabled={profile.featureSupport?.[feature.id] === false}
+                    checked={Boolean(config.features[feature.id])}
+                    onChange={(event) => update(`features.${feature.id}`, event.target.checked)}
+                  />
+                  <span>{feature.label}</span>
+                </label>
+              ))}
+            </fieldset>
+          </section>
+
+          {config.firmwareFamily === "aerialkit" && (
+            <section className="fc-section" aria-labelledby="fc-aircraft-integration-title">
+              <div className="fc-section-heading">
+                <Compass size={18} aria-hidden="true" />
+                <div>
+                  <h3 id="fc-aircraft-integration-title">Sensor and power</h3>
+                  <p>
+                    Aerial Kit board-to-airframe rotation and pack-voltage telemetry.
+                    These are planned firmware values, not completed calibration.
+                  </p>
+                </div>
+              </div>
+
+              <div className="fc-calibration fc-alignment-plan">
+                <div className="fc-calibration-heading">
+                  <strong>Board alignment plan</strong>
+                  <span>
+                    Set the mounting rotation before sensor calibration. Zero means
+                    the board axes align with the airframe.
+                  </span>
+                </div>
+                <div
+                  className="fc-alignment-order"
+                  role="note"
+                  aria-label="Aerial Kit applies alignment roll, then pitch, then yaw"
+                >
+                  <span><small>1 · Roll</small><strong>X axis</strong></span>
+                  <ArrowRight size={14} aria-hidden="true" />
+                  <span><small>2 · Pitch</small><strong>Y axis</strong></span>
+                  <ArrowRight size={14} aria-hidden="true" />
+                  <span><small>3 · Yaw</small><strong>Z axis</strong></span>
+                </div>
+                <div className="fc-field-grid fc-field-grid-three">
+                  <Field label="Alignment roll" htmlFor="fc-align-roll" hint="-180 to 180 degrees">
+                    <input
+                      id="fc-align-roll"
+                      type="number"
+                      min="-180"
+                      max="180"
+                      step="0.1"
+                      aria-invalid={numericInvalid(config.alignRollDeg)}
+                      value={numericValue(config.alignRollDeg)}
+                      onChange={(event) => update("alignRollDeg", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field label="Alignment pitch" htmlFor="fc-align-pitch" hint="-180 to 180 degrees">
+                    <input
+                      id="fc-align-pitch"
+                      type="number"
+                      min="-180"
+                      max="180"
+                      step="0.1"
+                      aria-invalid={numericInvalid(config.alignPitchDeg)}
+                      value={numericValue(config.alignPitchDeg)}
+                      onChange={(event) => update("alignPitchDeg", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field label="Alignment yaw" htmlFor="fc-align-yaw" hint="-180 to 180 degrees">
+                    <input
+                      id="fc-align-yaw"
+                      type="number"
+                      min="-180"
+                      max="180"
+                      step="0.1"
+                      aria-invalid={numericInvalid(config.alignYawDeg)}
+                      value={numericValue(config.alignYawDeg)}
+                      onChange={(event) => update("alignYawDeg", numericInput(event.target.value))}
+                    />
+                  </Field>
+                </div>
+                <p className="fc-alignment-note">
+                  Verify the sign by tilting the aircraft and watching the live
+                  attitude report. This plan does not calibrate or observe the IMU.
+                </p>
+              </div>
+
               <div className="fc-calibration fc-battery-plan">
                 <div className="fc-calibration-heading">
                   <strong>Battery telemetry plan</strong>
@@ -988,32 +1092,8 @@ export default function FlightControllerSetup({
                   </Field>
                 </div>
               </div>
-            )}
-
-            <fieldset className="fc-feature-list">
-              <legend>Enabled features</legend>
-              {FC_FEATURES.map((feature) => (
-                <label
-                  key={feature.id}
-                  className={profile.featureSupport?.[feature.id] === false ? "is-unavailable" : ""}
-                    title={profile.featureSupport?.[feature.id] === false
-                      ? feature.id === "blackbox" && config.firmwareFamily === "aerialkit"
-                        ? "Aerial Kit logs internally; this external blackbox field is not applicable"
-                        : "Not exposed by this documented board profile"
-                      : undefined}
-                >
-                  <input
-                    id={`fc-feature-${feature.id}`}
-                    type="checkbox"
-                    disabled={profile.featureSupport?.[feature.id] === false}
-                    checked={Boolean(config.features[feature.id])}
-                    onChange={(event) => update(`features.${feature.id}`, event.target.checked)}
-                  />
-                  <span>{feature.label}</span>
-                </label>
-              ))}
-            </fieldset>
-          </section>
+            </section>
+          )}
 
           <section className="fc-section" aria-labelledby="fc-safety-title">
             <div className="fc-section-heading">

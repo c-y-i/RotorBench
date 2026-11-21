@@ -151,6 +151,9 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
       vbatCells: 4,
       vbatWarnCell: 3.4,
       vbatMinCell: 3.2,
+      alignRollDeg: 0.5,
+      alignPitchDeg: -1.5,
+      alignYawDeg: 90,
     }),
   });
   const readiness = summarizeHardwareReadiness({
@@ -165,6 +168,9 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
     fcBatteryCellOverride: 4,
     fcBatteryWarnCellV: 3.4,
     fcBatteryMinCellV: 3.2,
+    fcAlignmentRollDeg: 0.5,
+    fcAlignmentPitchDeg: -1.5,
+    fcAlignmentYawDeg: 90,
   });
 });
 

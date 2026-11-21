@@ -479,6 +479,53 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.fc-alignment-order {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr) 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 9px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.fc-alignment-order > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.fc-alignment-order small {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fc-alignment-order strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.fc-alignment-order > svg {
+  justify-self: center;
+  color: var(--brand);
+}
+
+.fc-alignment-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .fc-board-facts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1362,6 +1409,14 @@
 
   .fc-calibration-heading span {
     text-align: start;
+  }
+
+  .fc-alignment-order {
+    grid-template-columns: 1fr;
+  }
+
+  .fc-alignment-order > svg {
+    transform: rotate(90deg);
   }
 
   .fc-board-facts {

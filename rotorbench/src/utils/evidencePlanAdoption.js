@@ -303,6 +303,39 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => `${value} V/cell`,
     },
     {
+      key: "alignRollDeg",
+      source: "align_roll_deg",
+      snapshotKey: "align_roll_deg",
+      label: "Board alignment roll",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= -180 && number <= 180 ? number : null;
+      },
+      display: (value) => `${value}°`,
+    },
+    {
+      key: "alignPitchDeg",
+      source: "align_pitch_deg",
+      snapshotKey: "align_pitch_deg",
+      label: "Board alignment pitch",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= -180 && number <= 180 ? number : null;
+      },
+      display: (value) => `${value}°`,
+    },
+    {
+      key: "alignYawDeg",
+      source: "align_yaw_deg",
+      snapshotKey: "align_yaw_deg",
+      label: "Board alignment yaw",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= -180 && number <= 180 ? number : null;
+      },
+      display: (value) => `${value}°`,
+    },
+    {
       key: "rthEnabled",
       source: "rth_enable",
       snapshotKey: "rth_enable",

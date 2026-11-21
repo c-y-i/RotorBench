@@ -22,6 +22,9 @@ const config = {
   vbatCells: 0,
   vbatWarnCell: 3.5,
   vbatMinCell: 3.3,
+  alignRollDeg: 0,
+  alignPitchDeg: -1.5,
+  alignYawDeg: 90,
   rthEnabled: false,
 };
 
@@ -46,6 +49,9 @@ test("Aerial Kit preview uses current runtime parameter names and omits save", (
     "set vbat_cells 0",
     "set vbat_warn_cell 3.5",
     "set vbat_min_cell 3.3",
+    "set align_roll_deg 0",
+    "set align_pitch_deg -1.5",
+    "set align_yaw_deg 90",
     "set rth_enable 0",
     "set velocity_channel 0",
   ]));

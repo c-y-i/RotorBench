@@ -99,7 +99,10 @@ export function buildFlightControllerCommands(
     finite(config.vbatRatio) &&
     integer(config.vbatCells) &&
     finite(config.vbatWarnCell) &&
-    finite(config.vbatMinCell);
+    finite(config.vbatMinCell) &&
+    finite(config.alignRollDeg) &&
+    finite(config.alignPitchDeg) &&
+    finite(config.alignYawDeg);
 
   if (!validPlan) {
     return {
@@ -142,6 +145,9 @@ export function buildFlightControllerCommands(
     `set vbat_cells ${Number(config.vbatCells)}`,
     `set vbat_warn_cell ${Number(config.vbatWarnCell)}`,
     `set vbat_min_cell ${Number(config.vbatMinCell)}`,
+    `set align_roll_deg ${Number(config.alignRollDeg)}`,
+    `set align_pitch_deg ${Number(config.alignPitchDeg)}`,
+    `set align_yaw_deg ${Number(config.alignYawDeg)}`,
     `set rth_enable ${config.rthEnabled ? 1 : 0}`,
   );
 

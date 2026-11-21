@@ -587,6 +587,9 @@ export function createDefaultFlightControllerConfig(
     vbatCells: 0,
     vbatWarnCell: 3.5,
     vbatMinCell: 3.3,
+    alignRollDeg: 0,
+    alignPitchDeg: 0,
+    alignYawDeg: 0,
     dshotKhz: 300,
     failsafeAction: "firmware-derived",
     armChannel: channelPreset?.armChannel ?? null,
@@ -788,6 +791,19 @@ export function validateFlightControllerConfig(
         code: "vbat-threshold-order",
         message: "Battery minimum threshold must be below the warning threshold.",
       });
+    }
+    for (const [key, code, label] of [
+      ["alignRollDeg", "align-roll-range", "roll"],
+      ["alignPitchDeg", "align-pitch-range", "pitch"],
+      ["alignYawDeg", "align-yaw-range", "yaw"],
+    ]) {
+      if (!finite(config[key]) || Number(config[key]) < -180 || Number(config[key]) > 180) {
+        issues.push({
+          severity: "error",
+          code,
+          message: `Board alignment ${label} must be between -180 and 180 degrees.`,
+        });
+      }
     }
   }
 
@@ -1135,6 +1151,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     ...(config.firmwareFamily === "aerialkit"
       ? [
           `Receiver calibration: min ${config.rcMin}, mid ${config.rcMid}, max ${config.rcMax}, deadband ${config.rcDeadband}`,
+          `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell`,
         ]
       : []),

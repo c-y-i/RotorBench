@@ -26,6 +26,9 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
         vbat_cells: "0",
         vbat_warn_cell: "3.4",
         vbat_min_cell: "3.3",
+        align_roll_deg: "0",
+        align_pitch_deg: "0",
+        align_yaw_deg: "90",
         rth_enable: "1",
       },
     },
@@ -48,17 +51,21 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
       vbatCells: 0,
       vbatWarnCell: 3.5,
       vbatMinCell: 3.3,
+      alignRollDeg: 0,
+      alignPitchDeg: 0,
+      alignYawDeg: 0,
       rthEnabled: false,
     },
   );
 
   expect(patch.supported).toBe(true);
-  expect(patch.matchedCount).toBe(6);
+  expect(patch.matchedCount).toBe(8);
   expect(patch.fields).toEqual(expect.arrayContaining([
     expect.objectContaining({ key: "dshotKhz", observedValue: 600 }),
     expect.objectContaining({ key: "receiverProtocol", observedValue: "sbus" }),
     expect.objectContaining({ key: "vbatRatio", observedValue: 10.8 }),
     expect.objectContaining({ key: "vbatWarnCell", observedValue: 3.4 }),
+    expect.objectContaining({ key: "alignYawDeg", observedValue: 90 }),
     expect.objectContaining({ key: "rthEnabled", observedValue: true }),
   ]));
   expect(patch.fields.find((field) => field.key === "airframe")).toBeUndefined();

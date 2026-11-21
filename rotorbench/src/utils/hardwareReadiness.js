@@ -236,6 +236,15 @@ export function summarizeHardwareReadiness({
     fcBatteryMinCellV: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.vbatMinCell
       : null,
+    fcAlignmentRollDeg: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.alignRollDeg
+      : null,
+    fcAlignmentPitchDeg: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.alignPitchDeg
+      : null,
+    fcAlignmentYawDeg: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.alignYawDeg
+      : null,
     hardwareVerified: false,
   };
 }
@@ -289,6 +298,9 @@ export function sanitizeHardwareReadiness(readiness) {
     fcBatteryCellOverride: readiness.fcBatteryCellOverride ?? null,
     fcBatteryWarnCellV: readiness.fcBatteryWarnCellV ?? null,
     fcBatteryMinCellV: readiness.fcBatteryMinCellV ?? null,
+    fcAlignmentRollDeg: readiness.fcAlignmentRollDeg ?? null,
+    fcAlignmentPitchDeg: readiness.fcAlignmentPitchDeg ?? null,
+    fcAlignmentYawDeg: readiness.fcAlignmentYawDeg ?? null,
     hardwareVerified: false,
   };
 }

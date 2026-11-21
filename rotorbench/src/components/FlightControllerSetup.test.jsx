@@ -18,6 +18,10 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Cell override")).toHaveValue(0);
   expect(screen.getByLabelText("Warning threshold")).toHaveValue(3.5);
   expect(screen.getByLabelText("Minimum threshold")).toHaveValue(3.3);
+  expect(screen.getByRole("heading", { name: "Sensor and power" })).toBeInTheDocument();
+  expect(screen.getByLabelText("Alignment roll")).toHaveValue(0);
+  expect(screen.getByLabelText("Alignment pitch")).toHaveValue(0);
+  expect(screen.getByLabelText("Alignment yaw")).toHaveValue(0);
 });
 
 test("shows the selected Aerial Kit airframe motor output map", () => {
@@ -374,6 +378,28 @@ test("battery telemetry parameters reach the parent plan", () => {
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatCells: 4 }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatWarnCell: 3.4 }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatMinCell: 3.2 }));
+});
+
+test("board alignment order and angles reach the parent plan", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.getByRole("note", {
+    name: "Aerial Kit applies alignment roll, then pitch, then yaw",
+  })).toHaveTextContent("1 · RollX axis2 · PitchY axis3 · YawZ axis");
+  fireEvent.change(screen.getByLabelText("Alignment roll"), {
+    target: { value: "0.5" },
+  });
+  fireEvent.change(screen.getByLabelText("Alignment pitch"), {
+    target: { value: "-1.5" },
+  });
+  fireEvent.change(screen.getByLabelText("Alignment yaw"), {
+    target: { value: "90" },
+  });
+
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ alignRollDeg: 0.5 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ alignPitchDeg: -1.5 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ alignYawDeg: 90 }));
 });
 
 test("workspace Aerial Kit boards expose workspace switches instead of velocity", () => {
