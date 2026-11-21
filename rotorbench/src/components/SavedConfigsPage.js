@@ -20,6 +20,7 @@ import {
   Fan,
   Filter,
   FolderOpen,
+  Link2,
   Pencil,
   Plus,
   Radio,
@@ -39,6 +40,7 @@ import {
 import { copyBenchEvidenceAttachment } from "../utils/benchEvidenceAttachment";
 import { summarizeBuild } from "../utils/buildComparison";
 import { parseBuildSheetJson } from "../utils/buildSheet";
+import { buildShareUrl } from "../utils/buildLink";
 import { readJsonStorage, writeJsonStorage } from "../utils/storage";
 
 const componentDefinitions = [
@@ -179,6 +181,30 @@ export default function SavedConfigsPage() {
             );
         } catch (e) {
             setTransientMessage("error", `Could not duplicate build: ${e.message}`, 4000);
+        }
+    };
+
+    const copyShareLink = async (item) => {
+        try {
+            const link = buildShareUrl({
+                componentIds: item.componentIds,
+                geometryOverrides: item.geometryOverrides,
+            });
+            if (!navigator.clipboard?.writeText) {
+                throw new Error("clipboard access is unavailable in this browser");
+            }
+            await navigator.clipboard.writeText(link);
+            setTransientMessage(
+                "success",
+                `Share link copied for "${displayName(item)}". Notes and hardware plan state were excluded.`,
+                4000,
+            );
+        } catch (e) {
+            setTransientMessage(
+                "error",
+                `Could not create share link: ${e.message}`,
+                5000,
+            );
         }
     };
 
@@ -664,6 +690,13 @@ export default function SavedConfigsPage() {
                                                 >
                                                     <Copy size={16} aria-hidden="true" />
                                                     Duplicate
+                                                </button>
+                                                <button
+                                                    className="action-btn secondary"
+                                                    onClick={() => copyShareLink(it)}
+                                                >
+                                                    <Link2 size={16} aria-hidden="true" />
+                                                    Share link
                                                 </button>
                                             </div>
                                             <div className="saved-actions-danger">

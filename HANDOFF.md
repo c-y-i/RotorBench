@@ -298,7 +298,7 @@ The build also exposes a collapsible provenance panel. For every selected part i
 
 The provenance panel can export a portable `rotorbench.build-sheet.v1` JSON draft. It includes selected IDs, physical-fit state, electrical-limit state, both sets of individual check rows, provenance counts and parts, and explicitly records that analysis and hardware verification are not included.
 
-Build can also copy a versioned `/build?share=...` link containing only validated catalog component IDs and selected-part measurement overrides. The decoder validates the schema, catalog IDs, token length, and measured values before applying anything. It excludes build notes, hardware plans, binding phrases, UIDs, evidence, serial paths, and local identifiers. Shared links take precedence over stored drafts, are consumed into a normal working build, and retain the usual compatibility and analysis gates.
+Build can also copy a versioned `/build?share=...` link containing only validated catalog component IDs and selected-part measurement overrides. Saved cards expose the same action. The decoder validates the schema, catalog IDs, token length, and measured values before applying anything. It excludes build notes, hardware plans, binding phrases, UIDs, evidence, serial paths, and local identifiers. Shared links take precedence over stored drafts, are consumed into a normal working build, and retain the usual compatibility and analysis gates.
 
 Build sheets also include the sanitized attached-evidence summary when present: status label, attachment time, scope/identity state, pass/fail/open counts, and explicit `hardwareVerified: false` plus `authenticityVerified: false`. Raw evidence files and full checks are excluded.
 
@@ -450,7 +450,7 @@ cd ../backend
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The latest catalog, BOM, model-manifest, comparison, interactive assembly-profile, hardware-briefing, portable-build-link, and automated accessibility rerun passed 399 frontend tests across 56 suites, the production build, full ESLint, fourteen backend tests, and the Impeccable detector. The long audit inventory below records the preceding 339-test pass; its feature coverage remains valid and the newer focused tests are additive.
+The latest catalog, BOM, model-manifest, comparison, interactive assembly-profile, hardware-briefing, portable-build-link, and automated accessibility rerun passed 400 frontend tests across 56 suites, the production build, full ESLint, fourteen backend tests, and the Impeccable detector. The long audit inventory below records the preceding 339-test pass; its feature coverage remains valid and the newer focused tests are additive.
 
 `axe-core` is now an explicit development dependency. Reusable jsdom structural checks run against the interactive assembly profile and populated comparison with WCAG 2 A/AA tags; colour contrast remains covered by the rendered-browser checks because jsdom has no layout engine.
 

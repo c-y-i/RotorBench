@@ -179,3 +179,28 @@ test("status filters isolate hardware-plan review from clear plans", async () =>
   fireEvent.change(filter, { target: { value: "all" } });
   expect(screen.getByRole("heading", { name: "Offline build" })).toBeInTheDocument();
 });
+
+test("saved builds copy sanitized portable share links", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole("heading", { name: "Offline build" });
+  fireEvent.click(screen.getByRole("button", { name: "Share link" }));
+  await screen.findByText(/Share link copied for "Offline build"/i);
+
+  const link = writeText.mock.calls[0][0];
+  expect(link).toContain("/build?share=");
+  expect(decodeURIComponent(link)).not.toContain(
+    "Inspect the motor direction map before assembly.",
+  );
+  expect(screen.getByText(/Notes and hardware plan state were excluded/i))
+    .toBeInTheDocument();
+});
