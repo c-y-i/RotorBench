@@ -28,3 +28,20 @@ test("does not render without both propulsion parts", () => {
   );
   expect(container).toBeEmptyDOMElement();
 });
+
+test("props-in reverses the visible corner directions", () => {
+  render(
+    <PropRotationMap
+      motor={{ id: "motor-test", name: "Test motor" }}
+      propeller={{ id: "prop-test", name: "Test propeller" }}
+      direction="props-in"
+    />,
+  );
+  expect(screen.getByText("props in · CW / CCW")).toBeInTheDocument();
+  const description = screen.getByRole("img", {
+    name: "Propeller rotation by frame corner",
+  });
+  expect(description).toHaveAccessibleDescription(
+    /Front-left and rear-right propellers rotate clockwise/i,
+  );
+});

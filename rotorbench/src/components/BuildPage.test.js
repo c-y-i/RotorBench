@@ -16,6 +16,7 @@ jest.mock("./BabylonViewer.jsx", () => ({
   autoRotate,
   exploded,
   assemblySpec,
+  propellerDirection,
   showFitOverlay,
   fitOverlayStatus,
 }) => (
@@ -29,6 +30,7 @@ jest.mock("./BabylonViewer.jsx", () => ({
     data-motor-shaft={assemblySpec?.motor?.propShaftMm ?? ""}
     data-motor-measured={assemblySpec?.motor?.measuredFields?.join(",") || ""}
     data-propeller={assemblySpec?.propeller?.id || ""}
+    data-propeller-direction={propellerDirection || ""}
     data-esc={assemblySpec?.esc?.id || ""}
     data-battery={assemblySpec?.battery?.id || ""}
     data-flight-controller={assemblySpec?.flightController?.id || ""}
@@ -691,6 +693,48 @@ test("restores an automatically saved unsaved build draft", async () => {
     .toHaveAttribute("role", "status");
   fireEvent.click(screen.getByText("Build provenance"));
   expect(screen.getByLabelText("Build notes")).toHaveValue("Recovered note");
+});
+
+test("saved Betaflight QUAD X direction drives the assembly prop handedness", async () => {
+  const buildId = "props-in-build";
+  localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
+    version: 1,
+    id: buildId,
+    name: "Props-in draft",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-tmotor-f1404-3800kv",
+      propellerId: "prop-gemfan-hurricane-3520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp1-v2",
+    },
+  }));
+  localStorage.setItem(`rotorbench:hardware-plan:${buildId}:fc`, JSON.stringify({
+    planVersion: 3,
+    selectedFlightControllerId: "fc-speedybee-f405-mini",
+    selectedReceiverId: "rx-radiomaster-rp1-v2",
+    firmwareFamily: "betaflight",
+    profileId: "custom-board",
+    airframe: "quadx",
+    motorDirection: "props-in",
+  }));
+
+  render(
+    <MemoryRouter initialEntries={["/build"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(screen.getByTestId("assembly-viewer"))
+    .toHaveAttribute("data-propeller-direction", "props-in");
+  expect(screen.getByText("props in · CW / CCW")).toBeInTheDocument();
 });
 
 test("new build requests ignore and consume an existing draft", async () => {

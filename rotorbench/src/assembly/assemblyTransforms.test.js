@@ -6,6 +6,7 @@ import {
   getMotorMountOutlineMm,
   getMotorOriginsMm,
   getPropellerHubDiameterMm,
+  getPropellerHandedness,
   getPropellerOriginsMm,
   getPropellerSweepDiameterMm,
   getPropellerVariant,
@@ -70,6 +71,19 @@ test("propellers sit above each motor shaft with alternating handedness", () => 
     getPropellerVariant(2),
     getPropellerVariant(3),
   ]);
+});
+
+test("props-in reverses propeller handedness without changing mount positions", () => {
+  const propsOut = getPropellerOriginsMm(frame, motor, propeller, "props-out");
+  const propsIn = getPropellerOriginsMm(frame, motor, propeller, "props-in");
+
+  propsIn.forEach((origin, index) => {
+    expect(origin.slice(0, 3)).toEqual(propsOut[index].slice(0, 3));
+    expect(origin[3]).not.toBe(propsOut[index][3]);
+  });
+  expect(getPropellerHandedness("upperLeft", "props-in")).toBe("CW");
+  expect(getPropellerVariant(0, "props-in")).toBe("CW");
+  expect(getPropellerVariant(0, "props-out")).toBe("CCW");
 });
 
 test("electronics stack in order and battery clears the stack", () => {

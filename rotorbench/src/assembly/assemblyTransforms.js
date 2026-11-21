@@ -12,14 +12,34 @@ export const COMPONENT_FALLBACK_DIMENSIONS_MM = {
 
 export const MOTOR_CORNER_ORDER = ["upperLeft", "upperRight", "lowerRight", "lowerLeft"];
 
-// A conventional quad-X "props-out" layout alternates handedness diagonally.
-// The matching CW/CCW GLBs share the same hub coordinate system.
-export const PROPELLER_HANDEDNESS_BY_CORNER = {
-  upperLeft: "CCW",
-  upperRight: "CW",
-  lowerRight: "CCW",
-  lowerLeft: "CW",
-};
+// A conventional quad-X layout alternates handedness diagonally. The matching
+// CW/CCW GLBs share the same hub coordinate system.
+export const PROPELLER_HANDEDNESS_BY_PROFILE = Object.freeze({
+  "props-out": Object.freeze({
+    upperLeft: "CCW",
+    upperRight: "CW",
+    lowerRight: "CCW",
+    lowerLeft: "CW",
+  }),
+  "props-in": Object.freeze({
+    upperLeft: "CW",
+    upperRight: "CCW",
+    lowerRight: "CW",
+    lowerLeft: "CCW",
+  }),
+});
+
+export const PROPELLER_HANDEDNESS_BY_CORNER =
+  PROPELLER_HANDEDNESS_BY_PROFILE["props-out"];
+
+export function normalizePropellerDirection(direction) {
+  return direction === "props-in" ? "props-in" : "props-out";
+}
+
+export function getPropellerHandedness(corner, direction = "props-out") {
+  return PROPELLER_HANDEDNESS_BY_PROFILE[normalizePropellerDirection(direction)][corner]
+    || "CCW";
+}
 
 // Exploded inspection keeps every X/Z mounting coordinate unchanged. Each
 // layer moves upward along the same Y axis; zero restores the assembled pose.
@@ -174,7 +194,12 @@ export function getMotorOriginsMm(frame, motor) {
   return getFrameMountPointsMm(frame, motor);
 }
 
-export function getPropellerOriginsMm(frame, motor, propeller) {
+export function getPropellerOriginsMm(
+  frame,
+  motor,
+  propeller,
+  direction = "props-out",
+) {
   const motorOrigins = getMotorOriginsMm(frame, motor);
   const motorHeightMm = getFallbackDimensionsMm("motor", motor)[1];
   const propMount = numericVector(propeller?.mounting_point) || [0, 0, 0];
@@ -186,7 +211,7 @@ export function getPropellerOriginsMm(frame, motor, propeller) {
       origin[0] - propMount[0],
       shaftTopY + shaftClearanceMm - propMount[1],
       origin[2] - propMount[2],
-      PROPELLER_HANDEDNESS_BY_CORNER[MOTOR_CORNER_ORDER[index]],
+      getPropellerHandedness(MOTOR_CORNER_ORDER[index], direction),
     ];
   });
 }
@@ -237,8 +262,8 @@ export function getBatteryPlacementMm(frame = {}, battery = {}, parts = {}) {
   };
 }
 
-export function getPropellerVariant(index) {
-  return PROPELLER_HANDEDNESS_BY_CORNER[MOTOR_CORNER_ORDER[index]] || "CCW";
+export function getPropellerVariant(index, direction = "props-out") {
+  return getPropellerHandedness(MOTOR_CORNER_ORDER[index], direction);
 }
 
 export function getExplodedOffsetMm(componentType, exploded = false) {

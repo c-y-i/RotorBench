@@ -2,7 +2,8 @@ import React, { useId } from "react";
 import { Fan } from "lucide-react";
 import {
   MOTOR_CORNER_ORDER,
-  PROPELLER_HANDEDNESS_BY_CORNER,
+  getPropellerHandedness,
+  normalizePropellerDirection,
 } from "../assembly/assemblyTransforms";
 
 const CORNER_LABELS = {
@@ -19,8 +20,14 @@ const CORNER_POSITIONS = {
   lowerLeft: [60, 130],
 };
 
-export default function PropRotationMap({ motor = null, propeller = null }) {
+export default function PropRotationMap({
+  motor = null,
+  propeller = null,
+  direction = "props-out",
+}) {
   const id = useId().replace(/:/g, "");
+  const directionProfile = normalizePropellerDirection(direction);
+  const directionLabel = directionProfile === "props-in" ? "props in" : "props out";
   if (!motor?.id || !propeller?.id) return null;
 
   return (
@@ -31,7 +38,7 @@ export default function PropRotationMap({ motor = null, propeller = null }) {
           <strong>Prop rotation map</strong>
           <small>{motor.name} · {propeller.name}</small>
         </span>
-        <em>4 corners · CW / CCW</em>
+        <em>{directionLabel} · CW / CCW</em>
       </summary>
       <div>
         <svg
@@ -42,8 +49,9 @@ export default function PropRotationMap({ motor = null, propeller = null }) {
         >
           <title>Propeller rotation by frame corner</title>
           <desc id={`${id}-description`}>
-            Front-left and rear-right propellers rotate counter-clockwise.
-            Front-right and rear-left propellers rotate clockwise.
+            {directionProfile === "props-in"
+              ? "Front-left and rear-right propellers rotate clockwise. Front-right and rear-left propellers rotate counter-clockwise."
+              : "Front-left and rear-right propellers rotate counter-clockwise. Front-right and rear-left propellers rotate clockwise."}
           </desc>
           <text className="prop-map-front" x="120" y="15" textAnchor="middle">
             FRONT
@@ -51,20 +59,20 @@ export default function PropRotationMap({ motor = null, propeller = null }) {
           <path className="prop-map-frame" d="M60 57 180 130M180 57 60 130" />
           {MOTOR_CORNER_ORDER.map((corner) => {
             const [x, y] = CORNER_POSITIONS[corner];
-            const direction = PROPELLER_HANDEDNESS_BY_CORNER[corner];
-            const clockwise = direction === "CW";
+            const handedness = getPropellerHandedness(corner, directionProfile);
+            const clockwise = handedness === "CW";
             return (
               <g key={corner} transform={`translate(${x} ${y})`}>
                 <circle className="prop-map-motor" r="21" />
                 <path className="prop-map-blades" d="M-17-7 17 7M-17 7 17-7" />
                 <path
-                  className={`prop-map-direction is-${direction.toLowerCase()}`}
+                  className={`prop-map-direction is-${handedness.toLowerCase()}`}
                   d={clockwise
                     ? "M-14 0A14 14 0 1 1 0 14"
                     : "M14 0A14 14 0 1 0 0 14"}
                 />
                 <path
-                  className={`prop-map-arrow is-${direction.toLowerCase()}`}
+                  className={`prop-map-arrow is-${handedness.toLowerCase()}`}
                   d={clockwise
                     ? "M0 18 5 10 -5 10Z"
                     : "M0 18 -5 10 5 10Z"}
@@ -73,21 +81,22 @@ export default function PropRotationMap({ motor = null, propeller = null }) {
                   {CORNER_LABELS[corner]}
                 </text>
                 <text
-                  className={`prop-map-rotation is-${direction.toLowerCase()}`}
+                  className={`prop-map-rotation is-${handedness.toLowerCase()}`}
                   x="0"
                   y="49"
                   textAnchor="middle"
                 >
-                  {direction}
+                  {handedness}
                 </text>
               </g>
             );
           })}
         </svg>
         <p>
-          Corner handedness follows the current assembly contract and is
+          Corner handedness follows the {directionLabel} assembly plan and is
           intentionally not labeled as vendor motor numbers. Confirm the
-          airframe and propeller markings before wiring or flight.
+          flight-controller direction, airframe, and propeller markings before
+          wiring or flight.
         </p>
       </div>
     </details>

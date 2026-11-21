@@ -238,9 +238,15 @@ const createMotorFallback = (scene, motor = {}, position, index) => {
   return root;
 };
 
-const createPropellerFallback = (scene, propeller = {}, position, index) => {
+const createPropellerFallback = (
+  scene,
+  propeller = {},
+  position,
+  index,
+  propellerDirection = "props-out",
+) => {
   const dimensions = getFallbackDimensionsMm("propeller", propeller).map((value) => value * MM_TO_SCENE);
-  const variant = getPropellerVariant(index);
+  const variant = getPropellerVariant(index, propellerDirection);
   const root = new TransformNode(`prop_${index}_root`, scene);
   const bladeMaterial = createMaterial(scene, `prop_${index}_blade_mat`, variant === "CW" ? "#f1f3e9" : "#9ce5d8");
   const hubMaterial = createMaterial(scene, `prop_${index}_hub_mat`, "#212a27");
@@ -349,6 +355,7 @@ const BabylonViewer = ({
   propellerUrl,
   propellerCWUrl,
   propellerCCWUrl,
+  propellerDirection = "props-out",
   propellerMountingPoint = [0, 0, 0], // offset from prop origin to mounting plane
   assemblySpec = {},
   exploded = false,
@@ -1405,7 +1412,12 @@ const BabylonViewer = ({
       await motorAssemblyPromise;
       disposeComponentType("propeller");
 
-      const originValues = getPropellerOriginsMm(frameSpec, motorSpec, propellerSpec);
+      const originValues = getPropellerOriginsMm(
+        frameSpec,
+        motorSpec,
+        propellerSpec,
+        propellerDirection,
+      );
       const sources = {};
       if (propellerCWUrl) sources.CW = (await loadSingle(propellerCWUrl, null, "propeller"))?.filter((mesh) => !mesh.name.startsWith("__")) || [];
       if (propellerCCWUrl) sources.CCW = (await loadSingle(propellerCCWUrl, null, "propeller"))?.filter((mesh) => !mesh.name.startsWith("__")) || [];
@@ -1418,7 +1430,7 @@ const BabylonViewer = ({
       const propellerHeightMm = getFallbackDimensionsMm("propeller", propellerSpec)[1];
       const mountedRoots = [];
       originValues.forEach((origin, index) => {
-        const variant = getPropellerVariant(index);
+        const variant = getPropellerVariant(index, propellerDirection);
         const meshes = sources[variant]?.length ? sources[variant] : sources[variant === "CW" ? "CCW" : "CW"] || [];
         const motorRoot = motorRoots[index];
         const motorTopY = getVisibleTopY(
@@ -1441,7 +1453,13 @@ const BabylonViewer = ({
           });
           if (root) mountedRoots.push(root);
         } else {
-          const root = createPropellerFallback(scene, propellerSpec || {}, position, index);
+          const root = createPropellerFallback(
+            scene,
+            propellerSpec || {},
+            position,
+            index,
+            propellerDirection,
+          );
           if (root) mountedRoots.push(root);
         }
       });
@@ -1474,7 +1492,7 @@ const BabylonViewer = ({
     previousClearedComponentsRef.current = clearedComponents;
     // Assembly helpers are local to this effect and intentionally stable for its lifecycle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelUrl, modelUrls, frameCornerPositions, motorUrl, motorMountingPoint, batteryUrl, batteryMountingPoint, fcUrl, fcMountingPoint, escUrl, escMountingPoint, receiverUrl, receiverMountingPoint, propellerUrl, propellerCWUrl, propellerCCWUrl, propellerMountingPoint, assemblySpec, groundClearance, resetKey, clearedComponents]);
+  }, [modelUrl, modelUrls, frameCornerPositions, motorUrl, motorMountingPoint, batteryUrl, batteryMountingPoint, fcUrl, fcMountingPoint, escUrl, escMountingPoint, receiverUrl, receiverMountingPoint, propellerUrl, propellerCWUrl, propellerCCWUrl, propellerDirection, propellerMountingPoint, assemblySpec, groundClearance, resetKey, clearedComponents]);
 
   return (
     <div

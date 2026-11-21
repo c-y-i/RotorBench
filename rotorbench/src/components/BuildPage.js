@@ -887,6 +887,18 @@ export default function BuildPage() {
     }),
     [selectedFlightControllerPart, selectedReceiverPart, workingBuildId],
   );
+  const assemblyPropellerDirection = useMemo(() => (
+    hardwareReadiness.configured &&
+    hardwareReadiness.fcMotorLayoutSource === "Betaflight" &&
+    hardwareReadiness.fcAirframe === "quadx"
+      ? hardwareReadiness.fcMotorDirection || "props-out"
+      : "props-out"
+  ), [
+    hardwareReadiness.configured,
+    hardwareReadiness.fcAirframe,
+    hardwareReadiness.fcMotorDirection,
+    hardwareReadiness.fcMotorLayoutSource,
+  ]);
   const physicalFitState = selectedPhysicalChecks.length === 0
     ? "pending"
     : !physicalFit.ok
@@ -1268,6 +1280,7 @@ export default function BuildPage() {
                   propellerUrl={propellerModelUrl}
                   propellerCWUrl={propellerCWModelUrl}
                   propellerCCWUrl={propellerCCWModelUrl}
+                  propellerDirection={assemblyPropellerDirection}
                   propellerMountingPoint={propellerMountingPoint}
                   batteryUrl={batteryModelUrl}
                   batteryMountingPoint={batteryMountingPoint}
@@ -1404,6 +1417,7 @@ export default function BuildPage() {
           <PropRotationMap
             motor={assemblySpec.motor}
             propeller={assemblySpec.propeller}
+            direction={assemblyPropellerDirection}
           />
           <AssemblyStackMap
             frame={assemblySpec.frame}
