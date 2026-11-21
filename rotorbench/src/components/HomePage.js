@@ -60,6 +60,7 @@ export default function HomePage() {
   const [receiverMountingPoint, setReceiverMountingPoint] = useState([0, 0, 0]);
   const [clearedComponents, setClearedComponents] = useState([]);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
+  const [platformSize, setPlatformSize] = useState("all");
   // Get component details from current build
   const getComponent = (type, id) => {
     if (!id) return null;
@@ -84,6 +85,21 @@ export default function HomePage() {
     ])),
     [],
   );
+  const platformSizes = useMemo(() => (
+    Array.from(new Set(PLATFORM_PRESETS.map(
+      (preset) => preset.name.match(/^[\d.]+/)?.[0] || "—",
+    ))).sort((left, right) => (
+      (Number.parseFloat(left) || Number.POSITIVE_INFINITY)
+      - (Number.parseFloat(right) || Number.POSITIVE_INFINITY)
+    ))
+  ), []);
+  const visiblePlatforms = useMemo(() => (
+    platformSize === "all"
+      ? PLATFORM_PRESETS
+      : PLATFORM_PRESETS.filter(
+        (preset) => preset.name.match(/^[\d.]+/)?.[0] === platformSize,
+      )
+  ), [platformSize]);
   const hasAnySelection = Boolean(
     currentBuild &&
     currentBuild.componentIds &&
@@ -255,10 +271,42 @@ export default function HomePage() {
               <h2 id="starter-platforms-title">Start with a complete platform</h2>
               <p>Load seven source-backed parts, already aligned in the assembly preview.</p>
             </div>
-            <span>{PLATFORM_PRESETS.length} source builds</span>
+            <span>
+              {platformSize === "all"
+                ? `${PLATFORM_PRESETS.length} source builds`
+                : `${visiblePlatforms.length} of ${PLATFORM_PRESETS.length} source builds`}
+            </span>
+          </div>
+          <div
+            className="starter-platform-filters"
+            role="group"
+            aria-label="Filter starter platforms by frame size"
+          >
+            <span className="starter-platform-filter-label">Frame size</span>
+            {["all", ...platformSizes].map((size) => {
+              const count = size === "all"
+                ? PLATFORM_PRESETS.length
+                : PLATFORM_PRESETS.filter(
+                  (preset) => preset.name.match(/^[\d.]+/)?.[0] === size,
+                ).length;
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  className={`starter-platform-filter ${
+                    platformSize === size ? "is-active" : ""
+                  }`}
+                  aria-pressed={platformSize === size}
+                  onClick={() => setPlatformSize(size)}
+                >
+                  {size === "all" ? "All builds" : `${size}-inch builds`}
+                  <small>{count}</small>
+                </button>
+              );
+            })}
           </div>
           <div className="starter-platform-list">
-            {PLATFORM_PRESETS.map((preset) => {
+            {visiblePlatforms.map((preset) => {
               const size = preset.name.match(/^[\d.]+/)?.[0] || "—";
               const propeller = componentsData.propellers.find(
                 (part) => part.id === preset.componentIds.propellerId,

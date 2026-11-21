@@ -80,6 +80,44 @@ test("starter platform actions open a preassembled build draft", async () => {
   );
 });
 
+test("starter platforms filter by frame size while preserving direct launch actions", async () => {
+  const { container } = renderHome();
+  await screen.findByTestId("home-assembly-viewer");
+
+  const filters = screen.getByRole("group", {
+    name: "Filter starter platforms by frame size",
+  });
+  expect(within(filters).getAllByRole("button")).toHaveLength(6);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(13);
+
+  const fiveInch = within(filters).getByRole("button", {
+    name: /^5-inch builds\s*5$/,
+  });
+  fireEvent.click(fiveInch);
+  expect(fiveInch).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(5);
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch Volador II VX5 51499 build",
+  })).toBeInTheDocument();
+  expect(screen.queryByRole("button", {
+    name: "Open 7-inch long-range source build",
+  })).not.toBeInTheDocument();
+
+  fireEvent.click(within(filters).getByRole("button", {
+    name: /^2.5-inch builds\s*1$/,
+  }));
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(1);
+  expect(screen.getByRole("button", {
+    name: "Open 2.5-inch AOS Cine25 source build",
+  })).toBeInTheDocument();
+
+  fireEvent.click(within(filters).getByRole("button", {
+    name: /^All builds\s*13$/,
+  }));
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(13);
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
 test("new build actions request a fresh draft even when one is saved", async () => {
   renderHome();
   await screen.findByTestId("home-assembly-viewer");
