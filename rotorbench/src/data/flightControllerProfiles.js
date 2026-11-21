@@ -1463,9 +1463,22 @@ export function buildArmingGatePreview(
       id: "outputs",
       label: "Output mix",
       reason: "AK_ARM_OUTPUTS",
-      codes: ["output-count", "servo-count", "build-airframe-mismatch"],
-      detail: issueDetail(["output-count", "servo-count", "build-airframe-mismatch"])
-        || "The selected build and airframe fit the documented motor and servo outputs.",
+      codes: [
+        "output-count",
+        "servo-count",
+        "build-airframe-mismatch",
+        "servo-reverse",
+        "servo-trim-range",
+        "servo-travel-range",
+      ],
+      detail: issueDetail([
+        "output-count",
+        "servo-count",
+        "build-airframe-mismatch",
+        "servo-reverse",
+        "servo-trim-range",
+        "servo-travel-range",
+      ]) || "The selected build and airframe fit the documented motor and servo outputs, and the planned servo plumbing is valid.",
     },
     {
       id: "receiver-transport",

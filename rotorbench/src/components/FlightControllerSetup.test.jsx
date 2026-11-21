@@ -113,6 +113,7 @@ test("servo validation reviews focus the affected output", () => {
   fireEvent.change(within(servo2).getByLabelText("Travel"), {
     target: { value: "" },
   });
+  expect(screen.getByText("1 blocked")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", {
     name: "Review servo travel",
   }));

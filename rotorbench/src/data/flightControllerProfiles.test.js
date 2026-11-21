@@ -687,6 +687,34 @@ test("arming preview reports a real output-mix blocker", () => {
   expect(preview.planBlockerCount).toBe(1);
 });
 
+test("arming preview blocks an invalid servo output plan", () => {
+  const profile = getBoardProfile("esp32dev");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: "esp32dev",
+    airframe: "elevonwing",
+    receiverUart: "UART2",
+    receiverBaud: 420000,
+    armChannel: 5,
+    modeChannel: 6,
+    servo1TravelUs: 99,
+  };
+  const preview = buildArmingGatePreview(
+    config,
+    profile,
+    validateFlightControllerConfig(config, profile),
+  );
+
+  expect(preview.planChecks).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      id: "outputs",
+      status: "blocked",
+      detail: expect.stringMatching(/Servo 1 travel/i),
+    }),
+  ]));
+  expect(preview.planBlockerCount).toBe(1);
+});
+
 test("arming preview marks a custom receiver route unverified", () => {
   const profile = getBoardProfile("custom-board");
   const config = {
