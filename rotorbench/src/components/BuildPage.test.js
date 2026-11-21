@@ -184,6 +184,12 @@ test("a starter-platform deep link selects all seven components and consumes the
   expect(screen.getByRole("button", { name: "Save and go home" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
   expect(screen.getByText("4/8 verified · 4 estimated")).toBeInTheDocument();
+  const powerPath = screen.getByRole("region", {
+    name: "Battery to ESC power path",
+  });
+  expect(within(powerPath).getByText("XT30 match")).toBeInTheDocument();
+  expect(within(powerPath).getByText("Tattu R-Line 4S 850mAh 95C"))
+    .toBeInTheDocument();
   fireEvent.click(screen.getByText("Viewer placement"));
   expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
     "Propeller-to-shaft alignment",
@@ -343,6 +349,40 @@ test("a measured battery deck produces a build-local footprint check", async () 
   expect(within(deckCheck).getByText(
     /measured usable battery deck of 70 × 80 mm/i,
   )).toBeInTheDocument();
+});
+
+test("the power path surfaces source-backed manual termination", async () => {
+  const solderBuild = {
+    id: "solder-power-build",
+    name: "Solder power build",
+    componentIds: {
+      frameId: "frame-aos-55-v2",
+      motorId: "motor-tmotor-f60-pro-v-1750kv",
+      propellerId: "prop-gemfan-hurricane-51466-v2",
+      escId: "esc-holybro-tekko32-f4-65a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-6s-1300-120c",
+      receiverId: "rx-radiomaster-rp3-h",
+    },
+  };
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build: solderBuild } }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const powerPath = screen.getByRole("region", {
+    name: "Battery to ESC power path",
+  });
+  expect(within(powerPath).getByText("Solder lead")).toBeInTheDocument();
+  expect(within(powerPath).getByText("Solder pads")).toBeInTheDocument();
+  expect(within(powerPath).getByText(/verify polarity and wire gauge/i))
+    .toBeInTheDocument();
 });
 
 test("an invalid starter-platform deep link leaves the required build gates intact", async () => {

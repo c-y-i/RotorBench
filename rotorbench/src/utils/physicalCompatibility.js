@@ -212,6 +212,46 @@ export function checkPowerConnector(battery, esc) {
   );
 }
 
+export function summarizePowerPath(battery, esc) {
+  const check = checkPowerConnector(battery, esc);
+  const batteryConnector = String(battery?.dischargeConnector || "").trim().toUpperCase();
+  const escConnector = String(esc?.includedPowerConnector || "").trim().toUpperCase();
+  let displayState = "pending";
+  let label = "Select battery and ESC";
+
+  if (!battery) {
+    label = "Select battery";
+  } else if (!esc) {
+    label = "Select ESC";
+  } else if (esc.powerConnection === "solder-pads") {
+    displayState = "manual";
+    label = "Solder lead";
+  } else if (esc.powerConnection === "supplied-cable") {
+    displayState = "review";
+    label = "Verify termination";
+  } else if (check.status === "compatible") {
+    displayState = "verified";
+    label = `${escConnector} match`;
+  } else if (check.status === "conflict") {
+    displayState = "conflict";
+    label = "Adapter required";
+  } else {
+    displayState = "unknown";
+    label = "Awaiting connector data";
+  }
+
+  return {
+    ...check,
+    displayState,
+    label,
+    batteryName: battery?.name || "Battery not selected",
+    escName: esc?.name || "ESC not selected",
+    batteryConnector: batteryConnector || null,
+    escConnector: escConnector || null,
+    escTermination: esc?.powerConnection || null,
+  };
+}
+
 export function checkBatteryEnvelope(battery, frame) {
   const frameDimensions = frame?.dimensionsMm;
   const batteryDimensions = battery?.dimensionsMm;

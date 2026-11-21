@@ -8,6 +8,7 @@ import MeasuredGeometryPanel from "./MeasuredGeometryPanel";
 import API_BASE from "../config/api";
 import {
   physicalChecksFor,
+  summarizePowerPath,
   summarizePhysicalChecks,
 } from "../utils/physicalCompatibility";
 import {
@@ -818,6 +819,7 @@ export default function BuildPage() {
       : []),
   ];
   const physicalFit = summarizePhysicalChecks(selectedPhysicalChecks);
+  const powerPath = summarizePowerPath(selectedBatteryPart, selectedEscPart);
   const physicalCheckRows = Array.from(
     new Map(
       selectedPhysicalChecks.map((item) => [
@@ -1420,6 +1422,53 @@ export default function BuildPage() {
                 ))}
               </ul>
             </details>
+          )}
+
+          {(selectedBatteryPart || selectedEscPart) && (
+            <section
+              className={`power-path-summary is-${powerPath.displayState}`}
+              aria-label="Battery to ESC power path"
+            >
+              <div className="power-path-heading">
+                <Zap size={15} aria-hidden="true" />
+                <span>
+                  <strong>Power path</strong>
+                  <small>Battery to ESC termination</small>
+                </span>
+                <em>{powerPath.label}</em>
+              </div>
+              <div className="power-path-route">
+                <div>
+                  <BatteryCharging size={16} aria-hidden="true" />
+                  <span>
+                    <small>Battery</small>
+                    <strong title={powerPath.batteryName}>
+                      {powerPath.batteryName}
+                    </strong>
+                  </span>
+                  <em>{powerPath.batteryConnector || "Connector missing"}</em>
+                </div>
+                <ChevronRight size={16} aria-hidden="true" />
+                <div>
+                  <Zap size={16} aria-hidden="true" />
+                  <span>
+                    <small>ESC</small>
+                    <strong title={powerPath.escName}>
+                      {powerPath.escName}
+                    </strong>
+                  </span>
+                  <em>
+                    {powerPath.escConnector
+                      || (powerPath.escTermination === "solder-pads"
+                        ? "Solder pads"
+                        : powerPath.escTermination === "supplied-cable"
+                          ? "Termination unspecified"
+                          : "Connector missing")}
+                  </em>
+                </div>
+              </div>
+              <p>{powerPath.message}</p>
+            </section>
           )}
 
           {(selectedFramePart

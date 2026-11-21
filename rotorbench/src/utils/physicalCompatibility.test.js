@@ -5,6 +5,7 @@ import {
   checkPowerConnector,
   checkPropellerFit,
   physicalChecksFor,
+  summarizePowerPath,
   summarizePhysicalChecks,
 } from "./physicalCompatibility";
 
@@ -96,6 +97,45 @@ test("source-backed power termination remains manual when no connector is suppli
   )).toMatchObject({
     status: "unknown",
     message: expect.stringMatching(/does not publish its connector type/i),
+  });
+});
+
+test("power path summaries name matches, adapters, solder pads, and unpublished cables", () => {
+  expect(summarizePowerPath(
+    { name: "XT60 pack", dischargeConnector: "XT60" },
+    {
+      name: "XT60 ESC",
+      includedPowerConnector: "XT60",
+      powerConnection: "connector",
+    },
+  )).toMatchObject({
+    displayState: "verified",
+    label: "XT60 match",
+  });
+  expect(summarizePowerPath(
+    { name: "XT30 pack", dischargeConnector: "XT30" },
+    {
+      name: "XT60 ESC",
+      includedPowerConnector: "XT60",
+      powerConnection: "connector",
+    },
+  )).toMatchObject({
+    displayState: "conflict",
+    label: "Adapter required",
+  });
+  expect(summarizePowerPath(
+    { name: "XT60 pack", dischargeConnector: "XT60" },
+    { name: "Pad ESC", powerConnection: "solder-pads" },
+  )).toMatchObject({
+    displayState: "manual",
+    label: "Solder lead",
+  });
+  expect(summarizePowerPath(
+    { name: "XT60 pack", dischargeConnector: "XT60" },
+    { name: "Cable ESC", powerConnection: "supplied-cable" },
+  )).toMatchObject({
+    displayState: "review",
+    label: "Verify termination",
   });
 });
 
