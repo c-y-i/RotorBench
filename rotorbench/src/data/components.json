@@ -1028,6 +1028,27 @@
       "priceSourceUrl": "https://holybro.com/products/kakute-h7-v2",
       "dataStatus": "verified_planform_and_specs_estimated_mounting",
       "estimatedFields": ["mounting_point"]
+    },
+    {
+      "id": "fc-holybro-kakute-f722",
+      "name": "Holybro Kakute F722",
+      "manufacturer": "Holybro",
+      "processor": "STM32F722",
+      "weight": 8,
+      "mounting_point": [0, 0, 0],
+      "mountingPatternMm": [30.5, 30.5],
+      "planformMm": [35, 35],
+      "firmware": ["Betaflight", "INAV"],
+      "imu": "ICM42688P",
+      "maxVoltage": 33.6,
+      "features": ["OSD", "Blackbox", "Barometer", "9V BEC"],
+      "price": 79,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://holybro.com/products/kakute-f722",
+      "priceSourceUrl": "https://holybro.com/products/kakute-f722",
+      "dataStatus": "verified_specs_estimated_mounting",
+      "estimatedFields": ["mounting_point"]
     }
   ],
   "frames": [

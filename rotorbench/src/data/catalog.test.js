@@ -323,6 +323,7 @@ test("source-backed board planforms improve fallback assembly alignment", () => 
     ["escs", "esc-holybro-tekko32-f4-65a", [43, 44]],
     ["flight_controllers", "fc-iflight-borg-5s-rx", [34, 27]],
     ["flight_controllers", "fc-holybro-kakute-h7-v2", [35, 35]],
+    ["flight_controllers", "fc-holybro-kakute-f722", [35, 35]],
   ];
 
   for (const [category, id, planformMm] of expected) {
@@ -332,6 +333,27 @@ test("source-backed board planforms improve fallback assembly alignment", () => 
     expect(part.estimatedFields).not.toContain("planformMm");
     expect(part.sourceUrl).toMatch(/^https:\/\//);
   }
+});
+
+test("Kakute F722 keeps official specs and price with only mounting estimated", () => {
+  const controller = componentsData.flight_controllers.find(
+    (item) => item.id === "fc-holybro-kakute-f722",
+  );
+
+  expect(controller).toMatchObject({
+    name: "Holybro Kakute F722",
+    processor: "STM32F722",
+    imu: "ICM42688P",
+    weight: 8,
+    maxVoltage: 33.6,
+    firmware: ["Betaflight", "INAV"],
+    mountingPatternMm: [30.5, 30.5],
+    planformMm: [35, 35],
+    price: 79,
+    sourceUrl: "https://holybro.com/products/kakute-f722",
+    priceSourceUrl: "https://holybro.com/products/kakute-f722",
+  });
+  expect(controller.estimatedFields).toEqual(["mounting_point"]);
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {

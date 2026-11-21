@@ -23,8 +23,35 @@ test("every catalog flight controller resolves to one documented board map", () 
     .flatMap((profile) => profile.catalogFlightControllerIds || []);
 
   expect(missing).toEqual([]);
-  expect(componentsData.flight_controllers).toHaveLength(9);
+  expect(componentsData.flight_controllers).toHaveLength(10);
   expect(new Set(mappedIds).size).toBe(mappedIds.length);
+});
+
+test("Kakute F722 maps its documented receiver and ESC telemetry UARTs", () => {
+  const f722 = getBoardProfile("kakute-f722");
+  expect(f722).toMatchObject({
+    family: "betaflight",
+    board: "KAKUTEF7MINIV3",
+    processor: "STM32F722",
+    imu: "ICM42688P",
+    receiverUart: "UART2",
+    receiverBaud: 420000,
+    gpsUart: null,
+    outputs: { motors: 6, servos: 0 },
+  });
+  expect(f722.serialPorts).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      id: "UART2",
+      role: "Receiver",
+      detail: expect.stringMatching(/pin 3 RX.*pin 4 TX/i),
+    }),
+    expect.objectContaining({
+      id: "UART4",
+      role: "ESC telemetry",
+    }),
+  ]));
+  expect(f722.sourceRefs.some((source) => source.includes("KakuteF722_Manual")))
+    .toBe(true);
 });
 
 test("Aerial Kit motor layouts preserve the firmware output order", () => {

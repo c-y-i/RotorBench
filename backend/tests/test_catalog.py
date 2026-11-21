@@ -43,11 +43,11 @@ class CatalogContractTests(unittest.TestCase):
                 "propellers": 11,
                 "batteries": 11,
                 "escs": 8,
-                "flight_controllers": 9,
+                "flight_controllers": 10,
                 "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 76)
+        self.assertEqual(sum(counts.values()), 77)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 76)
+        self.assertEqual(len(records), 77)
         self.assertTrue(all(record.id for record in records))
 
     def test_published_board_planforms_survive_catalog_hydration(self):
@@ -76,6 +76,7 @@ class CatalogContractTests(unittest.TestCase):
             ("escs", "esc-holybro-tekko32-f4-65a"): [43, 44],
             ("flight_controllers", "fc-iflight-borg-5s-rx"): [34, 27],
             ("flight_controllers", "fc-holybro-kakute-h7-v2"): [35, 35],
+            ("flight_controllers", "fc-holybro-kakute-f722"): [35, 35],
         }
         for (category, component_id), planform in expected.items():
             records = getattr(self.database, category)
