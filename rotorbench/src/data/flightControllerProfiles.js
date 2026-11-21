@@ -796,6 +796,30 @@ export function buildSerialAllocationSummary(config = {}, profile = {}) {
     .join("; ")}`;
 }
 
+export function buildSerialAllocationText(config = {}, profile = {}) {
+  const ports = getSerialPortAssignments(config, profile);
+  if (ports.length === 0) return "";
+  return [
+    "# RotorBench serial allocation - planning only",
+    `# Board: ${profile.label || "Not set"} (${profile.board || "not mapped"})`,
+    `# Receiver route: ${config.receiverUart || "not assigned"}`,
+    `# GPS route: ${config.features?.gps
+      ? normalizeSerialPortName(config.receiverUart)
+        === normalizeSerialPortName(profile.gpsUart)
+        ? "receiver conflict"
+        : profile.gpsUart || "not available"
+      : "disabled"}`,
+    ...ports.map((port) => (
+      `${port.id}: ${port.role} - ${port.detail}${
+        port.assignments.length ? ` [${port.assignments.join(" + ")}]` : ""
+      }`
+    )),
+    "",
+    "# Verify UART ownership, pad direction, signal levels, and continuity on the physical board.",
+    "# RotorBench did not test this serial allocation or hardware state.",
+  ].join("\n");
+}
+
 export const AIRFRAMES = [
   { value: "quadx", label: "Quad X", motors: 4, servos: 0 },
   { value: "quadx1234", label: "Quad X, motors 1-4 front-left first", motors: 4, servos: 0 },

@@ -40,6 +40,7 @@ import {
   getAirframeMotorLayout,
   getBoardProfile,
   getChannelPreset,
+  buildSerialAllocationText,
   getSerialPortAssignments,
   supportsAerialKitLaunch,
   validateFlightControllerConfig,
@@ -558,6 +559,23 @@ export default function FlightControllerSetup({
     }
   };
 
+  const copySerialAllocation = async () => {
+    if (!navigator.clipboard?.writeText) {
+      setSaveState("Clipboard access is unavailable in this browser.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(
+        buildSerialAllocationText(config, profile),
+      );
+      setSaveState(
+        "Serial allocation copied. No UART, peripheral, continuity, or hardware state was verified.",
+      );
+    } catch {
+      setSaveState("The browser refused clipboard access.");
+    }
+  };
+
   const errorCount = issues.filter((issue) => issue.severity === "error").length;
   const warningCount = issues.length - errorCount;
   const readinessClass = errorCount
@@ -918,6 +936,10 @@ export default function FlightControllerSetup({
                       </li>
                     ))}
                   </ol>
+                  <button type="button" onClick={copySerialAllocation}>
+                    <Clipboard size={14} aria-hidden="true" />
+                    Copy serial allocation
+                  </button>
                 </div>
               </details>
             )}

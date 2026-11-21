@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import FlightControllerSetup from "./FlightControllerSetup";
 import { getA11yViolations } from "../test/a11y";
 
@@ -309,6 +315,55 @@ test("selecting SpeedyBee F405 V4 exposes its documented 30x30 mapping", () => {
     .toHaveTextContent("GPS");
   expect(screen.getByText(/MicroSD blackbox · card required/i))
     .toBeInTheDocument();
+});
+
+test("copies the full serial allocation with a planning boundary", async () => {
+  const originalClipboard = navigator.clipboard;
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+
+  try {
+    render(
+      <FlightControllerSetup
+        selectedFlightController={{
+          id: "fc-speedybee-f405-v4",
+          name: "SpeedyBee F405 V4",
+          processor: "STM32F405",
+          imu: "ICM42688P",
+          firmware: ["Betaflight"],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Serial allocation"));
+    fireEvent.click(screen.getByRole("button", {
+      name: "Copy serial allocation",
+    }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const text = writeText.mock.calls[0][0];
+    expect(text).toContain("# Board: SpeedyBee F405 V4 (SPEEDYBEEF405V4)");
+    expect(text).toContain("# Receiver route: UART2");
+    expect(text).toContain("# GPS route: UART6");
+    expect(text).toContain("UART4: Bluetooth tuning");
+    expect(text).toContain("UART5: ESC telemetry");
+    expect(text).toContain("RotorBench did not test this serial allocation");
+    await waitFor(() => {
+      expect(screen.getByText(/Serial allocation copied/i)).toBeInTheDocument();
+    });
+  } finally {
+    if (originalClipboard) {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: originalClipboard,
+      });
+    } else {
+      delete navigator.clipboard;
+    }
+  }
 });
 
 test("selecting Matek F405-WMN exposes its documented INAV wing mapping", () => {

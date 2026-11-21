@@ -869,6 +869,30 @@
   color: var(--ok);
 }
 
+.fc-port-map > div > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.fc-port-map > div > button:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
 .fc-motor-layout-panel {
   display: grid;
   gap: 9px;
