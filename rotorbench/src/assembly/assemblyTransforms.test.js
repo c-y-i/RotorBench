@@ -3,9 +3,11 @@ import {
   getBatteryPlacementMm,
   getExplodedOffsetMm,
   getFrameMountPointsMm,
+  getMotorMountOutlineMm,
   getMotorOriginsMm,
   getPropellerHubDiameterMm,
   getPropellerOriginsMm,
+  getPropellerSweepDiameterMm,
   getPropellerVariant,
   getStackLevelsMm,
 } from "./assemblyTransforms";
@@ -19,22 +21,33 @@ const frame = {
   lower_right_motor_position: [86.01, 4.75, 70.74],
   lower_left_motor_position: [-86.01, 4.75, 70.74],
   motorMountPatternsMm: [[16, 16], [19, 19]],
+  sourceUrl: "https://example.com/frame",
+  dataStatus: "verified",
+  estimatedFields: [],
 };
 
 const motor = {
+  id: "motor-test",
   size: "2207",
   mounting_point: [0, 20.15, 0],
   dimensionsMm: [28, 31, 28],
   mountingPatternMm: [16, 16],
   propShaftMm: 5,
+  sourceUrl: "https://example.com/motor",
+  dataStatus: "verified",
+  estimatedFields: [],
 };
 
 const propeller = {
+  id: "propeller-test",
   size: 5,
   bladeCount: 3,
   mounting_point: [0, 0, 0],
   shaftMm: 5,
   dimensionsMm: [127, 7, 127],
+  sourceUrl: "https://example.com/propeller",
+  dataStatus: "verified",
+  estimatedFields: [],
 };
 
 test("motor roots use the frame mount centers after model normalization", () => {
@@ -83,6 +96,22 @@ test("props without explicit hub dimensions get a finite size-derived hub", () =
   })).toBe(13);
 });
 
+test("fit-overlay geometry uses catalogued sweep diameter and mount pattern", () => {
+  expect(getPropellerSweepDiameterMm({
+    size: 3.5,
+    dimensionsMm: [89.5, 5.5, 89.5],
+  })).toBe(89.5);
+  expect(getPropellerSweepDiameterMm({ size: 5 })).toBe(127);
+  expect(getMotorMountOutlineMm({ mountingPatternMm: [12, 9] })).toEqual([
+    [-6, 0, -4.5],
+    [6, 0, -4.5],
+    [6, 0, 4.5],
+    [-6, 0, 4.5],
+    [-6, 0, -4.5],
+  ]);
+  expect(getMotorMountOutlineMm({})).toBeNull();
+});
+
 test("exploded inspection preserves mount axes and restores exact zero offsets", () => {
   expect(getExplodedOffsetMm("frame", true)).toBe(0);
   expect(getExplodedOffsetMm("motor", true)).toBe(0);
@@ -101,15 +130,41 @@ test("viewer placement audit verifies mounts, shaft alignment, stack, and batter
   const audit = buildViewerPlacementAudit(frame, {
     motor,
     propeller,
-    esc: { id: "esc", dimensionsMm: [45, 8, 40] },
-    flightController: { id: "fc", dimensionsMm: [36, 8, 36] },
-    receiver: { id: "rx", dimensionsMm: [24, 7, 18] },
-    battery: { id: "battery", dimensionsMm: [78, 39, 38] },
+    esc: {
+      id: "esc",
+      dimensionsMm: [45, 8, 40],
+      sourceUrl: "https://example.com/esc",
+      dataStatus: "verified",
+      estimatedFields: [],
+    },
+    flightController: {
+      id: "fc",
+      dimensionsMm: [36, 8, 36],
+      sourceUrl: "https://example.com/fc",
+      dataStatus: "verified",
+      estimatedFields: [],
+    },
+    receiver: {
+      id: "rx",
+      dimensionsMm: [24, 7, 18],
+      sourceUrl: "https://example.com/rx",
+      dataStatus: "verified",
+      estimatedFields: [],
+    },
+    battery: {
+      id: "battery",
+      dimensionsMm: [78, 39, 38],
+      sourceUrl: "https://example.com/battery",
+      dataStatus: "verified",
+      estimatedFields: [],
+    },
   });
 
   expect(audit.scope).toBe("viewer-placement");
   expect(audit.complete).toBe(true);
   expect(audit.verifiedCount).toBe(8);
+  expect(audit.estimatedCount).toBe(0);
+  expect(audit.fallbackCount).toBe(0);
   expect(audit.awaitingCount).toBe(0);
   expect(audit.conflictCount).toBe(0);
   expect(audit.checks.map((check) => check.id)).toEqual([
@@ -171,4 +226,51 @@ test("viewer placement audit flags mount, hub, and sweep conflicts", () => {
     .toBe("conflict");
   expect(audit.checks.find((check) => check.id === "propeller-sweep").status)
     .toBe("conflict");
+});
+
+test("viewer placement audit keeps estimated and fallback geometry unverified", () => {
+  const estimated = buildViewerPlacementAudit(
+    { ...frame, estimatedFields: ["motor positions"] },
+    { motor, propeller },
+  );
+  expect(estimated.complete).toBe(false);
+  expect(estimated.estimatedCount).toBe(4);
+  expect(estimated.checks.find((check) => check.id === "frame-mounts")).toMatchObject({
+    status: "estimated",
+  });
+  expect(estimated.checks.find((check) => check.id === "propeller-sweep")).toMatchObject({
+    status: "estimated",
+  });
+
+  const fallbackFrame = {
+    ...frame,
+    upper_left_motor_position: undefined,
+    upper_right_motor_position: undefined,
+    lower_right_motor_position: undefined,
+    lower_left_motor_position: undefined,
+  };
+  const fallback = buildViewerPlacementAudit(fallbackFrame, { motor, propeller });
+  expect(fallback.complete).toBe(false);
+  expect(fallback.fallbackCount).toBe(4);
+  expect(fallback.checks.find((check) => check.id === "frame-mounts")).toMatchObject({
+    status: "fallback",
+  });
+});
+
+test("viewer placement propagates build-local measurements without verification", () => {
+  const audit = buildViewerPlacementAudit(
+    frame,
+    {
+      motor: {
+        ...motor,
+        measuredFields: ["propShaftMm"],
+      },
+      propeller,
+    },
+  );
+
+  expect(audit.complete).toBe(false);
+  expect(audit.measuredCount).toBe(1);
+  expect(audit.checks.find((check) => check.id === "propeller-hub"))
+    .toMatchObject({ status: "measured" });
 });

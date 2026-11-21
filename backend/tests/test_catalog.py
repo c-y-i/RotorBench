@@ -1,6 +1,13 @@
 import unittest
 
-from utils.component_data import get_all_components_db, load_all_components
+from pydantic import ValidationError
+
+from models.components import DroneBuildConfig
+from utils.component_data import (
+    get_all_components_db,
+    hydrate_build,
+    load_all_components,
+)
 
 
 class CatalogContractTests(unittest.TestCase):
@@ -18,15 +25,15 @@ class CatalogContractTests(unittest.TestCase):
             counts,
             {
                 "frames": 7,
-                "motors": 12,
+                "motors": 14,
                 "propellers": 7,
-                "batteries": 8,
+                "batteries": 9,
                 "escs": 7,
                 "flight_controllers": 8,
                 "receivers": 8,
             },
         )
-        self.assertEqual(sum(counts.values()), 57)
+        self.assertEqual(sum(counts.values()), 60)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -46,7 +53,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), 60)
         self.assertTrue(all(record.id for record in records))
 
     def test_rp2_keeps_published_and_estimated_fields_separate(self):
@@ -104,6 +111,57 @@ class CatalogContractTests(unittest.TestCase):
             self.assertIn("mounting_point", motor.estimated_fields)
             self.assertNotIn("mountingPatternMm", motor.estimated_fields)
             self.assertNotIn("propShaftMm", motor.estimated_fields)
+
+    def test_measured_geometry_survives_build_round_trip_and_hydration(self):
+        config = DroneBuildConfig(
+            id="build-measured",
+            name="Measured build",
+            componentIds={
+                "frameId": "frame-aos-55-v2",
+                "motorId": "motor-tmotor-f60-pro-v-1750kv",
+                "propellerId": "prop-gemfan-hurricane-51466-v2",
+            },
+            geometryOverrides={
+                "schema": "rotorbench.measured-geometry.v1",
+                "categories": {
+                    "motors": {
+                        "motor-tmotor-f60-pro-v-1750kv": {
+                            "propShaftMm": 5,
+                            "dimensionsMm": [26.8, 31.7, 26.8],
+                        }
+                    }
+                },
+            },
+        )
+
+        stored = config.model_dump(by_alias=True, exclude_none=True)
+        self.assertEqual(
+            stored["geometryOverrides"]["schema"],
+            "rotorbench.measured-geometry.v1",
+        )
+        hydrated = hydrate_build(config)
+        self.assertEqual(hydrated.components.motors.prop_shaft_mm, 5)
+        self.assertEqual(
+            hydrated.components.motors.dimensions_mm,
+            [26.8, 31.7, 26.8],
+        )
+
+    def test_measured_geometry_rejects_non_positive_values(self):
+        with self.assertRaises(ValidationError):
+            DroneBuildConfig(
+                name="Invalid measurements",
+                componentIds={"motorId": "motor-tmotor-f60-pro-v-1750kv"},
+                geometryOverrides={
+                    "schema": "rotorbench.measured-geometry.v1",
+                    "categories": {
+                        "motors": {
+                            "motor-tmotor-f60-pro-v-1750kv": {
+                                "propShaftMm": -5,
+                            }
+                        }
+                    },
+                },
+            )
 
 
 if __name__ == "__main__":

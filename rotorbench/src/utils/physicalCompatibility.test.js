@@ -36,6 +36,25 @@ test("prop bore and motor shaft data detect an exact mismatch", () => {
   )).toMatchObject({ status: "conflict" });
 });
 
+test("build-local measurements stay measured instead of becoming verified", () => {
+  const measured = checkPropellerFit(
+    { name: "Prop", shaftMm: 5, hubDiameterMm: 13 },
+    {
+      name: "Motor",
+      propShaftMm: 5,
+      bellDiameterMm: 27.5,
+      measuredFields: ["propShaftMm"],
+    },
+  );
+  expect(measured).toMatchObject({ status: "measured" });
+  expect(summarizePhysicalChecks([measured])).toEqual({
+    ok: true,
+    verified: false,
+    measured: 1,
+    reason: "5 mm prop mounting matches the motor shaft.",
+  });
+});
+
 test("incomplete metadata stays unverified instead of claiming compatibility", () => {
   const checks = physicalChecksFor(
     "motors",
@@ -93,6 +112,7 @@ test("shared compatibility checks are summarized once", () => {
   expect(summarizePhysicalChecks([repeated, { ...repeated }])).toEqual({
     ok: true,
     verified: true,
+    measured: 0,
     reason: "XT30 battery connector matches the supplied lead.",
   });
 });

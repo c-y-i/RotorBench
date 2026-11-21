@@ -315,6 +315,12 @@
   background: var(--surface-soft);
 }
 
+.visibility-chip.viewer-fit-toggle.is-active {
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
 .visibility-chip:hover,
 .preview-debug-toggle:hover {
   border-color: var(--line-strong);
@@ -611,6 +617,281 @@
   border-radius: 0;
 }
 
+.viewer-fit-legend {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  max-width: min(360px, calc(100% - 20px));
+  padding: 8px 10px;
+  color: #f7f8f1;
+  background: rgba(10, 16, 15, 0.88);
+  border: 1px solid rgba(247, 248, 241, 0.22);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.viewer-fit-legend strong {
+  color: #f7f8f1;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.viewer-fit-legend span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  color: #cbd7cd;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.viewer-fit-legend i {
+  width: 7px;
+  height: 7px;
+  margin-inline-start: 5px;
+  border-radius: 2px;
+}
+
+.viewer-fit-legend i:first-child {
+  margin-inline-start: 0;
+}
+
+.viewer-fit-legend i.is-verified {
+  background: var(--signal);
+}
+
+.viewer-fit-legend i.is-measured {
+  background: #68d8c9;
+}
+
+.viewer-fit-legend i.is-conflict {
+  background: var(--flight-orange);
+}
+
+.viewer-fit-legend i.is-awaiting {
+  background: var(--sidebar-muted);
+}
+
+.measured-geometry {
+  margin-top: 10px;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.measured-geometry > summary {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 50px;
+  padding: 9px 11px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.measured-geometry > summary::-webkit-details-marker {
+  display: none;
+}
+
+.measured-geometry > summary:hover {
+  background: var(--surface-soft);
+}
+
+.measured-geometry > summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 34%, transparent);
+  outline-offset: -3px;
+}
+
+.measured-geometry > summary > svg {
+  color: var(--brand);
+}
+
+.measured-geometry > summary > span {
+  display: grid;
+  gap: 1px;
+}
+
+.measured-geometry > summary strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.measured-geometry > summary small {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.measured-geometry > summary em {
+  padding: 4px 7px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.measured-geometry-body {
+  display: grid;
+  gap: 14px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.measured-geometry-body > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.measured-geometry-body > section {
+  display: grid;
+  gap: 9px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+
+.measured-geometry-part-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.measured-geometry-part-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.measured-geometry-part-heading strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.measured-geometry-part-heading small {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.measured-geometry-part-heading button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.measured-geometry-part-heading button:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.measured-geometry-part-heading button:disabled {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.measured-geometry-fields {
+  display: grid;
+  gap: 6px;
+}
+
+.measured-geometry-field {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(190px, auto);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 9px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.measured-geometry-field > label {
+  display: grid;
+  gap: 2px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.measured-geometry-field > label small {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.measured-geometry-field > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.measured-geometry-field input {
+  width: 72px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 8px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.measured-geometry-field input:focus-visible {
+  border-color: var(--brand);
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
+.measured-geometry-field input::placeholder {
+  color: var(--ink-faint);
+}
+
+.measured-geometry-field > div > small {
+  flex: 1 0 100%;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  text-align: end;
+}
+
 .viewer-empty-state {
   position: absolute;
   inset: 0;
@@ -765,6 +1046,12 @@
   border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--line));
 }
 
+.viewer-placement-audit > summary em.is-measured {
+  color: var(--brand-strong);
+  background: #e3f4f0;
+  border: 1px solid #acd5cd;
+}
+
 .viewer-placement-audit-body {
   display: grid;
   gap: 10px;
@@ -808,8 +1095,17 @@
   color: var(--ok);
 }
 
+.viewer-placement-audit-body li.is-measured > svg {
+  color: var(--brand);
+}
+
 .viewer-placement-audit-body li.is-conflict > svg {
   color: var(--danger);
+}
+
+.viewer-placement-audit-body li.is-estimated > svg,
+.viewer-placement-audit-body li.is-fallback > svg {
+  color: var(--warn);
 }
 
 .viewer-placement-audit-body li > span {
@@ -840,8 +1136,17 @@
   color: var(--ok);
 }
 
+.viewer-placement-audit-body li.is-measured em {
+  color: var(--brand);
+}
+
 .viewer-placement-audit-body li.is-conflict em {
   color: var(--danger);
+}
+
+.viewer-placement-audit-body li.is-estimated em,
+.viewer-placement-audit-body li.is-fallback em {
+  color: var(--warn);
 }
 
 .spin-icon {
@@ -2405,8 +2710,14 @@
   background: #fbe8e8;
 }
 
+.physical-fit-summary.is-measured {
+  color: var(--brand-strong);
+  background: #e5f3ef;
+}
+
 .physical-fit-summary.is-conflict strong,
-.physical-fit-summary.is-verified strong {
+.physical-fit-summary.is-verified strong,
+.physical-fit-summary.is-measured strong {
   color: currentColor;
 }
 
@@ -2491,6 +2802,10 @@
   color: var(--ok);
 }
 
+.physical-fit-details li.is-measured > svg {
+  color: var(--brand);
+}
+
 .physical-fit-details li.is-conflict > svg {
   color: var(--danger);
 }
@@ -2522,6 +2837,10 @@
 
 .physical-fit-details li.is-compatible em {
   color: var(--ok);
+}
+
+.physical-fit-details li.is-measured em {
+  color: var(--brand);
 }
 
 .physical-fit-details li.is-conflict em {
@@ -3652,6 +3971,19 @@
 }
 
 @media (max-width: 640px) {
+  .measured-geometry-field {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .measured-geometry-field > div {
+    justify-content: flex-start;
+  }
+
+  .measured-geometry-field > div > small {
+    text-align: start;
+  }
+
   .starter-platforms {
     padding: 12px;
   }

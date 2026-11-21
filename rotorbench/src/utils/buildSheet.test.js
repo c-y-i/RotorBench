@@ -92,18 +92,27 @@ test("build sheet filenames are portable and deterministic", () => {
 });
 
 test("build sheets include sanitized local hardware-plan context", () => {
+  const geometryOverrides = {
+    schema: "rotorbench.measured-geometry.v1",
+    categories: {
+      frames: {
+        [frame.id]: { stackHeight: 31.2 },
+      },
+    },
+  };
   const sheet = createBuildSheet({
     build: {
       id: "build-hardware",
       name: "Hardware plan build",
       componentIds: { frameId: frame.id, escId: esc.id, batteryId: battery.id },
+      geometryOverrides,
     },
     assemblySpec: { frame, esc, battery },
     hardwareReadiness: {
       status: "review",
       label: "4 checks open",
       configured: true,
-      complete: true,
+      complete: false,
       issueCount: 4,
       blockerCount: 0,
       firmwareLabel: "Betaflight",
@@ -127,9 +136,14 @@ test("build sheets include sanitized local hardware-plan context", () => {
       rawFiles: ["pair.json"],
     },
     viewerPlacement: {
-      complete: true,
+      complete: false,
       verifiedCount: 5,
+      measuredCount: 0,
+      estimatedCount: 1,
+      fallbackCount: 0,
       awaitingCount: 0,
+      conflictCount: 0,
+      assembledCount: 6,
       checks: [
         { id: "frame-mounts", label: "Frame motor mounts", status: "verified", detail: "Four mounts." },
         { id: "motor-roots", label: "Four motor roots", status: "verified", detail: "Aligned." },
@@ -140,11 +154,14 @@ test("build sheets include sanitized local hardware-plan context", () => {
   expect(sheet).toMatchObject({
     analysisIncluded: false,
     hardwareVerified: false,
+    build: {
+      geometryOverrides,
+    },
     hardwarePlan: {
       status: "review",
       label: "4 checks open",
       configured: true,
-      complete: true,
+      complete: false,
       issueCount: 4,
       firmware: "Betaflight",
       receiverProtocol: "CRSF / ExpressLRS",
@@ -164,9 +181,14 @@ test("build sheets include sanitized local hardware-plan context", () => {
     },
     viewerPlacement: {
       scope: "viewer-placement",
-      complete: true,
+      complete: false,
       verifiedCount: 5,
+      measuredCount: 0,
+      estimatedCount: 1,
+      fallbackCount: 0,
       awaitingCount: 0,
+      conflictCount: 0,
+      assembledCount: 6,
     },
   });
   expect(sheet.hardwarePlan).not.toHaveProperty("radioPlan");
@@ -184,6 +206,14 @@ test("imported build sheets validate schema and catalog IDs", () => {
         frameId: "frame-aos-55-v2",
         motorId: "motor-emax-eco-ii-2207-1900kv",
       },
+      geometryOverrides: {
+        schema: "rotorbench.measured-geometry.v1",
+        categories: {
+          motors: {
+            "motor-emax-eco-ii-2207-1900kv": { propShaftMm: 5 },
+          },
+        },
+      },
     },
   }), {
     now: "2026-04-01T00:00:00.000Z",
@@ -196,6 +226,14 @@ test("imported build sheets validate schema and catalog IDs", () => {
       propellerId: null,
     },
     createdAt: "2026-04-01T00:00:00.000Z",
+    geometryOverrides: {
+      schema: "rotorbench.measured-geometry.v1",
+      categories: {
+        motors: {
+          "motor-emax-eco-ii-2207-1900kv": { propShaftMm: 5 },
+        },
+      },
+    },
   });
   expect(imported).not.toHaveProperty("id");
 });

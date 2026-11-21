@@ -4,6 +4,7 @@ import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
 import componentsData from "../data/components.json";
 import PartPicker from "./PartPicker";
+import MeasuredGeometryPanel from "./MeasuredGeometryPanel";
 import API_BASE from "../config/api";
 import {
   physicalChecksFor,
@@ -26,6 +27,12 @@ import {
   matchesPlatformPreset,
 } from "../data/platformPresets";
 import { summarizeBuildEvidence } from "../utils/buildEvidence";
+import {
+  applyMeasuredGeometryToAssemblySpec,
+  clearMeasuredGeometry,
+  normalizeGeometryOverrides,
+  setMeasuredGeometryValue,
+} from "../utils/buildGeometry";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
 import {
   readBenchEvidenceAttachment,
@@ -61,6 +68,7 @@ import {
   LoaderCircle,
   Radio,
   RotateCcw,
+  Ruler,
   Save,
   Settings2,
   Zap,
@@ -68,6 +76,23 @@ import {
 
 const BabylonViewer = lazy(() => import("./BabylonViewer.jsx"));
 const BUILD_DRAFT_KEY = "rotorbench:build-draft:v1";
+
+function describeViewerPlacement(audit) {
+  const total = audit.checks.length;
+  const labels = [];
+  if (audit.conflictCount) {
+    labels.push(
+      `${audit.conflictCount} conflict${audit.conflictCount === 1 ? "" : "s"}`,
+    );
+  }
+  labels.push(`${audit.verifiedCount}/${total} verified`);
+  if (audit.measuredCount) labels.push(`${audit.measuredCount} measured`);
+  if (audit.estimatedCount + audit.fallbackCount) {
+    labels.push(`${audit.estimatedCount + audit.fallbackCount} estimated`);
+  }
+  if (audit.awaitingCount) labels.push(`${audit.awaitingCount} awaiting`);
+  return labels.join(" · ");
+}
 
 function createWorkingBuildId() {
   return window.crypto?.randomUUID?.() || `build-${Date.now()}`;
@@ -128,6 +153,13 @@ export default function BuildPage() {
     () => initialBuild?.name || requestedPreset?.name || currentBuild?.name
       || storedDraft?.name || "Custom Build",
   );
+  const [geometryOverrides, setGeometryOverrides] = useState(() => (
+    normalizeGeometryOverrides(
+      initialBuild?.geometryOverrides
+      || currentBuild?.geometryOverrides
+      || storedDraft?.geometryOverrides,
+    )
+  ));
   const userId = localStorage.getItem("userId");
   const [message, setMessage] = useState({ type: "", text: "" });
 
@@ -160,6 +192,7 @@ export default function BuildPage() {
       setSelectedFC(sourceBuild.componentIds.flightControllerId || "");
       setSelectedBattery(sourceBuild.componentIds.batteryId || "");
       setSelectedReceiver(sourceBuild.componentIds.receiverId || "");
+      setGeometryOverrides(normalizeGeometryOverrides(sourceBuild.geometryOverrides));
     }
     if (requestedPreset) {
       setMessage({
@@ -195,6 +228,8 @@ export default function BuildPage() {
     setClearedComponents([]);
     setCameraView("orbit");
     setExplodedAssembly(false);
+    setShowFitOverlay(false);
+    setGeometryOverrides(normalizeGeometryOverrides(null));
     setMessage({ type: "info", text: "New build started." });
     setSearchParams({}, { replace: true });
     setTimeout(() => setMessage({ type: "", text: "" }), 1800);
@@ -219,6 +254,7 @@ export default function BuildPage() {
         receiverId: selectedReceiver || null,
       },
       totalWeight,
+      geometryOverrides,
       createdAt: currentBuild?.createdAt || now,
       updatedAt: now,
     };
@@ -268,6 +304,7 @@ export default function BuildPage() {
       },
       createdAt: currentBuild?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      geometryOverrides,
     };
 
     // Save to context
@@ -302,6 +339,7 @@ export default function BuildPage() {
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
   const [cameraView, setCameraView] = useState("orbit");
   const [explodedAssembly, setExplodedAssembly] = useState(false);
+  const [showFitOverlay, setShowFitOverlay] = useState(false);
   const [selectedPresetId, setSelectedPresetId] = useState(requestedPreset?.id || "");
 
   // Ensure the viewer starts clean (no fallback sample) every time BuildPage mounts
@@ -370,6 +408,7 @@ export default function BuildPage() {
         batteryId: selectedBattery || null,
         receiverId: selectedReceiver || null,
       },
+      geometryOverrides,
       updatedAt: new Date().toISOString(),
     });
   }, [
@@ -382,6 +421,7 @@ export default function BuildPage() {
     selectedReceiver,
     workingBuildId,
     workingBuildName,
+    geometryOverrides,
   ]);
 
   // Helper: fetch list for category and match filename starting with component id
@@ -586,6 +626,27 @@ export default function BuildPage() {
   const selectedEscPart = componentsData.escs.find((part) => part.id === selectedESC);
   const selectedFlightControllerPart = componentsData.flight_controllers.find((part) => part.id === selectedFC);
   const selectedReceiverPart = componentsData.receivers.find((part) => part.id === selectedReceiver);
+  const measuredGeometryParts = useMemo(() => [
+    { category: "frames", label: "Frame", part: selectedFramePart },
+    { category: "motors", label: "Motor", part: selectedMotorPart },
+    { category: "propellers", label: "Propeller", part: selectedPropellerPart },
+    { category: "batteries", label: "Battery", part: selectedBatteryPart },
+    { category: "escs", label: "ESC", part: selectedEscPart },
+    {
+      category: "flight_controllers",
+      label: "Flight controller",
+      part: selectedFlightControllerPart,
+    },
+    { category: "receivers", label: "Receiver", part: selectedReceiverPart },
+  ].filter(({ part }) => part), [
+    selectedFramePart,
+    selectedMotorPart,
+    selectedPropellerPart,
+    selectedBatteryPart,
+    selectedEscPart,
+    selectedFlightControllerPart,
+    selectedReceiverPart,
+  ]);
   const requiredParts = [
     selectedFramePart,
     selectedMotorPart,
@@ -597,7 +658,7 @@ export default function BuildPage() {
   const canAnalyze = requiredSelections === 4;
   const canSave = canAnalyze;
 
-  const assemblySpec = useMemo(() => ({
+  const catalogAssemblySpec = useMemo(() => ({
     frame: selectedFramePart || null,
     motor: selectedMotorPart || null,
     propeller: selectedPropellerPart || null,
@@ -614,10 +675,35 @@ export default function BuildPage() {
     selectedFlightControllerPart,
     selectedReceiverPart,
   ]);
+  const assemblySpec = useMemo(
+    () => applyMeasuredGeometryToAssemblySpec(
+      catalogAssemblySpec,
+      geometryOverrides,
+    ),
+    [catalogAssemblySpec, geometryOverrides],
+  );
   const viewerPlacementAudit = useMemo(
     () => buildViewerPlacementAudit(assemblySpec.frame, assemblySpec),
     [assemblySpec],
   );
+  const fitOverlayStatus = useMemo(() => {
+    const statusById = Object.fromEntries(
+      viewerPlacementAudit.checks.map((check) => [check.id, check.status]),
+    );
+    const motorStatus = statusById["motor-interface"];
+    const propHubStatus = statusById["propeller-hub"];
+    const propSweepStatus = statusById["propeller-sweep"];
+    return {
+      motorKnown: ["verified", "measured", "conflict"].includes(motorStatus),
+      motorConflict: motorStatus === "conflict",
+      motorMeasured: motorStatus === "measured",
+      propellerKnown: ["verified", "measured", "conflict"].includes(propSweepStatus),
+      propellerConflict: propHubStatus === "conflict"
+        || propSweepStatus === "conflict",
+      propellerMeasured: propHubStatus === "measured"
+        || propSweepStatus === "measured",
+    };
+  }, [viewerPlacementAudit]);
 
   const summarizeCandidate = (physicalChecks = [], electricalChecks = []) => {
     const physical = summarizePhysicalChecks(physicalChecks);
@@ -692,19 +778,19 @@ export default function BuildPage() {
   };
 
   const selectedPhysicalChecks = [
-    ...(selectedMotorPart
-      ? physicalChecksFor("motors", selectedMotorPart, assemblySpec)
+    ...(assemblySpec.motor
+      ? physicalChecksFor("motors", assemblySpec.motor, assemblySpec)
       : []),
-    ...(selectedEscPart
-      ? physicalChecksFor("escs", selectedEscPart, assemblySpec)
+    ...(assemblySpec.esc
+      ? physicalChecksFor("escs", assemblySpec.esc, assemblySpec)
       : []),
-    ...(selectedBatteryPart
-      ? physicalChecksFor("batteries", selectedBatteryPart, assemblySpec)
+    ...(assemblySpec.battery
+      ? physicalChecksFor("batteries", assemblySpec.battery, assemblySpec)
       : []),
-    ...(selectedFlightControllerPart
+    ...(assemblySpec.flightController
       ? physicalChecksFor(
           "flight_controllers",
-          selectedFlightControllerPart,
+          assemblySpec.flightController,
           assemblySpec,
         )
       : []),
@@ -720,6 +806,9 @@ export default function BuildPage() {
   );
   const physicalVerifiedCount = physicalCheckRows.filter(
     (item) => item.status === "compatible",
+  ).length;
+  const physicalMeasuredCount = physicalCheckRows.filter(
+    (item) => item.status === "measured",
   ).length;
   const physicalMissingCount = physicalCheckRows.filter(
     (item) => item.status === "unknown",
@@ -759,9 +848,10 @@ export default function BuildPage() {
     ? "pending"
     : !physicalFit.ok
       ? "conflict"
-      : physicalFit.verified
-        ? "verified"
-        : "unverified";
+      : physicalMissingCount > 0
+        ? "unverified"
+        : physicalFit.measured > 0 ? "measured"
+          : physicalFit.verified ? "verified" : "unverified";
   const compatibilityConflict = !physicalFit.ok || !electricalFit.ok;
 
   const exportBuildSheet = () => {
@@ -777,6 +867,7 @@ export default function BuildPage() {
         batteryId: selectedBattery || null,
         receiverId: selectedReceiver || null,
       },
+      geometryOverrides,
     };
     const sheet = createBuildSheet({
       build: exportedBuild,
@@ -844,6 +935,7 @@ export default function BuildPage() {
     setSelectedReceiver(preset.componentIds.receiverId);
     setClearedComponents([]);
     setCameraView("orbit");
+    setGeometryOverrides(normalizeGeometryOverrides(null));
     setMessage({ type: "info", text: `${preset.name} loaded. Review before analysis.` });
     setTimeout(() => setMessage({ type: "", text: "" }), 3000);
   };
@@ -863,6 +955,7 @@ export default function BuildPage() {
             batteryId: selectedBattery || null,
             receiverId: selectedReceiver || null,
           },
+          geometryOverrides,
         },
       },
     });
@@ -993,6 +1086,17 @@ export default function BuildPage() {
                 </button>
               </div>
               <div className="visibility-chip-row">
+                <button
+                  type="button"
+                  className={`visibility-chip viewer-fit-toggle ${
+                    showFitOverlay ? "is-active" : ""
+                  }`}
+                  aria-pressed={showFitOverlay}
+                  onClick={() => setShowFitOverlay((current) => !current)}
+                >
+                  <Fan size={14} aria-hidden="true" />
+                  <span>Fit overlay</span>
+                </button>
                 {[
                   { id: "frame", label: "Frame", Icon: Box, has: selectedFrame },
                   { id: "motor", label: "Motors", Icon: Cog, has: selectedMotor },
@@ -1068,9 +1172,26 @@ export default function BuildPage() {
                   resetKey={resetKey}
                   clearedComponents={clearedComponents}
                   debug={showDebugStatus}
+                  showFitOverlay={showFitOverlay}
+                  fitOverlayStatus={fitOverlayStatus}
                   backgroundColor={backgroundColor}
                 />
               </Suspense>
+            )}
+            {selectedFrame && showFitOverlay && (
+              <div className="viewer-fit-legend" role="status">
+                <strong>Fit overlay</strong>
+                <span>
+                  <i className="is-verified" aria-hidden="true" />
+                  Verified interface
+                  <i className="is-measured" aria-hidden="true" />
+                  User-measured
+                  <i className="is-conflict" aria-hidden="true" />
+                  Conflict
+                  <i className="is-awaiting" aria-hidden="true" />
+                  Metadata incomplete
+                </span>
+              </div>
             )}
           </div>
           {loadingModels && (
@@ -1096,27 +1217,32 @@ export default function BuildPage() {
                 <em className={
                   viewerPlacementAudit.complete
                     ? "is-complete"
-                    : viewerPlacementAudit.conflictCount ? "is-conflict" : ""
-                }>
-                  {viewerPlacementAudit.complete
-                    ? `${viewerPlacementAudit.checks.length}/${viewerPlacementAudit.checks.length} aligned`
                     : viewerPlacementAudit.conflictCount
-                      ? `${viewerPlacementAudit.conflictCount} conflict${viewerPlacementAudit.conflictCount === 1 ? "" : "s"} · ${viewerPlacementAudit.verifiedCount}/${viewerPlacementAudit.checks.length} placed`
-                      : `${viewerPlacementAudit.verifiedCount}/${viewerPlacementAudit.checks.length} placed`}
+                      ? "is-conflict"
+                      : viewerPlacementAudit.measuredCount ? "is-measured" : ""
+                }>
+                  {describeViewerPlacement(viewerPlacementAudit)}
                 </em>
               </summary>
               <div className="viewer-placement-audit-body">
                 <p>
                   This audits assembled coordinates from catalog and fallback
-                  geometry plus catalogued mount and shaft interfaces. It does
-                  not claim complete product fit, electrical compatibility, or a
-                  live aircraft check.
+                  geometry, build-local caliper measurements, and catalogued
+                  mount and shaft interfaces. Source confidence stays visible
+                  for every check. It does not claim complete product fit,
+                  electrical compatibility, or a live aircraft check.
                 </p>
                 <ul aria-label="Viewer placement checks">
                   {viewerPlacementAudit.checks.map((check) => (
-                    <li key={check.id} className={`is-${check.status}`}>
+                    <li
+                      key={check.id}
+                      className={`is-${check.status}`}
+                      aria-label={check.label}
+                    >
                       {check.status === "verified"
                         ? <Check size={14} aria-hidden="true" />
+                        : check.status === "measured"
+                          ? <Ruler size={14} aria-hidden="true" />
                         : check.status === "conflict"
                           ? <CircleAlert size={14} aria-hidden="true" />
                           : <Box size={14} aria-hidden="true" />}
@@ -1127,7 +1253,15 @@ export default function BuildPage() {
                       <em>{
                         check.status === "verified"
                           ? "Verified"
-                          : check.status === "conflict" ? "Conflict" : "Awaiting"
+                          : check.status === "measured"
+                            ? "Measured"
+                          : check.status === "conflict"
+                            ? "Conflict"
+                            : check.status === "estimated"
+                              ? "Estimated"
+                              : check.status === "fallback"
+                                ? "Fallback"
+                                : "Awaiting"
                       }</em>
                     </li>
                   ))}
@@ -1135,6 +1269,26 @@ export default function BuildPage() {
               </div>
             </details>
           )}
+          <MeasuredGeometryPanel
+            parts={measuredGeometryParts}
+            overrides={geometryOverrides}
+            onChange={(category, partId, field, value) => {
+              setGeometryOverrides((current) => setMeasuredGeometryValue(
+                current,
+                category,
+                partId,
+                field,
+                value,
+              ));
+            }}
+            onReset={(category, partId) => {
+              setGeometryOverrides((current) => clearMeasuredGeometry(
+                current,
+                category,
+                partId,
+              ));
+            }}
+          />
         </section>
 
         <section className="build-form-panel" aria-label="Component selection">
@@ -1156,6 +1310,8 @@ export default function BuildPage() {
           <div className={`physical-fit-summary is-${physicalFitState}`}>
             {physicalFitState === "conflict"
               ? <CircleAlert size={16} aria-hidden="true" />
+              : physicalFitState === "measured"
+                ? <Ruler size={16} aria-hidden="true" />
               : physicalFitState === "verified"
                 ? <Check size={16} aria-hidden="true" />
                 : <Box size={16} aria-hidden="true" />}
@@ -1163,6 +1319,8 @@ export default function BuildPage() {
               <strong>
                 {physicalFitState === "conflict"
                   ? "Physical fit conflict"
+                  : physicalFitState === "measured"
+                    ? "Physical fit uses local measurements"
                   : physicalFitState === "verified"
                     ? "Physical fit verified"
                     : "Fit needs manual verification"}
@@ -1182,6 +1340,9 @@ export default function BuildPage() {
                 <span>Physical fit checks</span>
                 <small>
                   {physicalVerifiedCount} verified
+                  {physicalMeasuredCount
+                    ? ` · ${physicalMeasuredCount} measured`
+                    : ""}
                   {physicalMissingCount
                     ? ` · ${physicalMissingCount} awaiting data`
                     : " · no data gaps"}
@@ -1189,9 +1350,15 @@ export default function BuildPage() {
               </summary>
               <ul>
                 {physicalCheckRows.map((item) => (
-                  <li key={`${item.status}:${item.label}:${item.message}`} className={`is-${item.status}`}>
+                  <li
+                    key={`${item.status}:${item.label}:${item.message}`}
+                    className={`is-${item.status}`}
+                    aria-label={item.label}
+                  >
                     {item.status === "compatible"
                       ? <Check size={14} aria-hidden="true" />
+                      : item.status === "measured"
+                        ? <Ruler size={14} aria-hidden="true" />
                       : item.status === "conflict"
                         ? <CircleAlert size={14} aria-hidden="true" />
                         : <Box size={14} aria-hidden="true" />}
@@ -1202,6 +1369,8 @@ export default function BuildPage() {
                     <em>
                       {item.status === "compatible"
                         ? "Verified"
+                        : item.status === "measured"
+                          ? "Measured"
                         : item.status === "conflict"
                           ? "Conflict"
                           : "Awaiting data"}
@@ -1233,7 +1402,11 @@ export default function BuildPage() {
               </summary>
               <ul>
                 {electricalCheckRows.map((item) => (
-                  <li key={`${item.status}:${item.label}:${item.message}`} className={`is-${item.status}`}>
+                  <li
+                    key={`${item.status}:${item.label}:${item.message}`}
+                    className={`is-${item.status}`}
+                    aria-label={item.label}
+                  >
                     {item.status === "compatible"
                       ? <Check size={14} aria-hidden="true" />
                       : item.status === "conflict"
@@ -1377,6 +1550,9 @@ export default function BuildPage() {
                 {buildEvidence.estimatedFieldCount
                   ? ` · ${buildEvidence.estimatedFieldCount} estimated fields`
                   : ""}
+                {buildEvidence.measuredFieldCount
+                  ? ` · ${buildEvidence.measuredFieldCount} measured fields`
+                  : ""}
                 {buildEvidence.geometryFallbackCount
                   ? ` · ${buildEvidence.geometryFallbackCount} geometry fallbacks`
                   : ""}
@@ -1408,6 +1584,9 @@ export default function BuildPage() {
                   {part.estimatedFields.length > 0 && (
                     <span>{part.estimatedFields.length} estimated</span>
                   )}
+                  {part.measuredFields.length > 0 && (
+                    <span>{part.measuredFields.length} measured</span>
+                  )}
                   {part.geometryFallback && <span>Geometry fallback</span>}
                 </div>
                 <div className="build-evidence-links">
@@ -1432,6 +1611,9 @@ export default function BuildPage() {
                 </div>
                 {part.estimatedFields.length > 0 && (
                   <p>Estimated: {part.estimatedFields.join(", ")}</p>
+                )}
+                {part.measuredFields.length > 0 && (
+                  <p>Measured locally: {part.measuredFields.join(", ")}</p>
                 )}
               </div>
             ))}
@@ -1489,6 +1671,8 @@ export default function BuildPage() {
             setSelectedReceiver("");
             setCameraView("orbit");
             setExplodedAssembly(false);
+            setShowFitOverlay(false);
+            setGeometryOverrides(normalizeGeometryOverrides(null));
             setSelectedPresetId("");
             // Clear all model URL states immediately so viewer sees empty set
             setModelUrls([]);

@@ -159,35 +159,82 @@ def hydrate_build(build_config: DroneBuildConfig) -> Optional[DroneBuild]:
     """
     components = DroneComponents()
 
+    def measured_values(category: str, part_id: Optional[str]):
+        overrides = build_config.geometry_overrides
+        if not part_id or not overrides:
+            return {}
+        values = getattr(overrides.categories, category, {}).get(part_id)
+        if not values:
+            return {}
+        return values.model_dump(exclude_none=True)
+
     # Frame
     if build_config.component_ids.frame_id:
-        components.frame = get_component_by_id("frame", build_config.component_ids.frame_id)
+        frame = get_component_by_id("frame", build_config.component_ids.frame_id)
+        if frame:
+            components.frame = frame.model_copy(
+                update=measured_values("frames", frame.id)
+            )
 
     # Motor (NOTE: if DroneComponents.motors expects a list, wrap it)
     if build_config.component_ids.motor_id:
         motor = get_component_by_id("motor", build_config.component_ids.motor_id)
-        components.motors = motor  # or [motor] if your model expects a list
+        if motor:
+            components.motors = motor.model_copy(
+                update=measured_values("motors", motor.id)
+            )
 
     # Propeller
     if build_config.component_ids.propeller_id:
         prop = get_component_by_id("propeller", build_config.component_ids.propeller_id)
-        components.propellers = prop  # or [prop]
+        if prop:
+            components.propellers = prop.model_copy(
+                update=measured_values("propellers", prop.id)
+            )
 
     # ESC
     if build_config.component_ids.esc_id:
-        components.esc = get_component_by_id("esc", build_config.component_ids.esc_id)
+        esc = get_component_by_id("esc", build_config.component_ids.esc_id)
+        if esc:
+            components.esc = esc.model_copy(
+                update=measured_values("escs", esc.id)
+            )
 
     # Flight controller
     if build_config.component_ids.flight_controller_id:
-        components.flight_controller = get_component_by_id("flight_controller", build_config.component_ids.flight_controller_id)
+        flight_controller = get_component_by_id(
+            "flight_controller",
+            build_config.component_ids.flight_controller_id,
+        )
+        if flight_controller:
+            components.flight_controller = flight_controller.model_copy(
+                update=measured_values(
+                    "flight_controllers",
+                    flight_controller.id,
+                )
+            )
 
     # Battery
     if build_config.component_ids.battery_id:
-        components.battery = get_component_by_id("battery", build_config.component_ids.battery_id)
+        battery = get_component_by_id(
+            "battery",
+            build_config.component_ids.battery_id,
+        )
+        if battery:
+            components.battery = battery.model_copy(
+                update=measured_values("batteries", battery.id)
+            )
 
     # Receiver
     if build_config.component_ids.receiver_id:
-        components.receiver = get_component_by_id("receiver", build_config.component_ids.receiver_id)
+        receiver = get_component_by_id(
+            "receiver",
+            build_config.component_ids.receiver_id,
+        )
+        if receiver:
+            components.receiver = receiver.model_copy(
+                update=measured_values("receivers", receiver.id)
+            )
 
     return DroneBuild(
         id=build_config.id or f"build-{uuid.uuid4().hex[:12]}",

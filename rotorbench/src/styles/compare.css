@@ -144,6 +144,11 @@
   border-color: #8b5137;
 }
 
+.compare-build-statuses span.is-measured {
+  color: #8ce8db;
+  border-color: #397c73;
+}
+
 .compare-build-statuses span.is-unverified,
 .compare-build-statuses span.is-plan-partial,
 .compare-build-statuses span.is-plan-review,

@@ -25,6 +25,13 @@ function check(status, message, label) {
   return { status, message, label };
 }
 
+function usesMeasuredField(part, fields) {
+  const measuredFields = Array.isArray(part?.measuredFields)
+    ? part.measuredFields
+    : [];
+  return fields.some((field) => measuredFields.includes(field));
+}
+
 export function checkBoardStack(part, frame) {
   const boardPattern = asPattern(part?.mountingPatternMm);
   const framePatterns = patternsFor(frame, "stackMountPatternsMm");
@@ -78,7 +85,7 @@ export function checkMotorMount(motor, frame) {
   }
   if (framePatterns.some((pattern) => samePattern(pattern, motorPattern))) {
     return check(
-      "compatible",
+      usesMeasuredField(motor, ["mountingPatternMm"]) ? "measured" : "compatible",
       `${motorPattern[0]} × ${motorPattern[1]} mm motor pattern fits the frame mount range.`,
       `${motor.name} mount`,
     );
@@ -115,6 +122,9 @@ export function checkPropellerFit(propeller, motor) {
 
   const hubDiameter = Number(propeller.hubDiameterMm);
   const bellDiameter = Number(motor.bellDiameterMm);
+  let measuredComparison =
+    usesMeasuredField(propeller, ["hubDiameterMm"])
+    || usesMeasuredField(motor, ["bellDiameterMm"]);
   if (
     Number.isFinite(hubDiameter) &&
     Number.isFinite(bellDiameter) &&
@@ -131,8 +141,11 @@ export function checkPropellerFit(propeller, motor) {
     Number.isFinite(Number(propeller.shaftMm)) &&
     Number.isFinite(Number(motor.propShaftMm))
   ) {
+    measuredComparison = measuredComparison
+      || usesMeasuredField(propeller, ["shaftMm"])
+      || usesMeasuredField(motor, ["propShaftMm"]);
     return check(
-      "compatible",
+      measuredComparison ? "measured" : "compatible",
       `${propeller.shaftMm} mm prop mounting matches the motor shaft.`,
       `${propeller.name} hub fit`,
     );
@@ -243,22 +256,25 @@ export function summarizePhysicalChecks(checks) {
   );
   const conflict = uniqueChecks.find((item) => item.status === "conflict");
   if (conflict) {
-    return { ok: false, verified: false, reason: conflict.message };
+    return { ok: false, verified: false, measured: 0, reason: conflict.message };
   }
   const compatible = uniqueChecks.filter((item) => item.status === "compatible");
+  const measured = uniqueChecks.filter((item) => item.status === "measured");
   const unknown = uniqueChecks.filter((item) => item.status === "unknown");
-  if (unknown.length === 0 && compatible.length > 0) {
+  if (unknown.length === 0 && compatible.length + measured.length > 0) {
     return {
       ok: true,
-      verified: true,
-      reason: compatible.map((item) => item.message).join(" "),
+      verified: measured.length === 0,
+      measured: measured.length,
+      reason: [...compatible, ...measured].map((item) => item.message).join(" "),
     };
   }
   return {
     ok: true,
     verified: false,
+    measured: measured.length,
     reason:
-      [...compatible, ...unknown]
+      [...compatible, ...measured, ...unknown]
         .map((item) => item.message)
         .slice(0, 2)
         .join(" ") || "No physical-fit checks apply to this selection.",

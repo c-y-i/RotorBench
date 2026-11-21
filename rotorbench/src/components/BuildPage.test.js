@@ -1,9 +1,16 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { Link, MemoryRouter, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import BuildPage from "./BuildPage";
 
-jest.mock("./BabylonViewer.jsx", () => ({ cameraView, autoRotate, exploded, assemblySpec }) => (
+jest.mock("./BabylonViewer.jsx", () => ({
+  cameraView,
+  autoRotate,
+  exploded,
+  assemblySpec,
+  showFitOverlay,
+  fitOverlayStatus,
+}) => (
   <div
     data-testid="assembly-viewer"
     data-camera-view={cameraView}
@@ -11,11 +18,15 @@ jest.mock("./BabylonViewer.jsx", () => ({ cameraView, autoRotate, exploded, asse
     data-exploded={String(exploded)}
     data-frame={assemblySpec?.frame?.id || ""}
     data-motor={assemblySpec?.motor?.id || ""}
+    data-motor-shaft={assemblySpec?.motor?.propShaftMm ?? ""}
+    data-motor-measured={assemblySpec?.motor?.measuredFields?.join(",") || ""}
     data-propeller={assemblySpec?.propeller?.id || ""}
     data-esc={assemblySpec?.esc?.id || ""}
     data-battery={assemblySpec?.battery?.id || ""}
     data-flight-controller={assemblySpec?.flightController?.id || ""}
     data-receiver={assemblySpec?.receiver?.id || ""}
+    data-fit-overlay={String(showFitOverlay)}
+    data-fit-motor-conflict={String(Boolean(fitOverlayStatus?.motorConflict))}
   />
 ));
 
@@ -28,6 +39,11 @@ function LocationProbe() {
       <output data-testid="location-build-id">{location.state?.build?.id || ""}</output>
       <output data-testid="location-fc-id">
         {location.state?.build?.componentIds?.flightControllerId || ""}
+      </output>
+      <output data-testid="location-motor-shaft">
+        {location.state?.build?.geometryOverrides?.categories?.motors?.[
+          location.state?.build?.componentIds?.motorId
+        ]?.propShaftMm || ""}
       </output>
     </>
   );
@@ -160,7 +176,7 @@ test("a starter-platform deep link selects all seven components and consumes the
   expect(screen.getByTestId("location-search")).toHaveTextContent("");
   expect(screen.getByRole("button", { name: "Save and go home" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
-  expect(screen.getByText("8/8 aligned")).toBeInTheDocument();
+  expect(screen.getByText("4/8 verified · 4 estimated")).toBeInTheDocument();
   fireEvent.click(screen.getByText("Viewer placement"));
   expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
     "Propeller-to-shaft alignment",
@@ -174,6 +190,95 @@ test("a starter-platform deep link selects all seven components and consumes the
   expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
     "Propeller sweep separation",
   );
+  const fitOverlay = screen.getByRole("button", { name: "Fit overlay" });
+  fireEvent.click(fitOverlay);
+  expect(viewer).toHaveAttribute("data-fit-overlay", "true");
+  expect(screen.getByText(/Verified interface/)).toBeInTheDocument();
+});
+
+test("the 5.5-inch XING2 6S preset exposes estimated geometry honestly", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=source-55-xing2"]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-motor", "motor-iflight-xing2-2207-1855kv");
+  expect(viewer).toHaveAttribute("data-battery", "battery-tattu-rline-v3-6s-1050-120c");
+  expect(viewer).toHaveAttribute("data-esc", "esc-speedybee-bl32-50a");
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+  expect(screen.getByText("2/8 verified · 6 estimated")).toBeInTheDocument();
+});
+
+test("build-local measurements update fit evidence without claiming verification", async () => {
+  const measuredBuild = {
+    id: "measured-build",
+    name: "Measured build",
+    componentIds: {
+      frameId: "frame-aos-55-v2",
+      motorId: "motor-tmotor-f60-pro-v-1750kv",
+      propellerId: "prop-gemfan-hurricane-51466-v2",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-speedybee-f405-v4",
+      batteryId: "battery-tattu-rline-6s-1300-120c",
+      receiverId: "rx-radiomaster-rp3-h",
+    },
+  };
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build: measuredBuild } }]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  fireEvent.click(screen.getByText("Measured geometry"));
+  const shaft = screen.getByLabelText(
+    "Motor Prop shaft diameter in millimetres",
+  );
+  expect(shaft).toHaveValue(null);
+  fireEvent.change(shaft, { target: { value: "5" } });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(screen.getByTestId("assembly-viewer")).toHaveAttribute(
+    "data-motor-measured",
+    "propShaftMm",
+  );
+
+  fireEvent.click(screen.getByText("Viewer placement"));
+  const hubCheck = screen.getByRole("listitem", {
+    name: "Propeller hub interface",
+  });
+  expect(within(hubCheck).getByText("Measured")).toBeInTheDocument();
+  expect(within(hubCheck).queryByText("Verified")).not.toBeInTheDocument();
+  expect(screen.queryByText("Physical fit verified")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText("Physical fit checks"));
+  const measuredPhysicalFit = screen.getByRole("listitem", {
+    name: "Gemfan Hurricane 51466 V2 hub fit",
+  });
+  expect(within(measuredPhysicalFit).getByText("Measured")).toBeInTheDocument();
+
+  const draft = JSON.parse(localStorage.getItem("rotorbench:build-draft:v1"));
+  expect(draft.geometryOverrides.categories.motors[
+    "motor-tmotor-f60-pro-v-1750kv"
+  ].propShaftMm).toBe(5);
+
+  fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
+  expect(screen.getByTestId("location-path")).toHaveTextContent("/analysis");
+  expect(screen.getByTestId("location-motor-shaft")).toHaveTextContent("5");
 });
 
 test("an invalid starter-platform deep link leaves the required build gates intact", async () => {

@@ -544,6 +544,11 @@
   background: #e8f5ee;
 }
 
+.saved-build-state .is-fit-measured {
+  color: var(--brand-strong);
+  background: #e5f3ef;
+}
+
 .saved-build-state .is-fit-unverified {
   color: var(--brand-strong);
   background: var(--brand-soft);

@@ -16,6 +16,12 @@ export function getSelectedPartEvidence(assemblySpec = {}) {
       const estimatedFields = Array.isArray(part.estimatedFields)
         ? part.estimatedFields
         : [];
+      const measuredFields = Array.isArray(part.measuredFields)
+        ? part.measuredFields
+        : [];
+      const remainingEstimatedFields = estimatedFields.filter(
+        (field) => !measuredFields.includes(field),
+      );
       return {
         key,
         label,
@@ -24,7 +30,8 @@ export function getSelectedPartEvidence(assemblySpec = {}) {
         sourceUrl: part.sourceUrl || null,
         priceSourceUrl: part.priceSourceUrl || null,
         connectorSourceUrl: part.connectorSourceUrl || null,
-        estimatedFields,
+        estimatedFields: remainingEstimatedFields,
+        measuredFields,
         modelStatus: part.modelStatus || null,
         sourceBacked: Boolean(part.sourceUrl),
         geometryFallback: part.modelStatus === "not_available",
@@ -42,6 +49,10 @@ export function summarizeBuildEvidence(assemblySpec = {}) {
     estimatedPartCount: parts.filter((part) => part.estimatedFields.length > 0).length,
     estimatedFieldCount: parts.reduce(
       (total, part) => total + part.estimatedFields.length,
+      0,
+    ),
+    measuredFieldCount: parts.reduce(
+      (total, part) => total + part.measuredFields.length,
       0,
     ),
     geometryFallbackCount: parts.filter((part) => part.geometryFallback).length,

@@ -9,6 +9,10 @@ const build = {
   id: "build-old",
   name: "Original",
   componentIds: { frameId: "frame-1" },
+  geometryOverrides: {
+    schema: "rotorbench.measured-geometry.v1",
+    categories: { frames: { "frame-1": { stackHeight: 28 } } },
+  },
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
 };
@@ -19,6 +23,7 @@ test("build duplication creates a new identity and preserves component selection
     id: "build-new",
     name: "Original copy",
     componentIds: build.componentIds,
+    geometryOverrides: build.geometryOverrides,
     createdAt: "2026-02-01T00:00:00.000Z",
     updatedAt: "2026-02-01T00:00:00.000Z",
   });
@@ -31,6 +36,7 @@ test("rename updates only the name and modified time", () => {
     id: "build-old",
     name: "Renamed",
     componentIds: build.componentIds,
+    geometryOverrides: build.geometryOverrides,
     createdAt: build.createdAt,
     updatedAt: "2026-02-02T00:00:00.000Z",
   });

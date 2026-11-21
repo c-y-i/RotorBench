@@ -16,6 +16,14 @@ const build = {
   },
   createdAt: "2026-11-20T00:00:00.000Z",
   updatedAt: "2026-11-20T01:00:00.000Z",
+  geometryOverrides: {
+    schema: "rotorbench.measured-geometry.v1",
+    categories: {
+      motors: {
+        "motor-tmotor-f1404-3800kv": { propShaftMm: 1.5 },
+      },
+    },
+  },
 };
 
 const analysis = {
@@ -72,9 +80,14 @@ test("creates a versioned analysis report without mutating the build", () => {
         serialPath: "/dev/ttyACM0",
       },
       viewerPlacement: {
-        complete: true,
+        complete: false,
         verifiedCount: 5,
+        measuredCount: 1,
+        estimatedCount: 1,
+        fallbackCount: 0,
         awaitingCount: 0,
+        conflictCount: 0,
+        assembledCount: 6,
         checks: [
           { id: "motor-roots", label: "Four motor roots", status: "verified", detail: "Aligned." },
         ],
@@ -89,6 +102,7 @@ test("creates a versioned analysis report without mutating the build", () => {
       id: "build-analysis-export",
       name: "Bench quad",
       componentIds: build.componentIds,
+      geometryOverrides: build.geometryOverrides,
     },
     verification: {
       analysisIsEstimate: true,
@@ -123,9 +137,14 @@ test("creates a versioned analysis report without mutating the build", () => {
     },
     viewerPlacement: {
       scope: "viewer-placement",
-      complete: true,
+      complete: false,
       verifiedCount: 5,
+      measuredCount: 1,
+      estimatedCount: 1,
+      fallbackCount: 0,
       awaitingCount: 0,
+      conflictCount: 0,
+      assembledCount: 6,
     },
   });
   expect(report.analysis).toEqual(analysis);

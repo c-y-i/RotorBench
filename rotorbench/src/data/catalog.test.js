@@ -38,6 +38,63 @@ test("expanded receivers keep source and estimated fields explicit", () => {
   }
 });
 
+test("iFlight XING2 2207 keeps published mechanics and estimates explicit", () => {
+  const motor = componentsData.motors.find(
+    (item) => item.id === "motor-iflight-xing2-2207-2755kv",
+  );
+
+  expect(motor).toMatchObject({
+    name: "iFlight XING2 2207 2755KV",
+    kv: 2755,
+    weight: 31.6,
+    maxCurrent: 40.35,
+    voltage: { min: 14.8, max: 16.8 },
+    mountingPatternMm: [16, 16],
+    dimensionsMm: [29.08, 32.6, 29.08],
+    propShaftMm: 5,
+    price: 20.99,
+    modelStatus: "not_available",
+    sourceUrl: expect.stringContaining("shop.iflight.com"),
+  });
+  expect(motor.estimatedFields).toEqual(["mounting_point"]);
+  expect(componentsData.motors.find(
+    (item) => item.id === "motor-iflight-xing2-2207-1855kv",
+  )).toMatchObject({
+    kv: 1855,
+    maxCurrent: 35.08,
+    voltage: { min: 14.8, max: 24 },
+    mountingPatternMm: [16, 16],
+    propShaftMm: 5,
+    price: 20.99,
+  });
+});
+
+test("Tattu R-Line 6S pack keeps pack dimensions and estimated curves explicit", () => {
+  const battery = componentsData.batteries.find(
+    (item) => item.id === "battery-tattu-rline-v3-6s-1050-120c",
+  );
+
+  expect(battery).toMatchObject({
+    name: "Tattu R-Line V3 6S 1050mAh 120C",
+    capacity: 1050,
+    voltage: 22.2,
+    cells: 6,
+    cRating: 120,
+    weight: 200,
+    dimensionsMm: [76, 40, 37],
+    dischargeConnector: "XT60",
+    price: 32.99,
+    modelStatus: "not_available",
+    sourceUrl: expect.stringContaining("genstattu.com"),
+  });
+  expect(battery.estimatedFields).toEqual([
+    "mounting_point",
+    "dischargeProfile",
+  ]);
+  expect(battery.estimatedFields).not.toContain("dimensionsMm");
+  expect(battery.estimatedFields).not.toContain("weight");
+});
+
 test("RP2 V2 keeps the manufacturer's physical dimensions distinct from estimates", () => {
   const receiver = componentsData.receivers.find(
     (item) => item.id === "rx-radiomaster-rp2-v2",

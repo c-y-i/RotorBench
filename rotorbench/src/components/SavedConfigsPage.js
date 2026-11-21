@@ -66,6 +66,7 @@ const formatSavedDate = (value) => {
 
 const fitLabels = {
     verified: "Fit verified",
+    measured: "Fit measured locally",
     unverified: "Fit review",
     conflict: "Fit conflict",
     pending: "Fit unchecked",

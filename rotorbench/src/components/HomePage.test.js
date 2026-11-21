@@ -31,7 +31,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-test("offers both complete source-backed platforms from an empty overview", async () => {
+test("offers all complete source-backed platforms from an empty overview", async () => {
   renderHome();
 
   expect(await screen.findByTestId("home-assembly-viewer")).toBeInTheDocument();
@@ -40,6 +40,8 @@ test("offers both complete source-backed platforms from an empty overview", asyn
   expect(screen.getByRole("button", { name: "Open 5.5-inch source build" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 5.5-inch diversity source build" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 3.5-inch 4600KV source build" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Open 5.5-inch XING2 6S build" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Open 5.5-inch XING2 4S build" })).toBeInTheDocument();
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
 });
 

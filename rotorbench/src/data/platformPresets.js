@@ -57,6 +57,34 @@ export const PLATFORM_PRESETS = [
       receiverId: "rx-radiomaster-rp2-v2",
     },
   },
+  {
+    id: "source-55-xing2",
+    name: "5.5-inch XING2 6S build",
+    description: "AOS 5.5, XING2 2207 1855KV, HQ R42, Mamba F55A, Kakute H7 V2, RP4TD, Tattu 6S",
+    componentIds: {
+      frameId: "frame-aos-55-v2",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hq-r42-51x42x3",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-v3-6s-1050-120c",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  },
+  {
+    id: "source-55-xing2-4s",
+    name: "5.5-inch XING2 4S build",
+    description: "AOS 5.5, XING2 2207 2755KV, HQ R42, SpeedyBee 50A stack, Kakute H7 V2, RP4TD, CNHL 4S",
+    componentIds: {
+      frameId: "frame-aos-55-v2",
+      motorId: "motor-iflight-xing2-2207-2755kv",
+      propellerId: "prop-hq-r42-51x42x3",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  },
 ];
 
 const idCategory = {

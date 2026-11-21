@@ -7,7 +7,7 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(4);
+  expect(PLATFORM_PRESETS).toHaveLength(6);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
@@ -29,6 +29,20 @@ test("every starter platform references a complete catalog build", () => {
     componentIds: {
       motorId: "motor-tmotor-f1404-4600kv",
       receiverId: "rx-radiomaster-rp2-v2",
+    },
+  });
+  expect(getPlatformPreset("source-55-xing2")).toMatchObject({
+    componentIds: {
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      escId: "esc-speedybee-bl32-50a",
+      batteryId: "battery-tattu-rline-v3-6s-1050-120c",
+    },
+  });
+  expect(getPlatformPreset("source-55-xing2-4s")).toMatchObject({
+    componentIds: {
+      motorId: "motor-iflight-xing2-2207-2755kv",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      escId: "esc-speedybee-bl32-50a",
     },
   });
 });

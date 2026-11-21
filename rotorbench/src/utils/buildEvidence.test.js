@@ -20,14 +20,17 @@ test("build evidence separates source-backed, estimated, and fallback parts", ()
     motor: {
       id: "motor-legacy",
       name: "Legacy motor",
+      measuredFields: ["dimensionsMm"],
+      estimatedFields: ["dimensionsMm", "mounting_point"],
     },
   });
 
   expect(summary).toMatchObject({
     selectedCount: 3,
     sourceBackedCount: 2,
-    estimatedPartCount: 1,
-    estimatedFieldCount: 1,
+    estimatedPartCount: 2,
+    estimatedFieldCount: 2,
+    measuredFieldCount: 1,
     geometryFallbackCount: 2,
     legacyUnsupportedCount: 1,
   });

@@ -1,4 +1,5 @@
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
+import { normalizeGeometryOverrides } from "./buildGeometry";
 
 export const ANALYSIS_REPORT_SCHEMA = "rotorbench.analysis-report.v1";
 
@@ -48,6 +49,9 @@ export function createAnalysisReport(
       name: build.name || "Untitled build",
       description: build.description || "",
       componentIds: { ...build.componentIds },
+      geometryOverrides: build.geometryOverrides
+        ? normalizeGeometryOverrides(build.geometryOverrides)
+        : null,
       createdAt: build.createdAt || null,
       updatedAt: build.updatedAt || null,
     },
@@ -63,7 +67,12 @@ export function createAnalysisReport(
           scope: "viewer-placement",
           complete: Boolean(viewerPlacement.complete),
           verifiedCount: Number(viewerPlacement.verifiedCount) || 0,
+          measuredCount: Number(viewerPlacement.measuredCount) || 0,
+          estimatedCount: Number(viewerPlacement.estimatedCount) || 0,
+          fallbackCount: Number(viewerPlacement.fallbackCount) || 0,
           awaitingCount: Number(viewerPlacement.awaitingCount) || 0,
+          conflictCount: Number(viewerPlacement.conflictCount) || 0,
+          assembledCount: Number(viewerPlacement.assembledCount) || 0,
           checks: Array.isArray(viewerPlacement.checks)
             ? viewerPlacement.checks.map((check) => ({
                 id: check.id,

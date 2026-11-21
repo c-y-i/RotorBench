@@ -8,6 +8,7 @@ import {
   electricalChecksFor,
   summarizeElectricalChecks,
 } from "./electricalCompatibility";
+import { normalizeGeometryOverrides } from "./buildGeometry";
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
 
 function selectedPhysicalChecks(assemblySpec) {
@@ -56,6 +57,10 @@ export function createBuildSheet({
     ? "pending"
     : !physicalFit.ok
       ? "conflict"
+      : uniqueChecks.some((check) => check.status === "unknown")
+        ? "unverified"
+        : physicalFit.measured > 0
+          ? "measured"
       : physicalFit.verified
         ? "verified"
         : "unverified";
@@ -93,7 +98,12 @@ export function createBuildSheet({
           scope: "viewer-placement",
           complete: Boolean(viewerPlacement.complete),
           verifiedCount: Number(viewerPlacement.verifiedCount) || 0,
+          measuredCount: Number(viewerPlacement.measuredCount) || 0,
+          estimatedCount: Number(viewerPlacement.estimatedCount) || 0,
+          fallbackCount: Number(viewerPlacement.fallbackCount) || 0,
           awaitingCount: Number(viewerPlacement.awaitingCount) || 0,
+          conflictCount: Number(viewerPlacement.conflictCount) || 0,
+          assembledCount: Number(viewerPlacement.assembledCount) || 0,
           checks: Array.isArray(viewerPlacement.checks)
             ? viewerPlacement.checks.map((check) => ({
                 id: check.id,
@@ -108,6 +118,9 @@ export function createBuildSheet({
       id: build.id || null,
       name: build.name || "Untitled build",
       componentIds: build.componentIds || {},
+      geometryOverrides: build.geometryOverrides
+        ? normalizeGeometryOverrides(build.geometryOverrides)
+        : null,
     },
     physicalFit: {
       status: physicalFitStatus,
@@ -123,6 +136,7 @@ export function createBuildSheet({
       selectedCount: evidence.selectedCount,
       sourceBackedCount: evidence.sourceBackedCount,
       estimatedFieldCount: evidence.estimatedFieldCount,
+      measuredFieldCount: evidence.measuredFieldCount,
       geometryFallbackCount: evidence.geometryFallbackCount,
       parts: evidence.parts,
     },
@@ -191,6 +205,7 @@ export function parseBuildSheetJson(text, {
   return {
     name: String(sheet.build.name || "Imported build").trim() || "Imported build",
     componentIds,
+    geometryOverrides: normalizeGeometryOverrides(sheet.build.geometryOverrides),
     createdAt: now,
     updatedAt: now,
     totalWeight: 0,

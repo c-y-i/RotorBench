@@ -2,8 +2,8 @@
 Pydantic models for drone components.
 These models provide validation and serialization for the API.
 """
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Literal, Optional, Dict
 from datetime import datetime
 from enum import Enum
 
@@ -196,6 +196,76 @@ class ComponentIds(BaseModel):
         populate_by_name = True
 
 
+def _positive_vector(value: Optional[List[float]], length: int):
+    if value is None:
+        return None
+    if len(value) != length or any(entry <= 0 for entry in value):
+        raise ValueError(f"expected {length} positive millimetre values")
+    return value
+
+
+class GeometryValuesBase(BaseModel):
+    dimensions_mm: Optional[List[float]] = Field(None, alias="dimensionsMm")
+
+    class Config:
+        populate_by_name = True
+        extra = "forbid"
+
+    @field_validator("dimensions_mm")
+    @classmethod
+    def validate_dimensions(cls, value):
+        return _positive_vector(value, 3)
+
+
+class FrameGeometryValues(GeometryValuesBase):
+    stack_height: Optional[float] = Field(None, alias="stackHeight", gt=0)
+
+
+class MotorGeometryValues(GeometryValuesBase):
+    mounting_pattern_mm: Optional[List[float]] = Field(
+        None, alias="mountingPatternMm"
+    )
+    prop_shaft_mm: Optional[float] = Field(None, alias="propShaftMm", gt=0)
+    bell_diameter_mm: Optional[float] = Field(None, alias="bellDiameterMm", gt=0)
+
+    @field_validator("mounting_pattern_mm")
+    @classmethod
+    def validate_mounting_pattern(cls, value):
+        return _positive_vector(value, 2)
+
+
+class PropellerGeometryValues(GeometryValuesBase):
+    shaft_mm: Optional[float] = Field(None, alias="shaftMm", gt=0)
+    hub_diameter_mm: Optional[float] = Field(None, alias="hubDiameterMm", gt=0)
+    hub_thickness_mm: Optional[float] = Field(None, alias="hubThicknessMm", gt=0)
+
+
+class MeasuredGeometryCategories(BaseModel):
+    frames: Dict[str, FrameGeometryValues] = Field(default_factory=dict)
+    motors: Dict[str, MotorGeometryValues] = Field(default_factory=dict)
+    propellers: Dict[str, PropellerGeometryValues] = Field(default_factory=dict)
+    batteries: Dict[str, GeometryValuesBase] = Field(default_factory=dict)
+    escs: Dict[str, GeometryValuesBase] = Field(default_factory=dict)
+    flight_controllers: Dict[str, GeometryValuesBase] = Field(default_factory=dict)
+    receivers: Dict[str, GeometryValuesBase] = Field(default_factory=dict)
+
+    class Config:
+        extra = "forbid"
+
+
+class MeasuredGeometryOverrides(BaseModel):
+    schema_value: Literal["rotorbench.measured-geometry.v1"] = Field(
+        ..., alias="schema"
+    )
+    categories: MeasuredGeometryCategories = Field(
+        default_factory=MeasuredGeometryCategories
+    )
+
+    class Config:
+        populate_by_name = True
+        extra = "forbid"
+
+
 class DroneBuildConfig(BaseModel):
     """Drone build configuration with component IDs (for storage)"""
     id: Optional[str] = None
@@ -204,6 +274,9 @@ class DroneBuildConfig(BaseModel):
     description: Optional[str] = None
     note: Optional[str] = None
     component_ids: ComponentIds = Field(..., alias="componentIds")
+    geometry_overrides: Optional[MeasuredGeometryOverrides] = Field(
+        None, alias="geometryOverrides"
+    )
     total_weight: Optional[float] = Field(None, alias="totalWeight")
     created_at: Optional[datetime] = Field(None, alias="createdAt")
     updated_at: Optional[datetime] = Field(None, alias="updatedAt")

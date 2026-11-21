@@ -21,6 +21,7 @@ import "../styles/compare.css";
 
 const physicalFitLabels = {
   verified: "Physical fit verified",
+  measured: "Physical fit uses local measurements",
   unverified: "Fit needs review",
   conflict: "Physical fit conflict",
   pending: "Fit not checked",

@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import API_BASE from "../config/api";
 import { buildViewerPlacementAudit } from "../assembly/assemblyTransforms";
+import { applyMeasuredGeometry } from "../utils/buildGeometry";
 import {
   analysisReportFilename,
   createAnalysisReport,
@@ -71,13 +72,42 @@ export default function AnalysisPage() {
     };
 
     // Get components
-    const frame = getComponentById("frames", buildConfig.componentIds.frameId);
-    const motors = getComponentById("motors", buildConfig.componentIds.motorId);
-    const propellers = getComponentById("propellers", buildConfig.componentIds.propellerId);
-    const esc = getComponentById("escs", buildConfig.componentIds.escId);
-    const flightController = getComponentById("flight_controllers", buildConfig.componentIds.flightControllerId);
-    const battery = getComponentById("batteries", buildConfig.componentIds.batteryId);
-    const receiver = getComponentById("receivers", buildConfig.componentIds.receiverId);
+    const withMeasurements = (category, part) => applyMeasuredGeometry(
+      category,
+      part,
+      buildConfig.geometryOverrides,
+    );
+    const frame = withMeasurements(
+      "frames",
+      getComponentById("frames", buildConfig.componentIds.frameId),
+    );
+    const motors = withMeasurements(
+      "motors",
+      getComponentById("motors", buildConfig.componentIds.motorId),
+    );
+    const propellers = withMeasurements(
+      "propellers",
+      getComponentById("propellers", buildConfig.componentIds.propellerId),
+    );
+    const esc = withMeasurements(
+      "escs",
+      getComponentById("escs", buildConfig.componentIds.escId),
+    );
+    const flightController = withMeasurements(
+      "flight_controllers",
+      getComponentById(
+        "flight_controllers",
+        buildConfig.componentIds.flightControllerId,
+      ),
+    );
+    const battery = withMeasurements(
+      "batteries",
+      getComponentById("batteries", buildConfig.componentIds.batteryId),
+    );
+    const receiver = withMeasurements(
+      "receivers",
+      getComponentById("receivers", buildConfig.componentIds.receiverId),
+    );
 
     return {
       id: buildConfig.id,
@@ -171,7 +201,11 @@ export default function AnalysisPage() {
 
   const componentRows = useMemo(() => {
     const ids = build?.componentIds || {};
-    const findPart = (category, id) => componentsData[category]?.find((part) => part.id === id);
+    const findPart = (category, id) => applyMeasuredGeometry(
+      category,
+      componentsData[category]?.find((part) => part.id === id),
+      build?.geometryOverrides,
+    );
     const frame = findPart("frames", ids.frameId);
     const motor = findPart("motors", ids.motorId);
     const propeller = findPart("propellers", ids.propellerId);

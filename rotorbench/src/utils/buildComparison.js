@@ -8,6 +8,7 @@ import {
   electricalChecksFor,
   summarizeElectricalChecks,
 } from "./electricalCompatibility";
+import { applyMeasuredGeometry } from "./buildGeometry";
 import { summarizeHardwareReadiness } from "./hardwareReadiness";
 import {
   readBenchEvidenceAttachment,
@@ -27,10 +28,19 @@ const partDefinitions = [
 
 export function summarizeBuild(build) {
   const ids = build?.componentIds || {};
-  const parts = partDefinitions.map((definition) => ({
-    ...definition,
-    part: componentsData[definition.category]?.find((part) => part.id === ids[definition.key]) || null,
-  }));
+  const parts = partDefinitions.map((definition) => {
+    const part = componentsData[definition.category]?.find(
+      (candidate) => candidate.id === ids[definition.key],
+    );
+    return {
+      ...definition,
+      part: applyMeasuredGeometry(
+        definition.category,
+        part || null,
+        build?.geometryOverrides,
+      ),
+    };
+  });
   const byCategory = Object.fromEntries(
     parts.map(({ category, part }) => [category, part]),
   );
@@ -89,6 +99,10 @@ export function summarizeBuild(build) {
     ? "pending"
     : !physicalFit.ok
       ? "conflict"
+      : physicalChecks.some((check) => check.status === "unknown")
+        ? "unverified"
+        : physicalFit.measured > 0
+          ? "measured"
       : physicalFit.verified
         ? "verified"
         : "unverified";
@@ -124,6 +138,7 @@ export function summarizeBuild(build) {
     electricalFitSummary: electricalFit.reason,
     sourceBackedCount: evidence.sourceBackedCount,
     estimatedFieldCount: evidence.estimatedFieldCount,
+    measuredFieldCount: evidence.measuredFieldCount,
     geometryFallbackCount: evidence.geometryFallbackCount,
     hardwarePlanStatus: readHardwarePlanStatus(build?.id),
     hardwareReadinessStatus: hardwareReadiness.status,
@@ -161,6 +176,7 @@ export function readHardwarePlanStatus(
 
 const physicalFitLabels = {
   verified: "Verified",
+  measured: "Measured",
   unverified: "Needs review",
   conflict: "Conflict",
   pending: "Not selected",
@@ -204,6 +220,7 @@ export function createComparisonReport(
       benchEvidenceStatus: build.benchEvidenceStatus,
       sourceBackedCount: build.sourceBackedCount,
       estimatedFieldCount: build.estimatedFieldCount,
+      measuredFieldCount: build.measuredFieldCount,
       geometryFallbackCount: build.geometryFallbackCount,
       totalWeight: build.totalWeight,
       totalPrice: build.totalPrice,
@@ -367,6 +384,13 @@ export function comparisonRows(left, right) {
       right: right.estimatedFieldCount,
       format: (value) => String(value),
       lowerIsBetter: true,
+    },
+    {
+      id: "measured-geometry",
+      label: "Measured geometry fields",
+      left: left.measuredFieldCount,
+      right: right.measuredFieldCount,
+      format: (value) => String(value),
     },
     {
       id: "geometry-fallbacks",

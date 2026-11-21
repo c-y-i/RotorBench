@@ -48,6 +48,47 @@ function patternKey(pattern) {
   return pattern ? `${pattern[0]}x${pattern[1]}` : null;
 }
 
+const GEOMETRY_CONFIDENCE = Object.freeze({
+  verified: 0,
+  measured: 1,
+  estimated: 2,
+  fallback: 3,
+  awaiting: 4,
+});
+
+function weakestGeometryStatus(...statuses) {
+  return statuses.reduce((weakest, status) => (
+    GEOMETRY_CONFIDENCE[status] > GEOMETRY_CONFIDENCE[weakest]
+      ? status
+      : weakest
+  ), "verified");
+}
+
+function metadataConfidence(part, fields = []) {
+  if (!part?.id) return "awaiting";
+  const measuredFields = Array.isArray(part.measuredFields)
+    ? part.measuredFields
+    : [];
+  if (fields.some((field) => measuredFields.includes(field))) {
+    return "measured";
+  }
+  const estimatedFields = Array.isArray(part.estimatedFields)
+    ? part.estimatedFields
+    : [];
+  if (fields.some((field) => estimatedFields.includes(field))) {
+    return "estimated";
+  }
+  if (!part.sourceUrl && !part.dataStatus) return "estimated";
+  return "verified";
+}
+
+function dimensionsConfidence(part) {
+  if (!part?.id) return "awaiting";
+  if (part.measuredFields?.includes("dimensionsMm")) return "measured";
+  if (!numericVector(part.dimensionsMm)) return "fallback";
+  return metadataConfidence(part, ["dimensionsMm"]);
+}
+
 export function toSceneVectorMm(value, fallback = [0, 0, 0]) {
   const source = numericVector(value) || fallback;
   return source.map((axis) => Number(axis) * MM_TO_SCENE);
@@ -87,6 +128,24 @@ export function getPropellerHubDiameterMm(propeller = {}) {
   if (Number.isFinite(explicit) && explicit > 0) return explicit;
   const diameter = getFallbackDimensionsMm("propeller", propeller)[0];
   return Math.min(Math.max(diameter * 0.12, 6), 16);
+}
+
+export function getPropellerSweepDiameterMm(propeller = {}) {
+  return getFallbackDimensionsMm("propeller", propeller)[0];
+}
+
+export function getMotorMountOutlineMm(motor = {}) {
+  const pattern = numericPattern(motor.mountingPatternMm);
+  if (!pattern) return null;
+  const halfWidth = pattern[0] / 2;
+  const halfDepth = pattern[1] / 2;
+  return [
+    [-halfWidth, 0, -halfDepth],
+    [halfWidth, 0, -halfDepth],
+    [halfWidth, 0, halfDepth],
+    [-halfWidth, 0, halfDepth],
+    [-halfWidth, 0, -halfDepth],
+  ];
 }
 
 export function getFrameMountPointsMm(frame = {}) {
@@ -196,15 +255,22 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
     frame.lower_right_motor_position,
     frame.lower_left_motor_position,
   ].every((position) => numericVector(position));
+  const frameMountStatus = !hasFrame
+    ? "awaiting"
+    : namedMounts
+      ? metadataConfidence(frame, ["motor positions", "motorPositions"])
+      : "fallback";
   const checks = [{
     id: "frame-mounts",
     label: "Frame motor mounts",
-    status: hasFrame ? "verified" : "awaiting",
-    detail: hasFrame
-      ? namedMounts
-        ? "Four named frame coordinates resolve to motor mounting centers."
-        : "Four mounting centers resolve from the catalogued wheelbase fallback."
-      : "Select a frame to resolve four mounting centers.",
+    status: frameMountStatus,
+    detail: !hasFrame
+      ? "Select a frame to resolve four mounting centers."
+      : frameMountStatus === "verified"
+        ? "Four named, source-backed frame coordinates resolve to motor mounting centers."
+        : frameMountStatus === "estimated"
+          ? "Explicit mount coordinates are present, but the catalog marks their source as estimated."
+          : "Mounting centers are generated from wheelbase because explicit coordinates are unavailable.",
   }];
 
   const motorOrigins = hasFrame && parts.motor
@@ -218,9 +284,11 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
   checks.push({
     id: "motor-roots",
     label: "Four motor roots",
-    status: motorsAligned ? "verified" : "awaiting",
+    status: motorsAligned ? frameMountStatus : "awaiting",
     detail: motorsAligned
-      ? "All four motor root origins use the frame mount coordinates."
+      ? frameMountStatus === "verified"
+        ? "All four source-backed motor root origins use the frame mount coordinates."
+        : "All four motor roots use the available frame coordinates, whose source is estimated or fallback geometry."
       : !parts.motor
         ? "Select motors to place motor roots."
         : "Select a frame to resolve motor mount coordinates.",
@@ -239,9 +307,15 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
   checks.push({
     id: "propeller-shafts",
     label: "Propeller-to-shaft alignment",
-    status: propellersAligned ? "verified" : "awaiting",
+    status: propellersAligned
+      ? weakestGeometryStatus(
+          frameMountStatus,
+          metadataConfidence(parts.motor, ["mounting_point"]),
+          metadataConfidence(parts.propeller, ["mounting_point"]),
+        )
+      : "awaiting",
     detail: propellersAligned
-      ? "Four propeller origins share each motor's X/Z axis and sit above the motor top."
+      ? "Four propeller origins share each motor's X/Z axis and sit above the motor top at the available source confidence."
       : !parts.propeller
         ? "Select propellers to check hub placement above the motor shafts."
         : !parts.motor
@@ -270,9 +344,16 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
   checks.push({
     id: "electronics-stack",
     label: "Electronics stack order",
-    status: electronicsOrdered ? "verified" : "awaiting",
+    status: electronicsOrdered
+      ? weakestGeometryStatus(
+          metadataConfidence(frame, ["stackHeight", "dimensionsMm"]),
+          dimensionsConfidence(stackParts.esc),
+          dimensionsConfidence(stackParts.flightController),
+          dimensionsConfidence(stackParts.receiver),
+        )
+      : "awaiting",
     detail: electronicsOrdered
-      ? "ESC, flight controller, and receiver occupy separated ascending levels."
+      ? "ESC, flight controller, and receiver occupy separated ascending levels at the available source confidence."
       : !hasFrame
         ? "Select a frame to resolve the electronics stack base."
         : "Select ESC, flight controller, and receiver to verify stack order.",
@@ -288,7 +369,15 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
   checks.push({
     id: "battery-clearance",
     label: "Battery above electronics",
-    status: batteryClearsStack ? "verified" : "awaiting",
+    status: batteryClearsStack
+      ? weakestGeometryStatus(
+          metadataConfidence(frame, ["stackHeight", "dimensionsMm"]),
+          dimensionsConfidence(parts.battery),
+          dimensionsConfidence(stackParts.esc),
+          dimensionsConfidence(stackParts.flightController),
+          dimensionsConfidence(stackParts.receiver),
+        )
+      : "awaiting",
     detail: batteryClearsStack
       ? "The battery origin clears the highest selected electronics component."
       : !hasFrame
@@ -311,7 +400,12 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
     id: "motor-interface",
     label: "Motor mount interface",
     status: motorInterfaceKnown
-      ? motorInterfaceMatches ? "verified" : "conflict"
+      ? motorInterfaceMatches
+        ? weakestGeometryStatus(
+            metadataConfidence(frame, ["motorMountPatternsMm"]),
+            metadataConfidence(parts.motor, ["mountingPatternMm"]),
+          )
+        : "conflict"
       : "awaiting",
     detail: motorInterfaceKnown
       ? motorInterfaceMatches
@@ -333,7 +427,12 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
     id: "propeller-hub",
     label: "Propeller hub interface",
     status: propHubKnown
-      ? propHubMatches ? "verified" : "conflict"
+      ? propHubMatches
+        ? weakestGeometryStatus(
+            metadataConfidence(parts.motor, ["propShaftMm"]),
+            metadataConfidence(parts.propeller, ["shaftMm"]),
+          )
+        : "conflict"
       : "awaiting",
     detail: propHubKnown
       ? propHubMatches
@@ -365,7 +464,12 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
     label: "Propeller sweep separation",
     status: minimumSweepClearance == null
       ? "awaiting"
-      : minimumSweepClearance >= 0 ? "verified" : "conflict",
+      : minimumSweepClearance >= 0
+        ? weakestGeometryStatus(
+            frameMountStatus,
+            dimensionsConfidence(parts.propeller),
+          )
+        : "conflict",
     detail: minimumSweepClearance == null
       ? "Select motors and propellers to resolve sweep separation."
       : minimumSweepClearance >= 0
@@ -376,8 +480,14 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
   return {
     checks,
     verifiedCount: checks.filter((check) => check.status === "verified").length,
+    measuredCount: checks.filter((check) => check.status === "measured").length,
+    estimatedCount: checks.filter((check) => check.status === "estimated").length,
+    fallbackCount: checks.filter((check) => check.status === "fallback").length,
     awaitingCount: checks.filter((check) => check.status === "awaiting").length,
     conflictCount: checks.filter((check) => check.status === "conflict").length,
+    assembledCount: checks.filter((check) => (
+      ["verified", "measured", "estimated", "fallback"].includes(check.status)
+    )).length,
     complete: checks.every((check) => check.status === "verified"),
     scope: "viewer-placement",
   };

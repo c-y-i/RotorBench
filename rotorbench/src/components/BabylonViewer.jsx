@@ -17,9 +17,11 @@ import {
   getExplodedOffsetMm,
   getFallbackDimensionsMm,
   getFrameMountPointsMm,
+  getMotorMountOutlineMm,
   getMotorOriginsMm,
   getPropellerHubDiameterMm,
   getPropellerOriginsMm,
+  getPropellerSweepDiameterMm,
   getPropellerVariant,
   getStackLevelsMm,
   MM_TO_SCENE,
@@ -353,6 +355,8 @@ const BabylonViewer = ({
   groundClearance = 2, // millimeters to lift lowest point above ground
   resetKey = 0,
   debug = false,
+  showFitOverlay = false,
+  fitOverlayStatus = {},
   clearedComponents = [], // array of component type strings to remove (e.g. ['frame','motor'])
   backgroundColor = "#2d2d44" // hex color for scene background
 }) => {
@@ -362,6 +366,8 @@ const BabylonViewer = ({
   const cameraRef = useRef(null);
   const autoRotateRef = useRef(autoRotate);
   const explodedRef = useRef(exploded);
+  const showFitOverlayRef = useRef(showFitOverlay);
+  const fitOverlayStatusRef = useRef(fitOverlayStatus);
   const [, setLoadedCount] = useState(0);
   const normalizeTimerRef = useRef(null);
   const [loadStatuses, setLoadStatuses] = useState({});
@@ -386,6 +392,107 @@ const BabylonViewer = ({
   useEffect(() => {
     autoRotateRef.current = autoRotate;
   }, [autoRotate]);
+
+  const disposeFitOverlay = (scene) => {
+    if (!scene) return;
+    scene.meshes
+      .filter((mesh) => mesh.metadata?.viewerFitOverlay)
+      .forEach((mesh) => {
+        const material = mesh.material;
+        mesh.dispose(false, true);
+        material?.dispose?.();
+      });
+  };
+
+  const applyFitOverlay = (scene, enabled) => {
+    if (!scene) return;
+    disposeFitOverlay(scene);
+    if (!enabled) return;
+
+    const scale = unitScaleRef.current || FIXED_UNIT_SCALE;
+    const status = fitOverlayStatusRef.current || {};
+    const propellerColor = status.propellerConflict ? "#e95418"
+      : status.propellerMeasured ? "#68d8c9"
+        : status.propellerKnown ? "#d5ff4f" : "#9aa59f";
+    const motorColor = status.motorConflict ? "#e95418"
+      : status.motorMeasured ? "#68d8c9"
+        : status.motorKnown ? "#d5ff4f" : "#9aa59f";
+    const propellerMaterial = createMaterial(
+      scene,
+      "__fit_overlay_prop_material",
+      propellerColor,
+      true,
+    );
+    propellerMaterial.alpha = 0.92;
+    propellerMaterial.disableLighting = true;
+    propellerMaterial.backFaceCulling = false;
+    const sweepMaterial = createMaterial(
+      scene,
+      "__fit_overlay_sweep_material",
+      propellerColor,
+      true,
+    );
+    sweepMaterial.alpha = 0.08;
+    sweepMaterial.disableLighting = true;
+    sweepMaterial.backFaceCulling = false;
+
+    const sweepDiameter = getPropellerSweepDiameterMm(assemblySpec.propeller || {}) * scale;
+    (scene.__propellerRoots || []).forEach((root, index) => {
+      const ring = MeshBuilder.CreateTorus(
+        `__fit_overlay_prop_${index}`,
+        {
+          diameter: sweepDiameter,
+          thickness: Math.max(sweepDiameter * 0.012, 0.0006),
+          tessellation: 72,
+        },
+        scene,
+      );
+      ring.parent = root;
+      ring.isPickable = false;
+      ring.material = propellerMaterial;
+      ring.metadata = { viewerFitOverlay: true };
+
+      const sweep = MeshBuilder.CreateDisc(
+        `__fit_overlay_sweep_${index}`,
+        { radius: sweepDiameter / 2, tessellation: 72 },
+        scene,
+      );
+      sweep.parent = root;
+      sweep.rotation.x = Math.PI / 2;
+      sweep.position.y = 0.0004;
+      sweep.isPickable = false;
+      sweep.material = sweepMaterial;
+      sweep.metadata = { viewerFitOverlay: true };
+    });
+
+    const mountOutline = getMotorMountOutlineMm(assemblySpec.motor || {});
+    if (mountOutline) {
+      (scene.__motorRoots || []).forEach((root, index) => {
+        const outline = MeshBuilder.CreateLines(
+          `__fit_overlay_mount_${index}`,
+          {
+            points: mountOutline.map(
+              ([x, y, z]) => new Vector3(x * scale, y * scale, z * scale),
+            ),
+          },
+          scene,
+        );
+        outline.parent = root;
+        outline.color = Color3.FromHexString(motorColor);
+        outline.alpha = 0.96;
+        outline.isPickable = false;
+        outline.metadata = { viewerFitOverlay: true };
+      });
+    }
+  };
+
+  useEffect(() => {
+    showFitOverlayRef.current = showFitOverlay;
+    fitOverlayStatusRef.current = fitOverlayStatus;
+    applyFitOverlay(sceneRef.current, showFitOverlay);
+    // Rebuild after selection/toggle changes; the browser renderer owns these meshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showFitOverlay, fitOverlayStatus, assemblySpec, resetKey, clearedComponents]);
 
   const applyExplodedAssembly = (scene, enabled) => {
     if (!scene) return false;
@@ -1350,6 +1457,7 @@ const BabylonViewer = ({
         await buildPropellers(motorAssemblyPromise);
         await loadBattery();
         applyExplodedAssembly(scene, explodedRef.current);
+        applyFitOverlay(scene, showFitOverlayRef.current);
       } finally {
         if (scene.__currentLoadSession === loadSession) {
           scene.__assemblyInProgress = false;

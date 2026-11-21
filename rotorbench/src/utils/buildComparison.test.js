@@ -40,6 +40,7 @@ test("comparison rows include all seven component categories", () => {
       "electrical-limits",
       "source-backed",
       "estimated-fields",
+      "measured-geometry",
       "geometry-fallbacks",
       "hardware-plan",
       "bench-evidence",
@@ -59,6 +60,29 @@ test("comparison rows include all seven component categories", () => {
       "total-price",
     ]),
   );
+});
+
+test("saved-build summaries apply build-local geometry to their parts", () => {
+  const measured = summarizeBuild({
+    ...build,
+    geometryOverrides: {
+      schema: "rotorbench.measured-geometry.v1",
+      categories: {
+        motors: {
+          [build.componentIds.motorId]: {
+            dimensionsMm: [30, 30, 30],
+          },
+        },
+      },
+    },
+  });
+  expect(measured.measuredFieldCount).toBe(1);
+  expect(measured.parts.find((part) => part.category === "motors").part)
+    .toMatchObject({
+      dimensionsMm: [30, 30, 30],
+      measuredFields: ["dimensionsMm"],
+      geometrySource: "user-measured",
+    });
 });
 
 test("comparison rows mark only the values that differ", () => {

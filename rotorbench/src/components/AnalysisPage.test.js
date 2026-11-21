@@ -139,6 +139,41 @@ test("renders the completed analysis and opens the browser print dialog", async 
   expect(screen.getByText("Hardware setup route")).toBeInTheDocument();
 });
 
+test("analysis receives build-local measured geometry", async () => {
+  const measuredBuild = {
+    ...build,
+    id: "analysis-measured",
+    geometryOverrides: {
+      schema: "rotorbench.measured-geometry.v1",
+      categories: {
+        motors: {
+          [build.componentIds.motorId]: {
+            propShaftMm: 1.5,
+            dimensionsMm: [29.2, 32.1, 29.2],
+          },
+        },
+      },
+    },
+  };
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/analysis", state: { build: measuredBuild } }]}>
+      <BuildProvider>
+        <Routes>
+          <Route path="/analysis" element={<AnalysisPage />} />
+        </Routes>
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole("button", { name: /print report/i });
+  const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+  expect(body.components.motors).toMatchObject({
+    propShaftMm: 1.5,
+    dimensionsMm: [29.2, 32.1, 29.2],
+    geometrySource: "user-measured",
+  });
+});
+
 test("shows saved hardware-plan review state in the analysis report", async () => {
   localStorage.setItem(
     "rotorbench:hardware-plan:analysis-build:fc",
