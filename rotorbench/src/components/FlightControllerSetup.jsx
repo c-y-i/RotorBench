@@ -681,6 +681,7 @@ export default function FlightControllerSetup({
                 : []),
               { id: "fc-safety-title", label: "Arming" },
               { id: "fc-channels-title", label: "Channels" },
+              { id: "fc-plan-summary-title", label: "Summary" },
             ]}
           />
           <section className="fc-section" aria-labelledby="fc-profile-title">
@@ -1782,7 +1783,7 @@ export default function FlightControllerSetup({
         <aside className="fc-plan-panel" aria-label="Configuration plan summary">
           <div className="fc-plan-panel-heading">
             <div>
-              <h3>Plan summary</h3>
+              <h3 id="fc-plan-summary-title">Plan summary</h3>
               <p>{profile.label}</p>
             </div>
             <span className={`fc-readiness ${readinessClass}`}>

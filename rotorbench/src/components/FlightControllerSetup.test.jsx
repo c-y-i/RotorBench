@@ -7,6 +7,7 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByRole("navigation", { name: "Flight controller sections" }))
     .toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Sensor" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Summary" })).toBeInTheDocument();
   expect(screen.getByText("Local configuration plan")).toBeInTheDocument();
   expect(screen.getByLabelText("Flight controller plan summary"))
     .toHaveAttribute("tabindex", "0");
@@ -38,6 +39,14 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Requested gyro rate")).toHaveValue(0);
   expect(screen.getByLabelText("Loop divisor")).toHaveValue(1);
   expect(screen.getByRole("status")).toHaveTextContent("Driver default");
+});
+
+test("jumps from the section strip to the plan summary", () => {
+  render(<FlightControllerSetup />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Summary" }));
+
+  expect(screen.getByRole("heading", { name: "Plan summary" })).toHaveFocus();
 });
 
 test("shows the selected Aerial Kit airframe motor output map", () => {
