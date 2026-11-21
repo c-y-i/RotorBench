@@ -126,6 +126,14 @@ export function summarizeBuild(build) {
     readBenchEvidenceAttachment(build?.id),
     readCurrentBenchEvidenceScope(build),
   );
+  const thrustDataStatus = !byCategory.propellers
+    ? "not-selected"
+    : (byCategory.propellers.thrustData?.length || 0) > 0
+      ? (byCategory.propellers.estimatedFields?.includes("thrustData")
+          || !byCategory.propellers.sourceUrl)
+        ? "estimated"
+        : "available"
+      : "unavailable";
 
   return {
     id: build?.id || "draft",
@@ -162,6 +170,7 @@ export function summarizeBuild(build) {
     benchEvidenceStatus: benchEvidence.status,
     benchEvidenceLabel: benchEvidence.label,
     benchEvidenceConfigured: benchEvidence.configured,
+    thrustDataStatus,
     hasHardwareParts: Boolean(
       byCategory.flight_controllers || byCategory.receivers,
     ),
@@ -238,6 +247,7 @@ export function createComparisonReport(
       radioHostTransportLabel: build.radioHostTransportLabel,
       radioHostDocumented: build.radioHostDocumented,
       benchEvidenceStatus: build.benchEvidenceStatus,
+      thrustDataStatus: build.thrustDataStatus,
       sourceBackedCount: build.sourceBackedCount,
       estimatedFieldCount: build.estimatedFieldCount,
       measuredFieldCount: build.measuredFieldCount,
@@ -278,6 +288,12 @@ export function comparisonRows(left, right) {
   const rightParts = Object.fromEntries(
     right.parts.map(({ category, part }) => [category, part]),
   );
+  const thrustDataLabel = (value) => ({
+    estimated: "Estimated",
+    available: "Available",
+    unavailable: "Unavailable",
+    "not-selected": "Not selected",
+  })[value] || "Not selected";
   const rows = [
     ...left.parts.map((leftPart, index) => ({
       id: leftPart.key,
@@ -319,6 +335,13 @@ export function comparisonRows(left, right) {
       left: leftParts.propellers?.bladeCount ?? null,
       right: rightParts.propellers?.bladeCount ?? null,
       format: (value) => value == null ? "—" : String(value),
+    },
+    {
+      id: "propeller-thrust-data",
+      label: "Propeller thrust data",
+      left: left.thrustDataStatus,
+      right: right.thrustDataStatus,
+      format: thrustDataLabel,
     },
     {
       id: "battery-cells",

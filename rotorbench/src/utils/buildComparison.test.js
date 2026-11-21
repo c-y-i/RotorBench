@@ -52,6 +52,7 @@ test("comparison rows include all seven component categories", () => {
       "motor-size",
       "propeller-size",
       "propeller-blades",
+      "propeller-thrust-data",
       "battery-cells",
       "battery-capacity",
       "esc-current",
@@ -63,6 +64,36 @@ test("comparison rows include all seven component categories", () => {
       "total-price",
     ]),
   );
+});
+
+test("comparison rows distinguish estimated and unavailable thrust data", () => {
+  const estimated = summarizeBuild(build);
+  const unavailable = summarizeBuild({
+    ...build,
+    id: "build-25",
+    componentIds: {
+      ...build.componentIds,
+      frameId: "frame-aos-cine25-v5",
+      motorId: "motor-tmotor-f1404-4600kv",
+      propellerId: "prop-gemfan-hurricane-2520-3",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  });
+  const row = comparisonRows(estimated, unavailable)
+    .find((item) => item.id === "propeller-thrust-data");
+
+  expect(estimated.thrustDataStatus).toBe("estimated");
+  expect(unavailable.thrustDataStatus).toBe("unavailable");
+  expect(row).toMatchObject({
+    changed: true,
+    left: "estimated",
+    right: "unavailable",
+  });
+  expect(row.format(row.left)).toBe("Estimated");
+  expect(row.format(row.right)).toBe("Unavailable");
 });
 
 test("saved-build summaries apply build-local geometry to their parts", () => {

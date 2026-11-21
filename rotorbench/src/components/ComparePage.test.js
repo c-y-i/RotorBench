@@ -133,3 +133,44 @@ test("saved hardware plans show their local review count", () => {
 
   expect(screen.getAllByText(/\d+ checks? open/i).length).toBeGreaterThan(1);
 });
+
+test("comparison keeps unavailable thrust data visible", () => {
+  const unavailable = {
+    ...build,
+    id: "build-cine25",
+    name: "Cine25 build",
+    componentIds: {
+      ...build.componentIds,
+      frameId: "frame-aos-cine25-v5",
+      motorId: "motor-tmotor-f1404-4600kv",
+      propellerId: "prop-gemfan-hurricane-2520-3",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  };
+  render(
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: "/compare",
+          state: {
+            builds: [
+              { ...build, id: "build-estimated", name: "Estimated build" },
+              unavailable,
+            ],
+          },
+        },
+      ]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByText("Estimated thrust data")).toBeInTheDocument();
+  expect(screen.getByText("Thrust data unavailable")).toBeInTheDocument();
+  expect(screen.getByRole("rowheader", {
+    name: "Propeller thrust data Changed",
+  })).toBeInTheDocument();
+});

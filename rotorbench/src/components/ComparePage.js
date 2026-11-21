@@ -34,6 +34,13 @@ const electricalFitLabels = {
   pending: "Electrical limits not checked",
 };
 
+const thrustDataLabels = {
+  estimated: "Estimated thrust data",
+  available: "Thrust data available",
+  unavailable: "Thrust data unavailable",
+  "not-selected": "Thrust data not selected",
+};
+
 export default function ComparePage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -153,6 +160,10 @@ export default function ComparePage() {
               <span>
                 <FileCheck2 size={13} aria-hidden="true" />
                 {build.sourceBackedCount}/{build.selectedCount} sourced
+              </span>
+              <span className={`is-performance-${build.thrustDataStatus}`}>
+                <ChartNoAxesCombined size={13} aria-hidden="true" />
+                {thrustDataLabels[build.thrustDataStatus]}
               </span>
               <span className={`is-plan-${build.hardwareReadinessStatus}`}>
                 <Settings2 size={13} aria-hidden="true" />

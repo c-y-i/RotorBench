@@ -149,10 +149,22 @@
   border-color: #397c73;
 }
 
+.compare-build-statuses span.is-performance-estimated,
+.compare-build-statuses span.is-performance-available {
+  color: #a8e8df;
+  border-color: #397c73;
+}
+
+.compare-build-statuses span.is-performance-unavailable {
+  color: #ffb083;
+  border-color: #8b5137;
+}
+
 .compare-build-statuses span.is-unverified,
 .compare-build-statuses span.is-plan-partial,
 .compare-build-statuses span.is-plan-review,
-.compare-build-statuses span.is-pending {
+.compare-build-statuses span.is-pending,
+.compare-build-statuses span.is-performance-not-selected {
   color: #f2d29d;
 }
 
