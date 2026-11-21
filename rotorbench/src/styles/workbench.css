@@ -4447,6 +4447,20 @@
     grid-template-columns: 15px minmax(0, 1fr);
   }
 
+  .viewer-placement-audit > summary {
+    grid-template-columns: 16px minmax(0, 1fr);
+    align-items: start;
+    row-gap: 6px;
+  }
+
+  .viewer-placement-audit > summary > em {
+    grid-column: 2;
+    justify-self: start;
+    max-width: 100%;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
   .viewer-check-actions {
     grid-column: 2;
     display: flex;
