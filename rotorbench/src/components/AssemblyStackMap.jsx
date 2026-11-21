@@ -7,15 +7,21 @@ import {
   getPropellerOriginsMm,
   getStackLevelsMm,
 } from "../assembly/assemblyTransforms";
+import { getCatalogModelEntry } from "../utils/modelAssets";
 
 const STACK_PARTS = [
-  { key: "propeller", label: "Propellers", componentType: "propeller" },
-  { key: "motor", label: "Motors", componentType: "motor" },
-  { key: "battery", label: "Battery", componentType: "battery" },
-  { key: "receiver", label: "Receiver", componentType: "receiver" },
-  { key: "flightController", label: "Flight controller", componentType: "flight_controller" },
-  { key: "esc", label: "ESC", componentType: "esc" },
-  { key: "frame", label: "Frame", componentType: "frame" },
+  { key: "propeller", label: "Propellers", componentType: "propeller", category: "propellers" },
+  { key: "motor", label: "Motors", componentType: "motor", category: "motors" },
+  { key: "battery", label: "Battery", componentType: "battery", category: "batteries" },
+  { key: "receiver", label: "Receiver", componentType: "receiver", category: "receivers" },
+  {
+    key: "flightController",
+    label: "Flight controller",
+    componentType: "flight_controller",
+    category: "flight_controllers",
+  },
+  { key: "esc", label: "ESC", componentType: "esc", category: "escs" },
+  { key: "frame", label: "Frame", componentType: "frame", category: "frames" },
 ];
 
 function confidenceLabel(part) {
@@ -62,7 +68,12 @@ export default function AssemblyStackMap({
     motor,
     propeller,
   };
-  const entries = STACK_PARTS.flatMap(({ key, label, componentType }) => {
+  const entries = STACK_PARTS.flatMap(({
+    key,
+    label,
+    componentType,
+    category,
+  }) => {
     const part = parts[key];
     if (!part?.id) return [];
     let height;
@@ -93,6 +104,7 @@ export default function AssemblyStackMap({
       height,
       top: y + height,
       confidence: confidenceLabel(part),
+      modelEntry: getCatalogModelEntry(part, category),
     }];
   }).sort((left, right) => right.top - left.top);
   const stackBaseEstimated = frame.estimatedFields?.includes("stackHeight");
@@ -119,6 +131,13 @@ export default function AssemblyStackMap({
                 <strong>{entry.label}</strong>
                 <small>
                   {entry.y.toFixed(1)}–{entry.top.toFixed(1)} mm
+                </small>
+                <small className={entry.modelEntry ? "is-model" : "is-fallback"}>
+                  {entry.modelEntry
+                    ? entry.modelEntry.contractStatus === "legacy-unverified"
+                      ? "Catalog GLB · legacy contract"
+                      : "Catalog GLB"
+                    : "Generated fallback"}
                 </small>
               </span>
               <span className="assembly-stack-map-actions">

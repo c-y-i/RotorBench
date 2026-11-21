@@ -45,6 +45,10 @@ import {
   summarizeBenchEvidenceAttachment,
 } from "../utils/benchEvidenceAttachment";
 import {
+  resolveModelForComponent,
+  resolvePropellerModelPair,
+} from "../utils/modelAssets";
+import {
   buildSheetFilename,
   createBuildSheet,
 } from "../utils/buildSheet";
@@ -452,44 +456,6 @@ export default function BuildPage() {
     geometryOverrides,
   ]);
 
-  // Helper: fetch list for category and match filename starting with component id
-  const fetchModelForComponent = async (category, componentId, signal) => {
-    if (!componentId) return null;
-    try {
-      const res = await fetch(`${API_BASE}/api/models/list/${category}`, { signal });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const prefixMatches = data.models.filter((model) =>
-        model.filename.toLowerCase().startsWith(componentId.toLowerCase())
-      );
-      const match = prefixMatches.find((model) => /\.glb$/i.test(model.filename)) || prefixMatches[0];
-      return match ? `${API_BASE}/api/models/convert/${category}/${match.filename}?format=glb` : null;
-    } catch (_) {
-      return null;
-    }
-  };
-
-  const fetchPropellerModelPair = async (componentId, signal) => {
-    if (!componentId) return { cw: null, ccw: null };
-    try {
-      const res = await fetch(`${API_BASE}/api/models/list/propellers`, { signal });
-      if (!res.ok) return { cw: null, ccw: null };
-      const data = await res.json();
-      const matching = data.models.filter((model) =>
-        model.filename.toLowerCase().startsWith(componentId.toLowerCase()) &&
-        /\.glb$/i.test(model.filename)
-      );
-      const toUrl = (model) =>
-        model ? `${API_BASE}/api/models/convert/propellers/${model.filename}?format=glb` : null;
-      return {
-        cw: toUrl(matching.find((model) => /_cw\./i.test(model.filename))),
-        ccw: toUrl(matching.find((model) => /_ccw\./i.test(model.filename))),
-      };
-    } catch {
-      return { cw: null, ccw: null };
-    }
-  };
-
   // Build model URLs when key selections change
   useEffect(() => {
     const nonFrameSelected = selectedMotor || selectedPropeller || selectedESC || selectedFC || selectedBattery || selectedReceiver;
@@ -518,8 +484,7 @@ export default function BuildPage() {
     }
 
     let cancelled = false;
-    const controller = new AbortController();
-    const load = async () => {
+    const load = () => {
       setLoadingModels(true);
       setModelError("");
       const [
@@ -530,15 +495,15 @@ export default function BuildPage() {
         fcUrl,
         receiverUrl,
         propModels,
-      ] = await Promise.all([
-        fetchModelForComponent("frames", selectedFrame, controller.signal),
-        fetchModelForComponent("motors", selectedMotor, controller.signal),
-        fetchModelForComponent("batteries", selectedBattery, controller.signal),
-        fetchModelForComponent("escs", selectedESC, controller.signal),
-        fetchModelForComponent("flight_controllers", selectedFC, controller.signal),
-        fetchModelForComponent("receivers", selectedReceiver, controller.signal),
-        fetchPropellerModelPair(selectedPropeller, controller.signal),
-      ]);
+      ] = [
+        resolveModelForComponent("frames", selectedFrame).modelUrl,
+        resolveModelForComponent("motors", selectedMotor).modelUrl,
+        resolveModelForComponent("batteries", selectedBattery).modelUrl,
+        resolveModelForComponent("escs", selectedESC).modelUrl,
+        resolveModelForComponent("flight_controllers", selectedFC).modelUrl,
+        resolveModelForComponent("receivers", selectedReceiver).modelUrl,
+        resolvePropellerModelPair(selectedPropeller),
+      ];
       if (cancelled) return;
       const urls = frameUrl ? [frameUrl] : [];
       const propUrl = propModels.ccw || propModels.cw;
@@ -643,7 +608,6 @@ export default function BuildPage() {
     load();
     return () => {
       cancelled = true;
-      controller.abort();
     };
   }, [selectedFrame, selectedMotor, selectedBattery, selectedPropeller, selectedESC, selectedFC, selectedReceiver]);
 
@@ -1788,13 +1752,19 @@ export default function BuildPage() {
                   <span className={part.sourceBacked ? "is-source" : "is-legacy"}>
                     {part.sourceBacked ? "Source-backed" : "Legacy catalog"}
                   </span>
+                  <span className={part.geometryFallback ? "is-fallback" : "is-model"}>
+                    {part.geometryFallback
+                      ? "Generated geometry"
+                      : part.modelContractStatus === "legacy-unverified"
+                        ? "Catalog GLB · legacy contract"
+                        : "Catalog GLB"}
+                  </span>
                   {part.estimatedFields.length > 0 && (
                     <span>{part.estimatedFields.length} estimated</span>
                   )}
                   {part.measuredFields.length > 0 && (
                     <span>{part.measuredFields.length} measured</span>
                   )}
-                  {part.geometryFallback && <span>Geometry fallback</span>}
                 </div>
                 <div className="build-evidence-links">
                   {part.sourceUrl && (

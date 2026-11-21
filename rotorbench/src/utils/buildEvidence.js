@@ -1,3 +1,8 @@
+import {
+  getCatalogModelEntry,
+  hasCatalogModel,
+} from "./modelAssets";
+
 const CATEGORY_LABELS = {
   frame: "Frame",
   motor: "Motors",
@@ -6,6 +11,16 @@ const CATEGORY_LABELS = {
   esc: "ESC",
   flightController: "Flight controller",
   receiver: "Receiver",
+};
+
+const CATEGORY_KEYS = {
+  frame: "frames",
+  motor: "motors",
+  propeller: "propellers",
+  battery: "batteries",
+  esc: "escs",
+  flightController: "flight_controllers",
+  receiver: "receivers",
 };
 
 export function getSelectedPartEvidence(assemblySpec = {}) {
@@ -22,6 +37,9 @@ export function getSelectedPartEvidence(assemblySpec = {}) {
       const remainingEstimatedFields = estimatedFields.filter(
         (field) => !measuredFields.includes(field),
       );
+      const category = CATEGORY_KEYS[key];
+      const modelAvailable = hasCatalogModel(part, category);
+      const modelEntry = getCatalogModelEntry(part, category);
       return {
         key,
         label,
@@ -32,9 +50,10 @@ export function getSelectedPartEvidence(assemblySpec = {}) {
         connectorSourceUrl: part.connectorSourceUrl || null,
         estimatedFields: remainingEstimatedFields,
         measuredFields,
-        modelStatus: part.modelStatus || null,
+        modelStatus: modelAvailable ? "available" : "not_available",
+        modelContractStatus: modelEntry?.contractStatus || null,
         sourceBacked: Boolean(part.sourceUrl),
-        geometryFallback: part.modelStatus === "not_available",
+        geometryFallback: !modelAvailable,
       };
     })
     .filter(Boolean);

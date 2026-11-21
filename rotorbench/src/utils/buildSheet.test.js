@@ -83,7 +83,7 @@ test("build sheets include source, estimate, fallback, and fit state", () => {
       selectedCount: 3,
       sourceBackedCount: 3,
       estimatedFieldCount: 2,
-      geometryFallbackCount: 1,
+      geometryFallbackCount: 3,
     },
   });
 });

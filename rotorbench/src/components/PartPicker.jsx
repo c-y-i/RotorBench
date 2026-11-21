@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { readJsonStorage, writeJsonStorage } from "../utils/storage";
+import { hasCatalogModel } from "../utils/modelAssets";
 
 const categoryDetails = {
   frames: { label: "Frame", Icon: Box },
@@ -124,7 +125,7 @@ export default function PartPicker({
         if (resultFilter === "verified") return ok && verified;
         if (resultFilter === "conflict") return !ok;
         if (resultFilter === "source") return Boolean(part.sourceUrl);
-        if (resultFilter === "model") return part.modelStatus !== "not_available";
+        if (resultFilter === "model") return hasCatalogModel(part, category);
         if (resultFilter === "recent") return recentIds.includes(part.id);
         return true;
       })
@@ -365,7 +366,9 @@ export default function PartPicker({
                     </span>
                     <span className="part-option-price">
                       <strong>${Number(part.price).toFixed(2)}</strong>
-                      <small>{part.modelStatus === "not_available" ? "Geometry fallback" : "3D model"}</small>
+                      <small>
+                        {hasCatalogModel(part, category) ? "Catalog GLB" : "Geometry fallback"}
+                      </small>
                     </span>
                   </button>
                 );

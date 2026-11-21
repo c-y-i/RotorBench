@@ -1,3 +1,4 @@
+import componentsData from "../data/components.json";
 import { summarizeBuildEvidence } from "./buildEvidence";
 
 test("build evidence separates source-backed, estimated, and fallback parts", () => {
@@ -31,8 +32,22 @@ test("build evidence separates source-backed, estimated, and fallback parts", ()
     estimatedPartCount: 2,
     estimatedFieldCount: 2,
     measuredFieldCount: 1,
-    geometryFallbackCount: 2,
+    geometryFallbackCount: 3,
     legacyUnsupportedCount: 1,
   });
   expect(summarizeBuildEvidence({ frame: null }).parts).toEqual([]);
+});
+
+test("manifest-bound legacy GLBs are not counted as generated fallbacks", () => {
+  const summary = summarizeBuildEvidence({
+    frame: componentsData.frames.find((part) => part.id === "frame-5inch-220mm"),
+  });
+
+  expect(summary.parts[0]).toMatchObject({
+    id: "frame-5inch-220mm",
+    modelStatus: "available",
+    modelContractStatus: "legacy-unverified",
+    geometryFallback: false,
+  });
+  expect(summary.geometryFallbackCount).toBe(0);
 });

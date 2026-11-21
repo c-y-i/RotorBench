@@ -1576,6 +1576,14 @@
   font-size: 8px;
 }
 
+.assembly-stack-map-copy small.is-model {
+  color: var(--brand-strong);
+}
+
+.assembly-stack-map-copy small.is-fallback {
+  color: var(--warn);
+}
+
 .assembly-stack-map-actions {
   display: flex;
   align-items: center;
@@ -1878,6 +1886,16 @@
 }
 
 .build-evidence-tags .is-legacy {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.build-evidence-tags .is-model {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+}
+
+.build-evidence-tags .is-fallback {
   color: var(--warn);
   background: var(--accent-soft);
 }

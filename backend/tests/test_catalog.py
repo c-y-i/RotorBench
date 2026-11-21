@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from pydantic import ValidationError
 
@@ -8,6 +9,16 @@ from utils.component_data import (
     get_all_components_db,
     hydrate_build,
     load_all_components,
+)
+
+COMPONENT_CATEGORIES = (
+    "frames",
+    "motors",
+    "propellers",
+    "batteries",
+    "escs",
+    "flight_controllers",
+    "receivers",
 )
 
 
@@ -21,6 +32,7 @@ class CatalogContractTests(unittest.TestCase):
         counts = {
             category: len(items)
             for category, items in self.catalog.items()
+            if category in COMPONENT_CATEGORIES
         }
         self.assertEqual(
             counts,
@@ -39,7 +51,8 @@ class CatalogContractTests(unittest.TestCase):
     def test_all_component_ids_are_unique(self):
         ids = [
             component["id"]
-            for items in self.catalog.values()
+            for category, items in self.catalog.items()
+            if category in COMPONENT_CATEGORIES
             for component in items
         ]
         self.assertEqual(len(ids), len(set(ids)))
@@ -56,6 +69,33 @@ class CatalogContractTests(unittest.TestCase):
         ]
         self.assertEqual(len(records), 65)
         self.assertTrue(all(record.id for record in records))
+
+    def test_model_manifest_binds_existing_glb_assets(self):
+        manifest = self.catalog["modelManifest"]
+        self.assertEqual(manifest["schema"], "rotorbench.model-manifest.v1")
+        assets = manifest["assets"]
+        bound_count = sum(len(entries) for entries in assets.values())
+        self.assertEqual(bound_count, 24)
+
+        assets_root = Path(__file__).resolve().parents[1] / "assets"
+        for category, entries in assets.items():
+            catalog_ids = {
+                component["id"]
+                for component in self.catalog[category]
+            }
+            for component_id, entry in entries.items():
+                self.assertIn(component_id, catalog_ids)
+                self.assertEqual(entry["contractStatus"], "legacy-unverified")
+                filenames = (
+                    [entry["cw"], entry["ccw"]]
+                    if category == "propellers"
+                    else [entry["glb"]]
+                )
+                for filename in filenames:
+                    self.assertTrue(
+                        (assets_root / category / filename).is_file(),
+                        f"Missing model asset: {category}/{filename}",
+                    )
 
     def test_rp2_keeps_published_and_estimated_fields_separate(self):
         receiver = next(

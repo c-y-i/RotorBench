@@ -260,6 +260,33 @@ test("AOS Cine25 and Gemfan 2520 add a source-backed compact platform", () => {
   });
 });
 
+test("the model manifest binds legacy catalog IDs without prefix guessing", () => {
+  const manifest = componentsData.modelManifest;
+  const bound = Object.values(manifest.assets).flatMap((entries) => (
+    Object.entries(entries)
+  ));
+
+  expect(manifest.schema).toBe("rotorbench.model-manifest.v1");
+  expect(bound).toHaveLength(24);
+  bound.forEach(([id, entry]) => {
+    expect(entry.contractStatus).toBe("legacy-unverified");
+    expect(componentsData.motors
+      .concat(
+        componentsData.propellers,
+        componentsData.escs,
+        componentsData.flight_controllers,
+        componentsData.frames,
+        componentsData.batteries,
+        componentsData.receivers,
+      )
+      .some((part) => part.id === id)).toBe(true);
+  });
+  expect(manifest.assets.propellers["prop-2030-tri"]).toMatchObject({
+    cw: "prop-2030-tri_CW.glb",
+    ccw: "prop-2030-tri_CCW.glb",
+  });
+});
+
 test("source-backed fit metadata is not mislabeled as estimated", () => {
   const emax = componentsData.motors.find(
     (motor) => motor.id === "motor-emax-eco-ii-2207-1900kv",

@@ -74,6 +74,7 @@ test("renders the full propulsion, electronics, and battery height order", () =>
       expect.stringContaining("Frame"),
     ]));
   expect(screen.getByText(/frame stack height is estimated/i)).toBeInTheDocument();
+  expect(screen.getAllByText("Generated fallback")).toHaveLength(7);
 });
 
 test("has no structural WCAG A or AA violations", async () => {

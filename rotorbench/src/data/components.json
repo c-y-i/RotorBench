@@ -1,4 +1,47 @@
 {
+  "modelManifest": {
+    "schema": "rotorbench.model-manifest.v1",
+    "assets": {
+      "motors": {
+        "motor-1104-7500kv": { "glb": "motor-1104-7500kv.glb", "contractStatus": "legacy-unverified" },
+        "motor-1504.5-4000kv": { "glb": "motor-1504.5-4000kv.glb", "contractStatus": "legacy-unverified" },
+        "motor-1804-2800kv": { "glb": "motor-1804-2800kv.glb", "contractStatus": "legacy-unverified" },
+        "motor-2207-1750kv": { "glb": "motor-2207-1750kv.glb", "contractStatus": "legacy-unverified" },
+        "motor-2306-1700kv": { "glb": "motor-2306-1700kv.glb", "contractStatus": "legacy-unverified" }
+      },
+      "propellers": {
+        "prop-2030-tri": { "cw": "prop-2030-tri_CW.glb", "ccw": "prop-2030-tri_CCW.glb", "contractStatus": "legacy-unverified" },
+        "prop-3030-tri": { "cw": "prop-3030-tri_CW.glb", "ccw": "prop-3030-tri_CCW.glb", "contractStatus": "legacy-unverified" },
+        "prop-3530-tri": { "cw": "prop-3530-tri_CW.glb", "ccw": "prop-3530-tri_CCW.glb", "contractStatus": "legacy-unverified" },
+        "prop-5040-tri": { "cw": "prop-5040-tri_CW.glb", "ccw": "prop-5040-tri_CCW.glb", "contractStatus": "legacy-unverified" }
+      },
+      "escs": {
+        "esc-mamba-f55a": { "glb": "esc-mamba-f55a.glb", "contractStatus": "legacy-unverified" },
+        "esc-holybro-tekko32-50a": { "glb": "esc-holybro-tekko32-50a.glb", "contractStatus": "legacy-unverified" }
+      },
+      "flight_controllers": {
+        "fc-iflight-borg-5s-rx": { "glb": "fc-iflight-borg-5s-rx.glb", "contractStatus": "legacy-unverified" },
+        "fc-speedybee-f405-v3": { "glb": "fc-speedybee-f405-v3.glb", "contractStatus": "legacy-unverified" },
+        "fc-holybro-kakute-f7": { "glb": "fc-holybro-kakute-f7.glb", "contractStatus": "legacy-unverified" },
+        "fc-mamba-f722": { "glb": "fc-mamba-f722.glb", "contractStatus": "legacy-unverified" }
+      },
+      "frames": {
+        "frame-5inch-220mm": { "glb": "frame-5inch-220mm.glb", "contractStatus": "legacy-unverified" },
+        "frame-5inch-225mm": { "glb": "frame-5inch-225mm.glb", "contractStatus": "legacy-unverified" },
+        "frame-5inch-230mm": { "glb": "frame-5inch-230mm.glb", "contractStatus": "legacy-unverified" }
+      },
+      "batteries": {
+        "battery-4s-1550mah-95c": { "glb": "battery-4s-1550mah-95c.glb", "contractStatus": "legacy-unverified" },
+        "battery-4s-2200mah-80c": { "glb": "battery-4s-2200mah-80c.glb", "contractStatus": "legacy-unverified" },
+        "battery-4s-3000mah-90c": { "glb": "battery-4s-3000mah-90c.glb", "contractStatus": "legacy-unverified" },
+        "battery-6s-1300mah-120c": { "glb": "battery-6s-1300mah-120c.glb", "contractStatus": "legacy-unverified" },
+        "battery-4s-5000mah-100c": { "glb": "battery-4s-5000mah-100c.glb", "contractStatus": "legacy-unverified" }
+      },
+      "receivers": {
+        "rx-elrs-24g": { "glb": "rx-elrs-24g.glb", "contractStatus": "legacy-unverified" }
+      }
+    }
+  },
   "motors": [
     {
       "id": "motor-1104-7500kv",

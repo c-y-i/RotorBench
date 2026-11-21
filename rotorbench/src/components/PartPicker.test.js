@@ -10,6 +10,7 @@ const parts = [
     maxPropSize: 5,
     price: 55,
     sourceUrl: "https://example.com/frame-a",
+    model: "frame-a.glb",
     modelStatus: "available",
   },
   {

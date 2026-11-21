@@ -4,8 +4,11 @@ import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
 import componentsData from "../data/components.json";
 import TwoDViewer from "./TwoDViewer";
-import API_BASE from "../config/api";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
+import {
+  resolveModelForComponent,
+  resolvePropellerModelPair,
+} from "../utils/modelAssets";
 import {
   BatteryCharging,
   Box,
@@ -75,44 +78,6 @@ export default function HomePage() {
     ? Object.values(currentBuild.componentIds).filter(Boolean).length
     : 0;
 
-  // Fetch model URLs for 3D rendering
-  const fetchModelForComponent = async (category, componentId, signal) => {
-    if (!componentId) return null;
-    try {
-      const res = await fetch(`${API_BASE}/api/models/list/${category}`, { signal });
-      if (!res.ok) return null;
-      const data = await res.json();
-      const prefixMatches = data.models.filter((model) =>
-        model.filename.toLowerCase().startsWith(componentId.toLowerCase())
-      );
-      const match = prefixMatches.find((model) => /\.glb$/i.test(model.filename)) || prefixMatches[0];
-      return match ? `${API_BASE}/api/models/convert/${category}/${match.filename}?format=glb` : null;
-    } catch (_) {
-      return null;
-    }
-  };
-
-  const fetchPropellerModelPair = async (componentId, signal) => {
-    if (!componentId) return { cw: null, ccw: null };
-    try {
-      const res = await fetch(`${API_BASE}/api/models/list/propellers`, { signal });
-      if (!res.ok) return { cw: null, ccw: null };
-      const data = await res.json();
-      const matching = data.models.filter((model) =>
-        model.filename.toLowerCase().startsWith(componentId.toLowerCase()) &&
-        /\.glb$/i.test(model.filename)
-      );
-      const toUrl = (model) =>
-        model ? `${API_BASE}/api/models/convert/propellers/${model.filename}?format=glb` : null;
-      return {
-        cw: toUrl(matching.find((model) => /_cw\./i.test(model.filename))),
-        ccw: toUrl(matching.find((model) => /_ccw\./i.test(model.filename))),
-      };
-    } catch {
-      return { cw: null, ccw: null };
-    }
-  };
-
   useEffect(() => {
     if (!hasBuild) {
       setModelUrls([]);
@@ -135,8 +100,7 @@ export default function HomePage() {
     }
 
     let cancelled = false;
-    const controller = new AbortController();
-    const load = async () => {
+    const load = () => {
       const [
         frameUrl,
         motorUrl,
@@ -145,19 +109,18 @@ export default function HomePage() {
         escUrl,
         fcUrl,
         receiverUrl,
-      ] = await Promise.all([
-        fetchModelForComponent("frames", currentBuild.componentIds?.frameId, controller.signal),
-        fetchModelForComponent("motors", currentBuild.componentIds?.motorId, controller.signal),
-        fetchPropellerModelPair(currentBuild.componentIds?.propellerId, controller.signal),
-        fetchModelForComponent("batteries", currentBuild.componentIds?.batteryId, controller.signal),
-        fetchModelForComponent("escs", currentBuild.componentIds?.escId, controller.signal),
-        fetchModelForComponent(
+      ] = [
+        resolveModelForComponent("frames", currentBuild.componentIds?.frameId).modelUrl,
+        resolveModelForComponent("motors", currentBuild.componentIds?.motorId).modelUrl,
+        resolvePropellerModelPair(currentBuild.componentIds?.propellerId),
+        resolveModelForComponent("batteries", currentBuild.componentIds?.batteryId).modelUrl,
+        resolveModelForComponent("escs", currentBuild.componentIds?.escId).modelUrl,
+        resolveModelForComponent(
           "flight_controllers",
           currentBuild.componentIds?.flightControllerId,
-          controller.signal,
-        ),
-        fetchModelForComponent("receivers", currentBuild.componentIds?.receiverId, controller.signal),
-      ]);
+        ).modelUrl,
+        resolveModelForComponent("receivers", currentBuild.componentIds?.receiverId).modelUrl,
+      ];
       const urls = frameUrl ? [frameUrl] : [];
       const propellerUrl = propellerModels.ccw || propellerModels.cw;
 
@@ -234,7 +197,6 @@ export default function HomePage() {
     load();
     return () => {
       cancelled = true;
-      controller.abort();
     };
   }, [currentBuild, hasBuild, frame, motor, propeller, battery, esc, fc, receiver]);
 
