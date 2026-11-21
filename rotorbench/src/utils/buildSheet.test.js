@@ -184,6 +184,8 @@ test("build sheets include sanitized local hardware-plan context", () => {
       receiverProtocol: "CRSF / ExpressLRS",
       receiverUart: "UART1",
       receiverBaud: 420000,
+      receiverPins: null,
+      wiringStatus: "unverified",
       radioTarget: "Aerial Kit ELRS USB TX Rev A3",
       hardwareVerified: false,
     },

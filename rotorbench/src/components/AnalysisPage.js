@@ -405,6 +405,16 @@ export default function AnalysisPage() {
                 <dt>Radio</dt>
                 <dd>{hasHardwareSelection ? hardwareReadiness.radioTargetName : "Not selected"}</dd>
               </div>
+              <div>
+                <dt>Receiver wiring</dt>
+                <dd>
+                  {hasHardwareSelection
+                    ? hardwareReadiness.wiringStatus === "documented"
+                      ? "Pins documented"
+                      : "Verify pins"
+                    : "Not selected"}
+                </dd>
+              </div>
               {benchEvidence.configured && (
                 <div className="analysis-hardware-evidence">
                   <dt>Imported evidence</dt>

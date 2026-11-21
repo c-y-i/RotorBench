@@ -531,6 +531,13 @@ export default function SavedConfigsPage() {
                                             {buildSummary.geometryFallbackCount > 0 && (
                                                 <span>{buildSummary.geometryFallbackCount} geometry fallbacks</span>
                                             )}
+                                            {buildSummary.hasHardwareParts && (
+                                                <span className={`is-wiring-${buildSummary.receiverWiringStatus}`}>
+                                                    {buildSummary.receiverWiringStatus === "documented"
+                                                        ? "Pins documented"
+                                                        : "Verify pins"}
+                                                </span>
+                                            )}
                                             {buildSummary.benchEvidenceConfigured && (
                                                 <span className={`saved-evidence-state is-${buildSummary.benchEvidenceStatus}`}>
                                                     {buildSummary.benchEvidenceLabel}

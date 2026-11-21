@@ -36,6 +36,8 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     hardwareVerified: false,
     receiverUart: "UART1",
     receiverBaud: 420000,
+    receiverPins: "Not mapped",
+    wiringStatus: "unverified",
   });
   expect(readiness.firmwareLabel).toBe("Betaflight");
   expect(readiness.protocolLabel).toBe("CRSF / ExpressLRS");
@@ -82,6 +84,34 @@ test("saved plans report review items and local completion independently", () =>
   expect(readiness.issueCount).toBeGreaterThan(0);
   expect(readiness.fcPlan.receiverBaud).toBe(420000);
   expect(readiness.hardwareVerified).toBe(false);
+});
+
+test("documented board profiles expose a documented wiring readiness state", () => {
+  const base = "rotorbench:hardware-plan:build-wiring";
+  const storage = memoryStorage({
+    [`${base}:fc`]: JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: fc.id,
+      selectedReceiverId: receiver.id,
+      firmwareFamily: "aerialkit",
+      profileId: "esp32dev",
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+    }),
+  });
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-wiring",
+    flightController: fc,
+    receiver,
+    storage,
+  });
+
+  expect(readiness).toMatchObject({
+    receiverPins: "GPIO17 TX / GPIO16 RX",
+    wiringStatus: "documented",
+    wiringScope: "planning continuity checklist; hardware not tested",
+  });
 });
 
 test("plans for another FC or receiver are ignored", () => {

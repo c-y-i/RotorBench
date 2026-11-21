@@ -43,6 +43,7 @@ test("comparison rows include all seven component categories", () => {
       "measured-geometry",
       "geometry-fallbacks",
       "hardware-plan",
+      "receiver-wiring",
       "bench-evidence",
       "frame-size",
       "motor-kv",
@@ -83,6 +84,19 @@ test("saved-build summaries apply build-local geometry to their parts", () => {
       measuredFields: ["dimensionsMm"],
       geometrySource: "user-measured",
     });
+});
+
+test("comparison summaries expose documented versus unverified receiver wiring", () => {
+  const left = summarizeBuild(build);
+  expect(left).toMatchObject({
+    receiverPins: expect.any(String),
+    receiverWiringStatus: expect.stringMatching(/documented|unverified/),
+  });
+  const rows = comparisonRows(left, summarizeBuild(build));
+  expect(rows.find((row) => row.id === "receiver-wiring")).toMatchObject({
+    changed: false,
+    left: expect.stringMatching(/documented|unverified/),
+  });
 });
 
 test("comparison rows mark only the values that differ", () => {

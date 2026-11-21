@@ -11,6 +11,7 @@ import {
   buildRadioWarnings,
   getRadioTarget,
 } from "../data/radioProfiles";
+import { buildReceiverWiringPlan } from "./receiverWiring";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -77,6 +78,7 @@ export function summarizeHardwareReadiness({
     },
   };
   const profile = getBoardProfile(fcPlan.profileId, flightController);
+  const wiring = buildReceiverWiringPlan(fcPlan, profile, receiver);
   const fcIssues = validateFlightControllerConfig(fcPlan, profile);
   const radioWarnings = buildRadioWarnings(radioPlan, {
     channelLimit: fcPlan.firmwareFamily === "aerialkit" ? 8 : 16,
@@ -129,6 +131,9 @@ export function summarizeHardwareReadiness({
     protocolLabel: protocol?.label || fcPlan.receiverProtocol,
     receiverUart: fcPlan.receiverUart,
     receiverBaud: fcPlan.receiverBaud,
+    receiverPins: wiring.pins,
+    wiringStatus: wiring.documented ? "documented" : "unverified",
+    wiringScope: wiring.scope,
     radioTargetName: radioTarget.name,
     hardwareVerified: false,
   };
@@ -147,6 +152,9 @@ export function sanitizeHardwareReadiness(readiness) {
     receiverProtocol: readiness.protocolLabel || null,
     receiverUart: readiness.receiverUart || null,
     receiverBaud: readiness.receiverBaud ?? null,
+    receiverPins: readiness.receiverPins || null,
+    wiringStatus: readiness.wiringStatus || "unverified",
+    wiringScope: readiness.wiringScope || "planning continuity checklist; hardware not tested",
     radioTarget: readiness.radioTargetName || null,
     hardwareVerified: false,
   };

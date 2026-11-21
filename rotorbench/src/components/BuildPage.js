@@ -1734,7 +1734,10 @@ export default function BuildPage() {
               {selectedFlightControllerPart && (
                 <small>
                   {hardwareReadiness.firmwareLabel} · {hardwareReadiness.protocolLabel} ·{" "}
-                  {hardwareReadiness.receiverUart} / {hardwareReadiness.receiverBaud} baud
+                  {hardwareReadiness.receiverUart} / {hardwareReadiness.receiverBaud} baud ·{" "}
+                  {hardwareReadiness.wiringStatus === "documented"
+                    ? "Pins documented"
+                    : "Verify pins"}
                 </small>
               )}
             </div>

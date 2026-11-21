@@ -549,6 +549,16 @@
   background: #e5f3ef;
 }
 
+.saved-build-state .is-wiring-documented {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.saved-build-state .is-wiring-unverified {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
 .saved-build-state .is-fit-unverified {
   color: var(--brand-strong);
   background: var(--brand-soft);

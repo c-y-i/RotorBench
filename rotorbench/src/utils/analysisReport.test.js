@@ -143,6 +143,8 @@ test("creates a versioned analysis report without mutating the build", () => {
       receiverProtocol: "CRSF / ExpressLRS",
       receiverUart: "UART1",
       receiverBaud: 420000,
+      receiverPins: null,
+      wiringStatus: "unverified",
       radioTarget: "Aerial Kit ELRS USB TX Rev A3",
       hardwareVerified: false,
     },

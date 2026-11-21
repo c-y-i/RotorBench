@@ -143,6 +143,8 @@ export function summarizeBuild(build) {
     hardwarePlanStatus: readHardwarePlanStatus(build?.id),
     hardwareReadinessStatus: hardwareReadiness.status,
     hardwareReadinessLabel: hardwareReadiness.label,
+    receiverWiringStatus: hardwareReadiness.wiringStatus,
+    receiverPins: hardwareReadiness.receiverPins,
     hardwareIssueCount: hardwareReadiness.configured
       ? hardwareReadiness.issueCount
       : null,
@@ -217,6 +219,8 @@ export function createComparisonReport(
       electricalFitStatus: build.electricalFitStatus,
       hardwarePlanStatus: build.hardwarePlanStatus,
       hardwareReadinessStatus: build.hardwareReadinessStatus,
+      receiverWiringStatus: build.receiverWiringStatus,
+      receiverPins: build.receiverPins,
       benchEvidenceStatus: build.benchEvidenceStatus,
       sourceBackedCount: build.sourceBackedCount,
       estimatedFieldCount: build.estimatedFieldCount,
@@ -406,6 +410,13 @@ export function comparisonRows(left, right) {
       left: left.hardwareReadinessLabel,
       right: right.hardwareReadinessLabel,
       format: (value) => value,
+    },
+    {
+      id: "receiver-wiring",
+      label: "Receiver wiring",
+      left: left.receiverWiringStatus,
+      right: right.receiverWiringStatus,
+      format: (value) => value === "documented" ? "Pins documented" : "Verify pins",
     },
     {
       id: "bench-evidence",
