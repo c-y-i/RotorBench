@@ -197,16 +197,34 @@ export default function RadioLinkSetup({
       if (key === "targetId") {
         const nextPowerLevels = getRadioPowerLevels(value);
         const nextDefaultPower = getDefaultPowerDbm(value);
+        const nextPowerSpec = getRadioPowerSpec(value);
+        const nextPacketRates = getPacketRatesForTarget(value);
+        const nextPacketRateMode = nextPacketRates.some(
+          (rate) => rate.value === current.packetRateMode,
+        )
+          ? current.packetRateMode
+          : nextPacketRates.at(-1)?.value || current.packetRateMode;
+        const nextSwitchModes = getAvailableSwitchModes(
+          nextPacketRateMode,
+          current.linkMode,
+        );
         return {
           ...current,
           targetId: value,
           hostTransport: getDefaultHostTransport(value),
           hostBay: getDefaultHostBay(value),
           regulatoryRegion: getDefaultRegulatoryRegion(value),
+          packetRateMode: nextPacketRateMode,
+          switchMode: nextSwitchModes.includes(current.switchMode)
+            ? current.switchMode
+            : nextSwitchModes[0],
           powerDbm: nextPowerLevels
-            && !nextPowerLevels.some((level) => level.value === current.powerDbm)
-            ? nextPowerLevels[0].value
-            : nextDefaultPower ?? current.powerDbm,
+            ? nextPowerLevels.some((level) => level.value === current.powerDbm)
+              ? current.powerDbm
+              : nextPowerLevels[0].value
+            : nextPowerSpec
+              ? nextDefaultPower
+              : current.powerDbm,
         };
       }
       if (key === "linkMode") {
@@ -559,7 +577,9 @@ export default function RadioLinkSetup({
             <div className="radio-target-summary">
               <span><strong>{target.frequency}</strong> link</span>
               <span>{powerSpec?.regulatoryMaxima?.length
-                ? `${powerSpec.defaultDbm} dBm default`
+                ? powerSpec.defaultDbm != null
+                  ? `${powerSpec.defaultDbm} dBm default`
+                  : "Default power unpublished"
                 : "ISM domain compiled into firmware"}</span>
               <span><Cable size={14} aria-hidden="true" />{target.serial.frame}</span>
               <span><Usb size={14} aria-hidden="true" />{serialBaud ? `${serialBaud} baud logical` : "Serial rate not established"}</span>
@@ -721,7 +741,10 @@ export default function RadioLinkSetup({
                   />
                   <small id="radio-power-target-help">
                     {powerSpec?.regulatoryMaxima?.length
-                      ? `Official default: ${powerSpec.defaultDbm} dBm / ${powerSpec.defaultMw} mW. Published maxima: ${powerSpec.regulatoryMaxima
+                      ? `${powerSpec.defaultDbm != null
+                        && Number.isFinite(Number(powerSpec.defaultDbm))
+                        ? `Official default: ${powerSpec.defaultDbm} dBm / ${powerSpec.defaultMw} mW.`
+                        : "Manufacturer default not published."} Published maxima: ${powerSpec.regulatoryMaxima
                         .map((limit) => `${limit.region} ${limit.dbm} dBm`)
                         .join(", ")}.${
                         selectedRegulatoryLimit

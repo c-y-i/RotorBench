@@ -161,6 +161,54 @@ test("Ranger Micro and Ranger keep their published module-bay profiles", () => {
   expect(isRadioHostBayCompatible(ranger.id, "nano-8")).toBe(true);
 });
 
+test("Bandit family preserves sub-GHz bands, packet rates, and module formats", () => {
+  const nano = getRadioTarget("radiomaster-bandit-nano-915-tx");
+  const micro = getRadioTarget("radiomaster-bandit-micro-915-tx");
+  const full = getRadioTarget("radiomaster-bandit-915-tx");
+
+  expect(nano).toMatchObject({
+    frequency: "915/868 MHz (Sub-G)",
+    frequencyBands: ["Sub-G 900 MHz"],
+    defaultHostTransport: "module-bay",
+    defaultHostBay: "nano-8",
+    supportedHostBays: ["nano-8"],
+    roles: ["tx", "rx"],
+  });
+  expect(micro).toMatchObject({
+    defaultHostBay: "jr-micro-5",
+    supportedHostBays: ["jr-micro-5"],
+    roles: ["tx", "rx"],
+  });
+  expect(full).toMatchObject({
+    defaultHostBay: "jr-standard-5",
+    supportedHostBays: ["jr-standard-5", "nano-8"],
+    roles: ["tx"],
+  });
+  for (const target of [nano, micro, full]) {
+    expect(getPacketRatesForTarget(target.id).map((rate) => rate.value))
+      .toEqual(["25", "50", "100-full", "150", "200"]);
+    expect(target.power.regulatoryMaxima).toEqual([
+      { region: "FCC", dbm: 30, mw: 1000 },
+    ]);
+    expect(target.sourceUrl).toContain("radiomasterrc.com/products/bandit");
+  }
+  expect(getRadioReceiverBandCompatibility(
+    nano.id,
+    {
+      id: "rx-radiomaster-xr4-gemini",
+      frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    },
+  ).status).toBe("compatible");
+  expect(getRadioHandsetBayCompatibility(
+    "radiomaster-pocket",
+    nano.defaultHostBay,
+  ).status).toBe("compatible");
+  expect(getRadioHandsetBayCompatibility(
+    "radiomaster-boxer",
+    nano.defaultHostBay,
+  ).status).toBe("conflict");
+});
+
 test("Ranger module-bay plans reject a physically incompatible handset", () => {
   const warnings = buildRadioWarnings({
     ...DEFAULT_RADIO_CONFIG,

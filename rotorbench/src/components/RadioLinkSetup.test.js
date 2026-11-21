@@ -148,6 +148,40 @@ test("full-size Ranger can use either included JR or Nano adapter", () => {
   expect(screen.getByText("Nano 8-pin bay · supported")).toBeInTheDocument();
 });
 
+test("Bandit Nano exposes its sub-GHz packet range and Nano bay", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-bandit-nano-915-tx" },
+  });
+
+  expect(screen.getByLabelText("Handset bay")).toHaveValue("nano-8");
+  expect(screen.getByLabelText("Packet rate")).toHaveValue("200");
+  const powerInput = screen.getByRole("spinbutton", {
+    name: /TX power \(dBm\)/i,
+  });
+  expect(powerInput).toHaveValue(null);
+  expect(powerInput).toHaveAccessibleDescription(
+    /Manufacturer default not published.*FCC 30 dBm/i,
+  );
+  expect(screen.getByText("Default power unpublished")).toBeInTheDocument();
+  expect(screen.queryByText(/null dBm/i)).not.toBeInTheDocument();
+  expect(screen.getByText(/915\/868 MHz \(Sub-G\)/i)).toBeInTheDocument();
+  expect(screen.getByRole("option", { name: /^25 Hz/ })).toBeInTheDocument();
+  expect(screen.getByRole("option", { name: /^200 Hz/ })).toBeInTheDocument();
+  expect(screen.getByText(/Nano 8-pin: CRSF, GND, 5-12 V/i))
+    .toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Handset"), {
+    target: { value: "radiomaster-pocket" },
+  });
+  expect(screen.getByLabelText("Handset bay")).toHaveAttribute(
+    "aria-invalid",
+    "false",
+  );
+  expect(screen.getByText(/RadioMaster Pocket · Nano 8-pin bay · supported/i))
+    .toBeInTheDocument();
+});
+
 test("handset profiles expose source-backed bay mismatches before power", () => {
   render(<RadioLinkSetup />);
   fireEvent.change(screen.getByLabelText("Device"), {
