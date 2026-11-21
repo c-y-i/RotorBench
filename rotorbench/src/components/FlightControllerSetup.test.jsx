@@ -132,6 +132,28 @@ test("changing to an ESP32 profile exposes its documented UART", () => {
   );
 });
 
+test("selecting the SpeedyBee F405 V5 uses its documented board mapping", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-speedybee-f405-v5",
+        name: "SpeedyBee F405 V5",
+        processor: "STM32F405",
+        imu: "ICM42688P",
+        firmware: ["Betaflight"],
+      }}
+    />,
+  );
+
+  expect(screen.getByLabelText("Board profile"))
+    .toHaveValue("speedybee-f405-v5");
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART2");
+  expect(screen.getByRole("checkbox", { name: "GPS navigation" }))
+    .toBeChecked();
+  expect(screen.getByText(/UART4 GPS/i)).toBeInTheDocument();
+  expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
+});
+
 test("receiver wiring expands into a documented continuity checklist", () => {
   render(
     <FlightControllerSetup

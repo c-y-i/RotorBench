@@ -202,6 +202,50 @@ export const FC_BOARD_PROFILES = [
       "This profile comes from the workspace tree, not the supported public Aerial Kit build.",
     ],
   },
+  {
+    id: "speedybee-f405-v5",
+    family: "betaflight",
+    availability: "public",
+    buildScope: "planning",
+    catalogFlightControllerIds: ["fc-speedybee-f405-v5"],
+    label: "SpeedyBee F405 V5",
+    board: "SPEEDYBEEF405V5",
+    processor: "STM32F405",
+    imu: "ICM42688P",
+    imuBus: "SPI",
+    receiverUart: "UART2",
+    receiverPins: "Front receiver pads",
+    receiverBaud: 420000,
+    sbusBaud: 100000,
+    sbusNeedsInverter: true,
+    gpsUart: "UART4",
+    gpsPins: "GPS pads / front SH1.0-6-pin",
+    outputs: { motors: 4, servos: 2 },
+    defaultAirframe: "quadx",
+    receiverUartLocked: false,
+    flightLog: {
+      available: true,
+      label: "16 MB onboard blackbox",
+      retention: "The onboard flash stores blackbox data.",
+    },
+    featureSupport: {
+      telemetry: true,
+      osd: true,
+      blackbox: true,
+      gps: true,
+      barometer: true,
+      rangefinder: false,
+    },
+    sourceRefs: [
+      "https://www.speedybee.com/speedybee-f405-v5-55a-stack/",
+    ],
+    notes: [
+      "Official mapping: UART2 receiver, UART3 DJI VTX, UART4 GPS, UART5 ESC telemetry, UART6 receiver.",
+      "UART1 is shared with the Bluetooth tuning chip.",
+      "M1-M4 and the 10-pin connector expose motor outputs; S5-S6 expose servo outputs.",
+      "Confirm the selected Betaflight port and pad mapping before power or receiver calibration.",
+    ],
+  },
 ];
 
 export const CUSTOM_BOARD_PROFILE = {
@@ -528,6 +572,13 @@ export function getAerialKitControlRoles(profile = CUSTOM_BOARD_PROFILE) {
     : AERIALKIT_PUBLIC_CONTROL_ROLES;
 }
 
+export function getCatalogBoardProfile(selectedFlightController = null) {
+  if (!selectedFlightController?.id) return null;
+  return FC_BOARD_PROFILES.find((profile) => (
+    profile.catalogFlightControllerIds?.includes(selectedFlightController.id)
+  )) || null;
+}
+
 export function getBoardProfile(profileId, selectedFlightController = null) {
   const documented = FC_BOARD_PROFILES.find((profile) => profile.id === profileId);
   if (documented) return documented;
@@ -554,7 +605,7 @@ export function createDefaultFlightControllerConfig(
     return null;
   };
   const inferredFamily = firmwareNames.map(familyForName).find(Boolean) || "aerialkit";
-  const catalogProfile = selectedFlightController
+  const catalogProfile = getCatalogBoardProfile(selectedFlightController) || (selectedFlightController
     ? {
         ...CUSTOM_BOARD_PROFILE,
         label: selectedFlightController.name || CUSTOM_BOARD_PROFILE.label,
@@ -562,7 +613,7 @@ export function createDefaultFlightControllerConfig(
         processor: selectedFlightController.processor || CUSTOM_BOARD_PROFILE.processor,
         imu: selectedFlightController.imu || CUSTOM_BOARD_PROFILE.imu,
       }
-    : CUSTOM_BOARD_PROFILE;
+    : CUSTOM_BOARD_PROFILE);
 
   const receiverProtocol = selectedReceiver?.protocol?.toLowerCase().includes("sbus")
     ? "sbus"

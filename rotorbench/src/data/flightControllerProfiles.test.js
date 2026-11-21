@@ -4,6 +4,7 @@ import {
   createDefaultFlightControllerConfig,
   getAirframeMotorLayout,
   getBoardProfile,
+  getCatalogBoardProfile,
   getChannelPreset,
   getMotorOutputByCorner,
   getPropellerDirectionForOutputMap,
@@ -277,6 +278,31 @@ test("selected commercial controller infers its listed firmware family", () => {
   expect(config.beeperChannel).toBe(9);
   expect(config.failsafeThrottle).toBe(1000);
   expect(getChannelPreset(config)?.id).toBe("betaflight-bench");
+});
+
+test("SpeedyBee F405 V5 selects its documented Betaflight board profile", () => {
+  const selected = {
+    id: "fc-speedybee-f405-v5",
+    name: "SpeedyBee F405 V5",
+    processor: "STM32F405",
+    imu: "ICM42688P",
+    firmware: ["Betaflight"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config.profileId).toBe("speedybee-f405-v5");
+  expect(getCatalogBoardProfile(selected)?.id).toBe("speedybee-f405-v5");
+  expect(profile).toMatchObject({
+    label: "SpeedyBee F405 V5",
+    board: "SPEEDYBEEF405V5",
+    receiverUart: "UART2",
+    receiverBaud: 420000,
+    gpsUart: "UART4",
+    outputs: { motors: 4, servos: 2 },
+    receiverUartLocked: false,
+    flightLog: { label: "16 MB onboard blackbox" },
+  });
 });
 
 test("Betaflight Stage 2 landing throttle is validated and summarized honestly", () => {
