@@ -55,6 +55,20 @@ test("voltage and current limits identify the exact conflicting components", () 
     .toMatchObject({ status: "conflict" });
 });
 
+test("estimated voltage ranges stay unverified even when the pack is inside them", () => {
+  expect(checkMotorVoltage(
+    {
+      name: "Estimated motor",
+      voltage: { min: 22.2, max: 25.2 },
+      estimatedFields: ["voltage"],
+    },
+    { name: "6S pack", voltage: 22.2 },
+  )).toMatchObject({
+    status: "unknown",
+    message: expect.stringMatching(/catalog-estimated voltage range/i),
+  });
+});
+
 test("missing measurements remain unverified", () => {
   expect(checkPropellerClearance({}, {})).toMatchObject({ status: "unknown" });
   expect(checkMotorVoltage({}, battery)).toMatchObject({ status: "unknown" });

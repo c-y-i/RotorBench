@@ -270,6 +270,30 @@
       "priceSourceUrl": "https://shop.iflight.com/collaborations-quads-cat371/drone-bundles-cat369/fpv-propellers-cat115/motors-cat88/xing2-2207-4s-6s-fpv-motor-unibell-pro1464",
       "dataStatus": "verified_specs_estimated_mounting",
       "estimatedFields": ["mounting_point"]
+    },
+    {
+      "id": "motor-iflight-xing-2806-5-1300kv",
+      "name": "iFlight XING 2806.5 1300KV",
+      "kv": 1300,
+      "weight": 53.3,
+      "maxCurrent": 48.33,
+      "voltage": {
+        "min": 22.2,
+        "max": 25.2
+      },
+      "size": "2806.5",
+      "price": 31.61,
+      "mounting_point": [0, 18.4, 0],
+      "mountingPatternMm": [19, 19],
+      "dimensionsMm": [35.06, 36.8, 35.06],
+      "bellDiameterMm": 35.06,
+      "propShaftMm": 5,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://shop.iflight.com/race-quads-cat28/2RAW-Series-cat380/cinelifter-quads-cat342/motors-cat88/xing-x2806-5-fpv-nextgen-motor-pro1001",
+      "priceSourceUrl": "https://shop.iflight.com/race-quads-cat28/2RAW-Series-cat380/cinelifter-quads-cat342/motors-cat88/xing-x2806-5-fpv-nextgen-motor-pro1001",
+      "dataStatus": "verified_specs_estimated_mounting_and_voltage_range",
+      "estimatedFields": ["mounting_point", "voltage"]
     }
   ],
   "propellers": [
@@ -911,6 +935,31 @@
       "priceSourceUrl": "https://shop.iflight.com/AOS-3.5-V5-FPV-Frame-Kit-Pro2126",
       "dataStatus": "verified_specs_estimated_motor_positions",
       "estimatedFields": ["motor positions"]
+    },
+    {
+      "id": "frame-aos-7-evo-v12",
+      "name": "AOS 7 EVO V1.2",
+      "size": 293,
+      "weight": 290,
+      "material": "Carbon Fiber",
+      "motorCount": 4,
+      "maxPropSize": 7.0,
+      "stackHeight": 30.5,
+      "price": 79.9,
+      "upper_left_motor_position": [-103.59, 4.75, -103.59],
+      "upper_right_motor_position": [103.59, 4.75, -103.59],
+      "lower_right_motor_position": [103.59, 4.75, 103.59],
+      "lower_left_motor_position": [-103.59, 4.75, 103.59],
+      "stackMountPatternMm": [30.5, 30.5],
+      "stackMountPatternsMm": [[30.5, 30.5]],
+      "motorMountPatternsMm": [[19, 19]],
+      "dimensionsMm": [284, 34.5, 228],
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://shop.iflight.com/collaborations-quads-cat371/fpv-propellers-cat115/Mini-Quads-cat358/fpv-gears-cat59/drone-frame-cat346/AOS-7-EVO-Frame-Kit-Pro1952",
+      "priceSourceUrl": "https://shop.iflight.com/collaborations-quads-cat371/fpv-propellers-cat115/Mini-Quads-cat358/fpv-gears-cat59/drone-frame-cat346/AOS-7-EVO-Frame-Kit-Pro1952",
+      "dataStatus": "verified_specs_estimated_stack_and_motor_positions",
+      "estimatedFields": ["stackHeight", "stackMountPatternsMm", "motor positions"]
     }
   ],
   "batteries": [

@@ -15,6 +15,11 @@ function hasVoltageRange(component) {
   );
 }
 
+function hasEstimatedVoltageRange(component) {
+  return Array.isArray(component?.estimatedFields)
+    && component.estimatedFields.includes("voltage");
+}
+
 export function checkPropellerClearance(propeller, frame) {
   const label = propeller?.name ? `${propeller.name} frame clearance` : "Propeller frame clearance";
   const propSize = finiteNumber(propeller?.size);
@@ -52,6 +57,13 @@ export function checkMotorVoltage(motor, battery) {
   const minimum = Number(motor.voltage.min);
   const maximum = Number(motor.voltage.max);
   const voltage = Number(battery.voltage);
+  if (hasEstimatedVoltageRange(motor)) {
+    return result(
+      "unknown",
+      `${motor.name} has a catalog-estimated voltage range (${minimum}-${maximum} V). Verify the ${battery.voltage} V pack against the manufacturer's input guidance.`,
+      label,
+    );
+  }
   if (voltage >= minimum && voltage <= maximum) {
     return result(
       "compatible",
@@ -78,6 +90,13 @@ export function checkEscVoltage(esc, battery) {
   const minimum = Number(esc.voltage.min);
   const maximum = Number(esc.voltage.max);
   const voltage = Number(battery.voltage);
+  if (hasEstimatedVoltageRange(esc)) {
+    return result(
+      "unknown",
+      `${esc.name} has a catalog-estimated voltage range (${minimum}-${maximum} V). Verify the ${battery.voltage} V pack against the manufacturer's input guidance.`,
+      label,
+    );
+  }
   if (voltage >= minimum && voltage <= maximum) {
     return result(
       "compatible",

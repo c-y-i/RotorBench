@@ -24,8 +24,8 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(
             counts,
             {
-                "frames": 7,
-                "motors": 14,
+                "frames": 8,
+                "motors": 15,
                 "propellers": 7,
                 "batteries": 9,
                 "escs": 7,
@@ -33,7 +33,7 @@ class CatalogContractTests(unittest.TestCase):
                 "receivers": 8,
             },
         )
-        self.assertEqual(sum(counts.values()), 60)
+        self.assertEqual(sum(counts.values()), 62)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -53,7 +53,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 60)
+        self.assertEqual(len(records), 62)
         self.assertTrue(all(record.id for record in records))
 
     def test_rp2_keeps_published_and_estimated_fields_separate(self):
@@ -184,6 +184,33 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(supplied_cable.power_connection, "supplied-cable")
         self.assertIsNone(supplied_cable.included_power_connector)
         self.assertIn("shop.iflight.com", supplied_cable.connector_source_url)
+
+    def test_seven_inch_platform_components_keep_supported_and_estimated_fields_separate(self):
+        frame = next(
+            item for item in self.database.frames
+            if item.id == "frame-aos-7-evo-v12"
+        )
+        motor = next(
+            item for item in self.database.motors
+            if item.id == "motor-iflight-xing-2806-5-1300kv"
+        )
+
+        self.assertEqual(frame.size, 293)
+        self.assertEqual(frame.weight, 290)
+        self.assertEqual(frame.max_prop_size, 7.0)
+        self.assertEqual(frame.dimensions_mm, [284, 34.5, 228])
+        self.assertEqual(frame.motor_mount_patterns_mm, [[19, 19]])
+        self.assertIn("stackHeight", frame.estimated_fields)
+        self.assertIn("motor positions", frame.estimated_fields)
+
+        self.assertEqual(motor.kv, 1300)
+        self.assertEqual(motor.weight, 53.3)
+        self.assertEqual(motor.max_current, 48.33)
+        self.assertEqual(motor.dimensions_mm, [35.06, 36.8, 35.06])
+        self.assertEqual(motor.mounting_pattern_mm, [19, 19])
+        self.assertEqual(motor.prop_shaft_mm, 5)
+        self.assertIn("voltage", motor.estimated_fields)
+        self.assertIn("mounting_point", motor.estimated_fields)
 
 
 if __name__ == "__main__":

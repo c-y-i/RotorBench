@@ -173,6 +173,46 @@ test("expanded ESCs and flight controller preserve published limits", () => {
   });
 });
 
+test("AOS 7 and XING 2806.5 add source-backed long-range mechanics", () => {
+  const frame = componentsData.frames.find(
+    (item) => item.id === "frame-aos-7-evo-v12",
+  );
+  const motor = componentsData.motors.find(
+    (item) => item.id === "motor-iflight-xing-2806-5-1300kv",
+  );
+
+  expect(frame).toMatchObject({
+    size: 293,
+    weight: 290,
+    maxPropSize: 7,
+    dimensionsMm: [284, 34.5, 228],
+    motorMountPatternsMm: [[19, 19]],
+    modelStatus: "not_available",
+    sourceUrl: expect.stringContaining("iflight.com"),
+  });
+  expect(frame.estimatedFields).toEqual(expect.arrayContaining([
+    "stackHeight",
+    "stackMountPatternsMm",
+    "motor positions",
+  ]));
+
+  expect(motor).toMatchObject({
+    kv: 1300,
+    weight: 53.3,
+    maxCurrent: 48.33,
+    dimensionsMm: [35.06, 36.8, 35.06],
+    mountingPatternMm: [19, 19],
+    propShaftMm: 5,
+    bellDiameterMm: 35.06,
+    modelStatus: "not_available",
+    sourceUrl: expect.stringContaining("iflight.com"),
+  });
+  expect(motor.estimatedFields).toEqual(expect.arrayContaining([
+    "mounting_point",
+    "voltage",
+  ]));
+});
+
 test("source-backed fit metadata is not mislabeled as estimated", () => {
   const emax = componentsData.motors.find(
     (motor) => motor.id === "motor-emax-eco-ii-2207-1900kv",
