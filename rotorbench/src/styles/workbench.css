@@ -1619,12 +1619,64 @@
   border-top: 1px solid var(--line);
 }
 
-.assembly-notes-body > p {
+.assembly-notes-intro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.assembly-notes-intro > p {
+  max-width: 72ch;
   margin: 0;
   color: var(--ink-soft);
   font-size: 12px;
   line-height: 1.45;
   text-wrap: pretty;
+}
+
+.assembly-notes-copy {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 4px;
+}
+
+.assembly-notes-copy button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.assembly-notes-copy button:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
+.assembly-notes-copy button:focus-visible {
+  border-color: var(--brand);
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
+.assembly-notes-copy > span {
+  min-height: 1.2em;
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-align: end;
 }
 
 .assembly-notes-body > ol {
@@ -5629,6 +5681,20 @@
 
   .assembly-notes-body > ol {
     grid-template-columns: 1fr;
+  }
+
+  .assembly-notes-intro {
+    display: grid;
+  }
+
+  .assembly-notes-copy {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+  }
+
+  .assembly-notes-copy > span {
+    text-align: start;
   }
 
   .viewer-check-actions {

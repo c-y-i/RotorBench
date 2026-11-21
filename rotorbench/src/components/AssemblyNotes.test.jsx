@@ -1,6 +1,9 @@
 import React from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import AssemblyNotes, { getAssemblyNotes } from "./AssemblyNotes";
+import AssemblyNotes, {
+  createAssemblyNotesText,
+  getAssemblyNotes,
+} from "./AssemblyNotes";
 import componentsData from "../data/components.json";
 import { getA11yViolations } from "../test/a11y";
 
@@ -100,6 +103,27 @@ test("shows a published board footprint when full thickness is not catalogued", 
 
   expect(notes[0].facts).toContain("43 × 44 mm footprint");
   expect(notes[0].sourceState.label).toBe("Footprint + estimate");
+});
+
+test("copies a source-labelled handoff without upgrading the planning boundary", async () => {
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: jest.fn().mockResolvedValue(undefined) },
+  });
+  render(<AssemblyNotes {...sourceParts} />);
+
+  fireEvent.click(screen.getByText("Source-backed assembly notes"));
+  fireEvent.click(screen.getByRole("button", { name: "Copy notes" }));
+
+  await screen.findByText("Copied");
+  const text = navigator.clipboard.writeText.mock.calls[0][0];
+  expect(text).toMatch(/^RotorBench assembly notes/);
+  expect(text).toContain(
+    "This is not a wiring, physical-fit, or hardware verification.",
+  );
+  expect(text).toContain("Motors — Source + estimate | Generated fallback");
+  expect(text).toContain("Facts: Mount 9 × 9 mm | 1.5 mm shaft | 3800 KV");
+  expect(text).toContain(`Source: ${sourceParts.motor.sourceUrl}`);
 });
 
 test("has no structural WCAG A or AA violations", async () => {

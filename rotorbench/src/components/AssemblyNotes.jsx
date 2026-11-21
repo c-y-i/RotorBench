@@ -1,5 +1,5 @@
-import React from "react";
-import { ExternalLink, FileText } from "lucide-react";
+import React, { useState } from "react";
+import { Clipboard, ExternalLink, FileText } from "lucide-react";
 import { getCatalogModelEntry } from "../utils/modelAssets";
 
 const NOTE_PARTS = [
@@ -199,6 +199,27 @@ function modelLabelFor(part, category) {
     : "Catalog GLB";
 }
 
+export function createAssemblyNotesText(notes) {
+  const lines = [
+    "RotorBench assembly notes",
+    "Viewer anchors and catalog facts only. This is not a wiring, physical-fit, or hardware verification.",
+  ];
+  for (const note of notes) {
+    lines.push(
+      "",
+      `${note.label} — ${note.sourceState.label} | ${note.modelLabel}`,
+      `Anchor: ${note.anchor}`,
+    );
+    if (note.facts.length > 0) {
+      lines.push(`Facts: ${note.facts.join(" | ")}`);
+    }
+    if (note.sourceUrl) {
+      lines.push(`Source: ${note.sourceUrl}`);
+    }
+  }
+  return lines.join("\n");
+}
+
 export function getAssemblyNotes({
   frame = null,
   motor = null,
@@ -235,12 +256,25 @@ export function getAssemblyNotes({
 
 export default function AssemblyNotes(props) {
   const notes = getAssemblyNotes(props);
+  const [copyState, setCopyState] = useState("");
   if (notes.length === 0) return null;
 
   const fallbackCount = notes.filter(
     (note) => note.modelLabel === "Generated fallback",
   ).length;
   const catalogCount = notes.length - fallbackCount;
+
+  const copyNotes = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard unavailable");
+      }
+      await navigator.clipboard.writeText(createAssemblyNotesText(notes));
+      setCopyState("Copied");
+    } catch {
+      setCopyState("Clipboard unavailable. Copy from the notes.");
+    }
+  };
 
   return (
     <details className="assembly-notes">
@@ -261,11 +295,20 @@ export default function AssemblyNotes(props) {
         </em>
       </summary>
       <div className="assembly-notes-body">
-        <p>
-          These notes expose the anchors used by the 3D assembly and the source
-          state of each fact. Estimated fields and generated fallbacks remain
-          labelled; this is not a wiring, physical-fit, or hardware check.
-        </p>
+        <div className="assembly-notes-intro">
+          <p>
+            These notes expose the anchors used by the 3D assembly and the source
+            state of each fact. Estimated fields and generated fallbacks remain
+            labelled; this is not a wiring, physical-fit, or hardware check.
+          </p>
+          <div className="assembly-notes-copy">
+            <button type="button" onClick={copyNotes}>
+              <Clipboard size={14} aria-hidden="true" />
+              Copy notes
+            </button>
+            <span role="status">{copyState}</span>
+          </div>
+        </div>
         <ol aria-label="Source-backed assembly notes">
           {notes.map((note) => (
             <li
