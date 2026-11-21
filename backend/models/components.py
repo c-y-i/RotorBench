@@ -13,7 +13,47 @@ class VoltageRange(BaseModel):
     max: float = Field(..., description="Maximum voltage")
 
 
-class Motor(BaseModel):
+class ComponentCatalogMetadata(BaseModel):
+    mounting_point: Optional[List[float]] = Field(
+        None, description="Offset from the model origin to its mounting contact point"
+    )
+    mounting_pattern_mm: Optional[List[float]] = Field(
+        None, alias="mountingPatternMm", description="Mounting-hole spacing in millimeters"
+    )
+    stack_mount_pattern_mm: Optional[List[float]] = Field(
+        None, alias="stackMountPatternMm"
+    )
+    stack_mount_patterns_mm: Optional[List[List[float]]] = Field(
+        None, alias="stackMountPatternsMm"
+    )
+    motor_mount_patterns_mm: Optional[List[List[float]]] = Field(
+        None, alias="motorMountPatternsMm"
+    )
+    dimensions_mm: Optional[List[float]] = Field(
+        None, alias="dimensionsMm", description="Physical dimensions in millimeters"
+    )
+    prop_shaft_mm: Optional[float] = Field(None, alias="propShaftMm")
+    bell_diameter_mm: Optional[float] = Field(None, alias="bellDiameterMm")
+    hub_diameter_mm: Optional[float] = Field(None, alias="hubDiameterMm")
+    hub_thickness_mm: Optional[float] = Field(None, alias="hubThicknessMm")
+    shaft_mm: Optional[float] = Field(None, alias="shaftMm")
+    discharge_connector: Optional[str] = Field(None, alias="dischargeConnector")
+    included_power_connector: Optional[str] = Field(None, alias="includedPowerConnector")
+    model: Optional[str] = Field(None, description="Canonical 3D model filename")
+    model_cw: Optional[str] = Field(None, alias="modelCW")
+    model_ccw: Optional[str] = Field(None, alias="modelCCW")
+    model_status: Optional[str] = Field(None, alias="modelStatus")
+    source_url: Optional[str] = Field(None, alias="sourceUrl")
+    price_source_url: Optional[str] = Field(None, alias="priceSourceUrl")
+    connector_source_url: Optional[str] = Field(None, alias="connectorSourceUrl")
+    data_status: Optional[str] = Field(None, alias="dataStatus")
+    estimated_fields: Optional[List[str]] = Field(None, alias="estimatedFields")
+
+    class Config:
+        populate_by_name = True
+
+
+class Motor(ComponentCatalogMetadata):
     id: str
     name: str
     kv: int = Field(..., description="RPM per volt")
@@ -32,7 +72,7 @@ class ThrustDataPoint(BaseModel):
     thrust: float = Field(..., description="Thrust in grams at full throttle")
 
 
-class Propeller(BaseModel):
+class Propeller(ComponentCatalogMetadata):
     id: str
     name: str
     size: float = Field(..., description="Propeller size in inches")
@@ -47,7 +87,7 @@ class Propeller(BaseModel):
         populate_by_name = True
 
 
-class ESC(BaseModel):
+class ESC(ComponentCatalogMetadata):
     id: str
     name: str
     manufacturer: str = Field(..., description="ESC manufacturer")
@@ -62,7 +102,7 @@ class ESC(BaseModel):
         populate_by_name = True
 
 
-class FlightController(BaseModel):
+class FlightController(ComponentCatalogMetadata):
     id: str
     name: str
     manufacturer: str = Field(..., description="FC manufacturer")
@@ -78,7 +118,7 @@ class FlightController(BaseModel):
         populate_by_name = True
 
 
-class Frame(BaseModel):
+class Frame(ComponentCatalogMetadata):
     id: str
     name: str
     size: int = Field(..., description="Wheelbase in mm")
@@ -88,6 +128,10 @@ class Frame(BaseModel):
     max_prop_size: float = Field(..., alias="maxPropSize", description="Maximum propeller size in inches")
     stack_height: float = Field(..., alias="stackHeight", description="Stack mounting height in mm")
     price: float
+    upper_left_motor_position: Optional[List[float]] = None
+    upper_right_motor_position: Optional[List[float]] = None
+    lower_right_motor_position: Optional[List[float]] = None
+    lower_left_motor_position: Optional[List[float]] = None
 
     class Config:
         populate_by_name = True
@@ -98,7 +142,7 @@ class DischargePoint(BaseModel):
     voltage: float = Field(..., description="Voltage at this percentage")
 
 
-class Battery(BaseModel):
+class Battery(ComponentCatalogMetadata):
     id: str
     name: str
     capacity: int = Field(..., description="Capacity in mAh")
@@ -115,7 +159,7 @@ class Battery(BaseModel):
         populate_by_name = True
 
 
-class Receiver(BaseModel):
+class Receiver(ComponentCatalogMetadata):
     id: str
     name: str
     protocol: str = Field(..., description="Communication protocol")

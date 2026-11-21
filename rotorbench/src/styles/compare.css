@@ -1,0 +1,342 @@
+.compare-page {
+  display: grid;
+  gap: 18px;
+}
+
+.compare-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.compare-page-header h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 3.25rem;
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.compare-page-header p {
+  max-width: 64ch;
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.compare-print,
+.compare-export,
+.compare-filter,
+.compare-build-headings button,
+.compare-empty button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 13px;
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.compare-print,
+.compare-export,
+.compare-filter,
+.compare-build-headings button {
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+}
+
+.compare-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.compare-change-summary {
+  min-height: 32px;
+  padding: 0 9px;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 30px;
+  text-transform: uppercase;
+}
+
+.compare-filter[aria-pressed="true"] {
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
+.compare-filter:disabled {
+  color: var(--ink-faint);
+  background: var(--surface-soft);
+  cursor: not-allowed;
+}
+
+.compare-build-headings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.compare-build-headings section {
+  display: grid;
+  gap: 7px;
+  padding: 17px;
+  color: var(--sidebar-ink);
+  background: var(--ink);
+  border-radius: 8px;
+}
+
+.compare-build-headings span {
+  color: var(--signal);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.compare-build-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px !important;
+  margin-top: 3px !important;
+}
+
+.compare-build-statuses span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 7px;
+  color: #c7d1cc;
+  background: #202b27;
+  border: 1px solid #4b5752;
+  border-radius: 4px;
+  font-size: 8px;
+  line-height: 1.3;
+}
+
+.compare-build-statuses span.is-verified,
+.compare-build-statuses span.is-plan-ready {
+  color: var(--signal);
+  border-color: #63733e;
+}
+
+.compare-build-statuses span.is-conflict {
+  color: #ffb083;
+  border-color: #8b5137;
+}
+
+.compare-build-statuses span.is-unverified,
+.compare-build-statuses span.is-plan-partial,
+.compare-build-statuses span.is-plan-review,
+.compare-build-statuses span.is-pending {
+  color: #f2d29d;
+}
+
+.compare-build-statuses span.is-plan-invalid,
+.compare-build-statuses span.is-plan-blocked {
+  color: #ffadad;
+}
+
+.compare-build-headings h2 {
+  margin: 0;
+  color: var(--sidebar-ink);
+  font-size: 23px;
+  letter-spacing: -0.025em;
+}
+
+.compare-build-headings p {
+  margin: 0;
+  color: #b6c2bc;
+  font-size: 11px;
+}
+
+.compare-build-headings section > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.compare-build-headings button {
+  color: var(--sidebar-ink);
+  background: #202b27;
+  border-color: #4b5752;
+}
+
+.compare-build-headings button:hover {
+  color: var(--signal);
+}
+
+.compare-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.compare-scroll-hint {
+  display: none;
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.compare-table-wrap:focus-visible {
+  outline: 3px solid rgba(11, 118, 109, 0.5);
+  outline-offset: 2px;
+}
+
+.compare-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 13px 15px;
+  text-align: start;
+  border-bottom: 1px solid var(--line);
+}
+
+.compare-table thead th {
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.compare-table tbody th {
+  width: 26%;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.compare-table tbody th > span {
+  display: block;
+}
+
+.compare-table tbody th > small {
+  display: block;
+  margin-top: 2px;
+  color: var(--warn);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.compare-table tbody td {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.compare-table tbody tr.is-changed {
+  background: #fffaf0;
+}
+
+.compare-table tbody tr:last-child th,
+.compare-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.compare-table td.is-better {
+  background: var(--brand-soft);
+  font-weight: 700;
+}
+
+.compare-footnote {
+  max-width: 78ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.compare-empty {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  min-height: 240px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+@media (max-width: 900px) {
+  .compare-page {
+    padding: 16px 14px 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .compare-page-header {
+    display: grid;
+  }
+
+  .compare-page-header h1 {
+    font-size: 36px;
+  }
+
+  .compare-print,
+  .compare-export {
+    width: max-content;
+  }
+
+  .compare-header-actions {
+    justify-content: flex-start;
+  }
+
+  .compare-build-headings {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-scroll-hint {
+    display: block;
+  }
+}
+
+@media print {
+  .app-sidebar,
+  .mobile-header,
+  .mobile-nav,
+  .compare-print,
+  .compare-export,
+  .compare-filter,
+  .compare-build-headings button {
+    display: none !important;
+  }
+
+  .route-stage {
+    margin: 0;
+    padding: 0;
+  }
+
+  .compare-page {
+    color: #000;
+  }
+}

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
 import "../styles/analysis.css";
-import logo from "../assets/logo.png";
+import "../styles/modernization.css";
 import componentsData from "../data/components.json";
 import {
   LineChart,
@@ -16,16 +16,51 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import API_BASE from "../config/api";
+import { buildViewerPlacementAudit } from "../assembly/assemblyTransforms";
+import {
+  analysisReportFilename,
+  createAnalysisReport,
+} from "../utils/analysisReport";
+import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
+import {
+  readBenchEvidenceAttachment,
+  readCurrentBenchEvidenceScope,
+  summarizeBenchEvidenceAttachment,
+} from "../utils/benchEvidenceAttachment";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BatteryCharging,
+  Box,
+  ChartNoAxesCombined,
+  CircleAlert,
+  Cog,
+  Cpu,
+  DollarSign,
+  Download,
+  Fan,
+  Flag,
+  Gauge,
+  Package,
+  Printer,
+  Radio,
+  Rocket,
+  Route,
+  Scale,
+  Settings2,
+  Timer,
+  Wind,
+  Zap,
+} from "lucide-react";
 
 export default function AnalysisPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { updateAnalysis } = useBuild();
-  const build = location.state?.build;
+  const { currentBuild, updateAnalysis } = useBuild();
+  const build = location.state?.build || currentBuild;
   const hasAnalyzed = useRef(false);
 
   const hydrateBuild = useCallback((buildConfig) => {
@@ -43,18 +78,6 @@ export default function AnalysisPage() {
     const flightController = getComponentById("flight_controllers", buildConfig.componentIds.flightControllerId);
     const battery = getComponentById("batteries", buildConfig.componentIds.batteryId);
     const receiver = getComponentById("receivers", buildConfig.componentIds.receiverId);
-
-    // Log for debugging
-    console.log("Build config IDs:", buildConfig.componentIds);
-    console.log("Hydrated components:", {
-      frame: frame ? "✓ " + frame.name : "✗ null",
-      motors: motors ? "✓ " + motors.name : "✗ null",
-      propellers: propellers ? "✓ " + propellers.name : "✗ null",
-      esc: esc ? "✓ " + esc.name : "✗ null",
-      flightController: flightController ? "✓ " + flightController.name : "✗ null",
-      battery: battery ? "✓ " + battery.name : "✗ null",
-      receiver: receiver ? "✓ " + receiver.name : "✗ null",
-    });
 
     return {
       id: buildConfig.id,
@@ -82,8 +105,6 @@ export default function AnalysisPage() {
       // Hydrate build with full component objects
       const hydratedBuild = hydrateBuild(build);
 
-      console.log("Sending to API:", JSON.stringify(hydratedBuild, null, 2));
-
       const response = await fetch(`${API_BASE}/api/builds/analyze`, {
         method: "POST",
         headers: {
@@ -94,7 +115,6 @@ export default function AnalysisPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("API Error:", errorData);
         // Handle validation errors
         let errorMsg = "Analysis failed";
         if (errorData.detail) {
@@ -107,19 +127,16 @@ export default function AnalysisPage() {
             errorMsg = JSON.stringify(errorData.detail);
           }
         }
-        console.error("Error message:", errorMsg);
         throw new Error(errorMsg);
       }
 
       const analysisData = await response.json();
-      console.log("Analysis result:", analysisData);
       setAnalysis(analysisData);
       // Save to context so HomePage can display it
       updateAnalysis(analysisData);
       hasAnalyzed.current = true;
     } catch (err) {
       setError(err.message);
-      console.error("Analysis error:", err);
       hasAnalyzed.current = true;
     } finally {
       setLoading(false);
@@ -152,18 +169,87 @@ export default function AnalysisPage() {
     return rating.charAt(0).toUpperCase() + rating.slice(1);
   };
 
+  const componentRows = useMemo(() => {
+    const ids = build?.componentIds || {};
+    const findPart = (category, id) => componentsData[category]?.find((part) => part.id === id);
+    const frame = findPart("frames", ids.frameId);
+    const motor = findPart("motors", ids.motorId);
+    const propeller = findPart("propellers", ids.propellerId);
+    const battery = findPart("batteries", ids.batteryId);
+    const esc = findPart("escs", ids.escId);
+    const flightController = findPart("flight_controllers", ids.flightControllerId);
+    const receiver = findPart("receivers", ids.receiverId);
+
+    return [
+      { label: "Frame", part: frame, Icon: Box, meta: frame ? `${frame.size} mm · ${frame.weight} g` : "Not selected" },
+      { label: "Motors", part: motor, Icon: Cog, meta: motor ? `${motor.kv} KV · ${motor.size} · ${motor.weight} g` : "Not selected" },
+      { label: "Propellers", part: propeller, Icon: Fan, meta: propeller ? `${propeller.size}" · ${propeller.bladeCount} blades · ${propeller.weight} g` : "Not selected" },
+      { label: "Battery", part: battery, Icon: BatteryCharging, meta: battery ? `${battery.cells}S · ${battery.capacity} mAh · ${battery.weight} g` : "Not selected" },
+      { label: "ESC", part: esc, Icon: Zap, meta: esc ? `${esc.currentRating} A continuous · ${esc.weight} g` : "Not selected" },
+      { label: "Flight controller", part: flightController, Icon: Cpu, meta: flightController ? `${flightController.processor} · ${flightController.imu}` : "Not selected" },
+      { label: "Receiver", part: receiver, Icon: Radio, meta: receiver ? `${receiver.protocol} · ${receiver.channels} channels` : "Not selected" },
+    ];
+  }, [build]);
+
+  const noticeCount = (analysis?.errors?.length || 0) + (analysis?.warnings?.length || 0);
+  const selectedFlightControllerPart = componentRows.find(
+    (row) => row.label === "Flight controller",
+  )?.part;
+  const selectedReceiverPart = componentRows.find(
+    (row) => row.label === "Receiver",
+  )?.part;
+  const hasHardwareSelection = Boolean(
+    selectedFlightControllerPart || selectedReceiverPart,
+  );
+  const hardwareReadiness = useMemo(() => summarizeHardwareReadiness({
+    buildId: build?.id,
+    flightController: selectedFlightControllerPart,
+    receiver: selectedReceiverPart,
+  }), [build?.id, selectedFlightControllerPart, selectedReceiverPart]);
+  const benchEvidence = useMemo(() => summarizeBenchEvidenceAttachment(
+    readBenchEvidenceAttachment(build?.id),
+    readCurrentBenchEvidenceScope(build),
+  ), [build]);
+  const viewerPlacement = useMemo(() => {
+    const parts = {
+      frame: componentRows[0]?.part,
+      motor: componentRows[1]?.part,
+      propeller: componentRows[2]?.part,
+      battery: componentRows[3]?.part,
+      esc: componentRows[4]?.part,
+      flightController: componentRows[5]?.part,
+      receiver: componentRows[6]?.part,
+    };
+    return buildViewerPlacementAudit(parts.frame, parts);
+  }, [componentRows]);
+
+  const downloadReport = () => {
+    const report = createAnalysisReport(
+      build,
+      analysis,
+      new Date().toISOString(),
+      {
+        hardwarePlan: hardwareReadiness,
+        importedEvidence: benchEvidence,
+        viewerPlacement,
+      },
+    );
+    const blob = new Blob([JSON.stringify(report, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = analysisReportFilename(build.id);
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (!build) {
     return (
-      <div className="app-container">
-        <div className="top-bar">
-          <button className="icon-btn" onClick={() => navigate("/build")}>
-            ←
-          </button>
-          <div className="logo-area">
-            <img src={logo} alt="logo" className="logo-icon" />
-            <span className="logo-text">RotorBench</span>
-          </div>
-          <div style={{ width: "40px" }} />
+      <div className="app-container analysis-page">
+        <div className="page-header">
+          <h1 className="page-title">Analysis</h1>
         </div>
         <div className="error-message">
           <p>No build selected. Please go back and select a build.</p>
@@ -176,26 +262,38 @@ export default function AnalysisPage() {
   }
 
   return (
-    <div className={`app-container ${menuOpen ? "menu-open" : ""}`}>
-      {/* Top Bar */}
-      <div className="top-bar">
-        <button className="icon-btn menu-btn" onClick={() => setMenuOpen(true)}>
-          ☰
-        </button>
-
-        <div className="logo-area">
-          <img src={logo} alt="logo" className="logo-icon" />
-          <span className="logo-text">RotorBench</span>
-        </div>
-
-        <button className="icon-btn home-btn" onClick={() => navigate("/")}>
-          🏠
-        </button>
-      </div>
-
+    <div className="app-container analysis-page">
       {/* Page Title */}
       <div className="page-header">
-        <h2 className="page-title">Analysis</h2>
+        <div>
+          <h1 className="page-title">Analysis</h1>
+          <p className="page-subtitle">{build.name || "Custom build"} · performance and flight estimate</p>
+        </div>
+        {analysis && (
+          <div className="analysis-header-actions">
+            <span className={`report-status ${noticeCount ? "has-notes" : "is-clear"}`}>
+              {noticeCount
+                ? `${noticeCount} analysis ${noticeCount === 1 ? "notice" : "notices"}`
+                : "Analysis clear"}
+            </span>
+            <button
+              type="button"
+              className="analysis-print analysis-download"
+              onClick={downloadReport}
+            >
+              <Download size={16} aria-hidden="true" />
+              Download report
+            </button>
+            <button
+              type="button"
+              className="analysis-print"
+              onClick={() => window.print()}
+            >
+              <Printer size={16} aria-hidden="true" />
+              Print report
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Loading State */}
@@ -209,7 +307,7 @@ export default function AnalysisPage() {
       {/* Error State */}
       {error && (
         <div className="error-message">
-          <p>⚠️ {error}</p>
+          <p><CircleAlert size={17} aria-hidden="true" />{error}</p>
           <button className="action-btn analysis" onClick={analyzeBuild}>
             Retry
           </button>
@@ -218,66 +316,108 @@ export default function AnalysisPage() {
 
       {/* Analysis Results */}
       {analysis && !loading && (
-        <div className="analysis-content">
+        <div className="analysis-content analysis-report">
+          <section className="analysis-summary" aria-label="Analysis summary">
+            <div className="analysis-summary-verdict">
+              <span>Build verdict</span>
+              <strong>{getRatingLabel(analysis.performance.rating.thrustToWeight)}</strong>
+              <small>Power-to-weight assessment for this configuration</small>
+            </div>
+            <div className="analysis-summary-stat">
+              <span>Flight time</span>
+              <strong>{analysis.flightSimulation.estimatedFlightTime}<small>min</small></strong>
+            </div>
+            <div className="analysis-summary-stat">
+              <span>Max thrust</span>
+              <strong>{analysis.performance.maxThrust}<small>g</small></strong>
+            </div>
+            <div className="analysis-summary-stat">
+              <span>Build cost</span>
+              <strong><small>$</small>{analysis.totalCost}</strong>
+            </div>
+          </section>
+
+          <section
+            className={`analysis-hardware-context is-${hardwareReadiness.status}`}
+            aria-labelledby="analysis-hardware-title"
+          >
+            <span className="analysis-hardware-icon">
+              <Settings2 size={20} aria-hidden="true" />
+            </span>
+            <div className="analysis-hardware-copy">
+              <span>Hardware plan</span>
+              <h2 id="analysis-hardware-title">
+                {hasHardwareSelection
+                  ? `${hardwareReadiness.firmwareLabel} · ${hardwareReadiness.protocolLabel}`
+                  : "No hardware selected"}
+              </h2>
+              <p>
+                {selectedFlightControllerPart?.name || "No flight controller selected"}
+                {" / "}
+                {selectedReceiverPart?.name || "No receiver selected"}
+              </p>
+            </div>
+            <dl className="analysis-hardware-facts">
+              <div>
+                <dt>UART</dt>
+                <dd>
+                  {hasHardwareSelection
+                    ? `${hardwareReadiness.receiverUart} / ${hardwareReadiness.receiverBaud}`
+                    : "Not selected"}
+                </dd>
+              </div>
+              <div>
+                <dt>Radio</dt>
+                <dd>{hasHardwareSelection ? hardwareReadiness.radioTargetName : "Not selected"}</dd>
+              </div>
+              {benchEvidence.configured && (
+                <div className="analysis-hardware-evidence">
+                  <dt>Imported evidence</dt>
+                  <dd>{benchEvidence.label}</dd>
+                </div>
+              )}
+            </dl>
+            <div className="analysis-hardware-state">
+              <strong>{hardwareReadiness.label}</strong>
+              <div className="analysis-hardware-state-copy">
+                <span>Local plan · hardware not tested</span>
+                {benchEvidence.configured && (
+                  <span className={`analysis-evidence-state is-${benchEvidence.status}`}>
+                    Imported file · not independently verified
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                className="analysis-hardware-action"
+                onClick={() => navigate("/setup", { state: { build } })}
+              >
+                Review setup
+              </button>
+            </div>
+          </section>
+
           {/* Selected Components */}
           <div className="components-section">
-            <h3 className="section-header">📦 Selected Components</h3>
-
-            {build.componentIds.motorId && (
-              <div className="component-card">
-                <div className="component-icon motor-icon">⚙️</div>
+            <h3 className="section-header"><Package size={18} aria-hidden="true" />Selected components</h3>
+            {componentRows.map(({ label, part, Icon, meta }) => (
+              <div className={`component-card ${part ? "" : "is-missing"}`} key={label}>
+                <div className="component-icon"><Icon size={19} aria-hidden="true" /></div>
                 <div className="component-info">
-                  <div className="component-title">Motors</div>
-                  <div className="component-value">
-                    {componentsData.motors.find((m) => m.id === build.componentIds.motorId)?.name}
-                  </div>
+                  <div className="component-title">{label}</div>
+                  <div className="component-value">{part?.name || "Not selected"}</div>
+                  <div className="component-meta">{meta}</div>
                 </div>
               </div>
-            )}
-
-            {build.componentIds.propellerId && (
-              <div className="component-card">
-                <div className="component-icon propeller-icon">🔄</div>
-                <div className="component-info">
-                  <div className="component-title">Propellers</div>
-                  <div className="component-value">
-                    {componentsData.propellers.find((p) => p.id === build.componentIds.propellerId)?.name}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {build.componentIds.batteryId && (
-              <div className="component-card">
-                <div className="component-icon battery-icon">🔋</div>
-                <div className="component-info">
-                  <div className="component-title">Battery</div>
-                  <div className="component-value">
-                    {componentsData.batteries.find((b) => b.id === build.componentIds.batteryId)?.name}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {build.componentIds.flightControllerId && (
-              <div className="component-card">
-                <div className="component-icon fc-icon">🖥️</div>
-                <div className="component-info">
-                  <div className="component-title">Flight Controller</div>
-                  <div className="component-value">
-                    {componentsData.flight_controllers.find((f) => f.id === build.componentIds.flightControllerId)?.name}
-                  </div>
-                </div>
-              </div>
-            )}
+            ))}
           </div>
 
           {/* Performance Metrics */}
           <div className="metrics-section">
-            <h3 className="section-header">📊 Performance Metrics</h3>
+            <h3 className="section-header"><ChartNoAxesCombined size={18} aria-hidden="true" />Performance metrics</h3>
 
             <div className="metric-card">
-              <div className="metric-icon weight-icon">⚖️</div>
+              <div className="metric-icon weight-icon"><Scale size={20} aria-hidden="true" /></div>
               <div className="metric-content">
                 <div className="metric-label">Total Weight</div>
                 <div className="metric-value">{analysis.performance.totalWeight}g</div>
@@ -286,7 +426,7 @@ export default function AnalysisPage() {
             </div>
 
             <div className="metric-card">
-              <div className="metric-icon thrust-icon">🚀</div>
+              <div className="metric-icon thrust-icon"><Rocket size={20} aria-hidden="true" /></div>
               <div className="metric-content">
                 <div className="metric-label">Max Thrust</div>
                 <div className="metric-value">{analysis.performance.maxThrust}g</div>
@@ -295,7 +435,7 @@ export default function AnalysisPage() {
             </div>
 
             <div className="metric-card highlight">
-              <div className="metric-icon ratio-icon">⚖️</div>
+              <div className="metric-icon ratio-icon"><Gauge size={20} aria-hidden="true" /></div>
               <div className="metric-content">
                 <div className="metric-label">T/W Ratio</div>
                 <div className="metric-value-large">{analysis.performance.thrustToWeightRatio}:1</div>
@@ -305,13 +445,13 @@ export default function AnalysisPage() {
                     backgroundColor: getRatingColor(analysis.performance.rating.thrustToWeight),
                   }}
                 >
-                  {getRatingLabel(analysis.performance.rating.thrustToWeight)} - Racing capable
+                  {getRatingLabel(analysis.performance.rating.thrustToWeight)}
                 </div>
               </div>
             </div>
 
             <div className="metric-card">
-              <div className="metric-icon power-icon">⚡</div>
+              <div className="metric-icon power-icon"><Zap size={20} aria-hidden="true" /></div>
               <div className="metric-content">
                 <div className="metric-label">Power System</div>
                 <div className="metric-value">{analysis.performance.powerDraw}W</div>
@@ -322,47 +462,47 @@ export default function AnalysisPage() {
 
           {/* Flight Time Simulation */}
           <div className="flight-section">
-            <h3 className="section-header">✈️ Flight Time Simulation</h3>
+            <h3 className="section-header"><Timer size={18} aria-hidden="true" />Flight time simulation</h3>
 
             <div className="flight-grid">
               <div className="flight-card">
-                <div className="flight-icon">🔋</div>
+                <div className="flight-icon"><BatteryCharging size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Battery Capacity</div>
                 <div className="flight-value">{analysis.flightSimulation.batteryCapacity}mAh</div>
               </div>
 
               <div className="flight-card">
-                <div className="flight-icon">⚡</div>
+                <div className="flight-icon"><Zap size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Avg Current Draw</div>
                 <div className="flight-value">{analysis.flightSimulation.avgCurrentDraw}A</div>
               </div>
 
               <div className="flight-card highlight">
-                <div className="flight-icon">⏱️</div>
+                <div className="flight-icon"><Timer size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Estimated Flight Time</div>
                 <div className="flight-value-large">{analysis.flightSimulation.estimatedFlightTime} min</div>
               </div>
 
               <div className="flight-card">
-                <div className="flight-icon">📏</div>
+                <div className="flight-icon"><Route size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Estimated Range</div>
                 <div className="flight-value">{analysis.flightSimulation.estimatedRange} km</div>
               </div>
 
               <div className="flight-card">
-                <div className="flight-icon">🏁</div>
+                <div className="flight-icon"><Flag size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Hover Time</div>
                 <div className="flight-value">{analysis.flightSimulation.hoverTime} min</div>
               </div>
 
               <div className="flight-card">
-                <div className="flight-icon">💨</div>
+                <div className="flight-icon"><Wind size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Max Speed</div>
                 <div className="flight-value">{analysis.flightSimulation.maxSpeed} km/h</div>
               </div>
 
               <div className="flight-card">
-                <div className="flight-icon">📊</div>
+                <div className="flight-icon"><ChartNoAxesCombined size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Efficiency</div>
                 <div className="flight-value">{analysis.flightSimulation.efficiency} mAh/km</div>
               </div>
@@ -370,98 +510,104 @@ export default function AnalysisPage() {
           </div>
 
           {/* Battery Discharge Curve */}
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart
-              data={analysis.flightSimulation.dischargeData}
-              margin={{ top: 20, right: 40, left: 60, bottom: 30 }}  // Increase left margin
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="time"
-                label={{
-                  value: "Flight Time (Minutes)",
-                  position: "insideBottom",
-                  offset: -5,
-                }}
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => (value * 60).toFixed(1)}
-              />
-              <YAxis
-                yAxisId="left"
-                label={{
-                  value: "Voltage (V)",
-                  angle: -90,
-                  position: "insideLeft",
-                  offset: -10,
-                }}
-                tick={{ fontSize: 12 }}
-                domain={["dataMin - 0.5", "dataMax + 0.5"]}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                label={{
-                  value: "Capacity (mAh)",
-                  angle: 90,
-                  position: "insideRight",
-                  offset: -5,
-                }}
-                tick={{ fontSize: 12 }}
-                domain={[0, "dataMax + 100"]}
-              />
-              <Tooltip 
-                labelFormatter={(value) => `Time: ${(value * 60).toFixed(1)} min`}
-              />
-              <Legend verticalAlign="top" height={36} />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="voltage"
-                stroke="#2196f3"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-                name="Battery Voltage (V)"
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="remainingCapacity"
-                stroke="#f44336"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-                name="Remaining Capacity (mAh)"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="chart-section">
+            <h3 className="section-header"><ChartNoAxesCombined size={18} aria-hidden="true" />Battery discharge</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                data={analysis.flightSimulation.dischargeData}
+                margin={{ top: 20, right: 40, left: 60, bottom: 30 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#d6e1e2" />
+                <XAxis
+                  dataKey="time"
+                  label={{
+                    value: "Flight time (minutes)",
+                    position: "insideBottom",
+                    offset: -5,
+                  }}
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => (value * 60).toFixed(1)}
+                />
+                <YAxis
+                  yAxisId="left"
+                  label={{
+                    value: "Voltage (V)",
+                    angle: -90,
+                    position: "insideLeft",
+                    offset: -10,
+                  }}
+                  tick={{ fontSize: 12 }}
+                  domain={["dataMin - 0.5", "dataMax + 0.5"]}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  label={{
+                    value: "Capacity (mAh)",
+                    angle: 90,
+                    position: "insideRight",
+                    offset: -5,
+                  }}
+                  tick={{ fontSize: 12 }}
+                  domain={[0, "dataMax + 100"]}
+                />
+                <Tooltip
+                  labelFormatter={(value) => `Time: ${(value * 60).toFixed(1)} min`}
+                />
+                <Legend verticalAlign="top" height={36} />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="voltage"
+                  stroke="#0b766d"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                  name="Battery voltage (V)"
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="remainingCapacity"
+                  stroke="var(--warn)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                  name="Remaining capacity (mAh)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
 
-          {/* Validation Messages */}
-          {analysis.errors.length > 0 && (
-            <div className="validation-section error">
-              <h3 className="section-header">❌ Errors</h3>
-              {analysis.errors.map((err, i) => (
-                <div key={i} className="validation-message">
-                  {err}
+          {(analysis.errors.length > 0 || analysis.warnings.length > 0) && (
+            <div className="validation-stack">
+              {analysis.errors.length > 0 && (
+                <div className="validation-section error">
+                  <h3 className="section-header"><CircleAlert size={18} aria-hidden="true" />Errors</h3>
+                  {analysis.errors.map((err, i) => (
+                    <div key={i} className="validation-message">
+                      {err}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {analysis.warnings.length > 0 && (
-            <div className="validation-section warning">
-              <h3 className="section-header">⚠️ Warnings</h3>
-              {analysis.warnings.map((warn, i) => (
-                <div key={i} className="validation-message">
-                  {warn}
+              {analysis.warnings.length > 0 && (
+                <div className="validation-section warning">
+                  <h3 className="section-header"><AlertTriangle size={18} aria-hidden="true" />Warnings</h3>
+                  {analysis.warnings.map((warn, i) => (
+                    <div key={i} className="validation-message">
+                      {warn}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
 
           {/* Total Cost */}
           <div className="cost-section">
-            <h3 className="section-header">💰 Total Cost</h3>
+            <h3 className="section-header"><DollarSign size={18} aria-hidden="true" />Total cost</h3>
             <div className="cost-card">
               <div className="cost-label">Build Total</div>
               <div className="cost-value">${analysis.totalCost}</div>
@@ -472,52 +618,19 @@ export default function AnalysisPage() {
 
       {/* Bottom Buttons */}
       <div className="bottom-buttons">
-        <button className="action-btn save" onClick={() => navigate("/build", { state: { build } })}>
-          🔍 Back to build
+        <button className="action-btn profile-action-secondary" onClick={() => navigate("/build", { state: { build } })}>
+          <ArrowLeft size={18} aria-hidden="true" />
+          Back to build
         </button>
-        <button className="action-btn order">🛒 Order</button>
+        <button
+          className="action-btn analysis"
+          onClick={() => navigate("/setup", { state: { build } })}
+        >
+          <Settings2 size={18} aria-hidden="true" />
+          Hardware setup
+        </button>
       </div>
 
-      {/* Menu Drawer */}
-      {menuOpen && (
-        <div className="menu-overlay">
-          <div className="menu-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="drawer-top-right">
-              <button className="icon-btn menu-btn" onClick={() => setMenuOpen(false)}>
-                ☰
-              </button>
-            </div>
-            <button className="menu-item" onClick={() => navigate("/build")}>
-              Build Configuration
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/saved");
-              }}
-            >
-              Saved Builds
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => { setMenuOpen(false); navigate("/profile", { state: { userId: "leo" } }); }}
-            >
-              Profile
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/legal");
-              }}
-            >
-              Legal & Disclaimer
-            </button>
-          </div>
-          <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
-        </div>
-      )}
     </div>
   );
 }

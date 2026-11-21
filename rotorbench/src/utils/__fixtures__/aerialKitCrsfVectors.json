@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "protocol": "crsf",
+  "reviewed_commit": "fa65372",
+  "source": {
+    "encoder": "firmware/src/core/flight/ak_crsf.c and ak_crsf_telemetry.c",
+    "layout": "ExpressLRS 4.1.0 src/include/crsf_protocol.h"
+  },
+  "cases": [
+    {
+      "name": "rc_channels_centre",
+      "address": 200,
+      "frame_type": 22,
+      "payload_hex": "e0031ff8c0073ef0810f7ce0031ff8c0073ef0810f7c",
+      "raw_hex": "c81816e0031ff8c0073ef0810f7ce0031ff8c0073ef0810f7cad",
+      "decoded": {
+        "channels": [992, 992, 992, 992, 992, 992, 992, 992, 992, 992, 992, 992, 992, 992, 992, 992]
+      }
+    },
+    {
+      "name": "rc_channels_extremes",
+      "address": 234,
+      "frame_type": 22,
+      "payload_hex": "ac98382b260e3ef0810f7cac98382b260e3ef0810f7c",
+      "raw_hex": "ea1816ac98382b260e3ef0810f7cac98382b260e3ef0810f7cfb",
+      "decoded": {
+        "channels": [172, 1811, 172, 1811, 992, 992, 992, 992, 172, 1811, 172, 1811, 992, 992, 992, 992]
+      }
+    },
+    {
+      "name": "attitude",
+      "address": 234,
+      "frame_type": 30,
+      "payload_hex": "03e8ec782ee0",
+      "raw_hex": "ea081e03e8ec782ee084",
+      "decoded": {
+        "pitch_rad": 0.1,
+        "roll_rad": -0.5,
+        "yaw_rad": 1.2
+      }
+    },
+    {
+      "name": "battery",
+      "address": 234,
+      "frame_type": 8,
+      "payload_hex": "00a8007b0005dc58",
+      "raw_hex": "ea0a0800a8007b0005dc58d1",
+      "decoded": {
+        "capacity_mah": 1500,
+        "current_a": 12.3,
+        "remaining_percent": 88,
+        "voltage_v": 16.8
+      }
+    },
+    {
+      "name": "gps",
+      "address": 234,
+      "frame_type": 2,
+      "payload_hex": "1c4050a80517b6000168232805aa0c",
+      "raw_hex": "ea11021c4050a80517b6000168232805aa0cbd",
+      "decoded": {
+        "altitude_m": 450,
+        "groundspeed_mps": 10,
+        "heading_deg": 90,
+        "latitude_deg": 47.3977,
+        "longitude_deg": 8.544,
+        "satellites": 12
+      }
+    },
+    {
+      "name": "barometer",
+      "address": 234,
+      "frame_type": 9,
+      "payload_hex": "2be2ff06",
+      "raw_hex": "ea06092be2ff0688",
+      "decoded": {
+        "altitude_m": 123.4,
+        "vertical_speed_mps": -2.5
+      }
+    },
+    {
+      "name": "link_statistics",
+      "address": 234,
+      "frame_type": 20,
+      "payload_hex": "5a5c5807010203504604",
+      "raw_hex": "ea0c145a5c5807010203504604d7",
+      "decoded": {
+        "active_antenna": 1,
+        "downlink_link_quality": 70,
+        "downlink_rssi_dbm": -80,
+        "downlink_snr_db": 4,
+        "rf_mode": 2,
+        "uplink_link_quality": 88,
+        "uplink_rssi_1_dbm": -90,
+        "uplink_rssi_2_dbm": -92,
+        "uplink_snr_db": 7,
+        "uplink_tx_power": 3
+      }
+    },
+    {
+      "name": "flight_mode",
+      "address": 234,
+      "frame_type": 33,
+      "payload_hex": "414e474c4500",
+      "raw_hex": "ea0821414e474c450087",
+      "decoded": {
+        "mode": "ANGLE"
+      }
+    }
+  ]
+}

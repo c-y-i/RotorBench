@@ -1,0 +1,517 @@
+import {
+  BENCH_EVIDENCE_ATTACHMENT_SCHEMA,
+  BENCH_EVIDENCE_HISTORY_LIMIT,
+  appendBenchEvidenceAttachmentHistory,
+  benchEvidenceDomainScopeMatches,
+  benchEvidenceStorageKey,
+  benchEvidenceScopeMatches,
+  clearBenchEvidenceAttachmentHistory,
+  compareBenchEvidenceRuns,
+  copyBenchEvidenceAttachment,
+  createBenchEvidenceScope,
+  createBenchEvidenceAttachment,
+  readCurrentBenchEvidenceScope,
+  readBenchEvidenceAttachment,
+  readBenchEvidenceAttachmentHistory,
+  removeBenchEvidenceAttachment,
+  saveBenchEvidenceAttachment,
+  summarizeBenchEvidenceAttachment,
+} from "./benchEvidenceAttachment";
+
+const review = {
+  schema: "rotorbench.bench-evidence-review.v1",
+  kind: "pair",
+  fileOverall: "PASS",
+  importTrust: "locally selected file; authenticity not independently verified",
+  rfReportedPass: true,
+  rfEvidenceComplete: true,
+  integrityClean: true,
+  txUid: "10:73:A1:1F:A8:0F",
+  rxUid: "10:73:A1:1F:A8:0F",
+  planUid: "10:73:A1:1F:A8:0F",
+  planContext: { role: null, targetName: "Aerial Kit ELRS USB TX Rev A3" },
+  reportedBaud: 400000,
+  bundle: { complete: true, settingsComplete: true },
+  checks: [
+    { label: "Receiver RC frames", status: "pass" },
+    { label: "Current plan identity", status: "pass" },
+    { label: "Drive exit disarmed", status: "unverified" },
+    { label: "Module max power", status: "fail" },
+  ],
+};
+
+const scope = createBenchEvidenceScope({
+  build: {
+    componentIds: {
+      frameId: "frame-a",
+      motorId: "motor-a",
+      propellerId: "prop-a",
+      batteryId: "battery-a",
+      escId: "esc-a",
+      flightControllerId: "fc-a",
+      receiverId: "rx-a",
+    },
+  },
+  flightControllerPlan: {
+    planVersion: 3,
+    firmwareFamily: "aerialkit",
+    profileId: "esp32dev",
+    receiverUart: "UART2",
+    receiverBaud: 420000,
+    armChannel: 5,
+    modeChannel: 6,
+    rcMin: 172,
+    rcMid: 992,
+    rcMax: 1811,
+    rcDeadband: 0.02,
+    features: { telemetry: true, gps: true },
+  },
+  radioPlan: {
+    planVersion: 3,
+    targetId: "aerialkit-elrs-rev-a3",
+    role: "tx",
+    packetRateMode: "250",
+    powerDbm: -18,
+    channelMap: { arm: 5, flightMode: 6 },
+  },
+});
+
+test("attaches only a sanitized bench evidence summary", () => {
+  const attachment = createBenchEvidenceAttachment(
+    review,
+    "2026-11-20T12:00:00.000Z",
+  );
+
+  expect(attachment).toMatchObject({
+    schema: BENCH_EVIDENCE_ATTACHMENT_SCHEMA,
+    attachedAt: "2026-11-20T12:00:00.000Z",
+    hardwareVerifiedByRotorBench: false,
+    hasImportedUids: true,
+    uidPairMatches: true,
+    currentPlanUidMatch: true,
+    checkCounts: { pass: 2, fail: 1, unverified: 1 },
+    failedChecks: ["Module max power"],
+    unverifiedChecks: ["Drive exit disarmed"],
+  });
+  expect(JSON.stringify(attachment)).not.toContain("/dev/tty");
+  expect(JSON.stringify(attachment)).not.toContain("bindingPhrase");
+  expect(JSON.stringify(attachment)).not.toMatch(/10:73:a1:1f:a8:0f/i);
+  expect(JSON.stringify(attachment)).not.toContain("1073a11fa80f");
+  expect(attachment.txUidFingerprint).toMatch(/^fnv1a-/);
+  expect(attachment).not.toHaveProperty("txUid");
+  expect(attachment).not.toHaveProperty("rxUid");
+  expect(attachment).not.toHaveProperty("planUid");
+});
+
+test("stores and reads evidence by build identity", () => {
+  const storage = {
+    values: new Map(),
+    getItem(key) { return this.values.get(key) ?? null; },
+    setItem(key, value) { this.values.set(key, value); },
+    removeItem(key) { this.values.delete(key); },
+  };
+  const saved = saveBenchEvidenceAttachment("build-1", review, storage);
+
+  expect(saved).toMatchObject({ schema: BENCH_EVIDENCE_ATTACHMENT_SCHEMA });
+  expect(readBenchEvidenceAttachment("build-1", storage)).toMatchObject({
+    kind: "pair",
+    rfEvidenceComplete: true,
+  });
+  expect(readBenchEvidenceAttachmentHistory("build-1", storage)).toHaveLength(1);
+  expect(benchEvidenceStorageKey("build-1")).toBe(
+    "rotorbench:bench-evidence:build-1:v1",
+  );
+});
+
+test("migrates legacy raw binding identifiers out of a stored attachment", () => {
+  const storage = {
+    values: new Map(),
+    getItem(key) { return this.values.get(key) ?? null; },
+    setItem(key, value) { this.values.set(key, value); },
+    removeItem(key) { this.values.delete(key); },
+  };
+  storage.setItem(
+    "rotorbench:bench-evidence:build-legacy:v1",
+    JSON.stringify({
+      ...createBenchEvidenceAttachment(review),
+      txUid: "10:73:A1:1F:A8:0F",
+      rxUid: "10:73:A1:1F:A8:0F",
+      planUid: "10:73:A1:1F:A8:0F",
+    }),
+  );
+
+  const migrated = readBenchEvidenceAttachment("build-legacy", storage);
+  expect(migrated).toMatchObject({
+    hasImportedUids: true,
+    uidPairMatches: true,
+    currentPlanUidMatch: true,
+  });
+  expect(migrated.txUidFingerprint).toMatch(/^fnv1a-/);
+  expect(JSON.stringify(migrated)).not.toMatch(/10:73:a1:1f:a8:0f/i);
+  expect(storage.getItem("rotorbench:bench-evidence:build-legacy:v1"))
+    .not.toMatch(/10:73:a1:1f:a8:0f/i);
+});
+
+test("summaries keep imported evidence separate from hardware verification", () => {
+  const attachment = createBenchEvidenceAttachment({
+    ...review,
+    bundle: { complete: true, settingsComplete: false },
+  }, undefined, scope);
+  expect(summarizeBenchEvidenceAttachment(attachment, scope)).toMatchObject({
+    status: "settings-mismatch",
+    label: "Imported settings mismatch",
+    hardwareVerified: false,
+  });
+});
+
+test("copies an imported evidence summary to a duplicated build", () => {
+  const storage = {
+    values: new Map(),
+    getItem(key) { return this.values.get(key) ?? null; },
+    setItem(key, value) { this.values.set(key, value); },
+    removeItem(key) { this.values.delete(key); },
+  };
+  saveBenchEvidenceAttachment("build-source", review, storage, scope);
+
+  expect(copyBenchEvidenceAttachment("build-source", "build-copy", storage)).toBe(true);
+  expect(readBenchEvidenceAttachment("build-copy", storage)).toMatchObject({
+    schema: BENCH_EVIDENCE_ATTACHMENT_SCHEMA,
+    attachedAt: expect.any(String),
+    rfEvidenceComplete: true,
+    hardwareVerifiedByRotorBench: false,
+    scope,
+  });
+});
+
+test("removes an imported evidence summary from one build", () => {
+  const storage = {
+    values: new Map(),
+    getItem(key) { return this.values.get(key) ?? null; },
+    setItem(key, value) { this.values.set(key, value); },
+    removeItem(key) { this.values.delete(key); },
+  };
+  saveBenchEvidenceAttachment("build-1", review, storage);
+
+  expect(removeBenchEvidenceAttachment("build-1", storage)).toBe(true);
+  expect(readBenchEvidenceAttachment("build-1", storage)).toBeNull();
+});
+
+test("marks evidence stale when the current build or plan scope changes", () => {
+  const attachment = createBenchEvidenceAttachment(
+    review,
+    "2026-11-20T12:00:00.000Z",
+    scope,
+  );
+  const changedScope = createBenchEvidenceScope({
+    build: { componentIds: { ...scope.componentIds, motorId: "motor-b" } },
+    flightControllerPlan: scope.flightController,
+    radioPlan: scope.radio,
+  });
+
+  expect(benchEvidenceScopeMatches(scope, changedScope)).toBe(false);
+  expect(summarizeBenchEvidenceAttachment(attachment, changedScope)).toMatchObject({
+    status: "stale",
+    label: "Imported evidence · build or plan changed",
+    scopeStatus: "stale",
+    hardwareVerified: false,
+  });
+});
+
+test("reads the current evidence scope from saved hardware plans", () => {
+  const build = {
+    id: "build-current",
+    componentIds: scope.componentIds,
+  };
+  const storage = {
+    values: new Map([
+      [
+        "rotorbench:hardware-plan:build-current:fc",
+        JSON.stringify(scope.flightController),
+      ],
+      [
+        "rotorbench:hardware-plan:build-current:radio",
+        JSON.stringify(scope.radio),
+      ],
+    ]),
+    getItem(key) { return this.values.get(key) ?? null; },
+    removeItem(key) { this.values.delete(key); },
+  };
+
+  expect(readCurrentBenchEvidenceScope(build, storage)).toEqual(scope);
+});
+
+test("summarizes correlated endpoint observations without claiming RF verification", () => {
+  const attachment = createBenchEvidenceAttachment({
+    ...review,
+    kind: "observation-pair",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    observationCorrelationComplete: true,
+    bundle: { complete: false, settingsComplete: null },
+  }, undefined, scope);
+
+  expect(attachment).toMatchObject({
+    observationCorrelationComplete: true,
+    hardwareVerifiedByRotorBench: false,
+  });
+  expect(summarizeBenchEvidenceAttachment(attachment, scope)).toMatchObject({
+    status: "observation-pair",
+    label: "Two-endpoint observations correlated",
+    hardwareVerified: false,
+  });
+});
+
+test("tracks the staged pairing identity without storing the UID", () => {
+  const attachedScope = createBenchEvidenceScope({
+    build: { componentIds: scope.componentIds },
+    flightControllerPlan: scope.flightController,
+    radioPlan: scope.radio,
+    pairingUid: "10:73:A1:1F:A8:0F",
+  });
+  const sameIdentity = createBenchEvidenceScope({
+    build: { componentIds: scope.componentIds },
+    flightControllerPlan: scope.flightController,
+    radioPlan: scope.radio,
+    pairingUid: "10:73:a1:1f:a8:0f",
+  });
+  const changedIdentity = createBenchEvidenceScope({
+    build: { componentIds: scope.componentIds },
+    flightControllerPlan: scope.flightController,
+    radioPlan: scope.radio,
+    pairingUid: "AA:BB:CC:DD:EE:FF",
+  });
+  const attachment = createBenchEvidenceAttachment(
+    review,
+    "2026-11-20T12:00:00.000Z",
+    attachedScope,
+  );
+
+  expect(JSON.stringify(attachedScope)).not.toContain("1073a11fa80f");
+  expect(benchEvidenceScopeMatches(attachedScope, sameIdentity)).toBe(true);
+  expect(summarizeBenchEvidenceAttachment(attachment, sameIdentity)).toMatchObject({
+    status: "correlated",
+    identityStatus: "matched",
+  });
+  expect(summarizeBenchEvidenceAttachment(attachment, changedIdentity)).toMatchObject({
+    status: "identity-mismatch",
+    label: "Imported evidence · staged UID changed",
+    identityStatus: "mismatch",
+  });
+  expect(summarizeBenchEvidenceAttachment(attachment, null)).toMatchObject({
+    status: "identity-unstaged",
+    label: "Imported evidence · UID not currently staged",
+    identityStatus: "not-staged",
+  });
+});
+
+test("matches flight-controller and radio adoption scopes independently", () => {
+  const changedFc = createBenchEvidenceScope({
+    build: {
+      componentIds: {
+        ...scope.componentIds,
+        flightControllerId: "fc-b",
+      },
+    },
+    flightControllerPlan: {
+      ...scope.flightController,
+      armHoldMs: 750,
+    },
+    radioPlan: scope.radio,
+  });
+  const changedRadio = createBenchEvidenceScope({
+    build: { componentIds: scope.componentIds },
+    flightControllerPlan: scope.flightController,
+    radioPlan: {
+      ...scope.radio,
+      packetRateMode: "100-full",
+    },
+  });
+
+  expect(benchEvidenceDomainScopeMatches(
+    scope,
+    changedFc,
+    "radio",
+  )).toBe(true);
+  expect(benchEvidenceDomainScopeMatches(
+    scope,
+    changedFc,
+    "flightController",
+  )).toBe(false);
+  expect(benchEvidenceDomainScopeMatches(
+    scope,
+    changedRadio,
+    "flightController",
+  )).toBe(true);
+  expect(benchEvidenceDomainScopeMatches(
+    scope,
+    changedRadio,
+    "radio",
+  )).toBe(false);
+});
+
+test("summarizes complete FC status and preflight evidence as read-only", () => {
+  const attachment = createBenchEvidenceAttachment({
+    ...review,
+    kind: "fc-evidence",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    fcEvidence: { evidenceComplete: true },
+  }, undefined, scope);
+
+  expect(summarizeBenchEvidenceAttachment(attachment, scope)).toMatchObject({
+    status: "fc-evidence",
+    label: "FC status and preflight reviewed",
+    hardwareVerified: false,
+  });
+});
+
+test("summarizes radio device identity evidence as read-only", () => {
+  const attachment = createBenchEvidenceAttachment({
+    ...review,
+    kind: "radio-status-evidence",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    radioDeviceEvidence: { evidenceComplete: true },
+  }, undefined, scope);
+
+  expect(summarizeBenchEvidenceAttachment(attachment, scope)).toMatchObject({
+    status: "radio-evidence",
+    label: "Radio device status reviewed",
+    hardwareVerified: false,
+  });
+});
+
+test("summarizes matching FC parameter snapshots as read-only evidence", () => {
+  const attachment = createBenchEvidenceAttachment({
+    ...review,
+    kind: "fc-parameters",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    checks: [
+      { id: "fc-param-arm-channel", label: "FC parameter arm_channel", status: "pass" },
+    ],
+    fcEvidence: { parameters: { values: { arm_channel: "5" } } },
+  }, undefined, scope);
+
+  expect(summarizeBenchEvidenceAttachment(attachment, scope)).toMatchObject({
+    status: "fc-parameters",
+    label: "FC parameter snapshot matched",
+    hardwareVerified: false,
+  });
+});
+
+test("does not summarize a partial FC parameter snapshot as matched", () => {
+  const attachment = createBenchEvidenceAttachment({
+    ...review,
+    kind: "fc-parameters",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    checks: [
+      { id: "fc-param-arm-channel", label: "FC parameter arm_channel", status: "pass" },
+      { id: "fc-param-mode-channel", label: "FC parameter mode_channel", status: "unverified" },
+    ],
+    fcEvidence: { parameters: { values: { arm_channel: "5" } } },
+  }, undefined, scope);
+
+  expect(attachment.fcParametersComplete).toBe(false);
+  expect(summarizeBenchEvidenceAttachment(attachment, scope)).toMatchObject({
+    status: "observation",
+    label: "Imported observation only",
+    hardwareVerified: false,
+  });
+});
+
+test("keeps a bounded newest-first evidence run history", () => {
+  const storage = {
+    values: new Map(),
+    getItem(key) { return this.values.get(key) ?? null; },
+    setItem(key, value) { this.values.set(key, value); },
+    removeItem(key) { this.values.delete(key); },
+  };
+  for (let index = 0; index < BENCH_EVIDENCE_HISTORY_LIMIT + 2; index += 1) {
+    const attachment = createBenchEvidenceAttachment(
+      review,
+      `2026-11-20T12:00:${String(index).padStart(2, "0")}.000Z`,
+    );
+    appendBenchEvidenceAttachmentHistory("build-history", attachment, storage);
+  }
+
+  const history = readBenchEvidenceAttachmentHistory("build-history", storage);
+  expect(history).toHaveLength(BENCH_EVIDENCE_HISTORY_LIMIT);
+  expect(history[0].attachedAt).toBe("2026-11-20T12:00:09.000Z");
+  expect(history.at(-1).attachedAt).toBe("2026-11-20T12:00:02.000Z");
+  expect(clearBenchEvidenceAttachmentHistory("build-history", storage)).toBe(true);
+  expect(readBenchEvidenceAttachmentHistory("build-history", storage)).toEqual([]);
+});
+
+test("compares sanitized evidence runs without claiming hardware verification", () => {
+  const previous = createBenchEvidenceAttachment({
+    ...review,
+    checks: [
+      { label: "Receiver RC frames", status: "pass" },
+      { label: "Current plan identity", status: "fail" },
+      { label: "Module max power", status: "fail" },
+      { label: "Drive exit disarmed", status: "unverified" },
+    ],
+  });
+  const current = createBenchEvidenceAttachment(review);
+
+  expect(compareBenchEvidenceRuns(current, previous)).toMatchObject({
+    status: "improved",
+    label: "Review improved",
+    passDelta: 1,
+    failDelta: -1,
+    unverifiedDelta: 0,
+  });
+  expect(current.hardwareVerifiedByRotorBench).toBe(false);
+});
+
+test("does not call newly visible failures a regression when open checks shrink", () => {
+  const previous = createBenchEvidenceAttachment({
+    ...review,
+    checks: [
+      { label: "Receiver RC frames", status: "unverified" },
+      { label: "Link quality", status: "unverified" },
+      { label: "Frame freshness", status: "unverified" },
+    ],
+  });
+  const current = createBenchEvidenceAttachment({
+    ...review,
+    checks: [
+      { label: "Receiver RC frames", status: "pass" },
+      { label: "Link quality", status: "fail" },
+      { label: "Frame freshness", status: "pass" },
+    ],
+  });
+
+  expect(compareBenchEvidenceRuns(current, previous)).toMatchObject({
+    status: "mixed",
+    label: "Review coverage changed",
+    passDelta: 2,
+    failDelta: 1,
+    unverifiedDelta: -3,
+  });
+});
+
+test("does not compare different evidence types or check sets", () => {
+  const previous = createBenchEvidenceAttachment({
+    ...review,
+    kind: "fc-parameters",
+  });
+  const current = createBenchEvidenceAttachment(review);
+  expect(compareBenchEvidenceRuns(current, previous)).toMatchObject({
+    status: "not-comparable",
+    label: "Not comparable",
+    summary: "Different evidence types cannot be compared.",
+    comparable: false,
+  });
+
+  const changedChecks = createBenchEvidenceAttachment({
+    ...review,
+    checks: [...review.checks, { label: "New evidence gate", status: "pass" }],
+  });
+  expect(compareBenchEvidenceRuns(changedChecks, current)).toMatchObject({
+    status: "not-comparable",
+    summary: "The runs cover different checks.",
+  });
+});

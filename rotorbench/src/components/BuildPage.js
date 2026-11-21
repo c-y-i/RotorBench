@@ -1,57 +1,213 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { lazy, Suspense, useState, useEffect, useMemo } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
-import logo from "../assets/logo.png";
 import componentsData from "../data/components.json";
-import BabylonViewer from "./BabylonViewer.jsx";
+import PartPicker from "./PartPicker";
 import API_BASE from "../config/api";
+import {
+  physicalChecksFor,
+  summarizePhysicalChecks,
+} from "../utils/physicalCompatibility";
+import {
+  checkEscCurrent,
+  checkEscVoltage,
+  checkFlightControllerVoltage,
+  checkMotorVoltage,
+  checkPropellerClearance,
+  electricalChecksFor,
+  summarizeElectricalChecks,
+} from "../utils/electricalCompatibility";
+import { CAMERA_VIEWS } from "../assembly/cameraViews";
+import { buildViewerPlacementAudit } from "../assembly/assemblyTransforms";
+import {
+  PLATFORM_PRESETS,
+  getPlatformPreset,
+  matchesPlatformPreset,
+} from "../data/platformPresets";
+import { summarizeBuildEvidence } from "../utils/buildEvidence";
+import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
+import {
+  readBenchEvidenceAttachment,
+  readCurrentBenchEvidenceScope,
+  summarizeBenchEvidenceAttachment,
+} from "../utils/benchEvidenceAttachment";
+import {
+  buildSheetFilename,
+  createBuildSheet,
+} from "../utils/buildSheet";
+import {
+  buildBomFilename,
+  createBuildBomCsv,
+} from "../utils/buildBom";
+import { readJsonStorage, writeJsonStorage } from "../utils/storage";
+import { upsertBuild } from "../utils/savedBuilds";
+import {
+  BatteryCharging,
+  Box,
+  ChartNoAxesCombined,
+  Check,
+  ChevronRight,
+  CircleAlert,
+  Cog,
+  Cpu,
+  Download,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Fan,
+  FileCheck2,
+  Layers,
+  LoaderCircle,
+  Radio,
+  RotateCcw,
+  Save,
+  Settings2,
+  Zap,
+} from "lucide-react";
 
-const BUILDS_ENDPOINT = `${API_BASE}/api/builds`;
+const BabylonViewer = lazy(() => import("./BabylonViewer.jsx"));
+const BUILD_DRAFT_KEY = "rotorbench:build-draft:v1";
+
+function createWorkingBuildId() {
+  return window.crypto?.randomUUID?.() || `build-${Date.now()}`;
+}
+
+function sanitizeDraftComponentIds(componentIds) {
+  if (!componentIds || typeof componentIds !== "object" || Array.isArray(componentIds)) {
+    return null;
+  }
+  const categories = {
+    frameId: "frames",
+    motorId: "motors",
+    propellerId: "propellers",
+    escId: "escs",
+    flightControllerId: "flight_controllers",
+    batteryId: "batteries",
+    receiverId: "receivers",
+  };
+  return Object.fromEntries(
+    Object.entries(categories).map(([key, category]) => {
+      const id = componentIds[key];
+      const valid = typeof id === "string" &&
+        componentsData[category]?.some((part) => part.id === id);
+      return [key, valid ? id : null];
+    }),
+  );
+}
 
 export default function BuildPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { currentBuild, updateBuild } = useBuild();
 
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedPresetId = searchParams.get("preset") || "";
+  const requestedPreset = getPlatformPreset(requestedPresetId);
+  const startNewDraft = searchParams.get("new") === "1";
+  const initialBuild = location.state?.build;
+  const storedDraftValue = !initialBuild && !requestedPreset && !startNewDraft
+    ? readJsonStorage(BUILD_DRAFT_KEY, null)
+    : null;
+  const sanitizedDraftIds = storedDraftValue?.version === 1
+    ? sanitizeDraftComponentIds(storedDraftValue?.componentIds)
+    : null;
+  const storedDraft = sanitizedDraftIds &&
+    Object.values(sanitizedDraftIds).some(Boolean)
+    ? { ...storedDraftValue, componentIds: sanitizedDraftIds }
+    : null;
+  const initialComponentIds =
+    initialBuild?.componentIds ||
+    requestedPreset?.componentIds ||
+    (!startNewDraft ? currentBuild?.componentIds || storedDraft?.componentIds : null) ||
+    {};
+  const [workingBuildId, setWorkingBuildId] = useState(
+    () => initialBuild?.id || currentBuild?.id || storedDraft?.id || createWorkingBuildId(),
+  );
+  const [workingBuildName, setWorkingBuildName] = useState(
+    () => initialBuild?.name || requestedPreset?.name || currentBuild?.name
+      || storedDraft?.name || "Custom Build",
+  );
   const userId = localStorage.getItem("userId");
   const [message, setMessage] = useState({ type: "", text: "" });
 
   const totalWeight = 0;
 
   // Component selections - initialize from context if available
-  const [selectedFrame, setSelectedFrame] = useState("");
-  const [selectedMotor, setSelectedMotor] = useState("");
-  const [selectedPropeller, setSelectedPropeller] = useState("");
-  const [selectedESC, setSelectedESC] = useState("");
-  const [selectedFC, setSelectedFC] = useState("");
-  const [selectedBattery, setSelectedBattery] = useState("");
-  const [selectedReceiver, setSelectedReceiver] = useState("");
+  const [selectedFrame, setSelectedFrame] = useState(initialComponentIds.frameId || "");
+  const [selectedMotor, setSelectedMotor] = useState(initialComponentIds.motorId || "");
+  const [selectedPropeller, setSelectedPropeller] = useState(initialComponentIds.propellerId || "");
+  const [selectedESC, setSelectedESC] = useState(initialComponentIds.escId || "");
+  const [selectedFC, setSelectedFC] = useState(initialComponentIds.flightControllerId || "");
+  const [selectedBattery, setSelectedBattery] = useState(initialComponentIds.batteryId || "");
+  const [selectedReceiver, setSelectedReceiver] = useState(initialComponentIds.receiverId || "");
 
   // Load from context on mount
   useEffect(() => {
+    const requestedBuild = location.state?.build;
+    const sourceBuild = requestedBuild || (requestedPreset || startNewDraft ? null : currentBuild);
     // If a new build page is created, clear the old currentBuild.
-    if (!location.state?.build) {
+    if (requestedBuild) {
+      updateBuild(requestedBuild);
+    } else {
       updateBuild(null); // Clear context
     }
-    if (currentBuild?.componentIds) {
-      setSelectedFrame(currentBuild.componentIds.frameId || "");
-      setSelectedMotor(currentBuild.componentIds.motorId || "");
-      setSelectedPropeller(currentBuild.componentIds.propellerId || "");
-      setSelectedESC(currentBuild.componentIds.escId || "");
-      setSelectedFC(currentBuild.componentIds.flightControllerId || "");
-      setSelectedBattery(currentBuild.componentIds.batteryId || "");
-      setSelectedReceiver(currentBuild.componentIds.receiverId || "");
+    if (sourceBuild?.componentIds) {
+      setSelectedFrame(sourceBuild.componentIds.frameId || "");
+      setSelectedMotor(sourceBuild.componentIds.motorId || "");
+      setSelectedPropeller(sourceBuild.componentIds.propellerId || "");
+      setSelectedESC(sourceBuild.componentIds.escId || "");
+      setSelectedFC(sourceBuild.componentIds.flightControllerId || "");
+      setSelectedBattery(sourceBuild.componentIds.batteryId || "");
+      setSelectedReceiver(sourceBuild.componentIds.receiverId || "");
     }
+    if (requestedPreset) {
+      setMessage({
+        type: "info",
+        text: `${requestedPreset.name} loaded. Review before analysis.`,
+      });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+    } else if (!requestedBuild && !startNewDraft && storedDraft) {
+      setMessage({
+        type: "info",
+        text: `${storedDraft.name || "Unsaved build"} restored from this browser.`,
+      });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+    }
+    if (requestedPresetId || startNewDraft) setSearchParams({}, { replace: true });
+    // Mount-only initialization restores the active persisted build once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!startNewDraft) return;
+    updateBuild(null);
+    setWorkingBuildId(createWorkingBuildId());
+    setWorkingBuildName("Custom Build");
+    setSelectedFrame("");
+    setSelectedMotor("");
+    setSelectedPropeller("");
+    setSelectedESC("");
+    setSelectedFC("");
+    setSelectedBattery("");
+    setSelectedReceiver("");
+    setSelectedPresetId("");
+    setClearedComponents([]);
+    setCameraView("orbit");
+    setExplodedAssembly(false);
+    setMessage({ type: "info", text: "New build started." });
+    setSearchParams({}, { replace: true });
+    setTimeout(() => setMessage({ type: "", text: "" }), 1800);
+    // A same-route New Build action must reset component state as well as the URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startNewDraft]);
 
   const handleSave = async () => {
     const now = new Date().toISOString();
     const newBuild = {
-      id: crypto.randomUUID(), // Forever New ID
+      id: currentBuild?.id || workingBuildId,
       userId,
-      name: currentBuild?.name || "Custom Build",
+      name: workingBuildName,
       note: currentBuild?.note || "",
       componentIds: {
         frameId: selectedFrame,
@@ -72,10 +228,15 @@ export default function BuildPage() {
 
     // Storage Logic (offline / online)
     if (!userId || userId === "leo") {
-      const localBuilds = JSON.parse(localStorage.getItem("offlineBuilds") || "[]");
-      localBuilds.push(newBuild);
-      localStorage.setItem("offlineBuilds", JSON.stringify(localBuilds));
-      setMessage({ type: "success", text: "✅ Build saved locally." });
+      const stored = readJsonStorage("offlineBuilds", []);
+      const localBuilds = Array.isArray(stored) ? stored : [];
+      const updatedBuilds = upsertBuild(localBuilds, newBuild);
+      if (!writeJsonStorage("offlineBuilds", updatedBuilds)) {
+        setMessage({ type: "error", text: "The browser could not save this build locally." });
+        return;
+      }
+      localStorage.removeItem(BUILD_DRAFT_KEY);
+      setMessage({ type: "success", text: "Build saved locally." });
       setTimeout(() => { setMessage({ type: "", text: "" }); navigate("/"); }, 2000);
       return;
     }
@@ -86,14 +247,15 @@ export default function BuildPage() {
       body: JSON.stringify(newBuild),
     });
     if (!res.ok) throw new Error(await res.text());
+    localStorage.removeItem(BUILD_DRAFT_KEY);
     navigate("/");
   };
 
   const handleAnalyze = () => {
     // Create build config
     const build = {
-      id: currentBuild?.id || "build-" + Date.now(),
-      name: currentBuild?.name || "Custom Build",
+      id: currentBuild?.id || workingBuildId,
+      name: workingBuildName,
       description: currentBuild?.description || "User created build",
       componentIds: {
         frameId: selectedFrame || null,
@@ -115,9 +277,6 @@ export default function BuildPage() {
     navigate("/analysis", { state: { build } });
   };
 
-  const canAnalyze = selectedMotor && selectedPropeller && selectedBattery && selectedFrame;
-  const canSave = !!canAnalyze;
-
   // 3D model URLs state
   const [modelUrls, setModelUrls] = useState([]); // legacy aggregated urls (non-motor components)
   const [loadingModels, setLoadingModels] = useState(false);
@@ -125,6 +284,8 @@ export default function BuildPage() {
   const [motorModelUrl, setMotorModelUrl] = useState(null);
   const [batteryModelUrl, setBatteryModelUrl] = useState(null);
   const [propellerModelUrl, setPropellerModelUrl] = useState(null);
+  const [propellerCWModelUrl, setPropellerCWModelUrl] = useState(null);
+  const [propellerCCWModelUrl, setPropellerCCWModelUrl] = useState(null);
   const [escModelUrl, setEscModelUrl] = useState(null);
   const [fcModelUrl, setFcModelUrl] = useState(null);
   const [receiverModelUrl, setReceiverModelUrl] = useState(null);
@@ -139,11 +300,38 @@ export default function BuildPage() {
   const [clearedComponents, setClearedComponents] = useState([]);
   const [showDebugStatus, setShowDebugStatus] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
+  const [cameraView, setCameraView] = useState("orbit");
+  const [explodedAssembly, setExplodedAssembly] = useState(false);
+  const [selectedPresetId, setSelectedPresetId] = useState(requestedPreset?.id || "");
 
   // Ensure the viewer starts clean (no fallback sample) every time BuildPage mounts
   useEffect(() => {
     setResetKey(k => k + 1);
   }, []);
+
+  useEffect(() => {
+    const preset = getPlatformPreset(selectedPresetId);
+    if (!preset) return;
+    const currentIds = {
+      frameId: selectedFrame,
+      motorId: selectedMotor,
+      propellerId: selectedPropeller,
+      escId: selectedESC,
+      flightControllerId: selectedFC,
+      batteryId: selectedBattery,
+      receiverId: selectedReceiver,
+    };
+    if (!matchesPlatformPreset(preset, currentIds)) setSelectedPresetId("");
+  }, [
+    selectedBattery,
+    selectedESC,
+    selectedFC,
+    selectedFrame,
+    selectedMotor,
+    selectedPresetId,
+    selectedPropeller,
+    selectedReceiver,
+  ]);
 
   // Whenever a component is selected again, ensure it is removed from the cleared list
   useEffect(() => {
@@ -168,19 +356,69 @@ export default function BuildPage() {
     });
   }, [selectedFrame, selectedMotor, selectedPropeller, selectedESC, selectedFC, selectedBattery, selectedReceiver]);
 
+  useEffect(() => {
+    writeJsonStorage(BUILD_DRAFT_KEY, {
+      version: 1,
+      id: workingBuildId,
+      name: workingBuildName,
+      componentIds: {
+        frameId: selectedFrame || null,
+        motorId: selectedMotor || null,
+        propellerId: selectedPropeller || null,
+        escId: selectedESC || null,
+        flightControllerId: selectedFC || null,
+        batteryId: selectedBattery || null,
+        receiverId: selectedReceiver || null,
+      },
+      updatedAt: new Date().toISOString(),
+    });
+  }, [
+    selectedBattery,
+    selectedESC,
+    selectedFC,
+    selectedFrame,
+    selectedMotor,
+    selectedPropeller,
+    selectedReceiver,
+    workingBuildId,
+    workingBuildName,
+  ]);
+
   // Helper: fetch list for category and match filename starting with component id
-  const fetchModelForComponent = async (category, componentId) => {
+  const fetchModelForComponent = async (category, componentId, signal) => {
     if (!componentId) return null;
     try {
-      const res = await fetch(`${API_BASE}/api/models/list/${category}`);
+      const res = await fetch(`${API_BASE}/api/models/list/${category}`, { signal });
       if (!res.ok) return null;
       const data = await res.json();
-      console.log(`[fetchModelForComponent] ${category}/${componentId}:`, data.models.map(m => m.filename));
-      const match = data.models.find(m => m.filename.toLowerCase().startsWith(componentId.toLowerCase()));
-      console.log(`[fetchModelForComponent] Match for ${componentId}:`, match?.filename || 'NONE');
+      const prefixMatches = data.models.filter((model) =>
+        model.filename.toLowerCase().startsWith(componentId.toLowerCase())
+      );
+      const match = prefixMatches.find((model) => /\.glb$/i.test(model.filename)) || prefixMatches[0];
       return match ? `${API_BASE}/api/models/convert/${category}/${match.filename}?format=glb` : null;
     } catch (_) {
       return null;
+    }
+  };
+
+  const fetchPropellerModelPair = async (componentId, signal) => {
+    if (!componentId) return { cw: null, ccw: null };
+    try {
+      const res = await fetch(`${API_BASE}/api/models/list/propellers`, { signal });
+      if (!res.ok) return { cw: null, ccw: null };
+      const data = await res.json();
+      const matching = data.models.filter((model) =>
+        model.filename.toLowerCase().startsWith(componentId.toLowerCase()) &&
+        /\.glb$/i.test(model.filename)
+      );
+      const toUrl = (model) =>
+        model ? `${API_BASE}/api/models/convert/propellers/${model.filename}?format=glb` : null;
+      return {
+        cw: toUrl(matching.find((model) => /_cw\./i.test(model.filename))),
+        ccw: toUrl(matching.find((model) => /_ccw\./i.test(model.filename))),
+      };
+    } catch {
+      return { cw: null, ccw: null };
     }
   };
 
@@ -194,6 +432,8 @@ export default function BuildPage() {
       setMotorModelUrl(null);
       setBatteryModelUrl(null);
       setPropellerModelUrl(null);
+      setPropellerCWModelUrl(null);
+      setPropellerCCWModelUrl(null);
       setEscModelUrl(null);
       setFcModelUrl(null);
       setReceiverModelUrl(null);
@@ -210,44 +450,36 @@ export default function BuildPage() {
     }
 
     let cancelled = false;
+    const controller = new AbortController();
     const load = async () => {
       setLoadingModels(true);
       setModelError("");
-      const urls = [];
-      // Attempt frame, motor, battery (propellers often lack 3D model in assets)
-        const frameUrl = await fetchModelForComponent("frames", selectedFrame);
-        const motorUrl = await fetchModelForComponent("motors", selectedMotor);
-        const batteryUrl = await fetchModelForComponent("batteries", selectedBattery);
-        const escUrl = await fetchModelForComponent("escs", selectedESC);
-        const fcUrl = await fetchModelForComponent("flight_controllers", selectedFC);
-        const receiverUrl = await fetchModelForComponent("receivers", selectedReceiver);
-        // Propeller: use direct id prefix matching like other components
-        const propUrl = await fetchModelForComponent("propellers", selectedPropeller);
-        console.log('[BuildPage] Propeller URL:', propUrl, 'for ID:', selectedPropeller);
+      const [
+        frameUrl,
+        motorUrl,
+        batteryUrl,
+        escUrl,
+        fcUrl,
+        receiverUrl,
+        propModels,
+      ] = await Promise.all([
+        fetchModelForComponent("frames", selectedFrame, controller.signal),
+        fetchModelForComponent("motors", selectedMotor, controller.signal),
+        fetchModelForComponent("batteries", selectedBattery, controller.signal),
+        fetchModelForComponent("escs", selectedESC, controller.signal),
+        fetchModelForComponent("flight_controllers", selectedFC, controller.signal),
+        fetchModelForComponent("receivers", selectedReceiver, controller.signal),
+        fetchPropellerModelPair(selectedPropeller, controller.signal),
+      ]);
+      if (cancelled) return;
+      const urls = frameUrl ? [frameUrl] : [];
+      const propUrl = propModels.ccw || propModels.cw;
         
-        // Only update URLs if they actually changed to prevent unnecessary re-renders
-        if (frameUrl) urls.push(frameUrl);
-        
-        // If selected motor has no model, try a visual fallback of same size
-        let effectiveMotorUrl = motorUrl;
-        let effectiveMotorId = selectedMotor;
-        if (!motorUrl && selectedMotor) {
-          const selectedMotorObj = componentsData.motors.find(m => m.id === selectedMotor);
-          if (selectedMotorObj?.size) {
-            const alt = componentsData.motors.find(m => m.size === selectedMotorObj.size && m.id !== selectedMotor);
-            if (alt) {
-              const altUrl = await fetchModelForComponent("motors", alt.id);
-              if (altUrl) {
-                console.warn(`[BuildPage] No 3D model for ${selectedMotor}; using ${alt.id} (${alt.size}) for rendering only.`);
-                effectiveMotorUrl = altUrl;
-                effectiveMotorId = alt.id;
-              }
-            }
-          }
-        }
-        setMotorModelUrl(prev => effectiveMotorUrl === prev ? prev : effectiveMotorUrl);
+        setMotorModelUrl(prev => motorUrl === prev ? prev : motorUrl);
         setBatteryModelUrl(prev => batteryUrl === prev ? prev : batteryUrl);
         setPropellerModelUrl(prev => propUrl === prev ? prev : propUrl);
+        setPropellerCWModelUrl(prev => propModels.cw === prev ? prev : propModels.cw);
+        setPropellerCCWModelUrl(prev => propModels.ccw === prev ? prev : propModels.ccw);
         setEscModelUrl(prev => escUrl === prev ? prev : escUrl);
         setFcModelUrl(prev => fcUrl === prev ? prev : fcUrl);
         setReceiverModelUrl(prev => receiverUrl === prev ? prev : receiverUrl);
@@ -327,7 +559,7 @@ export default function BuildPage() {
 
         const hasAnyRenderable = Boolean(
           urls.length ||
-          effectiveMotorUrl ||
+          motorUrl ||
           batteryUrl ||
           escUrl ||
           fcUrl ||
@@ -335,422 +567,917 @@ export default function BuildPage() {
           propUrl
         );
 
-        if (!hasAnyRenderable && (selectedFrame || selectedMotor || selectedPropeller || selectedESC || selectedFC || selectedBattery || selectedReceiver)) {
-          setModelError("No 3D models found for selected components.");
-        } else {
-          setModelError("");
-        }
+        setModelError(hasAnyRenderable || selectedFrame ? "" : "Select a frame to begin assembly.");
 
         setLoadingModels(false);
       }
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [selectedFrame, selectedMotor, selectedBattery, selectedPropeller, selectedESC, selectedFC, selectedReceiver]);
 
+  const selectedFramePart = componentsData.frames.find((part) => part.id === selectedFrame);
+  const selectedMotorPart = componentsData.motors.find((part) => part.id === selectedMotor);
+  const selectedPropellerPart = componentsData.propellers.find((part) => part.id === selectedPropeller);
+  const selectedBatteryPart = componentsData.batteries.find((part) => part.id === selectedBattery);
+  const selectedEscPart = componentsData.escs.find((part) => part.id === selectedESC);
+  const selectedFlightControllerPart = componentsData.flight_controllers.find((part) => part.id === selectedFC);
+  const selectedReceiverPart = componentsData.receivers.find((part) => part.id === selectedReceiver);
+  const requiredParts = [
+    selectedFramePart,
+    selectedMotorPart,
+    selectedPropellerPart,
+    selectedBatteryPart,
+  ];
+  const requiredSelections = requiredParts.filter(Boolean).length;
+  const requiredCompletion = (requiredSelections / 4) * 100;
+  const canAnalyze = requiredSelections === 4;
+  const canSave = canAnalyze;
+
+  const assemblySpec = useMemo(() => ({
+    frame: selectedFramePart || null,
+    motor: selectedMotorPart || null,
+    propeller: selectedPropellerPart || null,
+    battery: selectedBatteryPart || null,
+    esc: selectedEscPart || null,
+    flightController: selectedFlightControllerPart || null,
+    receiver: selectedReceiverPart || null,
+  }), [
+    selectedFramePart,
+    selectedMotorPart,
+    selectedPropellerPart,
+    selectedBatteryPart,
+    selectedEscPart,
+    selectedFlightControllerPart,
+    selectedReceiverPart,
+  ]);
+  const viewerPlacementAudit = useMemo(
+    () => buildViewerPlacementAudit(assemblySpec.frame, assemblySpec),
+    [assemblySpec],
+  );
+
+  const summarizeCandidate = (physicalChecks = [], electricalChecks = []) => {
+    const physical = summarizePhysicalChecks(physicalChecks);
+    const electrical = summarizeElectricalChecks(electricalChecks);
+    if (!physical.ok || !electrical.ok) {
+      return {
+        ok: false,
+        verified: false,
+        reason: !physical.ok ? physical.reason : electrical.reason,
+      };
+    }
+    return {
+      ok: true,
+      verified: physical.verified && electrical.verified,
+      reason: [physical.reason, electrical.reason]
+        .filter((reason) => reason && !reason.startsWith("No "))
+        .join(" "),
+    };
+  };
+
+  const compatibility = {
+    frames: (part) => summarizeCandidate(
+      [
+        ...(selectedMotorPart
+          ? physicalChecksFor("motors", selectedMotorPart, {
+              ...assemblySpec,
+              frame: part,
+            })
+          : []),
+        ...(selectedEscPart
+          ? physicalChecksFor("escs", selectedEscPart, {
+              ...assemblySpec,
+              frame: part,
+            })
+          : []),
+        ...(selectedFlightControllerPart
+          ? physicalChecksFor("flight_controllers", selectedFlightControllerPart, {
+              ...assemblySpec,
+              frame: part,
+            })
+          : []),
+      ],
+      [checkPropellerClearance(selectedPropellerPart, part)],
+    ),
+    motors: (part) => summarizeCandidate(
+      physicalChecksFor("motors", part, assemblySpec),
+      [checkMotorVoltage(part, selectedBatteryPart)],
+    ),
+    propellers: (part) => summarizeCandidate(
+      physicalChecksFor("propellers", part, assemblySpec),
+      [checkPropellerClearance(part, selectedFramePart)],
+    ),
+    batteries: (part) => summarizeCandidate(
+      physicalChecksFor("batteries", part, assemblySpec),
+      [
+        checkMotorVoltage(selectedMotorPart, part),
+        checkEscVoltage(selectedEscPart, part),
+      ],
+    ),
+    escs: (part) => summarizeCandidate(
+      physicalChecksFor("escs", part, assemblySpec),
+      [
+        checkEscVoltage(part, selectedBatteryPart),
+        checkEscCurrent(part, selectedMotorPart),
+      ],
+    ),
+    flight_controllers: (part) => summarizeCandidate(
+      physicalChecksFor("flight_controllers", part, assemblySpec),
+      [checkFlightControllerVoltage(part, selectedBatteryPart)],
+    ),
+    receivers: () => ({ ok: true, verified: false, reason: "No catalogued receiver fit checks apply." }),
+  };
+
+  const selectedPhysicalChecks = [
+    ...(selectedMotorPart
+      ? physicalChecksFor("motors", selectedMotorPart, assemblySpec)
+      : []),
+    ...(selectedEscPart
+      ? physicalChecksFor("escs", selectedEscPart, assemblySpec)
+      : []),
+    ...(selectedBatteryPart
+      ? physicalChecksFor("batteries", selectedBatteryPart, assemblySpec)
+      : []),
+    ...(selectedFlightControllerPart
+      ? physicalChecksFor(
+          "flight_controllers",
+          selectedFlightControllerPart,
+          assemblySpec,
+        )
+      : []),
+  ];
+  const physicalFit = summarizePhysicalChecks(selectedPhysicalChecks);
+  const physicalCheckRows = Array.from(
+    new Map(
+      selectedPhysicalChecks.map((item) => [
+        `${item.status}:${item.label}:${item.message}`,
+        item,
+      ]),
+    ).values(),
+  );
+  const physicalVerifiedCount = physicalCheckRows.filter(
+    (item) => item.status === "compatible",
+  ).length;
+  const physicalMissingCount = physicalCheckRows.filter(
+    (item) => item.status === "unknown",
+  ).length;
+  const selectedElectricalChecks = electricalChecksFor(assemblySpec);
+  const electricalFit = summarizeElectricalChecks(selectedElectricalChecks);
+  const electricalCheckRows = Array.from(
+    new Map(
+      selectedElectricalChecks.map((item) => [
+        `${item.status}:${item.label}:${item.message}`,
+        item,
+      ]),
+    ).values(),
+  );
+  const electricalVerifiedCount = electricalCheckRows.filter(
+    (item) => item.status === "compatible",
+  ).length;
+  const electricalConflictCount = electricalCheckRows.filter(
+    (item) => item.status === "conflict",
+  ).length;
+  const electricalMissingCount = electricalCheckRows.filter(
+    (item) => item.status === "unknown",
+  ).length;
+  const buildEvidence = useMemo(
+    () => summarizeBuildEvidence(assemblySpec),
+    [assemblySpec],
+  );
+  const hardwareReadiness = useMemo(
+    () => summarizeHardwareReadiness({
+      buildId: workingBuildId,
+      flightController: selectedFlightControllerPart,
+      receiver: selectedReceiverPart,
+    }),
+    [selectedFlightControllerPart, selectedReceiverPart, workingBuildId],
+  );
+  const physicalFitState = selectedPhysicalChecks.length === 0
+    ? "pending"
+    : !physicalFit.ok
+      ? "conflict"
+      : physicalFit.verified
+        ? "verified"
+        : "unverified";
+  const compatibilityConflict = !physicalFit.ok || !electricalFit.ok;
+
+  const exportBuildSheet = () => {
+    const exportedBuild = {
+      id: workingBuildId,
+      name: workingBuildName,
+      componentIds: {
+        frameId: selectedFrame || null,
+        motorId: selectedMotor || null,
+        propellerId: selectedPropeller || null,
+        escId: selectedESC || null,
+        flightControllerId: selectedFC || null,
+        batteryId: selectedBattery || null,
+        receiverId: selectedReceiver || null,
+      },
+    };
+    const sheet = createBuildSheet({
+      build: exportedBuild,
+      assemblySpec,
+      hardwareReadiness,
+      importedEvidence: summarizeBenchEvidenceAttachment(
+        readBenchEvidenceAttachment(exportedBuild.id),
+        readCurrentBenchEvidenceScope(exportedBuild),
+      ),
+      viewerPlacement: viewerPlacementAudit,
+    });
+    const blob = new Blob([JSON.stringify(sheet, null, 2)], {
+      type: "application/json",
+    });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = buildSheetFilename(exportedBuild.name);
+    link.click();
+    URL.revokeObjectURL(link.href);
+    setMessage({
+      type: "success",
+      text: "Build sheet exported. Analysis is not included.",
+    });
+    setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+  };
+
+  const exportBuildBom = () => {
+    const exportedBuild = {
+      name: workingBuildName,
+      componentIds: {
+        frameId: selectedFrame || null,
+        motorId: selectedMotor || null,
+        propellerId: selectedPropeller || null,
+        escId: selectedESC || null,
+        flightControllerId: selectedFC || null,
+        batteryId: selectedBattery || null,
+        receiverId: selectedReceiver || null,
+      },
+    };
+    const blob = new Blob([createBuildBomCsv(exportedBuild)], {
+      type: "text/csv;charset=utf-8",
+    });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = buildBomFilename(exportedBuild.name);
+    link.click();
+    URL.revokeObjectURL(link.href);
+    setMessage({
+      type: "success",
+      text: "BOM CSV exported with catalog quantities and prices.",
+    });
+    setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+  };
+
+  const applyPlatformPreset = (presetId) => {
+    const preset = getPlatformPreset(presetId);
+    if (!preset) return;
+    setSelectedPresetId(preset.id);
+    setSelectedFrame(preset.componentIds.frameId);
+    setSelectedMotor(preset.componentIds.motorId);
+    setSelectedPropeller(preset.componentIds.propellerId);
+    setSelectedESC(preset.componentIds.escId);
+    setSelectedFC(preset.componentIds.flightControllerId);
+    setSelectedBattery(preset.componentIds.batteryId);
+    setSelectedReceiver(preset.componentIds.receiverId);
+    setClearedComponents([]);
+    setCameraView("orbit");
+    setMessage({ type: "info", text: `${preset.name} loaded. Review before analysis.` });
+    setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+  };
+
+  const openHardwareSetup = () => {
+    navigate("/setup", {
+      state: {
+        build: {
+          id: workingBuildId,
+          name: workingBuildName,
+          componentIds: {
+            frameId: selectedFrame || null,
+            motorId: selectedMotor || null,
+            propellerId: selectedPropeller || null,
+            escId: selectedESC || null,
+            flightControllerId: selectedFC || null,
+            batteryId: selectedBattery || null,
+            receiverId: selectedReceiver || null,
+          },
+        },
+      },
+    });
+  };
+
   return (
-    <div className={`app-container ${menuOpen ? "menu-open" : ""}`}>
+    <div className="app-container">
       {message.text && (
-        <div className={`message-bar ${message.type}`}>
+        <div
+          className={`message-bar ${message.type}`}
+          role="status"
+          aria-live="polite"
+        >
           {message.text}
         </div>
       )}
-      {/* Top Bar */}
-      <div className="top-bar">
-        <button className="icon-btn menu-btn" onClick={() => setMenuOpen(true)}>
-          ☰
-        </button>
-
-        <div className="logo-area">
-          <img src={logo} alt="logo" className="logo-icon" />
-          <span className="logo-text">RotorBench</span>
-        </div>
-
-        <button className="icon-btn home-btn" onClick={() => navigate("/")}>
-          🏠
-        </button>
-      </div>
-
       {/* Page Title & 3D Preview */}
-      <div className="section-title" style={{ fontSize: "20px", fontWeight: "600" }}>
-        Build Configuration
-      </div>
-      <div style={{ margin: "10px 0 24px" }}>
-        <div style={{ marginBottom: 6, fontSize: 12, color: "#666" }}>
-          3D Preview (all components when available)
+      <section className="build-page-header">
+        <div>
+          <h1><span>Build</span><span>configuration</span></h1>
+          <p>Choose compatible components and preview the assembly before analysis.</p>
         </div>
-        
-        {/* Component Visibility Controls */}
-        {(selectedFrame || selectedMotor || selectedBattery) && (
-          <div style={{
-            padding: "8px",
-            background: "#f8f9fa",
-            borderRadius: "8px",
-            marginBottom: "8px",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "6px",
-            fontSize: "11px"
-          }}>
-            <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", flexWrap: "wrap", gap: "6px" }}>
-              <span style={{ color: "#666", fontSize: "10px" }}>
-                Hide components:
+        <div
+          className="build-completion"
+          role="status"
+          aria-label={`${requiredSelections} of 4 required components selected`}
+        >
+          <div>
+            <strong>{requiredSelections}/4</strong>
+            <span>required parts</span>
+          </div>
+          <div className="completion-track" aria-hidden="true">
+            <span style={{ width: `${requiredCompletion}%` }} />
+          </div>
+          <div className="completion-parts" aria-hidden="true">
+            {[
+              ["Frame", selectedFrame],
+              ["Motors", selectedMotor],
+              ["Props", selectedPropeller],
+              ["Battery", selectedBattery],
+            ].map(([label, selected]) => (
+              <span key={label} className={selected ? "is-selected" : ""}>
+                {label}
               </span>
-              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                <label style={{ fontSize: "10px", color: "#666", display: "flex", alignItems: "center", gap: "4px" }}>
-                  Background:
-                  <select
-                    value={backgroundColor}
-                    onChange={(e) => setBackgroundColor(e.target.value)}
-                    style={{
-                      padding: "4px 6px",
-                      borderRadius: "6px",
-                      border: "1px solid #ccc",
-                      fontSize: "10px",
-                      background: "#fff",
-                      cursor: "pointer"
-                    }}
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="build-workspace">
+        <section className="build-preview-panel" aria-label="3D build preview">
+          <div className="build-preview-header">
+            <div>
+              <h2>Assembly preview</h2>
+              <p>Models appear as you add compatible parts.</p>
+            </div>
+            <span className="preview-live-label">
+              <span aria-hidden="true" />
+              Live
+            </span>
+          </div>
+
+          {(selectedFrame || selectedMotor || selectedBattery) && (
+            <div className="preview-controls">
+              <div className="preview-controls-heading">
+                <span>Visible components</span>
+                <div className="preview-tools">
+                  <label>
+                    Background
+                    <select
+                      value={backgroundColor}
+                      onChange={(e) => setBackgroundColor(e.target.value)}
+                    >
+                      <option value="#2d2d44">Dark gray</option>
+                      <option value="#111111">Black</option>
+                      <option value="#1a1a2e">Dark blue</option>
+                      <option value="#2c3e50">Slate blue</option>
+                      <option value="#34495e">Charcoal</option>
+                      <option value="#ffffff">White</option>
+                      <option value="#f5f5f5">Light gray</option>
+                      <option value="#e3f2fd">Light blue</option>
+                      <option value="#fff3e0">Light orange</option>
+                      <option value="#f1f8e9">Light green</option>
+                      <option value="#fce4ec">Light pink</option>
+                      <option value="#e8eaf6">Lavender</option>
+                      <option value="#fff9c4">Light yellow</option>
+                      <option value="#e0f2f1">Mint</option>
+                      <option value="#263238">Dark teal</option>
+                      <option value="#3e2723">Dark brown</option>
+                      <option value="#1b5e20">Dark green</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="preview-debug-toggle"
+                    onClick={() => setShowDebugStatus(!showDebugStatus)}
+                    aria-pressed={showDebugStatus}
                   >
-                    <option value="#2d2d44">Dark Gray</option>
-                    <option value="#111111">Black</option>
-                    <option value="#1a1a2e">Dark Blue</option>
-                    <option value="#2c3e50">Slate Blue</option>
-                    <option value="#34495e">Charcoal</option>
-                    <option value="#ffffff">White</option>
-                    <option value="#f5f5f5">Light Gray</option>
-                    <option value="#e3f2fd">Light Blue</option>
-                    <option value="#fff3e0">Light Orange</option>
-                    <option value="#f1f8e9">Light Green</option>
-                    <option value="#fce4ec">Light Pink</option>
-                    <option value="#e8eaf6">Lavender</option>
-                    <option value="#fff9c4">Light Yellow</option>
-                    <option value="#e0f2f1">Mint</option>
-                    <option value="#263238">Dark Teal</option>
-                    <option value="#3e2723">Dark Brown</option>
-                    <option value="#1b5e20">Dark Green</option>
-                  </select>
-                </label>
+                    {showDebugStatus ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />}
+                    {showDebugStatus ? "Hide status" : "Show status"}
+                  </button>
+                </div>
+              </div>
+              <div
+                className="camera-preset-row"
+                role="group"
+                aria-label="3D inspection view"
+              >
+                {Object.values(CAMERA_VIEWS).map((view) => (
+                  <button
+                    key={view.id}
+                    type="button"
+                    className={`camera-preset-button ${cameraView === view.id ? "is-active" : ""}`}
+                    aria-pressed={cameraView === view.id}
+                    onClick={() => setCameraView(view.id)}
+                  >
+                    {view.label}
+                  </button>
+                ))}
                 <button
-                  onClick={() => setShowDebugStatus(!showDebugStatus)}
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: "12px",
-                    border: `1px solid ${showDebugStatus ? '#2196F3' : '#ccc'}`,
-                    background: showDebugStatus ? '#e3f2fd' : '#fff',
-                    color: showDebugStatus ? '#1976d2' : '#666',
-                    cursor: "pointer",
-                    fontSize: "10px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px"
-                  }}
-                  title={showDebugStatus ? "Hide load status" : "Show load status"}
+                  type="button"
+                  className={`camera-preset-button ${explodedAssembly ? "is-active" : ""}`}
+                  aria-pressed={explodedAssembly}
+                  onClick={() => setExplodedAssembly((current) => !current)}
                 >
-                  <span>📊</span>
-                  <span>{showDebugStatus ? "Hide Status" : "Show Status"}</span>
+                  <Layers size={13} aria-hidden="true" />
+                  {explodedAssembly ? "Assembled" : "Exploded"}
                 </button>
               </div>
+              <div className="visibility-chip-row">
+                {[
+                  { id: "frame", label: "Frame", Icon: Box, has: selectedFrame },
+                  { id: "motor", label: "Motors", Icon: Cog, has: selectedMotor },
+                  { id: "propeller", label: "Props", Icon: Fan, has: selectedPropeller },
+                  { id: "battery", label: "Battery", Icon: BatteryCharging, has: selectedBattery },
+                  { id: "flight_controller", label: "FC", Icon: Cpu, has: selectedFC },
+                  { id: "esc", label: "ESC", Icon: Zap, has: selectedESC },
+                  { id: "receiver", label: "RX", Icon: Radio, has: selectedReceiver },
+                ].filter((comp) => comp.has).map(({ id, label, Icon }) => {
+                  const isHidden = clearedComponents.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`visibility-chip ${isHidden ? "is-hidden" : ""}`}
+                      aria-pressed={!isHidden}
+                      onClick={() => {
+                        setClearedComponents((prev) =>
+                          isHidden ? prev.filter((c) => c !== id) : [...prev, id],
+                        );
+                      }}
+                    >
+                      <Icon size={14} aria-hidden="true" />
+                      <span>{label}</span>
+                      {isHidden ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            {[
-              { id: 'frame', label: 'Frame', icon: '🖼️', has: selectedFrame },
-              { id: 'motor', label: 'Motors', icon: '⚙️', has: selectedMotor },
-              { id: 'propeller', label: 'Props', icon: '🔄', has: selectedPropeller },
-              { id: 'battery', label: 'Battery', icon: '🔋', has: selectedBattery },
-              { id: 'flight_controller', label: 'FC', icon: '🖥️', has: selectedFC },
-              { id: 'esc', label: 'ESC', icon: '⚡', has: selectedESC },
-              { id: 'receiver', label: 'RX', icon: '📡', has: selectedReceiver }
-            ].filter(comp => comp.has).map(comp => {
-              const isHidden = clearedComponents.includes(comp.id);
-              return (
-                <button
-                  key={comp.id}
-                  onClick={() => {
-                    setClearedComponents(prev => 
-                      isHidden 
-                        ? prev.filter(c => c !== comp.id)
-                        : [...prev, comp.id]
-                    );
-                  }}
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: "12px",
-                    border: `1px solid ${isHidden ? '#ccc' : '#4CAF50'}`,
-                    background: isHidden ? '#fff' : '#e8f5e9',
-                    color: isHidden ? '#999' : '#2e7d32',
-                    cursor: "pointer",
-                    fontSize: "10px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    opacity: isHidden ? 0.6 : 1
-                  }}
-                >
-                  <span>{comp.icon}</span>
-                  <span>{comp.label}</span>
-                  {isHidden && <span style={{ marginLeft: "2px" }}>👁️‍🗨️</span>}
-                </button>
-              );
-            })}
+          )}
+
+          <div className="build-viewer-frame">
+            {!selectedFrame && !loadingModels && !modelError && (
+              <div className="viewer-empty-state">
+                <Box size={30} strokeWidth={1.5} aria-hidden="true" />
+                <h3>Start with a frame</h3>
+                <p>Choose the airframe first. The remaining parts will build around it.</p>
+              </div>
+            )}
+            {selectedFrame && (
+              <Suspense
+                fallback={(
+                  <div className="viewer-loading-state" role="status">
+                    Loading 3D assembly view
+                  </div>
+                )}
+              >
+                <BabylonViewer
+                  modelUrl={null}
+                  modelUrls={modelUrls}
+                  motorUrl={motorModelUrl}
+                  motorMountingPoint={motorMountingPoint}
+                  frameCornerPositions={frameCornerPositions}
+                  propellerUrl={propellerModelUrl}
+                  propellerCWUrl={propellerCWModelUrl}
+                  propellerCCWUrl={propellerCCWModelUrl}
+                  propellerMountingPoint={propellerMountingPoint}
+                  batteryUrl={batteryModelUrl}
+                  batteryMountingPoint={batteryMountingPoint}
+                  escUrl={escModelUrl}
+                  escMountingPoint={escMountingPoint}
+                  fcUrl={fcModelUrl}
+                  fcMountingPoint={fcMountingPoint}
+                  receiverUrl={receiverModelUrl}
+                  receiverMountingPoint={receiverMountingPoint}
+                  assemblySpec={assemblySpec}
+                  exploded={explodedAssembly}
+                  groundClearance={4}
+                  autoRotate={cameraView === "orbit"}
+                  cameraView={cameraView}
+                  onLoaded={() => {}}
+                  resetKey={resetKey}
+                  clearedComponents={clearedComponents}
+                  debug={showDebugStatus}
+                  backgroundColor={backgroundColor}
+                />
+              </Suspense>
+            )}
           </div>
-        )}
-        
-        <BabylonViewer
-          modelUrl={null}
-          modelUrls={modelUrls}
-          motorUrl={motorModelUrl}
-          motorMountingPoint={motorMountingPoint}
-          frameCornerPositions={frameCornerPositions}
-          propellerUrl={propellerModelUrl}
-          propellerMountingPoint={propellerMountingPoint}
-          batteryUrl={batteryModelUrl}
-          batteryMountingPoint={batteryMountingPoint}
-          escUrl={escModelUrl}
-          escMountingPoint={escMountingPoint}
-          fcUrl={fcModelUrl}
-          fcMountingPoint={fcMountingPoint}
-          receiverUrl={receiverModelUrl}
-          receiverMountingPoint={receiverMountingPoint}
-          groundClearance={4}
-          autoRotate
-          onLoaded={() => {}}
-          resetKey={resetKey}
-          clearedComponents={clearedComponents}
-          debug={showDebugStatus}
-          backgroundColor={backgroundColor}
-        />
-        {loadingModels && (
-          <div style={{ fontSize: 12, color: "#888", marginTop: 4 }}>Loading component models…</div>
-        )}
-        {modelError && !loadingModels && (
-          <div style={{ fontSize: 12, color: "#d9534f", marginTop: 4 }}>{modelError}</div>
-        )}
-      </div>
+          {loadingModels && (
+            <div className="model-status" role="status">
+              <LoaderCircle size={15} className="spin-icon" aria-hidden="true" />
+              Loading component models...
+            </div>
+          )}
+          {modelError && !loadingModels && (
+            <div className="model-status is-error" role="alert">
+              <CircleAlert size={15} aria-hidden="true" />
+              {modelError}
+            </div>
+          )}
+          {Object.values(assemblySpec).some(Boolean) && (
+            <details className="viewer-placement-audit">
+              <summary>
+                <Layers size={16} aria-hidden="true" />
+                <span>
+                  <strong>Viewer placement</strong>
+                  <small>Assembly geometry and catalogued interfaces</small>
+                </span>
+                <em className={
+                  viewerPlacementAudit.complete
+                    ? "is-complete"
+                    : viewerPlacementAudit.conflictCount ? "is-conflict" : ""
+                }>
+                  {viewerPlacementAudit.complete
+                    ? `${viewerPlacementAudit.checks.length}/${viewerPlacementAudit.checks.length} aligned`
+                    : viewerPlacementAudit.conflictCount
+                      ? `${viewerPlacementAudit.conflictCount} conflict${viewerPlacementAudit.conflictCount === 1 ? "" : "s"} · ${viewerPlacementAudit.verifiedCount}/${viewerPlacementAudit.checks.length} placed`
+                      : `${viewerPlacementAudit.verifiedCount}/${viewerPlacementAudit.checks.length} placed`}
+                </em>
+              </summary>
+              <div className="viewer-placement-audit-body">
+                <p>
+                  This audits assembled coordinates from catalog and fallback
+                  geometry plus catalogued mount and shaft interfaces. It does
+                  not claim complete product fit, electrical compatibility, or a
+                  live aircraft check.
+                </p>
+                <ul aria-label="Viewer placement checks">
+                  {viewerPlacementAudit.checks.map((check) => (
+                    <li key={check.id} className={`is-${check.status}`}>
+                      {check.status === "verified"
+                        ? <Check size={14} aria-hidden="true" />
+                        : check.status === "conflict"
+                          ? <CircleAlert size={14} aria-hidden="true" />
+                          : <Box size={14} aria-hidden="true" />}
+                      <span>
+                        <strong>{check.label}</strong>
+                        <small>{check.detail}</small>
+                      </span>
+                      <em>{
+                        check.status === "verified"
+                          ? "Verified"
+                          : check.status === "conflict" ? "Conflict" : "Awaiting"
+                      }</em>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
+          )}
+        </section>
+
+        <section className="build-form-panel" aria-label="Component selection">
+          <div className="build-form-heading">
+            <div>
+              <h2>Parts manifest</h2>
+              <p>Select the required frame, power, and control components.</p>
+            </div>
+            {canAnalyze && (
+              <span className={`ready-chip ${compatibilityConflict ? "is-review" : ""}`}>
+                {compatibilityConflict
+                  ? <CircleAlert size={14} aria-hidden="true" />
+                  : <Check size={14} aria-hidden="true" />}
+                {compatibilityConflict ? "Review limits" : "Ready"}
+              </span>
+            )}
+          </div>
+
+          <div className={`physical-fit-summary is-${physicalFitState}`}>
+            {physicalFitState === "conflict"
+              ? <CircleAlert size={16} aria-hidden="true" />
+              : physicalFitState === "verified"
+                ? <Check size={16} aria-hidden="true" />
+                : <Box size={16} aria-hidden="true" />}
+            <span>
+              <strong>
+                {physicalFitState === "conflict"
+                  ? "Physical fit conflict"
+                  : physicalFitState === "verified"
+                    ? "Physical fit verified"
+                    : "Fit needs manual verification"}
+              </strong>
+              <small>
+                {physicalFitState === "pending"
+                  ? "Add a frame, motors, or electronics to check mounting and shaft data."
+                  : physicalFit.reason}
+              </small>
+            </span>
+          </div>
+
+          {physicalCheckRows.length > 0 && (
+            <details className="physical-fit-details">
+              <summary>
+                <ChevronRight size={14} aria-hidden="true" />
+                <span>Physical fit checks</span>
+                <small>
+                  {physicalVerifiedCount} verified
+                  {physicalMissingCount
+                    ? ` · ${physicalMissingCount} awaiting data`
+                    : " · no data gaps"}
+                </small>
+              </summary>
+              <ul>
+                {physicalCheckRows.map((item) => (
+                  <li key={`${item.status}:${item.label}:${item.message}`} className={`is-${item.status}`}>
+                    {item.status === "compatible"
+                      ? <Check size={14} aria-hidden="true" />
+                      : item.status === "conflict"
+                        ? <CircleAlert size={14} aria-hidden="true" />
+                        : <Box size={14} aria-hidden="true" />}
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small>{item.message}</small>
+                    </span>
+                    <em>
+                      {item.status === "compatible"
+                        ? "Verified"
+                        : item.status === "conflict"
+                          ? "Conflict"
+                          : "Awaiting data"}
+                    </em>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+
+          {(selectedFramePart
+            || selectedMotorPart
+            || selectedPropellerPart
+            || selectedBatteryPart
+            || selectedEscPart
+            || selectedFlightControllerPart) && (
+            <details className="physical-fit-details electrical-fit-details">
+              <summary>
+                <ChevronRight size={14} aria-hidden="true" />
+                <span>Electrical limits</span>
+                <small>
+                  {electricalConflictCount
+                    ? `${electricalConflictCount} conflict${electricalConflictCount === 1 ? "" : "s"}`
+                    : `${electricalVerifiedCount} verified`}
+                  {electricalMissingCount
+                    ? ` · ${electricalMissingCount} awaiting data`
+                    : " · no data gaps"}
+                </small>
+              </summary>
+              <ul>
+                {electricalCheckRows.map((item) => (
+                  <li key={`${item.status}:${item.label}:${item.message}`} className={`is-${item.status}`}>
+                    {item.status === "compatible"
+                      ? <Check size={14} aria-hidden="true" />
+                      : item.status === "conflict"
+                        ? <CircleAlert size={14} aria-hidden="true" />
+                        : <Box size={14} aria-hidden="true" />}
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small>{item.message}</small>
+                    </span>
+                    <em>
+                      {item.status === "compatible"
+                        ? "Verified"
+                        : item.status === "conflict"
+                          ? "Conflict"
+                          : "Awaiting data"}
+                    </em>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+
+          <div className="platform-preset-picker">
+            <label htmlFor="platform-preset">Starter platform</label>
+            <select
+              id="platform-preset"
+              value={selectedPresetId}
+              onChange={(event) => applyPlatformPreset(event.target.value)}
+            >
+              <option value="">Choose a source-backed platform</option>
+              {PLATFORM_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name}
+                </option>
+              ))}
+            </select>
+            {selectedPresetId && (
+              <small>{getPlatformPreset(selectedPresetId)?.description}</small>
+            )}
+          </div>
 
       {/* Frame Selection */}
-      <div>
-        <div className="section-title">🔲 Frame</div>
-        <div className="select-row">
-          <select
-            className="input-field"
-            value={selectedFrame}
-            onChange={(e) => setSelectedFrame(e.target.value)}
-            style={{ flex: 1 }}
-          >
-            <option value="">Select frame...</option>
-            {componentsData.frames.map((frame) => (
-              <option key={frame.id} value={frame.id}>
-                {frame.name} - ${frame.price}
-              </option>
-            ))}
-          </select>
-          {selectedFrame && (
-            <button
-              className="reset-btn"
-              onClick={() => {
-                setSelectedFrame("");
-                // remove frame model from aggregated urls
-                setModelUrls(prev => prev.filter(u => !/\/frames\//.test(u)));
-                setClearedComponents(c => [...new Set([...c, 'frame'])]);
-              }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+      <div className="component-fieldset">
+        <h3 className="section-title"><Box size={17} aria-hidden="true" />Frame</h3>
+        <PartPicker
+          category="frames"
+          parts={componentsData.frames}
+          value={selectedFrame}
+          onChange={setSelectedFrame}
+          compatibility={compatibility.frames}
+          placeholder="Choose a frame"
+        />
       </div>
 
       {/* Motor Selection */}
-      <div>
-        <div className="section-title">⚙️ Motors</div>
-        <div className="select-row">
-          <select
-            className="input-field"
-            value={selectedMotor}
-            onChange={(e) => setSelectedMotor(e.target.value)}
-            style={{ flex: 1 }}
-          >
-            <option value="">Select motor...</option>
-            {componentsData.motors.map((motor) => (
-              <option key={motor.id} value={motor.id}>
-                {motor.name} - ${motor.price}
-              </option>
-            ))}
-          </select>
-          {selectedMotor && (
-            <button
-              className="reset-btn"
-              onClick={() => {
-                setSelectedMotor("");
-                setMotorModelUrl(null);
-                setClearedComponents(c => [...new Set([...c, 'motor'])]);
-              }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+      <div className="component-fieldset">
+        <h3 className="section-title"><Cog size={17} aria-hidden="true" />Motors</h3>
+        <PartPicker
+          category="motors"
+          parts={componentsData.motors}
+          value={selectedMotor}
+          onChange={setSelectedMotor}
+          compatibility={compatibility.motors}
+          placeholder="Choose four matching motors"
+        />
       </div>
 
       {/* Propeller Selection */}
-      <div>
-        <div className="section-title">🔄 Propellers</div>
-        <div className="select-row">
-          <select
-            className="input-field"
-            value={selectedPropeller}
-            onChange={(e) => setSelectedPropeller(e.target.value)}
-            style={{ flex: 1 }}
-          >
-            <option value="">Select propeller...</option>
-            {componentsData.propellers.map((prop) => (
-              <option key={prop.id} value={prop.id}>
-                {prop.name} - ${prop.price}
-              </option>
-            ))}
-          </select>
-          {selectedPropeller && (
-            <button
-              className="reset-btn"
-              onClick={() => {
-                setSelectedPropeller("");
-                setPropellerModelUrl(null);
-                setClearedComponents(c => [...new Set([...c, 'propeller'])]);
-              }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+      <div className="component-fieldset">
+        <h3 className="section-title"><Fan size={17} aria-hidden="true" />Propellers</h3>
+        <PartPicker
+          category="propellers"
+          parts={componentsData.propellers}
+          value={selectedPropeller}
+          onChange={setSelectedPropeller}
+          compatibility={compatibility.propellers}
+          placeholder="Choose a propeller set"
+        />
       </div>
 
       {/* ESC Selection */}
-      <div>
-        <div className="section-title">⚡ ESC</div>
-        <div className="select-row">
-          <select className="input-field" value={selectedESC} onChange={(e) => setSelectedESC(e.target.value)} style={{ flex: 1 }}>
-            <option value="">Select ESC...</option>
-            {componentsData.escs.map((esc) => (
-              <option key={esc.id} value={esc.id}>
-                {esc.manufacturer} {esc.name} - ${esc.price}
-              </option>
-            ))}
-          </select>
-          {selectedESC && (
-            <button
-              className="reset-btn"
-              onClick={() => {
-                setSelectedESC("");
-                setEscModelUrl(null);
-                setClearedComponents(c => [...new Set([...c, 'esc'])]);
-              }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+      <div className="component-fieldset">
+        <h3 className="section-title"><Zap size={17} aria-hidden="true" />ESC</h3>
+        <PartPicker
+          category="escs"
+          parts={componentsData.escs}
+          value={selectedESC}
+          onChange={setSelectedESC}
+          compatibility={compatibility.escs}
+          placeholder="Choose an ESC"
+        />
       </div>
 
       {/* Flight Controller Selection */}
-      <div>
-        <div className="section-title">🖥️ Flight Controller</div>
-        <div className="select-row">
-          <select className="input-field" value={selectedFC} onChange={(e) => setSelectedFC(e.target.value)} style={{ flex: 1 }}>
-            <option value="">Select flight controller...</option>
-            {componentsData.flight_controllers.map((fc) => (
-              <option key={fc.id} value={fc.id}>
-                {fc.manufacturer} {fc.name} - ${fc.price}
-              </option>
-            ))}
-          </select>
-          {selectedFC && (
-            <button
-              className="reset-btn"
-              onClick={() => {
-                setSelectedFC("");
-                setFcModelUrl(null);
-                setClearedComponents(c => [...new Set([...c, 'flight_controller'])]);
-              }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+      <div className="component-fieldset">
+        <h3 className="section-title"><Cpu size={17} aria-hidden="true" />Flight controller</h3>
+        <PartPicker
+          category="flight_controllers"
+          parts={componentsData.flight_controllers}
+          value={selectedFC}
+          onChange={setSelectedFC}
+          compatibility={compatibility.flight_controllers}
+          placeholder="Choose a flight controller"
+        />
       </div>
 
       {/* Battery Selection */}
-      <div>
-        <div className="section-title">🔋 Battery</div>
-        <div className="select-row">
-          <select
-            className="input-field"
-            value={selectedBattery}
-            onChange={(e) => setSelectedBattery(e.target.value)}
-            style={{ flex: 1 }}
-          >
-            <option value="">Select battery...</option>
-            {componentsData.batteries.map((battery) => (
-              <option key={battery.id} value={battery.id}>
-                {battery.name} - ${battery.price}
-              </option>
-            ))}
-          </select>
-          {selectedBattery && (
-            <button
-              className="reset-btn"
-              onClick={() => {
-                setSelectedBattery("");
-                setBatteryModelUrl(null);
-                setClearedComponents(c => [...new Set([...c, 'battery'])]);
-              }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+      <div className="component-fieldset">
+        <h3 className="section-title"><BatteryCharging size={17} aria-hidden="true" />Battery</h3>
+        <PartPicker
+          category="batteries"
+          parts={componentsData.batteries}
+          value={selectedBattery}
+          onChange={setSelectedBattery}
+          compatibility={compatibility.batteries}
+          placeholder="Choose a battery"
+        />
       </div>
 
       {/* Receiver Selection */}
-      <div>
-        <div className="section-title">📡 Receiver (Optional)</div>
-        <div className="select-row">
-          <select
-            className="input-field"
-            value={selectedReceiver}
-            onChange={(e) => setSelectedReceiver(e.target.value)}
-            style={{ flex: 1 }}
-          >
-            <option value="">Select receiver...</option>
-            {componentsData.receivers.map((rx) => (
-              <option key={rx.id} value={rx.id}>
-                {rx.name} - ${rx.price}
-              </option>
-            ))}
-          </select>
-          {selectedReceiver && (
-            <button
-              className="reset-btn"
-              onClick={() => {
-                setSelectedReceiver("");
-                setReceiverModelUrl(null);
-                setClearedComponents(c => [...new Set([...c, 'receiver'])]);
-              }}
-            >
-              Reset
-            </button>
-          )}
-        </div>
+      <div className="component-fieldset">
+        <h3 className="section-title"><Radio size={17} aria-hidden="true" />Receiver <span>Optional</span></h3>
+        <PartPicker
+          category="receivers"
+          parts={componentsData.receivers}
+          value={selectedReceiver}
+          onChange={setSelectedReceiver}
+          compatibility={compatibility.receivers}
+          placeholder="Choose a receiver"
+        />
       </div>
+
+      {buildEvidence.selectedCount > 0 && (
+        <details className="build-evidence-panel">
+          <summary>
+            <FileCheck2 size={17} aria-hidden="true" />
+            <span>
+              <strong>Build provenance</strong>
+              <small>
+                {buildEvidence.sourceBackedCount}/{buildEvidence.selectedCount} source-backed
+                {buildEvidence.estimatedFieldCount
+                  ? ` · ${buildEvidence.estimatedFieldCount} estimated fields`
+                  : ""}
+                {buildEvidence.geometryFallbackCount
+                  ? ` · ${buildEvidence.geometryFallbackCount} geometry fallbacks`
+                  : ""}
+              </small>
+            </span>
+          </summary>
+          <div className="build-evidence-actions">
+            <button type="button" onClick={exportBuildSheet}>
+              <Download size={15} aria-hidden="true" />
+              Export build sheet
+            </button>
+            <button type="button" onClick={exportBuildBom}>
+              <Download size={15} aria-hidden="true" />
+              Export BOM CSV
+            </button>
+            <span>Draft JSON · no analysis or hardware verification claim</span>
+          </div>
+          <div className="build-evidence-list">
+            {buildEvidence.parts.map((part) => (
+              <div key={part.key} className="build-evidence-row">
+                <div className="build-evidence-part">
+                  <span>{part.label}</span>
+                  <strong>{part.name}</strong>
+                </div>
+                <div className="build-evidence-tags">
+                  <span className={part.sourceBacked ? "is-source" : "is-legacy"}>
+                    {part.sourceBacked ? "Source-backed" : "Legacy catalog"}
+                  </span>
+                  {part.estimatedFields.length > 0 && (
+                    <span>{part.estimatedFields.length} estimated</span>
+                  )}
+                  {part.geometryFallback && <span>Geometry fallback</span>}
+                </div>
+                <div className="build-evidence-links">
+                  {part.sourceUrl && (
+                    <a href={part.sourceUrl} target="_blank" rel="noreferrer">
+                      Product source <ExternalLink size={12} aria-hidden="true" />
+                    </a>
+                  )}
+                  {part.priceSourceUrl && (
+                    <a href={part.priceSourceUrl} target="_blank" rel="noreferrer">
+                      Price source <ExternalLink size={12} aria-hidden="true" />
+                    </a>
+                  )}
+                  {part.connectorSourceUrl && (
+                    <a href={part.connectorSourceUrl} target="_blank" rel="noreferrer">
+                      Connector source <ExternalLink size={12} aria-hidden="true" />
+                    </a>
+                  )}
+                  {!part.sourceUrl && !part.priceSourceUrl && !part.connectorSourceUrl && (
+                    <span>No source URL in catalog</span>
+                  )}
+                </div>
+                {part.estimatedFields.length > 0 && (
+                  <p>Estimated: {part.estimatedFields.join(", ")}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
 
       {/* Info Message */}
       {!canAnalyze && (
-        <div style={{ margin: "20px 14px", padding: "12px", background: "#fff3e0", borderRadius: "8px", fontSize: "13px" }}>
-          ⚠️ Please select at least Frame, Motor, Propeller, and Battery to analyze
+        <div className="requirement-note">
+          <CircleAlert size={17} aria-hidden="true" />
+          Select Frame, Motors, Propellers, and Battery to run an analysis.
         </div>
       )}
+          <div className="build-setup-cta" id="hardware-setup">
+            <div>
+              <strong>
+                Flight controller and radio
+                <span className={`build-setup-status is-${hardwareReadiness.status}`}>
+                  {hardwareReadiness.label}
+                </span>
+              </strong>
+              <span>
+                {selectedFlightControllerPart
+                  ? `${selectedFlightControllerPart.name}${selectedReceiverPart ? ` / ${selectedReceiverPart.name}` : " / No receiver"}`
+                  : "Plan receiver wiring, channel roles, firmware profile, and the link."}
+              </span>
+              {selectedFlightControllerPart && (
+                <small>
+                  {hardwareReadiness.firmwareLabel} · {hardwareReadiness.protocolLabel} ·{" "}
+                  {hardwareReadiness.receiverUart} / {hardwareReadiness.receiverBaud} baud
+                </small>
+              )}
+            </div>
+            <button type="button" onClick={openHardwareSetup}>
+              <Settings2 size={16} aria-hidden="true" />
+              {hardwareReadiness.configured ? "Review setup" : "Open setup"}
+            </button>
+          </div>
+        </section>
+      </div>
 
       <div className="bottom-buttons">
         <button
-          className="action-btn analysis"
+          className="action-btn reset-action"
+          aria-label="Reset all components"
           onClick={() => {
             // Clear all selections and trigger viewer reset
             setSelectedFrame("");
@@ -760,11 +1487,16 @@ export default function BuildPage() {
             setSelectedFC("");
             setSelectedBattery("");
             setSelectedReceiver("");
+            setCameraView("orbit");
+            setExplodedAssembly(false);
+            setSelectedPresetId("");
             // Clear all model URL states immediately so viewer sees empty set
             setModelUrls([]);
             setMotorModelUrl(null);
             setBatteryModelUrl(null);
             setPropellerModelUrl(null);
+            setPropellerCWModelUrl(null);
+            setPropellerCCWModelUrl(null);
             setEscModelUrl(null);
             setFcModelUrl(null);
             setReceiverModelUrl(null);
@@ -773,9 +1505,9 @@ export default function BuildPage() {
             setMessage({ type: "info", text: "Build reset." });
             setTimeout(() => setMessage({ type: "", text: "" }), 1500);
           }}
-          style={{ background: '#555' }}
         >
-          ♻️ Reset All
+          <RotateCcw size={18} aria-hidden="true" />
+          <span className="action-label-full">Reset all</span>
         </button>
         <button
           className="action-btn save"
@@ -783,8 +1515,11 @@ export default function BuildPage() {
           disabled={!canSave}
           style={{ opacity: canSave ? 1 : 0.5, cursor: canSave ? "pointer" : "not-allowed" }}
           title={canSave ? "Save & go Home" : "Select Frame, Motor, Propeller, Battery first"}
+          aria-label="Save and go home"
         >
-          💾 Save & Home
+          <Save size={18} aria-hidden="true" />
+          <span className="action-label-full">Save &amp; home</span>
+          <span className="action-label-compact" aria-hidden="true">Save</span>
         </button>
 
         <button
@@ -793,50 +1528,11 @@ export default function BuildPage() {
           onClick={handleAnalyze}
           style={{ opacity: canAnalyze ? 1 : 0.5 }}
         >
-          📊 Analyze
+          <ChartNoAxesCombined size={18} aria-hidden="true" />
+          Analyze
         </button>
       </div>
 
-      {/* Drawer (contained in phone) */}
-      {menuOpen && (
-        <div className="menu-overlay">
-          <div className="menu-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="drawer-top-right">
-              <button className="icon-btn menu-btn" onClick={() => setMenuOpen(false)}>
-                ☰
-              </button>
-            </div>
-            <button className="menu-item" onClick={() => navigate("/")}>
-              Home
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/saved");
-              }}
-            >
-              Saved Builds
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => { setMenuOpen(false); navigate("/profile", { state: { userId: "leo" } }); }}
-            >
-              Profile
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/legal");
-              }}
-            >
-              Legal & Disclaimer
-            </button>
-          </div>
-          <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
-        </div>
-      )}
     </div>
   );
 }

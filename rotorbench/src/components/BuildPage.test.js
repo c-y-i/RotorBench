@@ -1,0 +1,372 @@
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { Link, MemoryRouter, useLocation } from "react-router-dom";
+import { BuildProvider } from "../context/BuildContext";
+import BuildPage from "./BuildPage";
+
+jest.mock("./BabylonViewer.jsx", () => ({ cameraView, autoRotate, exploded, assemblySpec }) => (
+  <div
+    data-testid="assembly-viewer"
+    data-camera-view={cameraView}
+    data-auto-rotate={String(autoRotate)}
+    data-exploded={String(exploded)}
+    data-frame={assemblySpec?.frame?.id || ""}
+    data-motor={assemblySpec?.motor?.id || ""}
+    data-propeller={assemblySpec?.propeller?.id || ""}
+    data-esc={assemblySpec?.esc?.id || ""}
+    data-battery={assemblySpec?.battery?.id || ""}
+    data-flight-controller={assemblySpec?.flightController?.id || ""}
+    data-receiver={assemblySpec?.receiver?.id || ""}
+  />
+));
+
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <>
+      <output data-testid="location-search">{location.search}</output>
+      <output data-testid="location-path">{location.pathname}</output>
+      <output data-testid="location-build-id">{location.state?.build?.id || ""}</output>
+      <output data-testid="location-fc-id">
+        {location.state?.build?.componentIds?.flightControllerId || ""}
+      </output>
+    </>
+  );
+}
+
+const build = {
+  id: "build-camera-test",
+  name: "Camera test",
+  componentIds: {
+    frameId: "frame-5inch-220mm",
+    motorId: null,
+    propellerId: null,
+    escId: null,
+    flightControllerId: null,
+    batteryId: null,
+    receiverId: null,
+  },
+};
+
+beforeAll(() => {
+  if (!HTMLDialogElement.prototype.showModal) {
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+  }
+  if (!HTMLDialogElement.prototype.close) {
+    HTMLDialogElement.prototype.close = function close() {
+      this.removeAttribute("open");
+    };
+  }
+});
+
+beforeEach(() => {
+  localStorage.clear();
+  global.fetch = jest.fn(() => new Promise(() => {}));
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+test("inspection presets control the viewer without leaving orbit mode ambiguous", async () => {
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build } }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-camera-view", "orbit");
+  expect(viewer).toHaveAttribute("data-auto-rotate", "true");
+  expect(viewer).toHaveAttribute("data-exploded", "false");
+  expect(screen.getByText("Build provenance")).toBeInTheDocument();
+  expect(screen.getByText("0/1 source-backed")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Export build sheet" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Export BOM CSV" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Reset all components" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Save and go home" })).toBeDisabled();
+
+  fireEvent.click(screen.getByRole("button", { name: "Top" }));
+  expect(screen.getByRole("button", { name: "Top" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(viewer).toHaveAttribute("data-camera-view", "top");
+  expect(viewer).toHaveAttribute("data-auto-rotate", "false");
+
+  fireEvent.click(screen.getByRole("button", { name: "Orbit" }));
+  expect(viewer).toHaveAttribute("data-camera-view", "orbit");
+  expect(viewer).toHaveAttribute("data-auto-rotate", "true");
+
+  fireEvent.click(screen.getByRole("button", { name: "Exploded" }));
+  expect(screen.getByRole("button", { name: "Assembled" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(viewer).toHaveAttribute("data-exploded", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Assembled" }));
+  expect(viewer).toHaveAttribute("data-exploded", "false");
+
+  fireEvent.change(screen.getByLabelText("Starter platform"), {
+    target: { value: "source-35" },
+  });
+  expect(viewer).toHaveAttribute("data-frame", "frame-aos-35-v51");
+  expect(viewer).toHaveAttribute("data-motor", "motor-tmotor-f1404-3800kv");
+  expect(viewer).toHaveAttribute("data-battery", "battery-tattu-rline-4s-850-95c");
+
+  fireEvent.click(screen.getByText("Physical fit checks"));
+  expect(screen.getByText("SpeedyBee BLS 35A Mini V2 stack mount")).toBeInTheDocument();
+  expect(screen.getByText("SpeedyBee F405 Mini stack mount")).toBeInTheDocument();
+  expect(screen.getByText("T-Motor F1404 3800KV mount")).toBeInTheDocument();
+  expect(screen.getByText("Gemfan Hurricane 3520 3-Blade hub fit")).toBeInTheDocument();
+  expect(screen.getByText("Battery to ESC connector")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByText("Electrical limits"));
+  expect(screen.getByText("Gemfan Hurricane 3520 3-Blade frame clearance")).toBeInTheDocument();
+  expect(screen.getByText("T-Motor F1404 3800KV voltage")).toBeInTheDocument();
+  expect(screen.getByText("SpeedyBee BLS 35A Mini V2 current")).toBeInTheDocument();
+  expect(screen.getByText("SpeedyBee F405 Mini input voltage")).toBeInTheDocument();
+  expect(screen.getByText("Ready")).toBeInTheDocument();
+});
+
+test("a starter-platform deep link selects all seven components and consumes the query", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=source-35"]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-frame", "frame-aos-35-v51");
+  expect(viewer).toHaveAttribute("data-motor", "motor-tmotor-f1404-3800kv");
+  expect(viewer).toHaveAttribute("data-propeller", "prop-gemfan-hurricane-3520-3");
+  expect(viewer).toHaveAttribute("data-esc", "esc-speedybee-bls-35a-mini-v2");
+  expect(viewer).toHaveAttribute("data-flight-controller", "fc-speedybee-f405-mini");
+  expect(viewer).toHaveAttribute("data-battery", "battery-tattu-rline-4s-850-95c");
+  expect(viewer).toHaveAttribute("data-receiver", "rx-radiomaster-rp1-v2");
+  expect(screen.getByTestId("location-search")).toHaveTextContent("");
+  expect(screen.getByRole("button", { name: "Save and go home" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+  expect(screen.getByText("8/8 aligned")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Viewer placement"));
+  expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
+    "Propeller-to-shaft alignment",
+  );
+  expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
+    "Battery above electronics",
+  );
+  expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
+    "Motor mount interface",
+  );
+  expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
+    "Propeller sweep separation",
+  );
+});
+
+test("an invalid starter-platform deep link leaves the required build gates intact", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=not-a-platform"]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(screen.getByRole("heading", { name: "Start with a frame" })).toBeInTheDocument();
+  expect(screen.getByTestId("location-search")).toHaveTextContent("");
+  expect(screen.getByRole("button", { name: "Save and go home" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeDisabled();
+});
+
+test("hardware setup carries the unsaved draft identity and selected FC/receiver", async () => {
+  const hardwareDraft = {
+    id: "hardware-draft",
+    name: "Hardware draft",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-tmotor-f1404-3800kv",
+      propellerId: "prop-gemfan-hurricane-3520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp1-v2",
+    },
+  };
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build: hardwareDraft } }]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(screen.getByText("Plan not saved")).toBeInTheDocument();
+  expect(screen.getByText(/Betaflight · CRSF \/ ExpressLRS · UART1 \/ 420000 baud/i))
+    .toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Open setup" }));
+
+  expect(screen.getByTestId("location-path")).toHaveTextContent("/setup");
+  expect(screen.getByTestId("location-build-id")).toHaveTextContent("hardware-draft");
+  expect(screen.getByTestId("location-fc-id"))
+    .toHaveTextContent("fc-speedybee-f405-mini");
+});
+
+test("restores an automatically saved unsaved build draft", async () => {
+  localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
+    version: 1,
+    id: "recovered-draft",
+    name: "Recovered draft",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-tmotor-f1404-3800kv",
+      propellerId: "prop-gemfan-hurricane-3520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp1-v2",
+    },
+  }));
+
+  render(
+    <MemoryRouter initialEntries={["/build"]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-frame", "frame-aos-35-v51");
+  expect(viewer).toHaveAttribute("data-motor", "motor-tmotor-f1404-3800kv");
+  expect(viewer).toHaveAttribute("data-receiver", "rx-radiomaster-rp1-v2");
+  expect(screen.getByRole("button", { name: "Save and go home" })).toBeEnabled();
+  expect(screen.getByText("Recovered draft restored from this browser."))
+    .toHaveAttribute("role", "status");
+});
+
+test("new build requests ignore and consume an existing draft", async () => {
+  localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
+    version: 1,
+    id: "old-draft",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+    },
+  }));
+
+  render(
+    <MemoryRouter initialEntries={["/build?new=1"]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(screen.getByRole("heading", { name: "Start with a frame" })).toBeInTheDocument();
+  expect(screen.getByTestId("location-search")).toHaveTextContent("");
+  expect(screen.getByRole("button", { name: "Save and go home" })).toBeDisabled();
+});
+
+test("new build resets cleanly when selected from the already-open Build route", async () => {
+  localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
+    version: 1,
+    id: "draft-to-clear",
+    name: "Loaded draft",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-tmotor-f1404-3800kv",
+      propellerId: "prop-gemfan-hurricane-3520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp1-v2",
+    },
+  }));
+  render(
+    <MemoryRouter initialEntries={["/build"]}>
+      <BuildProvider>
+        <BuildPage />
+        <Link to="/build?new=1">Start clean draft</Link>
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(screen.getByTestId("assembly-viewer")).toHaveAttribute(
+    "data-frame",
+    "frame-aos-35-v51",
+  );
+
+  fireEvent.click(screen.getByRole("link", { name: "Start clean draft" }));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(screen.getByRole("heading", { name: "Start with a frame" })).toBeInTheDocument();
+  expect(screen.getByText("New build started.")).toBeInTheDocument();
+  expect(screen.getByTestId("location-search")).toHaveTextContent("");
+});
+
+test("stale draft IDs cannot satisfy required build gates", async () => {
+  localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
+    version: 1,
+    id: "stale-draft",
+    name: "Stale draft",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-removed-from-catalog",
+      propellerId: "prop-removed-from-catalog",
+      batteryId: "battery-removed-from-catalog",
+    },
+  }));
+  render(
+    <MemoryRouter initialEntries={["/build"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(screen.getByTestId("assembly-viewer")).toHaveAttribute(
+    "data-frame",
+    "frame-aos-35-v51",
+  );
+  expect(screen.getByTestId("assembly-viewer")).toHaveAttribute("data-motor", "");
+  expect(screen.getByText("1/4")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Save and go home" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeDisabled();
+});

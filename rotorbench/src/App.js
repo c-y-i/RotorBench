@@ -1,23 +1,30 @@
-import React, { useEffect } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter,
   Routes,
   Route,
-  Link,
   useLocation,
 } from "react-router-dom";
 import { BuildProvider } from "./context/BuildContext";
-import HomePage from "./components/HomePage";
-import BuildPage from "./components/BuildPage";
-import AnalysisPage from "./components/AnalysisPage";
-import UserProfilePage from "./components/UserProfilePage";
-import SavedConfigsPage from "./components/SavedConfigsPage";
-import LegalPage from "./components/LegalPage";
+import AppNav from "./components/AppNav";
+import RouteErrorBoundary from "./components/RouteErrorBoundary";
+
+const HomePage = lazy(() => import("./components/HomePage"));
+const BuildPage = lazy(() => import("./components/BuildPage"));
+const AnalysisPage = lazy(() => import("./components/AnalysisPage"));
+const UserProfilePage = lazy(() => import("./components/UserProfilePage"));
+const SavedConfigsPage = lazy(() => import("./components/SavedConfigsPage"));
+const LegalPage = lazy(() => import("./components/LegalPage"));
+const SetupPage = lazy(() => import("./components/SetupPage"));
+const ComparePage = lazy(() => import("./components/ComparePage"));
 
 function AnalyticsTracker() {
   const location = useLocation();
 
   useEffect(() => {
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
     if (typeof window.gtag !== "function") {
       return;
     }
@@ -32,23 +39,51 @@ function AnalyticsTracker() {
   return null;
 }
 
+function RouteLoading() {
+  return (
+    <div className="route-loading" role="status" aria-live="polite">
+      <span aria-hidden="true" />
+      <strong>Loading workspace</strong>
+      <p>Preparing this RotorBench view.</p>
+    </div>
+  );
+}
+
+function AppRoutes() {
+  const location = useLocation();
+  return (
+    <RouteErrorBoundary
+      resetKey={`${location.pathname}${location.search}`}
+    >
+      <Suspense fallback={<RouteLoading />}>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/build" element={<BuildPage />} />
+          <Route path="/setup" element={<SetupPage />} />
+          <Route path="/compare" element={<ComparePage />} />
+          <Route path="/analysis" element={<AnalysisPage />} />
+          <Route path="/profile" element={<UserProfilePage />} />
+          <Route path="/saved" element={<SavedConfigsPage />} />
+          <Route path="/legal" element={<LegalPage />} />
+        </Routes>
+      </Suspense>
+    </RouteErrorBoundary>
+  );
+}
+
 export default function App() {
   return (
     <BuildProvider>
       <BrowserRouter>
         <AnalyticsTracker />
         <div className="app-shell">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/build" element={<BuildPage />} />
-            <Route path="/analysis" element={<AnalysisPage />} />
-            <Route path="/profile" element={<UserProfilePage />} />
-            <Route path="/saved" element={<SavedConfigsPage />} />
-            <Route path="/legal" element={<LegalPage />} />
-          </Routes>
-          <footer className="legal-footer">
-            <Link to="/legal">Legal & Disclaimer</Link>
-          </footer>
+          <a className="skip-link" href="#main-content">
+            Skip to content
+          </a>
+          <AppNav />
+          <main id="main-content" className="route-stage">
+            <AppRoutes />
+          </main>
         </div>
       </BrowserRouter>
     </BuildProvider>

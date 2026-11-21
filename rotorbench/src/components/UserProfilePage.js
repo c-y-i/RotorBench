@@ -1,23 +1,35 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "../styles/home.css";
 import "../styles/analysis.css";     // reuse typography/sections/palette
 import "../styles/profile.css";      // small profile-only tweaks
-import logo from "../assets/logo.png";
+import "../styles/modernization.css";
 import API_BASE from "../config/api";
+import {
+  ArrowLeft,
+  Bell,
+  CircleAlert,
+  GitBranch,
+  Globe2,
+  LogOut,
+  Mail,
+  Palette,
+  Save,
+  Settings2,
+  SquarePen,
+  Timer,
+  UserPlus,
+  UserRound,
+} from "lucide-react";
 
 export default function UserProfilePage() {
-    const [menuOpen, setMenuOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
     const [user, setUser] = useState(null);
     const [edit, setEdit] = useState(false);
     const navigate = useNavigate();
-    const location = useLocation();
 
-    // Pass userId via route state or default
-    const userId = localStorage.getItem("userId") || null;
     const ghAvatar = (u) => (u ? `https://github.com/${u}.png` : "");
     const [message, setMessage] = useState({ type: "", text: "" });
 
@@ -117,7 +129,7 @@ export default function UserProfilePage() {
             if (offline.length > 0) {
                 setMessage({
                     type: "info",
-                    text: `☁️ Syncing ${offline.length} offline builds to your account...`,
+                    text: `Syncing ${offline.length} offline builds to your account...`,
                 });
 
                 for (const b of offline) {
@@ -137,7 +149,7 @@ export default function UserProfilePage() {
                 localStorage.removeItem("offlineBuilds");
                 setMessage({
                     type: "success",
-                    text: "✅ Offline builds successfully synced to your account!",
+                    text: "Offline builds synced to your account.",
                 });
             }
 
@@ -145,17 +157,17 @@ export default function UserProfilePage() {
             if (result.isNew === false) {
                 setMessage({
                     type: "success",
-                    text: `👋 Welcome back, ${saved.displayName || "User"}!`,
+                    text: `Welcome back, ${saved.displayName || "User"}.`,
                 });
             } else if (result.isNew === true) {
                 setMessage({
                     type: "success",
-                    text: "🎉 Registration successful! Let's get started.",
+                    text: "Registration complete. Your workspace is ready.",
                 });
             } else {
                 setMessage({
                     type: "success",
-                    text: "💾 Profile updated successfully!",
+                    text: "Profile updated successfully.",
                 });
             }
 
@@ -174,20 +186,15 @@ export default function UserProfilePage() {
     };
 
     return (
-        <div className={`app-container ${menuOpen ? "menu-open" : ""}`}>
-            {/* Top Bar */}
-            <div className="top-bar">
-                <button className="icon-btn menu-btn" onClick={() => setMenuOpen(true)}>☰</button>
-                <div className="logo-area">
-                    <img src={logo} alt="logo" className="logo-icon" />
-                    <span className="logo-text">RotorBench</span>
-                </div>
-                <button className="icon-btn home-btn" onClick={() => navigate("/")}>🏠</button>
-            </div>
-
+        <div className="app-container profile-page">
             {/* Page Title */}
             <div className="page-header">
-                <h2 className="page-title">{user?.id ? "Profile" : "Create Your Profile"}</h2>
+                <div>
+                    <h1 className="page-title">{user?.id ? "Profile" : "Create your profile"}</h1>
+                    <p className="page-subtitle">
+                        Keep your identity and builds connected across sessions.
+                    </p>
+                </div>
             </div>
             {message.text && (
                 <div className={`message-bar ${message.type}`}>
@@ -206,7 +213,7 @@ export default function UserProfilePage() {
             {/* Error */}
             {error && !loading && (
                 <div className="error-message">
-                    <p>⚠️ {error}</p>
+                    <p><CircleAlert size={17} aria-hidden="true" />{error}</p>
                     <button className="action-btn analysis" onClick={() => navigate(0)}>Retry</button>
                 </div>
             )}
@@ -214,28 +221,34 @@ export default function UserProfilePage() {
             {/* Content */}
             {user && !loading && (
                 <div className="analysis-content">
-                    {/* Identity Card (uses your highlight gradient style) */}
-                    <div className="metric-card highlight profile-identity">
-                        <div className="metric-icon" aria-hidden>👤</div>
-                        <div className="metric-content">
-                            <div className="metric-label">Display Name</div>
+                    <section className="profile-hero">
+                        <div className="profile-hero-avatar" aria-hidden="true">
+                            {user.displayName?.trim()?.charAt(0)?.toUpperCase() || <UserRound size={28} />}
+                        </div>
+                        <div className="profile-hero-copy">
+                            <span>Builder profile</span>
                             {!edit ? (
-                                <div className="metric-value-large">{user.displayName}</div>
+                                <h2>{user.displayName || "Unnamed builder"}</h2>
                             ) : (
                                 <input
                                     className="input-field"
+                                    aria-label="Display name"
                                     value={user.displayName || ""}
                                     onChange={(e) => onChange("displayName", e.target.value)}
                                     placeholder="Your name"
                                 />
                             )}
-                            <div className="metric-badge">User ID: {user.id}</div>
+                            <p>{user.email || "Add an email to connect saved builds."}</p>
                         </div>
-                    </div>
+                        <span className={`profile-state ${user.id ? "is-connected" : "is-draft"}`}>
+                            {user.id ? "Connected" : "Draft profile"}
+                        </span>
+                    </section>
 
                     {/* Contact */}
-                    <div className="metric-card">
-                        <div className="metric-icon">✉️</div>
+                    <div className="profile-account-grid">
+                    <div className="metric-card profile-account-card">
+                        <div className="metric-icon"><Mail size={21} aria-hidden="true" /></div>
                         <div className="metric-content">
                             <div className="metric-label">Email</div>
 
@@ -253,6 +266,7 @@ export default function UserProfilePage() {
                                 <>
                                     <input
                                         className="input-field"
+                                        aria-label="Email address"
                                         value={user.email || ""}
                                         onChange={(e) => onChange("email", e.target.value)}
                                         placeholder="name@example.com"
@@ -265,8 +279,8 @@ export default function UserProfilePage() {
                         </div>
                     </div>
 
-                    <div className="metric-card">
-                        <div className="metric-icon">🐙</div>
+                    <div className="metric-card profile-account-card">
+                        <div className="metric-icon"><GitBranch size={21} aria-hidden="true" /></div>
                         <div className="metric-content">
                             <div className="metric-label">GitHub Username</div>
                             {!edit ? (
@@ -274,6 +288,7 @@ export default function UserProfilePage() {
                             ) : (
                                 <input
                                     className="input-field"
+                                    aria-label="GitHub username"
                                     value={user.githubUsername || ""}
                                     onChange={(e) => onChange("githubUsername", e.target.value)}
                                     placeholder="octocat"
@@ -302,18 +317,20 @@ export default function UserProfilePage() {
                             )}
                         </div>
                     </div>
+                    </div>
 
-                    {/* Preferences (cards use your soft greys/blue) */}
-                    <h3 className="section-header">⚙️ Preferences</h3>
+                    {/* Preferences */}
+                    <h2 className="section-header"><Settings2 size={18} aria-hidden="true" />Preferences</h2>
                     <div className="pref-grid">
                         <div className="pref-card">
-                            <div className="pref-icon">🎨</div>
+                            <div className="pref-icon"><Palette size={19} aria-hidden="true" /></div>
                             <div className="pref-label">Theme</div>
                             {!edit ? (
                                 <div className="pref-value">{user.preferences?.theme || "system"}</div>
                             ) : (
                                 <select
                                     className="component-select-dropdown"
+                                    aria-label="Theme preference"
                                     value={user.preferences?.theme || "system"}
                                     onChange={(e) => onChange("preferences.theme", e.target.value)}
                                 >
@@ -325,13 +342,14 @@ export default function UserProfilePage() {
                         </div>
 
                         <div className="pref-card">
-                            <div className="pref-icon">🔔</div>
+                            <div className="pref-icon"><Bell size={19} aria-hidden="true" /></div>
                             <div className="pref-label">Notifications</div>
                             {!edit ? (
                                 <div className="pref-value">{user.preferences?.notifications || "disabled"}</div>
                             ) : (
                                 <select
                                     className="component-select-dropdown"
+                                    aria-label="Notification preference"
                                     value={user.preferences?.notifications || "disabled"}
                                     onChange={(e) => onChange("preferences.notifications", e.target.value)}
                                 >
@@ -342,13 +360,14 @@ export default function UserProfilePage() {
                         </div>
 
                         <div className="pref-card">
-                            <div className="pref-icon">🌐</div>
+                            <div className="pref-icon"><Globe2 size={19} aria-hidden="true" /></div>
                             <div className="pref-label">Language</div>
                             {!edit ? (
                                 <div className="pref-value">{user.preferences?.language || "en-US"}</div>
                             ) : (
                                 <input
                                     className="input-field"
+                                    aria-label="Language preference"
                                     value={user.preferences?.language || "en-US"}
                                     onChange={(e) => onChange("preferences.language", e.target.value)}
                                 />
@@ -357,64 +376,52 @@ export default function UserProfilePage() {
                     </div>
 
                     {/* Timestamps */}
-                    <div className="flight-card highlight" style={{ margin: "14px" }}>
-                        <div className="flight-icon">⏱️</div>
-                        <div className="flight-label">Last Updated</div>
-                        <div className="flight-value-large">
-                            {new Date(user.updatedAt || user.createdAt).toLocaleString()}
+                    {(user.updatedAt || user.createdAt) && (
+                        <div className="profile-meta-bar">
+                            <Timer size={17} aria-hidden="true" />
+                            <span>Last updated</span>
+                            <strong>{new Date(user.updatedAt || user.createdAt).toLocaleString()}</strong>
                         </div>
-                    </div>
+                    )}
                 </div>
             )}
 
             {/* Bottom Buttons */}
-            <div className="bottom-buttons">
+            <div className="bottom-buttons profile-actions">
                 {!edit ? (
                     <>
-                        <button className="action-btn save" onClick={() => setEdit(true)}>✏️ Edit</button>
-                        <button className="action-btn order" onClick={() => navigate(-1)}>🔙 Back</button>
+                        <button className="action-btn save" onClick={() => setEdit(true)}>
+                            <SquarePen size={17} aria-hidden="true" />
+                            Edit
+                        </button>
+                        <button className="action-btn profile-action-secondary" onClick={() => navigate(-1)}>
+                            <ArrowLeft size={17} aria-hidden="true" />
+                            Back
+                        </button>
                     </>
                 ) : (
                     <>
                         <button className="action-btn save" onClick={saveProfile} disabled={saving}>
-                            {saving ? "Saving…" : user?.id ? "💾 Save" : "🆕 Register"}
+                            {user?.id ? <Save size={17} aria-hidden="true" /> : <UserPlus size={17} aria-hidden="true" />}
+                            {saving ? "Saving..." : user?.id ? "Save profile" : "Register"}
                         </button>
-                        <button className="action-btn order" onClick={() => setEdit(false)}>Cancel</button>
+                        <button className="action-btn profile-action-secondary" onClick={() => setEdit(false)}>Cancel</button>
                     </>
                 )}
                 {!edit && (
                     <button
-                        className="action-btn order"
-                        style={{ background: "#999" }}
+                        className="action-btn profile-action-danger"
                         onClick={() => {
                             localStorage.removeItem("userId"); // Clear login status
                             navigate(0); // Refresh the page to re-enter registration mode.
                         }}
                     >
-                        🚪 Logout
+                        <LogOut size={17} aria-hidden="true" />
+                        Log out
                     </button>
                 )}
             </div>
 
-            {/* Menu Drawer */}
-            {menuOpen && (
-                <div className="menu-overlay" onClick={() => setMenuOpen(false)}>
-                    <div className="menu-drawer" onClick={(e) => e.stopPropagation()}>
-                        <div className="drawer-top-right">
-                            <button className="icon-btn menu-btn" onClick={() => setMenuOpen(false)}>☰</button>
-                        </div>
-                        <button className="menu-item" onClick={() => navigate("/build")}>Build Configuration</button>
-                        <button className="menu-item" onClick={() => navigate("/analysis", { state: { build: null } })}>Analysis</button>
-                        <button className="menu-item" onClick={() => navigate("/saved", { state: { userId } })}>
-                            Saved Configurations
-                        </button>
-                        <button className="menu-item" onClick={() => navigate("/legal")}>
-                            Legal & Disclaimer
-                        </button>
-                    </div>
-                    <div className="menu-backdrop" />
-                </div>
-            )}
         </div>
     );
 }

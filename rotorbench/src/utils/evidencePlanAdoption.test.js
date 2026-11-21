@@ -1,0 +1,142 @@
+import {
+  buildFcEvidencePlanPatch,
+  buildRadioEvidencePlanPatch,
+  evidencePatchValues,
+} from "./evidencePlanAdoption";
+
+test("builds typed FC plan differences from an Aerial Kit parameter snapshot", () => {
+  const patch = buildFcEvidencePlanPatch(
+    {
+      values: {
+        airframe: "0",
+        dshot_khz: "600",
+        rc_protocol: "1",
+        arm_channel: "5",
+        mode_channel: "6",
+        velocity_channel: "0",
+        arm_hold_ms: "750",
+        arm_max_tilt_deg: "30",
+        throttle_low: "0.04",
+        rc_timeout_ms: "300",
+        rc_min: "170",
+        rc_mid: "990",
+        rc_max: "1815",
+        rc_deadband: "0.01",
+        rth_enable: "1",
+      },
+    },
+    {
+      airframe: "quadx",
+      dshotKhz: 300,
+      receiverProtocol: "crsf",
+      armChannel: 5,
+      modeChannel: 6,
+      velocityChannel: null,
+      armHoldMs: 500,
+      armMaxTiltDeg: 25,
+      throttleLow: 0.05,
+      rcTimeoutMs: 250,
+      rcMin: 172,
+      rcMid: 992,
+      rcMax: 1811,
+      rcDeadband: 0.02,
+      rthEnabled: false,
+    },
+  );
+
+  expect(patch.supported).toBe(true);
+  expect(patch.matchedCount).toBe(4);
+  expect(patch.fields).toEqual(expect.arrayContaining([
+    expect.objectContaining({ key: "dshotKhz", observedValue: 600 }),
+    expect.objectContaining({ key: "receiverProtocol", observedValue: "sbus" }),
+    expect.objectContaining({ key: "rthEnabled", observedValue: true }),
+  ]));
+  expect(patch.fields.find((field) => field.key === "airframe")).toBeUndefined();
+});
+
+test("rejects malformed FC values instead of coercing them into the plan", () => {
+  const patch = buildFcEvidencePlanPatch(
+    {
+      values: {
+        dshot_khz: "301",
+        arm_hold_ms: "lots",
+        arm_channel: "999",
+      },
+    },
+    { dshotKhz: 300, armHoldMs: 500, armChannel: 6 },
+  );
+
+  expect(patch.fields).toEqual([]);
+  expect(patch.invalidFields.map((field) => field.key)).toEqual(expect.arrayContaining([
+    "dshotKhz",
+    "armChannel",
+    "armHoldMs",
+  ]));
+  expect(patch.invalidFields).toHaveLength(3);
+});
+
+test("builds radio plan differences from module labels", () => {
+  const patch = buildRadioEvidencePlanPatch(
+    {
+      settings: {
+        packetRate: { label: "333Hz Full" },
+        maxPower: { label: "25" },
+        telemetryRatio: { label: "1:128" },
+        switchMode: { label: "16ch Rate/2" },
+        linkMode: { label: "MAVLink" },
+        dynamicPower: { label: "Dyn" },
+        modelMatch: { label: "On" },
+      },
+    },
+    {
+      packetRateMode: "250",
+      powerDbm: -18,
+      telemetryRatio: "std",
+      switchMode: "wide",
+      linkMode: "normal",
+      dynamicPower: "off",
+      modelMatch: false,
+    },
+  );
+
+  expect(patch.fields.map((field) => [field.key, field.observedValue])).toEqual([
+    ["packetRateMode", "333-full"],
+    ["powerDbm", -14],
+    ["telemetryRatio", "1:128"],
+    ["switchMode", "16ch-rate2"],
+    ["linkMode", "mavlink"],
+    ["dynamicPower", "dynamic"],
+    ["modelMatch", true],
+  ]);
+});
+
+test("recognizes ExpressLRS short labels without creating false differences", () => {
+  const patch = buildRadioEvidencePlanPatch(
+    {
+      settings: {
+        packetRate: { label: "100Hz" },
+        telemetryRatio: { label: "Std" },
+      },
+    },
+    {
+      packetRateMode: "100-full",
+      telemetryRatio: "std",
+    },
+  );
+
+  expect(patch.supported).toBe(true);
+  expect(patch.matchedCount).toBe(2);
+  expect(patch.fields).toEqual([]);
+});
+
+test("returns only selected typed patch values", () => {
+  const patch = {
+    supported: true,
+    fields: [
+      { id: "a", key: "armChannel", observedValue: 5 },
+      { id: "b", key: "armHoldMs", observedValue: 750 },
+    ],
+  };
+
+  expect(evidencePatchValues(patch, ["b"])).toEqual({ armHoldMs: 750 });
+});

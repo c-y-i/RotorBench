@@ -28,9 +28,10 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #4fa3ff;
   border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 30%, var(--brand) 72%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0);
   animation: spin 1s linear infinite;
 }
 
@@ -446,4 +447,133 @@
 .cost-card {
   background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
   border: 0;
+}
+
+.analysis-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analysis-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 11px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.analysis-print:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
+@media (max-width: 640px) {
+  .analysis-header-actions {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+@media print {
+  .app-sidebar,
+  .mobile-header,
+  .mobile-nav,
+  .bottom-buttons,
+  .analysis-print,
+  .analysis-download,
+  .skip-link {
+    display: none !important;
+  }
+
+  .route-stage {
+    margin: 0;
+    padding: 0;
+  }
+
+  .app-container {
+    max-width: none;
+    color: #000;
+    background: #fff;
+  }
+
+  .page-header {
+    padding: 0 0 12px;
+    border-bottom: 1px solid #bbb;
+  }
+
+  .analysis-report {
+    display: block;
+  }
+
+  .analysis-summary {
+    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(90px, 0.55fr));
+    color: #000;
+    background: #fff;
+    border-color: #999;
+  }
+
+  .analysis-summary-verdict strong,
+  .analysis-summary-stat strong,
+  .analysis-summary-verdict span,
+  .analysis-summary-stat span,
+  .analysis-summary-verdict small,
+  .analysis-summary-stat strong small {
+    color: #000;
+  }
+
+  .analysis-summary-verdict,
+  .analysis-summary-stat {
+    min-height: 0;
+    padding: 10px;
+  }
+
+  .analysis-summary-stat {
+    border-color: #bbb;
+  }
+
+  .components-section,
+  .metrics-section,
+  .flight-section,
+  .chart-section,
+  .validation-section,
+  .cost-section {
+    break-inside: avoid;
+    margin: 12px 0;
+  }
+
+  .component-card,
+  .metric-card,
+  .flight-card,
+  .cost-card,
+  .validation-section,
+  .discharge-chart {
+    color: #000;
+    background: #fff !important;
+    box-shadow: none;
+    border: 1px solid #bbb;
+    animation: none;
+  }
+
+  .metric-value,
+  .metric-label,
+  .metric-subtitle,
+  .component-title,
+  .component-value,
+  .flight-label,
+  .flight-value,
+  .cost-label,
+  .cost-value {
+    color: #000 !important;
+  }
 }

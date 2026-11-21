@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     Engine,
     Scene,
@@ -8,16 +8,29 @@ import {
     SceneLoader,
     TransformNode
 } from "@babylonjs/core";
-import "@babylonjs/loaders";
+import "@babylonjs/loaders/glTF";
+import { supportsWebGL } from "../assembly/webglSupport";
 
-const TwoDViewer = ({ modelUrl }) => {
+const TwoDViewer = ({ modelUrl = null }) => {
     const canvasRef = useRef(null);
+    const [viewerError, setViewerError] = useState("");
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+        if (!supportsWebGL(canvas)) {
+            setViewerError("The orthographic preview needs WebGL. Enable hardware acceleration or use a WebGL-capable browser.");
+            return;
+        }
+        setViewerError("");
+        let engine;
+        try {
+            engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+        } catch {
+            setViewerError("The orthographic preview could not start WebGL. Enable hardware acceleration or use a WebGL-capable browser.");
+            return;
+        }
         const scene = new Scene(engine);
 
         // Detect if this is a preset (sample_assembly) or custom build
@@ -145,12 +158,14 @@ const TwoDViewer = ({ modelUrl }) => {
     return (
         <div className="drone-wrapper">
             <canvas ref={canvasRef} className="drone-canvas" style={{ width: "100%", height: "100%", display: "block" }} />
+            {viewerError && (
+                <div className="viewer-webgl-fallback" role="alert">
+                    <strong>2D preview unavailable</strong>
+                    <span>{viewerError}</span>
+                </div>
+            )}
         </div>
     );
-};
-
-TwoDViewer.defaultProps = {
-    modelUrl: null,
 };
 
 export default TwoDViewer;

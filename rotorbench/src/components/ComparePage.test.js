@@ -1,0 +1,135 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import ComparePage from "./ComparePage";
+
+const build = {
+  id: "build-compare",
+  name: "Compare build",
+  componentIds: {
+    frameId: "frame-5inch-220mm",
+    motorId: "motor-2207-1750kv",
+    propellerId: "prop-5040-tri",
+    batteryId: "battery-4s-1550mah-95c",
+    escId: "esc-mamba-f55a",
+    flightControllerId: "fc-holybro-kakute-f7",
+    receiverId: "rx-elrs-24g",
+  },
+};
+
+beforeEach(() => {
+  localStorage.clear();
+});
+
+test("comparison surfaces fit, evidence, and hardware-plan state", () => {
+  render(
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: "/compare",
+          state: {
+            builds: [
+              { ...build, id: "build-left", name: "Left build" },
+              { ...build, id: "build-right", name: "Right build" },
+            ],
+          },
+        },
+      ]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByRole("heading", { name: "Compare builds" })).toBeInTheDocument();
+  expect(screen.getByText("Physical fit")).toBeInTheDocument();
+  expect(screen.getByText("Electrical limits")).toBeInTheDocument();
+  expect(screen.getByText("Source-backed parts")).toBeInTheDocument();
+  expect(screen.getByText("Hardware plan")).toBeInTheDocument();
+  expect(screen.getAllByText("Fit needs review").length).toBeGreaterThan(1);
+  expect(screen.getAllByText("Electrical limits verified").length).toBeGreaterThan(1);
+  expect(screen.getAllByText("Plan not saved").length).toBeGreaterThan(1);
+  expect(screen.getByText("No catalog differences")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Changed only" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Export comparison" })).toBeInTheDocument();
+});
+
+test("marks changed rows and can show only differences", () => {
+  const changed = {
+    ...build,
+    id: "build-changed",
+    name: "Changed build",
+    componentIds: {
+      ...build.componentIds,
+      motorId: "motor-1804-2800kv",
+    },
+  };
+  render(
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: "/compare",
+          state: { builds: [build, changed] },
+        },
+      ]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByText(/\d+ differences/)).toBeInTheDocument();
+  expect(screen.getByRole("rowheader", { name: "Motors Changed" })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Changed only" }));
+  expect(screen.getByRole("button", { name: "Show all" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.queryByRole("rowheader", { name: "Frame" })).not.toBeInTheDocument();
+  expect(screen.getByRole("rowheader", { name: "Motors Changed" })).toBeInTheDocument();
+});
+
+test("saved hardware plans show their local review count", () => {
+  const plannedBuild = {
+    ...build,
+    id: "build-planned",
+    name: "Planned build",
+  };
+  const base = `rotorbench:hardware-plan:${plannedBuild.id}`;
+  localStorage.setItem(`${base}:fc`, JSON.stringify({
+    planVersion: 3,
+    selectedFlightControllerId: build.componentIds.flightControllerId,
+    selectedReceiverId: build.componentIds.receiverId,
+    firmwareFamily: "betaflight",
+    profileId: "custom-board",
+    armChannel: 5,
+    modeChannel: null,
+    beeperChannel: 9,
+    velocityChannel: null,
+    receiverProtocol: "crsf",
+    receiverUart: "UART1",
+    receiverBaud: 420000,
+  }));
+  localStorage.setItem(`${base}:radio`, JSON.stringify({
+    planVersion: 3,
+    selectedReceiverId: build.componentIds.receiverId,
+    channelMap: {
+      arm: 5,
+      flightMode: null,
+      beeper: 9,
+    },
+  }));
+
+  render(
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: "/compare",
+          state: { builds: [plannedBuild, { ...build, id: "build-other", name: "Other build" }] },
+        },
+      ]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getAllByText(/\d+ checks? open/i).length).toBeGreaterThan(1);
+});

@@ -1,0 +1,419 @@
+import {
+  buildArmingGatePreview,
+  buildFlightControllerSummary,
+  createDefaultFlightControllerConfig,
+  getBoardProfile,
+  getChannelPreset,
+  validateFlightControllerConfig,
+} from "./flightControllerProfiles";
+
+test("Feather profile rejects a four-motor airframe", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: "feather-f405",
+    airframe: "quadx",
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile("feather-f405"));
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "output-count", severity: "error" }),
+  ]));
+});
+
+test("documented Aerial Kit boards do not enable unfitted sensors", () => {
+  expect(getBoardProfile("feather-f405").featureSupport).toMatchObject({
+    barometer: false,
+    rangefinder: false,
+  });
+  expect(getBoardProfile("esp32dev").featureSupport).toMatchObject({
+    barometer: false,
+    rangefinder: false,
+  });
+  expect(getBoardProfile("ghf435-aio-v2").featureSupport).toMatchObject({
+    barometer: true,
+    rangefinder: false,
+  });
+});
+
+test("documented Aerial Kit boards expose the internal flight log separately", () => {
+  expect(getBoardProfile("feather-f405").flightLog).toMatchObject({
+    available: true,
+    label: "Internal flash log + retained RAM",
+  });
+  expect(getBoardProfile("esp32dev").flightLog).toMatchObject({
+    available: true,
+    label: "ESP32 aerialkit partition + retained RAM",
+  });
+  expect(getBoardProfile("custom-board").flightLog).toBeNull();
+});
+
+test("SBUS reports the missing return path and inverter requirement", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: "feather-f405",
+    airframe: "elevonwingsingle",
+    receiverProtocol: "sbus",
+    receiverBaud: 100000,
+    features: { ...createDefaultFlightControllerConfig().features, telemetry: true },
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile("feather-f405"));
+  expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+    "sbus-inverter",
+    "sbus-no-telemetry",
+  ]));
+});
+
+test("ESP32 profile detects a receiver and GPS UART conflict", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: "esp32dev",
+    receiverUart: "UART1",
+    features: { ...createDefaultFlightControllerConfig().features, gps: true },
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile("esp32dev"));
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "uart-conflict", severity: "error" }),
+  ]));
+});
+
+test("summary keeps the receiver and safety mapping visible", () => {
+  const config = createDefaultFlightControllerConfig();
+  const summary = buildFlightControllerSummary(config, getBoardProfile(config.profileId)).join("\n");
+  expect(summary).toContain("Receiver: CRSF / ExpressLRS");
+  expect(summary).toContain("arm 6");
+  expect(summary).toContain("velocity mode off");
+  expect(summary).toContain("arm, flight mode, velocity mode only");
+  expect(summary).toContain("Failsafe: Firmware-derived");
+});
+
+test("selected SBUS receiver drives the initial serial plan", () => {
+  const config = createDefaultFlightControllerConfig(null, {
+    id: "rx-sbus",
+    name: "SBUS receiver",
+    protocol: "SBUS",
+  });
+  expect(config.receiverProtocol).toBe("sbus");
+  expect(config.receiverBaud).toBe(100000);
+  expect(config.features.telemetry).toBe(false);
+});
+
+test("selected ExpressLRS receiver uses the documented arm and mode preset", () => {
+  const config = createDefaultFlightControllerConfig(null, {
+    id: "rx-elrs",
+    name: "ELRS 2.4G RX",
+    protocol: "CRSF",
+  });
+  expect(config.armChannel).toBe(5);
+  expect(config.modeChannel).toBe(6);
+  expect(getChannelPreset(config)?.id).toBe("aerialkit-elrs");
+});
+
+test("selected commercial controller infers its listed firmware family", () => {
+  const config = createDefaultFlightControllerConfig({
+    id: "fc-test",
+    name: "Betaflight board",
+    processor: "STM32F722",
+    imu: "MPU6000",
+    firmware: ["Betaflight"],
+  });
+  expect(config.firmwareFamily).toBe("betaflight");
+  expect(config.profileId).toBe("custom-board");
+  expect(config.armChannel).toBe(5);
+  expect(config.beeperChannel).toBe(9);
+  expect(getChannelPreset(config)?.id).toBe("betaflight-bench");
+});
+
+test("INAV does not inherit Betaflight channel presets", () => {
+  const config = createDefaultFlightControllerConfig({
+    id: "fc-inav",
+    name: "INAV board",
+    firmware: ["INAV"],
+  });
+  expect(config.firmwareFamily).toBe("inav");
+  expect(config.armChannel).toBeNull();
+  expect(config.modeChannel).toBeNull();
+  expect(getChannelPreset(config)).toBeNull();
+  expect(validateFlightControllerConfig(config, getBoardProfile(config.profileId)))
+    .toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "arm-channel-unset", severity: "error" }),
+    ]));
+});
+
+test("the first listed firmware is used for multi-firmware boards", () => {
+  const config = createDefaultFlightControllerConfig({
+    id: "fc-multi",
+    name: "Multi-firmware board",
+    firmware: ["Betaflight", "ArduPilot"],
+  });
+  expect(config.firmwareFamily).toBe("betaflight");
+});
+
+test("custom profile uses selected controller hardware fields", () => {
+  const profile = getBoardProfile("custom-board", {
+    name: "Kakute F7 AIO",
+    processor: "STM32F722",
+    imu: "MPU6000",
+  });
+  expect(profile.processor).toBe("STM32F722");
+  expect(profile.imu).toBe("MPU6000");
+});
+
+test("duplicate arm, mode, and beeper channels are rejected", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    armChannel: 5,
+    modeChannel: 5,
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile(config.profileId));
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "channel-conflict", severity: "error" }),
+  ]));
+});
+
+test("receiver calibration enforces Aerial Kit ranges and ordering", () => {
+  const base = createDefaultFlightControllerConfig();
+  const profile = getBoardProfile(base.profileId);
+  const outOfOrder = {
+    ...base,
+    rcMin: 1100,
+    rcMid: 900,
+    rcMax: 1811,
+  };
+  expect(validateFlightControllerConfig(outOfOrder, profile)).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ code: "rc-min-range", severity: "error" }),
+      expect.objectContaining({ code: "rc-calibration-order", severity: "error" }),
+    ]),
+  );
+
+  const invalidDeadband = {
+    ...base,
+    rcDeadband: 0.3,
+  };
+  expect(validateFlightControllerConfig(invalidDeadband, profile)).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ code: "rc-deadband-range", severity: "error" }),
+    ]),
+  );
+});
+
+test("arm is required and Aerial Kit control roles stay in channels 5 through 8", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    armChannel: null,
+    manualChannel: 9,
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile(config.profileId));
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "arm-channel-unset", severity: "error" }),
+    expect.objectContaining({ code: "channel-range", severity: "error" }),
+  ]));
+});
+
+test("Aerial Kit rejects roles its firmware does not register", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    beeperChannel: 7,
+    manualChannel: 8,
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile(config.profileId));
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "unsupported-control-role",
+      severity: "error",
+      message: expect.stringMatching(/only arm, flight mode, velocity mode/i),
+    }),
+  ]));
+});
+
+test("numeric safety limits reject missing and non-numeric imported values", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    armHoldMs: "not-a-number",
+    armMaxTiltDeg: null,
+    throttleLow: "",
+    rcTimeoutMs: undefined,
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile(config.profileId));
+  expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+    "arm-hold-range",
+    "arm-tilt-range",
+    "throttle-low-range",
+    "rc-timeout-range",
+  ]));
+});
+
+test("workspace-only profiles are disclosed and GHF435 defaults to its two-motor wing", () => {
+  const profile = getBoardProfile("ghf435-aio-v2");
+  expect(profile.defaultAirframe).toBe("elevonwing");
+  const config = createDefaultFlightControllerConfig();
+  const issues = validateFlightControllerConfig(
+    {
+      ...config,
+      profileId: "ghf435-aio-v2",
+      airframe: profile.defaultAirframe,
+    },
+    profile,
+  );
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "workspace-profile", severity: "warning" }),
+  ]));
+  expect(issues).not.toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "output-count" }),
+    expect.objectContaining({ code: "servo-count" }),
+  ]));
+});
+
+test("return-to-home requires GPS support", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    rthEnabled: true,
+    features: {
+      ...createDefaultFlightControllerConfig().features,
+      gps: false,
+    },
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile(config.profileId));
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "rth-without-gps", severity: "error" }),
+  ]));
+});
+
+test("arming preview separates mapped plan checks from unobserved firmware gates", () => {
+  const profile = getBoardProfile("esp32dev");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: "esp32dev",
+    airframe: "quadx",
+    receiverUart: "UART2",
+    receiverBaud: 420000,
+    armChannel: 5,
+    modeChannel: 6,
+  };
+  const preview = buildArmingGatePreview(
+    config,
+    profile,
+    validateFlightControllerConfig(config, profile),
+  );
+
+  expect(preview.available).toBe(true);
+  expect(preview.planChecks).toHaveLength(3);
+  expect(preview.planChecks.every((check) => check.status === "pass")).toBe(true);
+  expect(preview.liveGates).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: "outputs", status: "unobserved" }),
+    expect.objectContaining({ id: "imu", reason: "AK_ARM_NO_IMU", status: "unobserved" }),
+    expect.objectContaining({ id: "receiver-link", status: "unobserved" }),
+    expect.objectContaining({ id: "not-requested", status: "unobserved" }),
+    expect.objectContaining({ id: "switch-held", status: "unobserved" }),
+    expect.objectContaining({ id: "throttle", status: "unobserved" }),
+    expect.objectContaining({ id: "attitude-converged", status: "unobserved" }),
+    expect.objectContaining({ id: "level", status: "unobserved" }),
+  ]));
+  expect(preview.liveGates).toHaveLength(9);
+  expect(preview.liveGates).not.toEqual(expect.arrayContaining([
+    expect.objectContaining({ reason: "AK_ARM_CONTROLLER" }),
+  ]));
+  expect(preview.liveGates.every((gate) => gate.status === "unobserved")).toBe(true);
+});
+
+test("arming preview reports a real output-mix blocker", () => {
+  const profile = getBoardProfile("feather-f405");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: "feather-f405",
+    airframe: "quadx",
+    receiverUart: "USART3",
+    receiverBaud: 420000,
+  };
+  const preview = buildArmingGatePreview(
+    config,
+    profile,
+    validateFlightControllerConfig(config, profile),
+  );
+
+  expect(preview.planChecks).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: "outputs", status: "blocked" }),
+  ]));
+  expect(preview.planBlockerCount).toBe(1);
+});
+
+test("arming preview marks a custom receiver route unverified", () => {
+  const profile = getBoardProfile("custom-board");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: "custom-board",
+  };
+  const preview = buildArmingGatePreview(
+    config,
+    profile,
+    validateFlightControllerConfig(config, profile),
+  );
+
+  expect(preview.planChecks).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: "receiver-transport", status: "unverified" }),
+  ]));
+  expect(preview.reviewCount).toBe(1);
+});
+
+test("arming preview is limited to Aerial Kit firmware states", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    firmwareFamily: "betaflight",
+  };
+  expect(buildArmingGatePreview(config, getBoardProfile("custom-board"), [])).toEqual(
+    expect.objectContaining({ available: false, planChecks: [], liveGates: [] }),
+  );
+});
+
+test("build frame motor count must match the planned airframe", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    airframe: "elevonwingsingle",
+  };
+  const issues = validateFlightControllerConfig(
+    config,
+    getBoardProfile(config.profileId),
+    { buildMotorCount: 4 },
+  );
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "build-airframe-mismatch",
+      severity: "error",
+      message: expect.stringMatching(/frame has 4 motor mounts.*uses 1/i),
+    }),
+  ]));
+});
+
+test("u32 safety timing and receiver baud require whole numbers", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    receiverBaud: 420000.5,
+    armHoldMs: 500.5,
+    rcTimeoutMs: 250.25,
+  };
+  const issues = validateFlightControllerConfig(config, getBoardProfile(config.profileId));
+  expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+    "receiver-baud",
+    "arm-hold-range",
+    "rc-timeout-range",
+  ]));
+});
+
+test("workspace Aerial Kit profiles expose manual, control, and system-ID roles", () => {
+  const profile = getBoardProfile("weact-f405");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: profile.id,
+    airframe: profile.defaultAirframe,
+  };
+  expect(profile.notes.join(" ")).toMatch(/remains disarmed and refuses to arm/i);
+  expect(buildFlightControllerSummary(config, profile).join("\n"))
+    .toContain("Aerial Kit control roles: arm, flight mode, manual, control, system ID only");
+  expect(validateFlightControllerConfig({
+    ...config,
+    manualChannel: 7,
+    ctrlChannel: 8,
+    sysidChannel: null,
+  }, profile)).not.toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "unsupported-control-role" }),
+  ]));
+});

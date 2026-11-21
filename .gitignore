@@ -89,6 +89,9 @@ coverage/
 # Model conversion cache
 backend/assets-cache/
 
+# Graphify generated knowledge graph
+graphify-out/
+
 # Backend runtime data (mutable)
 backend/data/*.json
 backend/data/*.bak*

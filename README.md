@@ -82,9 +82,11 @@ The frontend will start at: **http://localhost:3000**
 - **Component Selection** - Browse and select from motors, propellers, batteries, ESCs, flight controllers, frames, and receivers
 - **Performance Analysis** - Calculate thrust-to-weight ratio, flight time, hover time, and power consumption
 - **Battery Simulation** - Detailed discharge curves showing voltage and capacity over time
-- **Compatibility Validation** - Automatic checks for voltage, current, and size compatibility
+- **Compatibility Validation** - Voltage, current, size, stack-pattern, motor-mount, propeller-shaft, and power-connector checks
 - **Cost Tracking** - Real-time build cost calculation
 - **User Profiles** - Save and manage multiple drone configurations
+- **Hardware Setup Planner** - Stage flight-controller firmware, UART, channel, safety, and ExpressLRS radio-link settings without claiming a hardware connection
+- **Build Comparison** - Compare selected parts, catalog totals, physical fit, source coverage, and hardware-plan state
 - **Interactive Charts** - Responsive visualizations for battery discharge and performance metrics
 - **Mobile-Friendly** - Works seamlessly on desktop, tablet, and mobile devices
 

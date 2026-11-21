@@ -1,0 +1,155 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import SavedConfigsPage from "./SavedConfigsPage";
+import { createBenchEvidenceScope } from "../utils/benchEvidenceAttachment";
+
+const offlineBuild = {
+  id: "offline-build",
+  name: "Offline build",
+  componentIds: {
+    frameId: "frame-5inch-220mm",
+    motorId: "motor-2207-1750kv",
+    propellerId: "prop-5040-tri",
+    batteryId: "battery-4s-1550mah-95c",
+    escId: null,
+    flightControllerId: null,
+    receiverId: null,
+  },
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+};
+
+beforeEach(() => {
+  localStorage.clear();
+  localStorage.setItem("offlineBuilds", JSON.stringify([offlineBuild]));
+  localStorage.setItem(
+    "rotorbench:hardware-plan:offline-build:fc",
+    JSON.stringify({ planVersion: 3 }),
+  );
+});
+
+test("offline builds can be renamed and duplicated with their saved plan and evidence", async () => {
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole("heading", { name: "Offline build" });
+  expect(screen.getByText("Hardware partial")).toBeInTheDocument();
+  expect(screen.getByText("Fit review")).toBeInTheDocument();
+  expect(screen.getByText("0/4 sourced")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+  fireEvent.change(screen.getByLabelText("Rename Offline build"), {
+    target: { value: "Renamed build" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Save build name" }));
+  await screen.findByRole("heading", { name: "Renamed build" });
+
+  localStorage.setItem(
+    "rotorbench:bench-evidence:offline-build:v1",
+    JSON.stringify({
+      schema: "rotorbench.build-bench-evidence.v1",
+      attachedAt: "2026-11-20T12:00:00.000Z",
+      rfReportedPass: true,
+      rfEvidenceComplete: true,
+      diagnosticsComplete: true,
+      settingsComplete: true,
+      checkCounts: { pass: 8, fail: 0, unverified: 2 },
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Duplicate" }));
+  await screen.findByRole("heading", { name: "Renamed build copy" });
+
+  const saved = JSON.parse(localStorage.getItem("offlineBuilds"));
+  expect(saved).toHaveLength(2);
+  const copy = saved.find((build) => build.name === "Renamed build copy");
+  expect(copy).toBeTruthy();
+  expect(
+    localStorage.getItem(`rotorbench:hardware-plan:${copy.id}:fc`),
+  ).toBe('{"planVersion":3}');
+  expect(
+    JSON.parse(localStorage.getItem(`rotorbench:bench-evidence:${copy.id}:v1`)),
+  ).toMatchObject({
+    schema: "rotorbench.build-bench-evidence.v1",
+    attachedAt: "2026-11-20T12:00:00.000Z",
+    rfEvidenceComplete: true,
+  });
+});
+
+test("a valid build sheet imports as a new offline build", async () => {
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("heading", { name: "Offline build" });
+  const file = {
+    name: "import.json",
+    text: async () => JSON.stringify({
+      schema: "rotorbench.build-sheet.v1",
+      build: {
+        id: "source-sheet",
+        name: "Imported AOS",
+        componentIds: {
+          frameId: "frame-aos-55-v2",
+          motorId: "motor-emax-eco-ii-2207-1900kv",
+        },
+      },
+    }),
+  };
+
+  fireEvent.change(screen.getByLabelText("Import RotorBench build sheet"), {
+    target: { files: [file] },
+  });
+
+  await screen.findByRole("heading", { name: "Imported AOS (imported)" });
+  const saved = JSON.parse(localStorage.getItem("offlineBuilds"));
+  expect(saved).toHaveLength(2);
+  expect(saved[0]).toMatchObject({
+    name: "Imported AOS (imported)",
+    componentIds: {
+      frameId: "frame-aos-55-v2",
+      motorId: "motor-emax-eco-ii-2207-1900kv",
+    },
+  });
+});
+
+test("malformed offline build storage recovers to an empty state", async () => {
+  localStorage.setItem("offlineBuilds", "{");
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+  expect(await screen.findByText("No saved builds yet")).toBeInTheDocument();
+  expect(localStorage.getItem("offlineBuilds")).toBeNull();
+});
+
+test("saved builds show explicitly attached imported evidence", async () => {
+  const evidenceScope = createBenchEvidenceScope({
+    build: offlineBuild,
+    flightControllerPlan: { planVersion: 3 },
+  });
+  localStorage.setItem(
+    "rotorbench:bench-evidence:offline-build:v1",
+    JSON.stringify({
+      schema: "rotorbench.build-bench-evidence.v1",
+      attachedAt: "2026-11-20T12:00:00.000Z",
+      rfReportedPass: true,
+      rfEvidenceComplete: true,
+      diagnosticsComplete: true,
+      settingsComplete: true,
+      checkCounts: { pass: 8, fail: 0, unverified: 2 },
+      scope: evidenceScope,
+    }),
+  );
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText("Imported evidence correlated")).toBeInTheDocument();
+});

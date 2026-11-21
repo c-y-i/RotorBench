@@ -1,0 +1,88 @@
+import { sanitizeHardwareReadiness } from "./hardwareReadiness";
+
+export const ANALYSIS_REPORT_SCHEMA = "rotorbench.analysis-report.v1";
+
+function sanitizeImportedEvidence(evidence) {
+  if (!evidence?.configured) return null;
+  return {
+    status: evidence.status || "observation",
+    label: evidence.label || "Imported evidence",
+    attachedAt: evidence.attachedAt || null,
+    scopeStatus: evidence.scopeStatus || "unchecked",
+    identityStatus: evidence.identityStatus || "not-recorded",
+    checkCounts: {
+      pass: Number(evidence.checkCounts?.pass) || 0,
+      fail: Number(evidence.checkCounts?.fail) || 0,
+      unverified: Number(evidence.checkCounts?.unverified) || 0,
+    },
+    failedChecks: Array.isArray(evidence.failedChecks)
+      ? evidence.failedChecks.map(String)
+      : [],
+    unverifiedChecks: Array.isArray(evidence.unverifiedChecks)
+      ? evidence.unverifiedChecks.map(String)
+      : [],
+    importTrust: evidence.importTrust || "locally selected file; authenticity not independently verified",
+    hardwareVerified: false,
+    authenticityVerified: false,
+  };
+}
+
+export function createAnalysisReport(
+  build,
+  analysis,
+  generatedAt = new Date().toISOString(),
+  { hardwarePlan = null, importedEvidence = null, viewerPlacement = null } = {},
+) {
+  if (!build?.id || !build?.componentIds) {
+    throw new Error("An identified build with component IDs is required.");
+  }
+  if (!analysis?.performance || !analysis?.flightSimulation) {
+    throw new Error("A completed analysis result is required.");
+  }
+
+  return {
+    schema: ANALYSIS_REPORT_SCHEMA,
+    generatedAt,
+    build: {
+      id: build.id,
+      name: build.name || "Untitled build",
+      description: build.description || "",
+      componentIds: { ...build.componentIds },
+      createdAt: build.createdAt || null,
+      updatedAt: build.updatedAt || null,
+    },
+    verification: {
+      analysisIsEstimate: true,
+      hardwareVerified: false,
+      evidenceAuthenticityVerified: false,
+    },
+    hardwarePlan: sanitizeHardwareReadiness(hardwarePlan),
+    importedEvidence: sanitizeImportedEvidence(importedEvidence),
+    viewerPlacement: viewerPlacement
+      ? {
+          scope: "viewer-placement",
+          complete: Boolean(viewerPlacement.complete),
+          verifiedCount: Number(viewerPlacement.verifiedCount) || 0,
+          awaitingCount: Number(viewerPlacement.awaitingCount) || 0,
+          checks: Array.isArray(viewerPlacement.checks)
+            ? viewerPlacement.checks.map((check) => ({
+                id: check.id,
+                label: check.label,
+                status: check.status,
+                detail: check.detail,
+              }))
+            : [],
+        }
+      : null,
+    analysis,
+  };
+}
+
+export function analysisReportFilename(buildId) {
+  const safeId = String(buildId || "build")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    || "build";
+  return `rotorbench-analysis-${safeId}.json`;
+}

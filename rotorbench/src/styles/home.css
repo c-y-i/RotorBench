@@ -448,7 +448,7 @@
   margin: 16px 0;
   padding: 12px;
   background: #fff3e0;
-  border-left: 4px solid #ffa726;
+  border: 1px solid #ffcc80;
   border-radius: 6px;
   font-size: 13px;
   color: #e65100;
@@ -458,7 +458,7 @@
   margin: 16px 0;
   padding: 12px;
   background: #e8f5e9;
-  border-left: 4px solid #66bb6a;
+  border: 1px solid #a5d6a7;
   border-radius: 6px;
   font-size: 13px;
   color: #2e7d32;
@@ -770,13 +770,13 @@
 
 .action-btn.save,
 .action-btn.analysis {
-  background: linear-gradient(135deg, var(--brand) 0%, #0c948a 100%);
-  color: #fff;
+  background: var(--signal);
+  color: var(--signal-ink);
 }
 
 .action-btn.order {
-  background: linear-gradient(135deg, var(--accent) 0%, #f97316 100%);
-  color: #fff;
+  background: var(--signal);
+  color: var(--signal-ink);
 }
 
 .action-btn:disabled {
@@ -842,11 +842,6 @@
 
 .component-select-icon {
   border: 1px solid #e3eef8;
-}
-
-.info-message,
-.success-message {
-  border-left-width: 5px;
 }
 
 .message-bar {

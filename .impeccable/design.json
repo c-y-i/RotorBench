@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-20T00:00:00.000Z",
+  "title": "Design System: RotorBench",
+  "extensions": {
+    "colorMeta": {
+      "signal-lime": {
+        "role": "primary",
+        "displayName": "Signal Lime",
+        "canonical": "#d5ff4f",
+        "tonalRamp": ["#26300a", "#3d4d0d", "#586f13", "#75931d", "#9ac42f", "#d5ff4f", "#e7ff99", "#f6ffd8"]
+      },
+      "muted-shell": {
+        "role": "neutral",
+        "displayName": "Muted Shell",
+        "canonical": "#d9ddd6",
+        "tonalRamp": ["#252a27", "#3d4540", "#59645e", "#78857e", "#a3ada7", "#d9ddd6", "#e8ebe6", "#f8faf7"]
+      },
+      "instrument-ink": {
+        "role": "neutral",
+        "displayName": "Instrument Ink",
+        "canonical": "#101816",
+        "tonalRamp": ["#101816", "#1d2b27", "#344740", "#4f665d", "#748b82", "#a2b3ac", "#d3ded9", "#f6faf8"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Workbench Display", "purpose": "Page and operational headings." },
+      "data": { "displayName": "Instrument Data", "purpose": "Measurements, commands, IDs, and tabular facts." }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 8px 22px rgba(18, 28, 24, 0.07)", "purpose": "Major workbench panels." },
+      { "name": "soft", "value": "0 20px 46px rgba(18, 28, 24, 0.12)", "purpose": "High-level overlays or temporary emphasis." }
+    ],
+    "motion": [
+      { "name": "state-out", "value": "160ms ease-out", "purpose": "Hover, focus, and small state transitions." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "640px" },
+      { "name": "tablet", "value": "900px" },
+      { "name": "wide", "value": "1180px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "High-attention action such as New Build or Open Port.",
+      "html": "<button class=\"ds-btn-primary\">NEW BUILD</button>",
+      "css": ".ds-btn-primary{min-height:44px;padding:0 14px;border:1px solid #d5ff4f;border-radius:7px;background:#d5ff4f;color:#10150e;font:700 11px Archivo,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:background 160ms ease-out,border-color 160ms ease-out}.ds-btn-primary:hover{background:#b7e52d;border-color:#b7e52d}.ds-btn-primary:focus-visible{outline:3px solid #08736a;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Clear, reversible secondary action.",
+      "html": "<button class=\"ds-btn-secondary\">DOWNLOAD REPORT</button>",
+      "css": ".ds-btn-secondary{min-height:44px;padding:0 14px;border:1px solid #c4cac3;border-radius:7px;background:#fcfbf6;color:#101816;font:700 11px Archivo,sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}.ds-btn-secondary:hover{border-color:#101816}.ds-btn-secondary:focus-visible{outline:3px solid #08736a;outline-offset:2px}"
+    },
+    {
+      "name": "Instrument Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Measurement or configuration field.",
+      "html": "<input class=\"ds-input\" value=\"420000\" aria-label=\"Logical baud\">",
+      "css": ".ds-input{min-height:44px;padding:0 10px;border:1px solid #c4cac3;border-radius:7px;background:#fcfbf6;color:#101816;font:600 13px 'IBM Plex Mono',monospace}.ds-input:focus-visible{outline:3px solid rgba(8,115,106,.3);border-color:#08736a}"
+    },
+    {
+      "name": "Work Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A major planning or analysis surface.",
+      "html": "<section class=\"ds-panel\"><strong>Hardware plan</strong><p>Local configuration, not hardware verification.</p></section>",
+      "css": ".ds-panel{padding:16px;border:1px solid #c4cac3;border-radius:14px;background:#f6f4ed;color:#101816;box-shadow:0 8px 22px rgba(18,28,24,.07)}.ds-panel p{margin:6px 0 0;color:#4a5a55;font:400 13px/1.5 Archivo,sans-serif}"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "description": "Explicit state label using text as well as color.",
+      "html": "<span class=\"ds-chip\">READ-ONLY</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;min-height:25px;padding:0 7px;border:1px solid transparent;border-radius:4px;background:#d2e9e3;color:#044e49;font:600 10px 'IBM Plex Mono',monospace;letter-spacing:.04em;text-transform:uppercase}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Flight Bench",
+    "overview": "RotorBench should feel like a well-organized workbench for planning, assembling, and reviewing an FPV aircraft. Instrument panels, compact measurements, and explicit state labels carry the personality.",
+    "keyCharacteristics": [
+      "Source-backed data with visible uncertainty",
+      "Matte flight-bench surfaces and signal-lime actions",
+      "Archivo for interface voice and IBM Plex Mono for measurements",
+      "Compact instrument panels, clear sections, and explicit safety boundaries",
+      "Responsive workbench layouts rather than a fixed phone shell"
+    ],
+    "rules": [
+      { "name": "The Signal Rule", "body": "Lime marks action or active state; it is not a decorative accent for every card.", "section": "colors" },
+      { "name": "The Measurement Rule", "body": "Monospace is used when the content is data, a command, or a measured value, not as a generic technical costume.", "section": "typography" },
+      { "name": "The One-Elevation Rule", "body": "A surface declares depth with either a border or a shadow system appropriate to its role; avoid ghost-card combinations that add both without meaning.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep planning, imported evidence, live observation, and hardware verification visibly distinct.",
+      "Do use IBM Plex Mono for measurements, commands, IDs, and parser facts.",
+      "Do retain 44px controls and test 390px and 1440px layouts.",
+      "Do use quiet borders and tonal surfaces before adding shadows."
+    ],
+    "donts": [
+      "Don't turn every section into an identical rounded card.",
+      "Don't use lime as a broad decorative wash.",
+      "Don't present estimated or imported data as manufacturer-verified or hardware-ready.",
+      "Don't hide missing compatibility with a green badge.",
+      "Don't use color without a text label or icon-equivalent cue."
+    ]
+  }
+}

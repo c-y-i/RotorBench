@@ -1,33 +1,21 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import "../styles/home.css";
 import "../styles/analysis.css";
-import logo from "../assets/logo.png";
+import { Scale, ShieldAlert, TriangleAlert, UserRound } from "lucide-react";
 
 export default function LegalPage() {
-  const navigate = useNavigate();
-
   return (
-    <div className="app-container">
-      <div className="top-bar">
-        <button className="icon-btn" onClick={() => navigate(-1)}>
-          ←
-        </button>
-        <div className="logo-area">
-          <img src={logo} alt="logo" className="logo-icon" />
-          <span className="logo-text">RotorBench</span>
-        </div>
-        <button className="icon-btn home-btn" onClick={() => navigate("/")}>
-          🏠
-        </button>
-      </div>
-
+    <div className="app-container legal-page">
       <div className="page-header">
-        <h2 className="page-title">Legal & Disclaimer</h2>
+        <div>
+          <h1 className="page-title">Legal & safety</h1>
+          <p className="page-subtitle">Model ownership, planning limits, and your responsibility before flight.</p>
+        </div>
       </div>
 
-      <div className="analysis-content" style={{ paddingBottom: "70px" }}>
+      <div className="analysis-content legal-content">
         <div className="metric-card">
+          <div className="metric-icon"><Scale size={20} aria-hidden="true" /></div>
           <div className="metric-content">
             <div className="metric-label">3D Model Ownership</div>
             <p className="metric-subtitle" style={{ marginTop: "8px" }}>
@@ -39,6 +27,7 @@ export default function LegalPage() {
         </div>
 
         <div className="metric-card">
+          <div className="metric-icon"><TriangleAlert size={20} aria-hidden="true" /></div>
           <div className="metric-content">
             <div className="metric-label">No Warranty</div>
             <p className="metric-subtitle" style={{ marginTop: "8px" }}>
@@ -50,6 +39,7 @@ export default function LegalPage() {
         </div>
 
         <div className="metric-card">
+          <div className="metric-icon"><ShieldAlert size={20} aria-hidden="true" /></div>
           <div className="metric-content">
             <div className="metric-label">Limitation of Liability</div>
             <p className="metric-subtitle" style={{ marginTop: "8px" }}>
@@ -61,6 +51,7 @@ export default function LegalPage() {
         </div>
 
         <div className="metric-card">
+          <div className="metric-icon"><UserRound size={20} aria-hidden="true" /></div>
           <div className="metric-content">
             <div className="metric-label">User Responsibility</div>
             <p className="metric-subtitle" style={{ marginTop: "8px" }}>

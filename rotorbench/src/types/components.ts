@@ -1,7 +1,18 @@
 // Type definitions for drone components
 // These types support the analysis feature calculations
 
-export interface Motor {
+export interface ComponentCatalogMetadata {
+  dimensionsMm?: [number, number, number];
+  model?: string | null;
+  modelStatus?: "available" | "not_available";
+  sourceUrl?: string;
+  priceSourceUrl?: string;
+  connectorSourceUrl?: string;
+  dataStatus?: string;
+  estimatedFields?: string[];
+}
+
+export interface Motor extends ComponentCatalogMetadata {
   id: string;
   name: string;
   kv: number; // RPM per volt
@@ -13,9 +24,13 @@ export interface Motor {
   };
   size: string; // e.g., "2207", "2306"
   price: number;
+  mounting_point?: [number, number, number];
+  mountingPatternMm?: [number, number];
+  propShaftMm?: number;
+  bellDiameterMm?: number;
 }
 
-export interface Propeller {
+export interface Propeller extends ComponentCatalogMetadata {
   id: string;
   name: string;
   size: number; // inches
@@ -29,9 +44,15 @@ export interface Propeller {
     kv: number; // Motor KV this data applies to
     thrust: number; // grams of thrust at full throttle
   }[];
+  mounting_point?: [number, number, number];
+  modelCW?: string | null;
+  modelCCW?: string | null;
+  hubDiameterMm?: number;
+  hubThicknessMm?: number;
+  shaftMm?: number;
 }
 
-export interface ESC {
+export interface ESC extends ComponentCatalogMetadata {
   id: string;
   name: string;
   manufacturer: string; // Keep manufacturer for ESC
@@ -45,9 +66,11 @@ export interface ESC {
   };
   protocol: string[]; // e.g., ["DShot600", "Multishot"]
   price: number;
+  mountingPatternMm?: [number, number];
+  includedPowerConnector?: string;
 }
 
-export interface FlightController {
+export interface FlightController extends ComponentCatalogMetadata {
   id: string;
   name: string;
   manufacturer: string; // Keep manufacturer for FC
@@ -59,9 +82,10 @@ export interface FlightController {
   maxVoltage: number;
   features: string[]; // e.g., ["OSD", "Blackbox", "Barometer"]
   price: number;
+  mountingPatternMm?: [number, number];
 }
 
-export interface Frame {
+export interface Frame extends ComponentCatalogMetadata {
   id: string;
   name: string;
   size: number; // wheelbase in mm
@@ -71,9 +95,16 @@ export interface Frame {
   maxPropSize: number; // inches
   stackHeight: number; // mm (mounting hole spacing)
   price: number;
+  upper_left_motor_position?: [number, number, number];
+  upper_right_motor_position?: [number, number, number];
+  lower_right_motor_position?: [number, number, number];
+  lower_left_motor_position?: [number, number, number];
+  stackMountPatternMm?: [number, number];
+  stackMountPatternsMm?: [number, number][];
+  motorMountPatternsMm?: [number, number][];
 }
 
-export interface Battery {
+export interface Battery extends ComponentCatalogMetadata {
   id: string;
   name: string;
   capacity: number; // mAh
@@ -88,9 +119,10 @@ export interface Battery {
     voltage: number;
   }[];
   price: number;
+  dischargeConnector?: string;
 }
 
-export interface Receiver {
+export interface Receiver extends ComponentCatalogMetadata {
   id: string;
   name: string;
   protocol: string; // e.g., "SBUS", "CRSF"

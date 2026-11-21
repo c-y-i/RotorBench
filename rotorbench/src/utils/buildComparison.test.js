@@ -1,0 +1,138 @@
+import {
+  comparisonReportFilename,
+  comparisonRows,
+  createComparisonReport,
+  readHardwarePlanStatus,
+  summarizeBuild,
+} from "./buildComparison";
+
+const build = {
+  id: "build-a",
+  name: "Five inch",
+  componentIds: {
+    frameId: "frame-5inch-220mm",
+    motorId: "motor-2207-1750kv",
+    propellerId: "prop-5040-tri",
+    batteryId: "battery-4s-1550mah-95c",
+    escId: "esc-mamba-f55a",
+    flightControllerId: "fc-holybro-kakute-f7",
+    receiverId: "rx-elrs-24g",
+  },
+};
+
+test("summarizes catalog weight and price using frame motor count", () => {
+  const summary = summarizeBuild(build);
+  expect(summary.selectedCount).toBe(7);
+  expect(summary.motorCount).toBe(4);
+  expect(summary.totalWeight).toBeGreaterThan(0);
+  expect(summary.totalPrice).toBeGreaterThan(0);
+});
+
+test("comparison rows include all seven component categories", () => {
+  const left = summarizeBuild(build);
+  const right = summarizeBuild({ ...build, id: "build-b", name: "Second build" });
+  const rows = comparisonRows(left, right);
+  expect(rows.filter((row) => row.left?.id)).toHaveLength(7);
+  expect(rows.map((row) => row.id)).toEqual(
+    expect.arrayContaining([
+      "selected-count",
+      "physical-fit",
+      "electrical-limits",
+      "source-backed",
+      "estimated-fields",
+      "geometry-fallbacks",
+      "hardware-plan",
+      "bench-evidence",
+      "frame-size",
+      "motor-kv",
+      "motor-size",
+      "propeller-size",
+      "propeller-blades",
+      "battery-cells",
+      "battery-capacity",
+      "esc-current",
+      "fc-firmware",
+      "fc-processor",
+      "receiver-protocol",
+      "receiver-channels",
+      "total-weight",
+      "total-price",
+    ]),
+  );
+});
+
+test("comparison rows mark only the values that differ", () => {
+  const left = summarizeBuild(build);
+  const changedBuild = {
+    ...build,
+    id: "build-b",
+    componentIds: {
+      ...build.componentIds,
+      motorId: "motor-1804-2800kv",
+    },
+  };
+  const right = summarizeBuild(changedBuild);
+  const rows = comparisonRows(left, right);
+
+  expect(rows.find((row) => row.id === "motorId")).toMatchObject({ changed: true });
+  expect(rows.find((row) => row.id === "motor-kv")).toMatchObject({ changed: true });
+  expect(rows.find((row) => row.id === "frameId")).toMatchObject({ changed: false });
+  expect(rows.filter((row) => row.changed).map((row) => row.id))
+    .toEqual(expect.arrayContaining(["motorId", "total-weight", "total-price"]));
+  expect(comparisonRows(left, summarizeBuild(build)).every((row) => !row.changed))
+    .toBe(true);
+});
+
+test("comparison reports contain portable specimen rows and explicit boundaries", () => {
+  const left = summarizeBuild(build);
+  const right = summarizeBuild({
+    ...build,
+    id: "build-b",
+    componentIds: { ...build.componentIds, motorId: "motor-1804-2800kv" },
+  });
+  const rows = comparisonRows(left, right);
+  const report = createComparisonReport(
+    left,
+    right,
+    rows,
+    "2026-11-20T12:00:00.000Z",
+  );
+
+  expect(report).toMatchObject({
+    schema: "rotorbench.build-comparison.v1",
+    differenceCount: expect.any(Number),
+    verification: {
+      catalogComparisonOnly: true,
+      hardwareVerified: false,
+      performanceAnalyzed: false,
+    },
+  });
+  expect(report.rows.find((row) => row.id === "motor-kv")).toMatchObject({
+    changed: true,
+    left: expect.any(Number),
+    right: expect.any(Number),
+  });
+  expect(report.rows.find((row) => row.id === "frameId").left).toEqual({
+    id: expect.any(String),
+    name: expect.any(String),
+  });
+  expect(comparisonReportFilename(left, right))
+    .toBe("rotorbench-compare-build-a-build-b.json");
+});
+
+test("hardware plan status distinguishes complete, partial, and invalid plans", () => {
+  localStorage.clear();
+  expect(readHardwarePlanStatus("build-a")).toBe("not-configured");
+  localStorage.setItem(
+    `rotorbench:hardware-plan:build-a:fc`,
+    JSON.stringify({ planVersion: 3 }),
+  );
+  expect(readHardwarePlanStatus("build-a")).toBe("partial");
+  localStorage.setItem(
+    `rotorbench:hardware-plan:build-a:radio`,
+    JSON.stringify({ planVersion: 3 }),
+  );
+  expect(summarizeBuild(build).hardwarePlanStatus).toBe("saved");
+  localStorage.setItem(`rotorbench:hardware-plan:build-a:radio`, "{");
+  expect(readHardwarePlanStatus("build-a")).toBe("invalid");
+});

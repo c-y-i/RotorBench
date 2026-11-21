@@ -1,4 +1,5 @@
 import React from "react";
+import { TriangleAlert } from "lucide-react";
 import "../styles/saved.css";
 
 export default function ConfirmModal({ message, onConfirm, onCancel, busy = false }) {
@@ -6,7 +7,7 @@ export default function ConfirmModal({ message, onConfirm, onCancel, busy = fals
         <div className="modal-backdrop" role="dialog" aria-modal="true">
             <div className="modal-card">
                 <div className="modal-body">
-                    <div className="modal-icon">⚠️</div>
+                    <div className="modal-icon"><TriangleAlert size={24} aria-hidden="true" /></div>
                     <div className="modal-message">{message}</div>
                 </div>
                 <div className="modal-actions">

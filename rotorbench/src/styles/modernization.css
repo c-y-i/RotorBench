@@ -1,0 +1,1467 @@
+/* Analysis, saved builds, and profile information architecture. */
+
+.report-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 11px;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.report-status.is-clear {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 35%, var(--line));
+}
+
+.report-status.has-notes {
+  color: var(--warn);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--warn) 30%, var(--line));
+}
+
+.analysis-report {
+  display: grid;
+  grid-template-areas:
+    "summary summary"
+    "hardware hardware"
+    "metrics components"
+    "flight components"
+    "chart components"
+    "alerts components"
+    "cost components";
+  grid-template-columns: minmax(0, 1.4fr) minmax(330px, 0.72fr);
+  align-items: start;
+  gap: 16px;
+  padding-bottom: 22px;
+}
+
+.analysis-summary {
+  grid-area: summary;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(120px, 0.55fr));
+  overflow: hidden;
+  color: var(--sidebar-ink);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+}
+
+.analysis-summary-verdict,
+.analysis-summary-stat {
+  display: grid;
+  align-content: center;
+  min-height: 112px;
+  padding: 18px;
+}
+
+.analysis-summary-verdict {
+  gap: 4px;
+}
+
+.analysis-summary-verdict span,
+.analysis-summary-stat span {
+  color: #aebbb5;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.analysis-summary-verdict strong {
+  color: var(--signal);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.analysis-summary-verdict small {
+  max-width: 34ch;
+  color: #aebbb5;
+  font-size: 11px;
+}
+
+.analysis-summary-stat {
+  border-inline-start: 1px solid #35413d;
+}
+
+.analysis-summary-stat strong {
+  color: var(--signal);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.analysis-summary-stat strong small {
+  margin-inline-start: 3px;
+  color: #b7c3bd;
+  font-size: 11px;
+}
+
+.analysis-hardware-context {
+  grid-area: hardware;
+  display: grid;
+  grid-template-columns: 42px minmax(180px, 1.15fr) minmax(210px, 0.85fr) minmax(210px, auto);
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.analysis-hardware-context.is-review,
+.analysis-hardware-context.is-partial {
+  background: #fff5eb;
+  border-color: #e4bd99;
+}
+
+.analysis-hardware-context.is-blocked {
+  background: #fff1f0;
+  border-color: #dfb2b2;
+}
+
+.analysis-hardware-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.analysis-hardware-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.analysis-hardware-copy > span,
+.analysis-hardware-facts dt,
+.analysis-hardware-state > span {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.analysis-hardware-copy h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.analysis-hardware-copy p {
+  overflow: hidden;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-hardware-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.analysis-hardware-facts div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.analysis-hardware-facts dd {
+  overflow: hidden;
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-hardware-facts .analysis-hardware-evidence {
+  grid-column: 1 / -1;
+}
+
+.analysis-hardware-facts .analysis-hardware-evidence dd {
+  white-space: normal;
+}
+
+.analysis-hardware-state {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 5px;
+  min-width: 210px;
+}
+
+.analysis-hardware-state-copy {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+
+.analysis-evidence-state {
+  padding: 2px 6px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.analysis-hardware-state strong {
+  color: var(--brand-strong);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.analysis-hardware-context.is-review .analysis-hardware-state strong,
+.analysis-hardware-context.is-partial .analysis-hardware-state strong {
+  color: var(--warn);
+}
+
+.analysis-hardware-context.is-blocked .analysis-hardware-state strong {
+  color: var(--danger);
+}
+
+.analysis-hardware-action {
+  min-height: 32px;
+  margin-top: 3px;
+  padding: 0 9px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.analysis-hardware-action:hover {
+  border-color: var(--ink);
+}
+
+.analysis-report .metrics-section {
+  grid-area: metrics;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.analysis-report .flight-section {
+  grid-area: flight;
+  margin: 0;
+}
+
+.analysis-report .chart-section {
+  grid-area: chart;
+  margin: 0;
+}
+
+.analysis-report > .validation-stack {
+  grid-area: alerts;
+}
+
+.validation-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.analysis-report > .cost-section {
+  grid-area: cost;
+  margin: 0;
+}
+
+.analysis-report .components-section {
+  grid-area: components;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-self: start;
+  gap: 0;
+  margin: 0;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.analysis-report .components-section > .section-header {
+  grid-column: auto;
+  margin: 0;
+  padding: 14px 15px;
+  border-bottom: 1px solid var(--line);
+}
+
+.analysis-report .components-section .component-card {
+  min-height: 0;
+  margin: 0;
+  padding: 11px 14px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.analysis-report .components-section .component-card:last-child {
+  border-bottom: 0;
+}
+
+.analysis-report .components-section .component-card.is-missing {
+  color: var(--ink-faint);
+  background: var(--surface-soft);
+}
+
+.analysis-report .components-section .component-title,
+.analysis-report .components-section .component-meta {
+  color: var(--ink-soft);
+  opacity: 1;
+}
+
+.analysis-report .components-section .component-value {
+  color: var(--ink);
+  opacity: 1;
+}
+
+.analysis-report .components-section .component-icon {
+  width: 34px;
+  height: 34px;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.component-meta {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analysis-report .metric-card {
+  min-height: 118px;
+}
+
+.analysis-report .metric-card.highlight .metric-badge {
+  color: #10150e !important;
+  opacity: 1;
+}
+
+.analysis-report .flight-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.analysis-report .flight-card.highlight {
+  grid-column: span 3;
+}
+
+.analysis-report .recharts-responsive-container {
+  width: 100% !important;
+}
+
+.analysis-report .cost-card {
+  min-height: 96px;
+  display: grid;
+  align-content: center;
+}
+
+.analysis-report .cost-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Saved builds */
+
+.saved-page .saved-list {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: 12px;
+}
+
+.saved-import-action {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 13px;
+  cursor: pointer;
+}
+
+.saved-import-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.saved-import-action:has(.saved-import-input:focus-visible) {
+  outline: 3px solid rgba(11, 118, 109, 0.5);
+  outline-offset: 2px;
+}
+
+.saved-page .saved-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.saved-page .saved-header {
+  padding: 16px 16px 10px;
+}
+
+.saved-card-copy {
+  width: 100%;
+  min-width: 0;
+}
+
+.saved-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.saved-rename-form {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.saved-rename-form .input-field {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+}
+
+.saved-rename-form button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.saved-rename-form button:first-of-type {
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
+.saved-page .saved-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.saved-part-count {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--line));
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.saved-page .saved-note {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 6px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.saved-build-state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+
+.saved-build-state span {
+  padding: 3px 6px;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.saved-build-state .is-fit-verified {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.saved-build-state .is-fit-unverified {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+}
+
+.saved-build-state .is-fit-conflict {
+  color: var(--danger);
+  background: #fbe8e8;
+}
+
+.saved-build-state .saved-evidence-state.is-correlated {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.saved-build-state .saved-evidence-state.is-settings-mismatch {
+  color: var(--danger);
+  background: #fbe8e8;
+}
+
+.saved-build-state .saved-evidence-state.is-rf-only,
+.saved-build-state .saved-evidence-state.is-claimed,
+.saved-build-state .saved-evidence-state.is-observation {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.saved-part-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 9px 16px;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.saved-part-preview span {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 5px;
+}
+
+.saved-part-preview svg {
+  flex: 0 0 auto;
+}
+
+.saved-page .saved-actions {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.saved-page .component-grid {
+  gap: 0;
+  margin-top: 0;
+  padding: 0 16px;
+}
+
+.saved-page .component-grid .component-card {
+  padding: 10px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.saved-page .component-grid .component-card:last-child {
+  border-bottom: 0;
+}
+
+.saved-page .component-grid .component-card.is-missing {
+  color: var(--ink-faint);
+}
+
+/* Profile */
+
+.profile-hero {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 22px;
+  color: var(--sidebar-ink);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 8px;
+}
+
+.profile-hero-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-radius: 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.profile-hero-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.profile-hero-copy > span {
+  color: #aebbb5;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.profile-hero-copy h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 27px;
+  line-height: 1.05;
+}
+
+.profile-hero-copy p {
+  overflow: hidden;
+  margin: 0;
+  color: #aebbb5;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-hero-copy .input-field {
+  width: 100%;
+  max-width: 420px;
+  margin: 3px 0;
+  color: var(--ink);
+}
+
+.profile-state {
+  padding: 5px 8px;
+  color: #b7c3bd;
+  border: 1px solid #4c5954;
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.profile-state.is-connected {
+  color: var(--signal);
+  border-color: #5f7043;
+}
+
+.profile-account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.profile-account-card {
+  min-height: 132px;
+  margin: 0;
+}
+
+.profile-account-card .input-field {
+  width: 100%;
+  min-height: 42px;
+  margin: 8px 0 0;
+}
+
+.profile-meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.profile-meta-bar span {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profile-meta-bar strong {
+  margin-inline-start: auto;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+@media (max-width: 1080px) {
+  .analysis-report {
+    grid-template-areas:
+      "summary"
+      "hardware"
+      "metrics"
+      "flight"
+      "chart"
+      "alerts"
+      "cost"
+      "components";
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-report > .components-section,
+  .analysis-report > .analysis-hardware-context,
+  .analysis-report > .metrics-section,
+  .analysis-report > .flight-section,
+  .analysis-report > .chart-section,
+  .analysis-report > .validation-stack,
+  .analysis-report > .cost-section {
+    grid-area: auto;
+  }
+
+  .analysis-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analysis-summary-verdict {
+    grid-column: 1 / -1;
+  }
+
+  .analysis-summary-stat {
+    border-top: 1px solid #35413d;
+    border-inline-start: 1px solid #35413d;
+  }
+}
+
+@media (max-width: 700px) {
+  .page-header {
+    display: grid;
+  }
+
+  .report-status {
+    width: max-content;
+  }
+
+  .analysis-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-summary-verdict,
+  .analysis-summary-stat {
+    min-height: 0;
+    padding: 14px 15px;
+  }
+
+  .analysis-summary-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-inline-start: 0;
+  }
+
+  .analysis-hardware-context {
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .analysis-hardware-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .analysis-hardware-facts,
+  .analysis-hardware-state {
+    grid-column: 1 / -1;
+  }
+
+  .analysis-hardware-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analysis-hardware-state {
+    min-width: 0;
+  }
+
+  .analysis-report .metrics-section,
+  .analysis-report .flight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-report .flight-card.highlight {
+    grid-column: auto;
+  }
+
+  .saved-page .saved-list {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-hero {
+    grid-template-columns: 52px minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .profile-hero-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .profile-hero-copy h2 {
+    font-size: 22px;
+  }
+
+  .profile-state {
+    grid-column: 2;
+    width: max-content;
+  }
+
+  .profile-account-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pref-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-meta-bar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .profile-meta-bar strong {
+    width: 100%;
+    margin-inline-start: 26px;
+  }
+}
+
+.saved-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.saved-compare-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.saved-compare-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+}
+
+.saved-hardware-state {
+  padding: 3px 6px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.saved-hardware-state.is-partial,
+.saved-hardware-state.is-review {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.saved-hardware-state.is-empty {
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+}
+
+.saved-hardware-state.is-blocked {
+  color: var(--danger);
+  background: #fbe9e9;
+}
+
+@media (max-width: 640px) {
+  .saved-title-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+.profile-page .profile-actions {
+  position: static;
+  margin-top: 20px;
+  padding: 12px 0 0;
+  background: transparent;
+  border-top: 1px solid var(--line);
+  backdrop-filter: none;
+}
+
+.profile-action-secondary {
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+}
+
+.profile-action-secondary:hover {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: var(--ink);
+}
+
+.profile-action-danger {
+  color: var(--danger);
+  background: #fff4f4;
+  border: 1px solid #dfb9b9;
+}
+
+.profile-action-danger:hover {
+  color: #7f1419;
+  background: #ffe8e8;
+  border-color: #c77e83;
+}
+
+@media (max-width: 640px) {
+  .saved-page .saved-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
+  }
+
+  .saved-page .saved-search-field {
+    grid-column: 1 / -1;
+    flex: none;
+    width: 100%;
+    max-width: none;
+  }
+
+  .saved-page .saved-toolbar .action-btn {
+    width: 100%;
+  }
+
+  .saved-page .saved-toolbar > button:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Shared utility-route language: Analysis, Saved, Profile, and Legal. */
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  padding: 20px 24px 18px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--line);
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .page-title {
+  max-width: 24ch;
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--type-page-title);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .page-subtitle {
+  max-width: 68ch;
+  margin: 7px 0 0;
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  line-height: 1.5;
+  text-wrap: balance;
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .section-header {
+  margin: 16px 0 10px;
+  color: var(--ink);
+  font-size: var(--type-section-title);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .analysis-print {
+  min-height: var(--control-min-height);
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  font-size: var(--type-meta);
+  font-weight: 700;
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.analysis,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.save,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.order {
+  color: var(--action-primary-ink);
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.analysis:not(:disabled):hover,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.save:not(:disabled):hover,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.order:not(:disabled):hover {
+  color: var(--action-primary-ink);
+  background: var(--action-primary-hover);
+  border-color: var(--action-primary-hover);
+  box-shadow: none;
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .profile-action-secondary,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.secondary {
+  color: var(--ink);
+  background: var(--surface-raised);
+  border-color: var(--line-strong);
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .profile-action-secondary:not(:disabled):hover,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.secondary:not(:disabled):hover {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: var(--ink);
+  box-shadow: none;
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.danger,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .profile-action-danger {
+  color: var(--danger);
+  background: #fff4f4;
+  border-color: #dfb9b9;
+}
+
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .action-btn.danger:not(:disabled):hover,
+.app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .profile-action-danger:not(:disabled):hover {
+  color: #7f1419;
+  background: #ffe8e8;
+  border-color: #c77e83;
+  box-shadow: none;
+}
+
+.analysis-page .analysis-print {
+  min-height: 40px;
+  font-size: var(--type-label);
+}
+
+.analysis-page .analysis-hardware-action {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: var(--type-label);
+}
+
+.analysis-page .analysis-summary-verdict span,
+.analysis-page .analysis-summary-stat span,
+.analysis-page .analysis-hardware-copy > span,
+.analysis-page .analysis-hardware-facts dt,
+.analysis-page .analysis-hardware-state > span,
+.analysis-page .section-header {
+  font-size: var(--type-label);
+}
+
+.analysis-page .report-status,
+.analysis-page .metric-badge,
+.analysis-page .analysis-report .metric-card.highlight .metric-badge {
+  font-size: var(--type-label) !important;
+}
+
+.analysis-page .analysis-summary-verdict small,
+.analysis-page .analysis-summary-stat strong small,
+.analysis-page .analysis-hardware-copy p,
+.analysis-page .analysis-hardware-facts dd,
+.analysis-page .analysis-hardware-state strong,
+.analysis-page .component-meta,
+.analysis-page .metric-subtitle {
+  font-size: var(--type-meta);
+}
+
+.analysis-page .component-card,
+.analysis-page .metric-card,
+.analysis-page .flight-card,
+.analysis-page .discharge-chart {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.analysis-page .metric-card.highlight,
+.analysis-page .flight-card.highlight,
+.analysis-page .cost-card {
+  color: var(--sidebar-ink);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+}
+
+.analysis-page .metric-card.highlight .metric-label,
+.analysis-page .metric-card.highlight .metric-subtitle,
+.analysis-page .flight-card.highlight .flight-label,
+.analysis-page .cost-label {
+  color: #b7c3bd;
+}
+
+.analysis-page .metric-card.highlight .metric-value-large,
+.analysis-page .flight-card.highlight .flight-value-large,
+.analysis-page .cost-value {
+  color: var(--signal);
+}
+
+.analysis-page .metric-card.highlight .metric-icon {
+  color: var(--signal);
+  background: #1b2522;
+  border: 1px solid #35413d;
+}
+
+.saved-page .saved-card {
+  background: var(--surface-raised);
+  border-color: var(--line);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.saved-page .saved-actions {
+  display: grid;
+  gap: 8px;
+  padding: 10px 16px 14px;
+}
+
+.saved-actions-primary,
+.saved-actions-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.saved-actions-primary .action-btn {
+  flex: 1 1 132px;
+}
+
+.saved-actions-danger {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.saved-page .saved-subtitle {
+  font-size: var(--type-meta);
+}
+
+.saved-page .saved-part-preview,
+.saved-page .saved-build-state span,
+.saved-page .saved-compare-toggle,
+.saved-page .saved-hardware-state,
+.saved-page .saved-part-count {
+  font-size: var(--type-label);
+}
+
+.saved-page .saved-rename-form .input-field,
+.saved-page .saved-rename-form button {
+  min-height: 44px;
+}
+
+.saved-page .saved-rename-form button {
+  width: 44px;
+  height: 44px;
+}
+
+.profile-page .profile-hero-copy > span,
+.profile-page .profile-state,
+.profile-page .profile-meta-bar span {
+  font-size: var(--type-label);
+}
+
+.profile-page .profile-hero-copy p,
+.profile-page .profile-meta-bar,
+.profile-page .profile-meta-bar strong {
+  font-size: var(--type-meta);
+}
+
+.profile-page .pref-label {
+  font-size: var(--type-meta);
+}
+
+.profile-page .profile-account-card .input-field {
+  min-height: var(--control-min-height);
+}
+
+@media (max-width: 700px) {
+  .app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) {
+    border-radius: 0;
+  }
+
+  .app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .page-header {
+    align-items: flex-start;
+    padding: 18px 16px 16px;
+  }
+
+  .app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .page-title {
+    font-size: 2rem;
+  }
+
+  .analysis-page .analysis-print,
+  .analysis-page .analysis-hardware-action {
+    min-height: var(--control-min-height);
+  }
+
+  .analysis-page .analysis-header-actions {
+    width: 100%;
+  }
+
+  .analysis-page .analysis-header-actions .analysis-print {
+    flex: 1 1 auto;
+  }
+
+  .saved-actions-primary .action-btn {
+    flex-basis: 100%;
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .app-sidebar,
+  .mobile-header,
+  .mobile-nav,
+  .bottom-buttons,
+  .analysis-print,
+  .skip-link {
+    display: none !important;
+  }
+
+  .route-stage {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .route-stage .app-container {
+    max-width: none;
+    padding: 0;
+    color: #000;
+    background: #fff;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    padding: 0 0 10mm;
+    border-bottom: 1px solid #aaa;
+  }
+
+  .page-title {
+    color: #000;
+  }
+
+  .page-subtitle {
+    color: #333;
+  }
+
+  .analysis-header-actions {
+    color: #000;
+  }
+
+  .report-status,
+  .report-status.is-clear,
+  .report-status.has-notes {
+    min-height: 0;
+    padding: 4px 7px;
+    color: #000;
+    background: #fff;
+    border-color: #888;
+  }
+
+  .analysis-report {
+    display: block;
+    padding-bottom: 0;
+  }
+
+  .analysis-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(28mm, 0.6fr));
+    color: #000;
+    background: #fff;
+    border-color: #888;
+    break-inside: avoid;
+  }
+
+  .analysis-summary-verdict,
+  .analysis-summary-stat {
+    min-height: 0;
+    padding: 7mm;
+  }
+
+  .analysis-summary-verdict span,
+  .analysis-summary-verdict strong,
+  .analysis-summary-verdict small,
+  .analysis-summary-stat span,
+  .analysis-summary-stat strong,
+  .analysis-summary-stat strong small {
+    color: #000;
+  }
+
+  .analysis-summary-stat {
+    border-color: #aaa;
+  }
+
+  .analysis-report > .components-section,
+  .analysis-report > .analysis-hardware-context,
+  .analysis-report > .metrics-section,
+  .analysis-report > .flight-section,
+  .analysis-report > .chart-section,
+  .analysis-report > .validation-stack,
+  .analysis-report > .cost-section {
+    grid-area: auto;
+    margin: 7mm 0;
+    break-inside: avoid;
+  }
+
+  .analysis-report .components-section {
+    overflow: visible;
+    background: #fff;
+    border-color: #aaa;
+  }
+
+  .analysis-hardware-context,
+  .analysis-hardware-context.is-review,
+  .analysis-hardware-context.is-partial,
+  .analysis-hardware-context.is-blocked {
+    color: #000;
+    background: #fff;
+    border-color: #aaa;
+  }
+
+  .analysis-hardware-copy h3,
+  .analysis-hardware-copy p,
+  .analysis-hardware-copy > span,
+  .analysis-hardware-facts dt,
+  .analysis-hardware-facts dd,
+  .analysis-hardware-state strong,
+  .analysis-hardware-state > span {
+    color: #000 !important;
+  }
+
+  .analysis-hardware-action {
+    display: none;
+  }
+
+  .analysis-report .components-section .component-card,
+  .analysis-report .components-section .component-card.is-missing,
+  .analysis-report .metric-card,
+  .analysis-report .metric-card.highlight,
+  .analysis-report .flight-card,
+  .analysis-report .flight-card.highlight,
+  .analysis-report .cost-card,
+  .analysis-report .validation-section {
+    color: #000;
+    background: #fff !important;
+    box-shadow: none;
+    border-color: #aaa;
+    animation: none;
+  }
+
+  .analysis-report .component-title,
+  .analysis-report .component-value,
+  .analysis-report .component-meta,
+  .analysis-report .metric-label,
+  .analysis-report .metric-value,
+  .analysis-report .metric-value-large,
+  .analysis-report .metric-subtitle,
+  .analysis-report .flight-label,
+  .analysis-report .flight-value,
+  .analysis-report .flight-value-large,
+  .analysis-report .validation-message,
+  .analysis-report .cost-label,
+  .analysis-report .cost-value {
+    color: #000 !important;
+    opacity: 1;
+  }
+
+  .analysis-report .metric-card.highlight .metric-badge {
+    color: #000 !important;
+    background: #fff !important;
+    border: 1px solid #000;
+  }
+
+  .analysis-report .section-header {
+    color: #000;
+  }
+
+  .analysis-report .recharts-responsive-container {
+    break-inside: avoid;
+  }
+}

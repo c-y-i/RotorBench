@@ -1,16 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { lazy, Suspense, useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
-import logo from "../assets/logo.png";
-import BabylonViewer from "./BabylonViewer";
 import componentsData from "../data/components.json";
 import TwoDViewer from "./TwoDViewer";
 import API_BASE from "../config/api";
+import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
+import {
+  BatteryCharging,
+  Box,
+  ChartNoAxesCombined,
+  ChevronRight,
+  Cog,
+  Cpu,
+  Edit3,
+  Eye,
+  EyeOff,
+  Fan,
+  Radio,
+  Scale,
+  Settings2,
+  Zap,
+} from "lucide-react";
+import { PLATFORM_PRESETS } from "../data/platformPresets";
 const sampleAssembly = process.env.PUBLIC_URL + "/assets/sample_assembly.glb";
+const BabylonViewer = lazy(() => import("./BabylonViewer"));
 
 export default function HomePage() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { currentBuild, analysisResults } = useBuild();
 
@@ -18,6 +34,8 @@ export default function HomePage() {
   const [modelUrls, setModelUrls] = useState([]);
   const [motorModelUrl, setMotorModelUrl] = useState(null);
   const [propellerModelUrl, setPropellerModelUrl] = useState(null);
+  const [propellerCWModelUrl, setPropellerCWModelUrl] = useState(null);
+  const [propellerCCWModelUrl, setPropellerCCWModelUrl] = useState(null);
   const [batteryModelUrl, setBatteryModelUrl] = useState(null);
   const [escModelUrl, setEscModelUrl] = useState(null);
   const [fcModelUrl, setFcModelUrl] = useState(null);
@@ -31,7 +49,6 @@ export default function HomePage() {
   const [receiverMountingPoint, setReceiverMountingPoint] = useState([0, 0, 0]);
   const [clearedComponents, setClearedComponents] = useState([]);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
-
   // Get component details from current build
   const getComponent = (type, id) => {
     if (!id) return null;
@@ -54,18 +71,45 @@ export default function HomePage() {
     currentBuild.componentIds &&
     Object.values(currentBuild.componentIds).some(Boolean)
   );
+  const selectedComponentCount = currentBuild?.componentIds
+    ? Object.values(currentBuild.componentIds).filter(Boolean).length
+    : 0;
 
   // Fetch model URLs for 3D rendering
-  const fetchModelForComponent = async (category, componentId) => {
+  const fetchModelForComponent = async (category, componentId, signal) => {
     if (!componentId) return null;
     try {
-      const res = await fetch(`${API_BASE}/api/models/list/${category}`);
+      const res = await fetch(`${API_BASE}/api/models/list/${category}`, { signal });
       if (!res.ok) return null;
       const data = await res.json();
-      const match = data.models.find(m => m.filename.toLowerCase().startsWith(componentId.toLowerCase()));
+      const prefixMatches = data.models.filter((model) =>
+        model.filename.toLowerCase().startsWith(componentId.toLowerCase())
+      );
+      const match = prefixMatches.find((model) => /\.glb$/i.test(model.filename)) || prefixMatches[0];
       return match ? `${API_BASE}/api/models/convert/${category}/${match.filename}?format=glb` : null;
     } catch (_) {
       return null;
+    }
+  };
+
+  const fetchPropellerModelPair = async (componentId, signal) => {
+    if (!componentId) return { cw: null, ccw: null };
+    try {
+      const res = await fetch(`${API_BASE}/api/models/list/propellers`, { signal });
+      if (!res.ok) return { cw: null, ccw: null };
+      const data = await res.json();
+      const matching = data.models.filter((model) =>
+        model.filename.toLowerCase().startsWith(componentId.toLowerCase()) &&
+        /\.glb$/i.test(model.filename)
+      );
+      const toUrl = (model) =>
+        model ? `${API_BASE}/api/models/convert/propellers/${model.filename}?format=glb` : null;
+      return {
+        cw: toUrl(matching.find((model) => /_cw\./i.test(model.filename))),
+        ccw: toUrl(matching.find((model) => /_ccw\./i.test(model.filename))),
+      };
+    } catch {
+      return { cw: null, ccw: null };
     }
   };
 
@@ -74,6 +118,8 @@ export default function HomePage() {
       setModelUrls([]);
       setMotorModelUrl(null);
       setPropellerModelUrl(null);
+      setPropellerCWModelUrl(null);
+      setPropellerCCWModelUrl(null);
       setBatteryModelUrl(null);
       setEscModelUrl(null);
       setFcModelUrl(null);
@@ -89,25 +135,38 @@ export default function HomePage() {
     }
 
     let cancelled = false;
+    const controller = new AbortController();
     const load = async () => {
-      const urls = [];
-
-      // Fetch frame model
-      const frameUrl = await fetchModelForComponent("frames", currentBuild.componentIds?.frameId);
-      if (frameUrl) urls.push(frameUrl);
-
-      // Fetch other component models
-      const motorUrl = await fetchModelForComponent("motors", currentBuild.componentIds?.motorId);
-      const propellerUrl = await fetchModelForComponent("propellers", currentBuild.componentIds?.propellerId);
-      const batteryUrl = await fetchModelForComponent("batteries", currentBuild.componentIds?.batteryId);
-      const escUrl = await fetchModelForComponent("escs", currentBuild.componentIds?.escId);
-      const fcUrl = await fetchModelForComponent("flight_controllers", currentBuild.componentIds?.flightControllerId);
-      const receiverUrl = await fetchModelForComponent("receivers", currentBuild.componentIds?.receiverId);
+      const [
+        frameUrl,
+        motorUrl,
+        propellerModels,
+        batteryUrl,
+        escUrl,
+        fcUrl,
+        receiverUrl,
+      ] = await Promise.all([
+        fetchModelForComponent("frames", currentBuild.componentIds?.frameId, controller.signal),
+        fetchModelForComponent("motors", currentBuild.componentIds?.motorId, controller.signal),
+        fetchPropellerModelPair(currentBuild.componentIds?.propellerId, controller.signal),
+        fetchModelForComponent("batteries", currentBuild.componentIds?.batteryId, controller.signal),
+        fetchModelForComponent("escs", currentBuild.componentIds?.escId, controller.signal),
+        fetchModelForComponent(
+          "flight_controllers",
+          currentBuild.componentIds?.flightControllerId,
+          controller.signal,
+        ),
+        fetchModelForComponent("receivers", currentBuild.componentIds?.receiverId, controller.signal),
+      ]);
+      const urls = frameUrl ? [frameUrl] : [];
+      const propellerUrl = propellerModels.ccw || propellerModels.cw;
 
       if (!cancelled) {
         setModelUrls(urls);
         setMotorModelUrl(motorUrl);
         setPropellerModelUrl(propellerUrl);
+        setPropellerCWModelUrl(propellerModels.cw);
+        setPropellerCCWModelUrl(propellerModels.ccw);
         setBatteryModelUrl(batteryUrl);
         setEscModelUrl(escUrl);
         setFcModelUrl(fcUrl);
@@ -173,258 +232,305 @@ export default function HomePage() {
     };
 
     load();
-    return () => { cancelled = true; };
-  }, [currentBuild, hasBuild, frame, motor, propeller]);
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [currentBuild, hasBuild, frame, motor, propeller, battery, esc, fc, receiver]);
+
+  const assemblySpec = useMemo(() => ({
+    frame: frame || null,
+    motor: motor || null,
+    propeller: propeller || null,
+    battery: battery || null,
+    esc: esc || null,
+    flightController: fc || null,
+    receiver: receiver || null,
+  }), [frame, motor, propeller, battery, esc, fc, receiver]);
+
+  const hardwarePlanState = useMemo(
+    () => summarizeHardwareReadiness({
+      buildId: currentBuild?.id,
+      flightController: fc,
+      receiver,
+    }),
+    [currentBuild?.id, fc, receiver],
+  );
 
   return (
-    <div className={`app-container${menuOpen ? " menu-open" : ""}`}>
+    <div className="app-container">
 
-      <div className="top-bar">
-        <button className="icon-btn menu-btn" onClick={() => setMenuOpen(true)}>☰</button>
-
-        <div className="logo-area">
-          <img src={logo} alt="logo" className="logo-icon" />
-          <span className="logo-text">RotorBench</span>
+      <section className="home-intro">
+        <div>
+          <h1><span>Build</span><span>overview</span></h1>
+          <p>Inspect the airframe and the numbers behind your next FPV build.</p>
         </div>
-
-        <button className="icon-btn search-btn" onClick={() => navigate("/build")}>🔍</button>
-      </div>
-
-      {/* View Switch */}
-      <div className="view-switch-container">
-        <div className="view-switch-track">
-          <div
-            className="view-switch-slider"
-            style={{
-              transform: activeView === "3D" ? "translateX(0%)" : "translateX(100%)",
-            }}
-          />
-          {["3D", "2D"].map((view) => (
-            <button
-              key={view}
-              className={`view-switch-option ${activeView === view ? "active" : ""}`}
-              onClick={() => setActiveView(view)}
-            >
-              {view} View
-            </button>
-          ))}
+        <div className={`build-status ${hasAnalysis ? "is-ready" : hasBuild ? "is-progress" : "is-empty"}`}>
+          <strong>{String(selectedComponentCount).padStart(2, "0")}<span>/07</span></strong>
+          <small>{hasAnalysis ? "Analysis ready" : hasBuild ? "Parts selected" : "Sample airframe"}</small>
         </div>
-      </div>
+      </section>
 
-      {/* Component Visibility Controls (3D View Only) */}
-      {activeView === "3D" && hasBuild && (
-        <div style={{
-          padding: "8px 14px",
-          background: "#f8f9fa",
-          borderBottom: "1px solid #e0e0e0",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
-          fontSize: "12px"
-        }}>
-          <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px", flexWrap: "wrap", gap: "6px" }}>
-            <span style={{ color: "#666" }}>Hide components:</span>
-            <label style={{ fontSize: "11px", color: "#666", display: "flex", alignItems: "center", gap: "4px" }}>
-              Background:
-              <select
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-                style={{
-                  padding: "4px 6px",
-                  borderRadius: "6px",
-                  border: "1px solid #ccc",
-                  fontSize: "11px",
-                  background: "#fff",
-                  cursor: "pointer"
-                }}
-              >
-                <option value="#2d2d44">Dark Gray</option>
-                <option value="#111111">Black</option>
-                <option value="#1a1a2e">Dark Blue</option>
-                <option value="#2c3e50">Slate Blue</option>
-                <option value="#34495e">Charcoal</option>
-                <option value="#ffffff">White</option>
-                <option value="#f5f5f5">Light Gray</option>
-                <option value="#e3f2fd">Light Blue</option>
-                <option value="#fff3e0">Light Orange</option>
-                <option value="#f1f8e9">Light Green</option>
-                <option value="#fce4ec">Light Pink</option>
-                <option value="#e8eaf6">Lavender</option>
-                <option value="#fff9c4">Light Yellow</option>
-                <option value="#e0f2f1">Mint</option>
-                <option value="#263238">Dark Teal</option>
-                <option value="#3e2723">Dark Brown</option>
-                <option value="#1b5e20">Dark Green</option>
-              </select>
-            </label>
+      {!hasAnySelection && (
+        <section className="starter-platforms" aria-labelledby="starter-platforms-title">
+          <div className="starter-platforms-header">
+            <div>
+              <h2 id="starter-platforms-title">Start with a complete platform</h2>
+              <p>Load seven source-backed parts, already aligned in the assembly preview.</p>
+            </div>
+            <span>{PLATFORM_PRESETS.length} source builds</span>
           </div>
-          {[
-            { id: 'frame', label: 'Frame', icon: '🖼️' },
-            { id: 'motor', label: 'Motors', icon: '⚙️' },
-            { id: 'propeller', label: 'Props', icon: '🔄' },
-            { id: 'battery', label: 'Battery', icon: '🔋' },
-            { id: 'flight_controller', label: 'FC', icon: '🖥️' },
-            { id: 'esc', label: 'ESC', icon: '⚡' },
-            { id: 'receiver', label: 'RX', icon: '📡' }
-          ].map(comp => {
-            const isHidden = clearedComponents.includes(comp.id);
-            return (
-              <button
-                key={comp.id}
-                onClick={() => {
-                  setClearedComponents(prev =>
-                    isHidden
-                      ? prev.filter(c => c !== comp.id)
-                      : [...prev, comp.id]
-                  );
-                }}
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  border: `1px solid ${isHidden ? '#ccc' : '#4CAF50'}`,
-                  background: isHidden ? '#fff' : '#e8f5e9',
-                  color: isHidden ? '#999' : '#2e7d32',
-                  cursor: "pointer",
-                  fontSize: "11px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  opacity: isHidden ? 0.6 : 1
-                }}
-              >
-                <span>{comp.icon}</span>
-                <span>{comp.label}</span>
-                {isHidden && <span style={{ marginLeft: "2px" }}>👁️‍🗨️</span>}
-              </button>
-            );
-          })}
-        </div>
+          <div className="starter-platform-list">
+            {PLATFORM_PRESETS.map((preset) => {
+              const size = preset.name.match(/^[\d.]+/)?.[0] || "—";
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className="starter-platform-option"
+                  aria-label={`Open ${preset.name}`}
+                  onClick={() => navigate(`/build?preset=${encodeURIComponent(preset.id)}`)}
+                >
+                  <span className="starter-platform-size" aria-hidden="true">
+                    <strong>{size}</strong>
+                    <small>IN</small>
+                  </span>
+                  <span className="starter-platform-copy">
+                    <strong>{preset.name}</strong>
+                    <small>{preset.description}</small>
+                  </span>
+                  <span className="starter-platform-action" aria-hidden="true">
+                    <span>7 parts</span>
+                    <ChevronRight size={16} />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
       )}
 
-      {/* 3D viewer */}
-      <div className="viewer-container">
-        {activeView === "3D" && (
-          <BabylonViewer
-            modelUrl={!hasAnySelection ? sampleAssembly : null}
-            modelUrls={modelUrls}
-            motorUrl={motorModelUrl}
-            motorMountingPoint={motorMountingPoint}
-            frameCornerPositions={frameCornerPositions}
-            propellerUrl={propellerModelUrl}
-            propellerMountingPoint={propellerMountingPoint}
-            batteryUrl={batteryModelUrl}
-            batteryMountingPoint={batteryMountingPoint}
-            escUrl={escModelUrl}
-            escMountingPoint={escMountingPoint}
-            fcUrl={fcModelUrl}
-            fcMountingPoint={fcMountingPoint}
-            receiverUrl={receiverModelUrl}
-            receiverMountingPoint={receiverMountingPoint}
-            groundClearance={4}
-            autoRotate
-            clearedComponents={clearedComponents}
-            backgroundColor={backgroundColor}
-          />
-        )}
-        {activeView === "2D" && (
-          <TwoDViewer modelUrl={hasAnySelection ? "/models/model.obj" : sampleAssembly} />
-        )}
-      </div>
-
-      {/* Spec Section - Shows saved build or placeholder */}
-      {/* Spec Section - Logically Grouped and Clear */}
-      <div className="spec-section-grouped">
-
-        {/* Overall Section */}
-        <div className="spec-card-group">
-          <div className="spec-header">
-            <div className="spec-icon overall-icon">⚖️</div>
+      <div className="home-workspace">
+        <section className="home-preview-panel" aria-label="Build preview">
+          <div className="preview-panel-header">
             <div>
-              <div className="spec-title">Overall</div>
-              <div className="spec-value">System Summary</div>
+              <h2>Airframe preview</h2>
+              <p>{hasBuild ? "Your selected components" : "Sample assembly"}</p>
+            </div>
+            <div className="view-switch-container">
+              <div className="view-switch-track">
+                <div
+                  className="view-switch-slider"
+                  style={{
+                    transform: activeView === "3D" ? "translateX(0%)" : "translateX(100%)",
+                  }}
+                />
+                {["3D", "2D"].map((view) => (
+                  <button
+                    key={view}
+                    className={`view-switch-option ${activeView === view ? "active" : ""}`}
+                    onClick={() => setActiveView(view)}
+                  >
+                    {view}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="spec-divider"></div>
-          <div className="spec-info">
-            <span>Total Weight</span>
-            <b>{hasAnalysis ? `${analysisResults.performance.totalWeight}g` : "--"}</b>
-          </div>
-          <div className="spec-info">
-            <span>T/W Ratio</span>
-            <b>{hasAnalysis ? `${analysisResults.performance.thrustToWeightRatio}:1` : "--"}</b>
-          </div>
-        </div>
+          {activeView === "3D" && hasBuild && (
+            <div className="preview-controls">
+              <div className="preview-controls-heading">
+                <span>Visible components</span>
+                <label>
+                  Background
+                  <select
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                  >
+                    <option value="#2d2d44">Dark gray</option>
+                    <option value="#111111">Black</option>
+                    <option value="#1a1a2e">Dark blue</option>
+                    <option value="#2c3e50">Slate blue</option>
+                    <option value="#34495e">Charcoal</option>
+                    <option value="#ffffff">White</option>
+                    <option value="#f5f5f5">Light gray</option>
+                    <option value="#e3f2fd">Light blue</option>
+                    <option value="#fff3e0">Light orange</option>
+                    <option value="#f1f8e9">Light green</option>
+                    <option value="#fce4ec">Light pink</option>
+                    <option value="#e8eaf6">Lavender</option>
+                    <option value="#fff9c4">Light yellow</option>
+                    <option value="#e0f2f1">Mint</option>
+                    <option value="#263238">Dark teal</option>
+                    <option value="#3e2723">Dark brown</option>
+                    <option value="#1b5e20">Dark green</option>
+                  </select>
+                </label>
+              </div>
+              <div className="visibility-chip-row">
+                {[
+                  { id: "frame", label: "Frame", Icon: Box },
+                  { id: "motor", label: "Motors", Icon: Cog },
+                  { id: "propeller", label: "Props", Icon: Fan },
+                  { id: "battery", label: "Battery", Icon: BatteryCharging },
+                  { id: "flight_controller", label: "FC", Icon: Cpu },
+                  { id: "esc", label: "ESC", Icon: Zap },
+                  { id: "receiver", label: "RX", Icon: Radio },
+                ].map(({ id, label, Icon }) => {
+                  const isHidden = clearedComponents.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`visibility-chip ${isHidden ? "is-hidden" : ""}`}
+                      aria-pressed={!isHidden}
+                      onClick={() => {
+                        setClearedComponents((prev) =>
+                          isHidden ? prev.filter((c) => c !== id) : [...prev, id],
+                        );
+                      }}
+                    >
+                      <Icon size={14} aria-hidden="true" />
+                      <span>{label}</span>
+                      {isHidden ? <EyeOff size={13} aria-hidden="true" /> : <Eye size={13} aria-hidden="true" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-        {/* Motors */}
-        <div className="spec-card-group">
-          <div className="spec-header">
-            <div className="spec-icon motor-icon">⚙️</div>
+          <div className="viewer-container">
+            {activeView === "3D" && (
+              <Suspense
+                fallback={(
+                  <div className="viewer-loading-state" role="status">
+                    Loading 3D assembly view
+                  </div>
+                )}
+              >
+                <BabylonViewer
+                modelUrl={!hasAnySelection ? sampleAssembly : null}
+                modelUrls={modelUrls}
+                motorUrl={motorModelUrl}
+                motorMountingPoint={motorMountingPoint}
+                frameCornerPositions={frameCornerPositions}
+                propellerUrl={propellerModelUrl}
+                propellerCWUrl={propellerCWModelUrl}
+                propellerCCWUrl={propellerCCWModelUrl}
+                propellerMountingPoint={propellerMountingPoint}
+                batteryUrl={batteryModelUrl}
+                batteryMountingPoint={batteryMountingPoint}
+                escUrl={escModelUrl}
+                escMountingPoint={escMountingPoint}
+                fcUrl={fcModelUrl}
+                fcMountingPoint={fcMountingPoint}
+                receiverUrl={receiverModelUrl}
+                receiverMountingPoint={receiverMountingPoint}
+                groundClearance={4}
+                autoRotate
+                clearedComponents={clearedComponents}
+                backgroundColor={backgroundColor}
+                assemblySpec={assemblySpec}
+                />
+              </Suspense>
+            )}
+            {activeView === "2D" && (
+              <TwoDViewer modelUrl={hasAnySelection ? "/models/model.obj" : sampleAssembly} />
+            )}
+          </div>
+
+          <div className="preview-caption">
+            <span>{hasBuild ? "Selected component set" : "Explore the sample, then add your own parts."}</span>
+            <button type="button" onClick={() => navigate("/build?new=1")}>
+              {hasBuild ? "Edit components" : "Start a build"}
+            </button>
+          </div>
+        </section>
+
+        <aside className="home-telemetry" aria-label="Build summary">
+          <div className="telemetry-heading">
             <div>
-              <div className="spec-title">Motors</div>
-              <div className="spec-value">{motor?.name || "Not selected"}</div>
+              <h2>Build summary</h2>
+              <p>{hasBuild ? "Live selections" : "Waiting for components"}</p>
+            </div>
+            <Scale size={24} strokeWidth={1.7} aria-hidden="true" />
+          </div>
+
+          <div className="telemetry-kpis">
+            <div className="telemetry-kpi">
+              <span>Thrust / weight</span>
+              <strong>{hasAnalysis ? analysisResults.performance.thrustToWeightRatio : "—"}</strong>
+              <small>Ratio</small>
+            </div>
+            <div className="telemetry-kpi">
+              <span>Flight time</span>
+              <strong>{hasAnalysis ? analysisResults.flightSimulation.estimatedFlightTime : "—"}</strong>
+              <small>Minutes</small>
+            </div>
+            <div className="telemetry-kpi telemetry-kpi-wide">
+              <span>All-up weight</span>
+              <strong>{hasAnalysis ? analysisResults.performance.totalWeight : "—"}<small>g</small></strong>
+              <small>Estimated system mass</small>
             </div>
           </div>
-        </div>
 
-        {/* Propellers */}
-        <div className="spec-card-group">
-          <div className="spec-header">
-            <div className="spec-icon propeller-icon">🔄</div>
-            <div>
-              <div className="spec-title">Propellers</div>
-              <div className="spec-value">{propeller?.name || "Not selected"}</div>
+          <div className="telemetry-list">
+            <div className="telemetry-row">
+              <span className="spec-icon motor-icon"><Cog size={17} aria-hidden="true" /></span>
+              <div><small>Motors</small><strong>{motor?.name || "Not selected"}</strong></div>
             </div>
-          </div>
-        </div>
-
-        {/* Battery */}
-        <div className="spec-card-group">
-          <div className="spec-header">
-            <div className="spec-icon battery-icon">🔋</div>
-            <div>
-              <div className="spec-title">Battery</div>
-              <div className="spec-value">{battery?.name || "Not selected"}</div>
+            <div className="telemetry-row">
+              <span className="spec-icon propeller-icon"><Fan size={17} aria-hidden="true" /></span>
+              <div><small>Propellers</small><strong>{propeller?.name || "Not selected"}</strong></div>
+            </div>
+            <div className="telemetry-row">
+              <span className="spec-icon battery-icon"><BatteryCharging size={17} aria-hidden="true" /></span>
+              <div><small>Battery</small><strong>{battery?.name || "Not selected"}</strong></div>
+            </div>
+            <div className="telemetry-row">
+              <span className="spec-icon fc-icon"><Cpu size={17} aria-hidden="true" /></span>
+              <div><small>Flight controller</small><strong>{fc?.name || "Not selected"}</strong></div>
             </div>
           </div>
 
-          <div className="spec-divider"></div>
-
-          <div className="spec-info">
-            <span>Voltage</span>
-            <b>{battery ? `${battery.voltage}V` : "--"}</b>
-          </div>
-          <div className="spec-info">
-            <span>Capacity</span>
-            <b>{battery ? `${battery.capacity}mAh` : "--"}</b>
-          </div>
-          <div className="spec-info">
-            <span>Current Draw</span>
-            <b>{hasAnalysis ? `${analysisResults.flightSimulation.avgCurrentDraw}A` : "--"}</b>
-          </div>
-          <div className="spec-info">
-            <span>Flight Time</span>
-            <b>{hasAnalysis ? `${analysisResults.flightSimulation.estimatedFlightTime}min` : "--"}</b>
-          </div>
-        </div>
-
-        {/* Flight Controller */}
-        <div className="spec-card-group">
-          <div className="spec-header">
-            <div className="spec-icon fc-icon">🖥️</div>
+          <div className="telemetry-battery">
             <div>
-              <div className="spec-title">Flight Controller</div>
-              <div className="spec-value">{fc?.name || "Not selected"}</div>
+              <small>Battery</small>
+              <strong>{battery ? `${battery.voltage}V / ${battery.capacity}mAh` : "Select a battery"}</strong>
+            </div>
+            <div>
+              <small>Estimated flight</small>
+              <strong>{hasAnalysis ? `${analysisResults.flightSimulation.estimatedFlightTime} min` : "--"}</strong>
             </div>
           </div>
-        </div>
 
+          <div className="telemetry-hardware">
+            <div className="telemetry-hardware-copy">
+              <small>Hardware setup</small>
+              <strong>
+                {fc
+                  ? `${fc.name}${receiver ? ` / ${receiver.name}` : " / No receiver"}`
+                  : "Flight controller and radio not configured"}
+              </strong>
+              <span className={`hardware-plan-status is-${hardwarePlanState.status}`}>
+                {hardwarePlanState.label}
+              </span>
+            </div>
+            <button type="button" onClick={() => navigate("/setup")}>
+              <Settings2 size={15} aria-hidden="true" />
+              Setup
+            </button>
+          </div>
+        </aside>
       </div>
 
       {/* Bottom Buttons */}
       <div className="bottom-buttons">
-        <button className="action-btn save" onClick={() => navigate("/build")}>
-          {hasBuild ? "✏️ Edit Build" : "🔍 New Build"}
+        <button className="action-btn save" onClick={() => navigate("/build?new=1")}>
+          {hasBuild ? <Edit3 size={18} aria-hidden="true" /> : <Box size={18} aria-hidden="true" />}
+          {hasBuild ? "Edit build" : "New build"}
         </button>
         <button
           className="action-btn analysis"
@@ -432,47 +538,10 @@ export default function HomePage() {
           onClick={() => navigate("/analysis", { state: { build: currentBuild } })}
           style={{ opacity: hasBuild ? 1 : 0.5, cursor: hasBuild ? "pointer" : "not-allowed" }}
         >
-          📊 Analysis
+          <ChartNoAxesCombined size={18} aria-hidden="true" />
+          View analysis
         </button>
       </div>
-
-      {menuOpen && (
-        <div className="menu-overlay">
-          <div className="menu-drawer" onClick={(e) => e.stopPropagation()}>
-            <div className="drawer-top-right">
-              <button className="icon-btn menu-btn" onClick={() => setMenuOpen(false)}>☰</button>
-            </div>
-            <button className="menu-item" onClick={() => navigate("/build")}>
-              Build Configuration
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/saved");
-              }}
-            >
-              Saved Builds
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => { setMenuOpen(false); navigate("/profile", { state: { userId: "leo" } }); }}
-            >
-              Profile
-            </button>
-            <button
-              className="menu-item"
-              onClick={() => {
-                setMenuOpen(false);
-                navigate("/legal");
-              }}
-            >
-              Legal & Disclaimer
-            </button>
-          </div>
-          <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
-        </div>
-      )}
 
     </div>
   );

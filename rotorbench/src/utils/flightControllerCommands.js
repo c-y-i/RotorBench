@@ -1,0 +1,146 @@
+export const AERIALKIT_AIRFRAME_IDS = {
+  quadx: 0,
+  elevonwing: 1,
+  quadx1234: 2,
+  quadp: 3,
+  y4: 4,
+  vtail4: 5,
+  tri: 6,
+  elevonwingsingle: 7,
+};
+
+export const AERIALKIT_RC_PROTOCOL_IDS = {
+  crsf: 0,
+  sbus: 1,
+};
+
+export function buildFlightControllerCommands(
+  config = {},
+  { issues = [], profile = null } = {},
+) {
+  if (config.firmwareFamily !== "aerialkit") {
+    if (config.firmwareFamily === "betaflight") {
+      const lines = [
+        "# Aerial Kit unified FC client preview.",
+        "# Reads use the Betaflight MSP client on the selected serial port.",
+        "ak fc status --port /dev/ttyACM0 --protocol betaflight --json fc-status.json",
+        "ak fc preflight --port /dev/ttyACM0 --protocol betaflight --json fc-preflight.json",
+        "ak fc rc --port /dev/ttyACM0 --protocol betaflight --json fc-rc.json",
+        "ak fc params --port /dev/ttyACM0 --name <exact-setting>",
+        "# Writes require exact setting names, a disarmed aircraft, and --write:",
+        "ak fc set <exact-setting> <value> --port /dev/ttyACM0 --write",
+      ];
+      return {
+        supported: true,
+        kind: "msp-query",
+        lines,
+        text: lines.join("\n"),
+        reason:
+          "Betaflight settings must be addressed by exact name. RotorBench provides discovery commands, not a fabricated write list.",
+      };
+    }
+    if (config.firmwareFamily === "inav") {
+      return {
+        supported: false,
+        lines: [],
+        text: "",
+        reason:
+          "The reviewed ak fc settings client is Betaflight-specific. INAV uses different parameter-group commands, so RotorBench does not generate a write preview for it.",
+      };
+    }
+    return {
+      supported: false,
+      lines: [],
+      text: "",
+      reason:
+        "No command preview is generated for this firmware family. Its serial, AUX, and mixer syntax must be verified against the selected board configuration.",
+    };
+  }
+
+  const blockers = issues.filter((issue) => issue.severity === "error");
+  if (blockers.length > 0) {
+    return {
+      supported: false,
+      blocked: true,
+      lines: [],
+      text: "",
+      reason: `Resolve ${blockers.length} plan blocker${blockers.length === 1 ? "" : "s"} before copying an executable Aerial Kit preview.`,
+    };
+  }
+
+  const airframe = AERIALKIT_AIRFRAME_IDS[config.airframe];
+  const protocol = AERIALKIT_RC_PROTOCOL_IDS[config.receiverProtocol];
+  const finite = (value) => (
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    Number.isFinite(Number(value))
+  );
+  const integer = (value) => finite(value) && Number.isInteger(Number(value));
+  const optionalInteger = (value) => value == null || integer(value);
+  const validPlan =
+    Number.isInteger(airframe) &&
+    integer(config.dshotKhz) &&
+    Number.isInteger(protocol) &&
+    integer(config.armChannel) &&
+    integer(config.modeChannel) &&
+    integer(config.rcMin) &&
+    integer(config.rcMid) &&
+    integer(config.rcMax) &&
+    finite(config.rcDeadband) &&
+    optionalInteger(config.velocityChannel) &&
+    optionalInteger(config.manualChannel) &&
+    optionalInteger(config.ctrlChannel) &&
+    optionalInteger(config.sysidChannel) &&
+    integer(config.armHoldMs) &&
+    finite(config.armMaxTiltDeg) &&
+    finite(config.throttleLow) &&
+    integer(config.rcTimeoutMs);
+
+  if (!validPlan) {
+    return {
+      supported: false,
+      blocked: true,
+      lines: [],
+      text: "",
+      reason: "The plan contains missing or invalid values. Resolve validation blockers before copying an executable preview.",
+    };
+  }
+
+  const lines = [
+    "# Aerial Kit console preview. Review each line before using it.",
+    "# RotorBench does not send or save these commands.",
+  ];
+  lines.push(`set airframe ${airframe}`);
+  lines.push(`set dshot_khz ${Number(config.dshotKhz)}`);
+  lines.push(`set rc_protocol ${protocol}`);
+  lines.push(`set arm_channel ${Number(config.armChannel)}`);
+  lines.push(`set mode_channel ${Number(config.modeChannel)}`);
+  if (profile?.buildScope === "workspace") {
+    lines.push(
+      `set manual_channel ${Number(config.manualChannel ?? 0)}`,
+      `set ctrl_channel ${Number(config.ctrlChannel ?? 0)}`,
+      `set sysid_channel ${Number(config.sysidChannel ?? 0)}`,
+    );
+  } else {
+    lines.push(`set velocity_channel ${Number(config.velocityChannel ?? 0)}`);
+  }
+  lines.push(
+    `set arm_hold_ms ${Number(config.armHoldMs)}`,
+    `set arm_max_tilt_deg ${Number(config.armMaxTiltDeg)}`,
+    `set throttle_low ${Number(config.throttleLow)}`,
+    `set rc_timeout_ms ${Number(config.rcTimeoutMs)}`,
+    `set rc_min ${Number(config.rcMin)}`,
+    `set rc_mid ${Number(config.rcMid)}`,
+    `set rc_max ${Number(config.rcMax)}`,
+    `set rc_deadband ${Number(config.rcDeadband)}`,
+    `set rth_enable ${config.rthEnabled ? 1 : 0}`,
+  );
+
+  return {
+    supported: true,
+    lines,
+    text: lines.join("\n"),
+    reason: "",
+  };
+}

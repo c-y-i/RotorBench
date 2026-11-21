@@ -1,0 +1,267 @@
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import FlightControllerSetup from "./FlightControllerSetup";
+
+test("renders a local flight-controller configuration plan", () => {
+  render(<FlightControllerSetup />);
+  expect(screen.getByRole("heading", { name: "Flight controller" })).toBeInTheDocument();
+  expect(screen.getByText("Local configuration plan")).toBeInTheDocument();
+  expect(screen.getByLabelText("Flight controller plan summary"))
+    .toHaveAttribute("tabindex", "0");
+  expect(screen.getByLabelText("Firmware family")).toHaveValue("aerialkit");
+  expect(screen.getByLabelText("Protocol")).toHaveValue("crsf");
+  expect(screen.getByLabelText("Full low")).toHaveValue(172);
+  expect(screen.getByLabelText("Centre")).toHaveValue(992);
+  expect(screen.getByLabelText("Full high")).toHaveValue(1811);
+  expect(screen.getByLabelText("Deadband")).toHaveValue(0.02);
+});
+
+test("shows the Aerial Kit arm-gate audit without claiming live readiness", () => {
+  render(<FlightControllerSetup />);
+  expect(screen.getByRole("heading", { name: "Arm-gate preview" })).toBeInTheDocument();
+  expect(screen.getByText("1 to verify")).toBeInTheDocument();
+  expect(screen.getByRole("list", { name: "Aerial Kit plan checks" })).toBeInTheDocument();
+  expect(screen.getByText("9 not observed")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Live gates"));
+  expect(screen.getByRole("list", { name: "Aerial Kit live gates not observed" })).toBeInTheDocument();
+  expect(screen.getByText("Receiver has spoken")).toBeInTheDocument();
+  expect(screen.getByText("IMU sample is usable")).toBeInTheDocument();
+  expect(screen.getByText("Arm switch released")).toBeInTheDocument();
+  expect(screen.getByText(/need a live, disarmed aircraft/i)).toBeInTheDocument();
+});
+
+test("does not show Aerial Kit live gates for another firmware family", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "betaflight" },
+  });
+  expect(screen.queryByRole("heading", { name: "Arm-gate preview" })).not.toBeInTheDocument();
+});
+
+test("changing to an ESP32 profile exposes its documented UART", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "esp32dev" },
+  });
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART2");
+  expect(screen.getAllByText(/GPIO17 TX/).length).toBeGreaterThan(0);
+  expect(screen.getByLabelText("Internal flight log")).toHaveTextContent(
+    "ESP32 aerialkit partition + retained RAM",
+  );
+});
+
+test("configuration changes reach the parent callback", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+  fireEvent.change(screen.getByLabelText("Arm channel"), {
+    target: { value: "7" },
+  });
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ armChannel: 7 }));
+});
+
+test("control path keeps receiver, serial, airframe, and motor output in one view", () => {
+  render(
+    <FlightControllerSetup
+      selectedReceiver={{
+        id: "rx-test",
+        name: "RadioMaster RP2 V2 ExpressLRS",
+        protocol: "CRSF",
+      }}
+    />,
+  );
+
+  const controlPath = screen.getByRole("region", { name: "Control path" });
+  expect(within(controlPath).getByText("RadioMaster RP2 V2 ExpressLRS")).toBeInTheDocument();
+  expect(within(controlPath).getByText(/CRSF \/ ExpressLRS/)).toBeInTheDocument();
+  expect(within(controlPath).getByText(/DShot 300 kHz/)).toBeInTheDocument();
+  expect(within(controlPath).getByText("Mapping incomplete")).toBeInTheDocument();
+});
+
+test("review actions focus the field that owns a plan issue", () => {
+  render(<FlightControllerSetup buildMotorCount={1} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Review airframe" }));
+
+  expect(screen.getByLabelText("Airframe")).toHaveFocus();
+});
+
+test("choosing Betaflight switches to its documented bench channel preset", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "betaflight" },
+  });
+  expect(screen.getByLabelText("Arm channel")).toHaveValue(5);
+  expect(screen.getByLabelText("Flight-mode channel")).toHaveValue(null);
+  expect(screen.getByLabelText("Mapping preset")).toHaveValue("betaflight-bench");
+});
+
+test("INAV requires an explicit channel map instead of inheriting Betaflight", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "inav" },
+  });
+  expect(screen.getByLabelText("Arm channel")).toHaveValue(null);
+  expect(screen.getByLabelText("Flight-mode channel")).toHaveValue(null);
+  expect(screen.getByLabelText("Mapping preset")).toHaveValue("custom");
+  expect(screen.queryByRole("option", { name: "Betaflight bench mapping" }))
+    .not.toBeInTheDocument();
+});
+
+test("returning to Aerial Kit removes control roles its firmware cannot register", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "betaflight" },
+  });
+  fireEvent.change(screen.getByLabelText("Manual channel"), {
+    target: { value: "7" },
+  });
+  fireEvent.change(screen.getByLabelText("Control channel"), {
+    target: { value: "8" },
+  });
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "aerialkit" },
+  });
+
+  expect(onChange.mock.calls.at(-1)[0]).toMatchObject({
+    armChannel: 6,
+    modeChannel: 5,
+    velocityChannel: null,
+    manualChannel: null,
+    ctrlChannel: null,
+    sysidChannel: null,
+    beeperChannel: null,
+  });
+  expect(screen.queryByLabelText("Manual channel")).not.toBeInTheDocument();
+});
+
+test("documented Aerial Kit receiver routing is read-only", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "weact-f405" },
+  });
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("USART1");
+  expect(screen.getByLabelText("Receiver UART")).toBeDisabled();
+  expect(screen.getByLabelText("Line rate")).toBeDisabled();
+});
+
+test("returning to a custom board keeps the selected controller hardware", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-kakute",
+        name: "Kakute F7 AIO",
+        processor: "STM32F722",
+        imu: "MPU6000",
+        firmware: ["Betaflight"],
+      }}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "esp32dev" },
+  });
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "custom-board" },
+  });
+  expect(screen.getByText("STM32F722")).toBeInTheDocument();
+  expect(screen.getByText("MPU6000")).toBeInTheDocument();
+});
+
+test("warnings are reviewed rather than presented as a valid plan", () => {
+  render(<FlightControllerSetup />);
+  expect(screen.getByText("FC · 1 review item")).toBeInTheDocument();
+  expect(screen.queryByText("Plan valid")).not.toBeInTheDocument();
+});
+
+test("blank required controls are marked invalid for assistive technology", () => {
+  render(<FlightControllerSetup />);
+  const armChannel = screen.getByLabelText("Arm channel");
+  fireEvent.change(armChannel, { target: { value: "" } });
+  expect(armChannel).toHaveAttribute("aria-invalid", "true");
+});
+
+test("changing boards preserves the SBUS line rate and input-only telemetry rule", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Protocol"), {
+    target: { value: "sbus" },
+  });
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "esp32dev" },
+  });
+  expect(screen.getByLabelText("Line rate")).toHaveValue(100000);
+  expect(screen.getByRole("checkbox", { name: "Receiver telemetry" })).not.toBeChecked();
+});
+
+test("command preview uses Aerial Kit syntax or unified MSP discovery without guessing writes", () => {
+  render(<FlightControllerSetup />);
+  expect(screen.getByText("Console command preview")).toBeInTheDocument();
+  expect(screen.getByText("Copy-only · no save command · nothing is executed")).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "betaflight" },
+  });
+  expect(screen.getByText(/Betaflight settings must be addressed by exact name/i)).toBeInTheDocument();
+  expect(screen.getByText(/ak fc status --port/)).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "inav" },
+  });
+  expect(screen.getByText(/INAV uses different parameter-group commands/i)).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "ardupilot" },
+  });
+  expect(screen.getByText(/No command preview is generated/)).toBeInTheDocument();
+});
+
+test("Aerial Kit exposes its velocity switch and omits unsupported control roles", () => {
+  render(<FlightControllerSetup />);
+  expect(screen.getByLabelText("Velocity channel")).toBeInTheDocument();
+  expect(screen.queryByLabelText("Beeper channel")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Manual channel")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Control channel")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("System-ID channel")).not.toBeInTheDocument();
+});
+
+test("blank numeric safety fields remain invalid instead of becoming zero", () => {
+  render(<FlightControllerSetup />);
+  const armHold = screen.getByLabelText("Arm hold");
+  fireEvent.change(armHold, { target: { value: "" } });
+  expect(armHold).toHaveValue(null);
+  expect(armHold).toHaveAttribute("aria-invalid", "true");
+});
+
+test("receiver calibration changes reach the parent plan", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+
+  fireEvent.change(screen.getByLabelText("Full low"), {
+    target: { value: "180" },
+  });
+  fireEvent.change(screen.getByLabelText("Deadband"), {
+    target: { value: "0.03" },
+  });
+
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ rcMin: 180 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ rcDeadband: 0.03 }));
+});
+
+test("workspace Aerial Kit boards expose workspace switches instead of velocity", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "weact-f405" },
+  });
+  expect(screen.queryByLabelText("Velocity channel")).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Manual channel")).toBeInTheDocument();
+  expect(screen.getByLabelText("Control channel")).toBeInTheDocument();
+  expect(screen.getByLabelText("System-ID channel")).toBeInTheDocument();
+  expect(screen.getByText("AK_ARM_NO_IMU")).toBeInTheDocument();
+});
+
+test("build motor count mismatch appears before command copying", () => {
+  render(<FlightControllerSetup buildMotorCount={4} />);
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "elevonwingsingle" },
+  });
+  expect(screen.getAllByText(/frame has 4 motor mounts.*uses 1/i)).toHaveLength(2);
+  expect(screen.getByText(/Resolve \d+ plan blocker.*Aerial Kit preview/i)).toBeInTheDocument();
+});

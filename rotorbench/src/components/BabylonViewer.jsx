@@ -1,8 +1,317 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Engine, Scene, ArcRotateCamera, Vector3, HemisphericLight, SceneLoader, TransformNode, Color3 } from "@babylonjs/core";
-import "@babylonjs/loaders"; // glTF/GLB loaders
+import {
+  ArcRotateCamera,
+  Color3,
+  Engine,
+  HemisphericLight,
+  MeshBuilder,
+  Scene,
+  SceneLoader,
+  StandardMaterial,
+  TransformNode,
+  Vector3,
+} from "@babylonjs/core";
+import "@babylonjs/loaders/glTF";
+import {
+  getBatteryPlacementMm,
+  getExplodedOffsetMm,
+  getFallbackDimensionsMm,
+  getFrameMountPointsMm,
+  getMotorOriginsMm,
+  getPropellerHubDiameterMm,
+  getPropellerOriginsMm,
+  getPropellerVariant,
+  getStackLevelsMm,
+  MM_TO_SCENE,
+  toSceneVectorMm,
+} from "../assembly/assemblyTransforms";
+import { getCameraView } from "../assembly/cameraViews";
+import { supportsWebGL } from "../assembly/webglSupport";
 
 const FIXED_UNIT_SCALE = 0.001; // 1 mm -> 0.001 Babylon units (meters)
+
+const createMaterial = (scene, name, hex, emissive = false) => {
+  const material = new StandardMaterial(name, scene);
+  material.diffuseColor = Color3.FromHexString(hex);
+  material.specularColor = new Color3(0.18, 0.2, 0.19);
+  if (emissive) {
+    material.emissiveColor = Color3.FromHexString(hex).scale(0.16);
+  }
+  return material;
+};
+
+const tagFallbackMeshes = (meshes, componentType, variant = null) => {
+  meshes.forEach((mesh) => {
+    mesh.metadata = {
+      ...(mesh.metadata || {}),
+      componentType,
+      assemblyFallback: true,
+      propellerVariant: variant,
+    };
+  });
+};
+
+const getGroupBounds = (meshes) => {
+  let min = new Vector3(
+    Number.POSITIVE_INFINITY,
+    Number.POSITIVE_INFINITY,
+    Number.POSITIVE_INFINITY,
+  );
+  let max = new Vector3(
+    Number.NEGATIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+  );
+  let hasFiniteBounds = false;
+
+  meshes.forEach((mesh) => {
+    if (!mesh?.getBoundingInfo) return;
+    mesh.computeWorldMatrix(true);
+    const box = mesh.getBoundingInfo()?.boundingBox;
+    if (!box) return;
+    const { minimumWorld, maximumWorld } = box;
+    if (
+      !Number.isFinite(minimumWorld.x) ||
+      !Number.isFinite(minimumWorld.y) ||
+      !Number.isFinite(minimumWorld.z) ||
+      !Number.isFinite(maximumWorld.x) ||
+      !Number.isFinite(maximumWorld.y) ||
+      !Number.isFinite(maximumWorld.z)
+    ) {
+      return;
+    }
+    min = Vector3.Minimize(min, minimumWorld);
+    max = Vector3.Maximize(max, maximumWorld);
+    hasFiniteBounds = true;
+  });
+
+  return hasFiniteBounds ? { min, max } : null;
+};
+
+const alignRootChildrenToBase = (root) => {
+  if (!root) return null;
+  const children = root.getChildMeshes().filter((mesh) => mesh.parent === root);
+  if (!children.length) return null;
+  const bounds = getGroupBounds(children);
+  if (!bounds) return null;
+  const centerX = (bounds.min.x + bounds.max.x) * 0.5;
+  const centerZ = (bounds.min.z + bounds.max.z) * 0.5;
+  children.forEach((mesh) => {
+    mesh.position.x -= centerX;
+    mesh.position.y -= bounds.min.y;
+    mesh.position.z -= centerZ;
+  });
+  return {
+    height: bounds.max.y - bounds.min.y,
+    width: bounds.max.x - bounds.min.x,
+    depth: bounds.max.z - bounds.min.z,
+  };
+};
+
+const createNormalizedInstance = ({
+  scene,
+  sourceMeshes,
+  componentType,
+  prefix,
+  index,
+  position,
+  variant = null,
+}) => {
+  const root = new TransformNode(`${prefix}_${index}_root`, scene);
+  const rootName = `${prefix}_${index}_root`;
+  const clones = sourceMeshes.map((source, meshIndex) => {
+    const clone = source.clone(`${rootName}_${meshIndex}_${source.name}`, null);
+    if (!clone) return null;
+    clone.parent = root;
+    clone.isVisible = true;
+    return clone;
+  }).filter(Boolean);
+
+  if (!clones.length) {
+    root.dispose();
+    return null;
+  }
+
+  alignRootChildrenToBase(root);
+
+  const toFinite = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
+  root.position = new Vector3(
+    toFinite(position?.x ?? position?.[0]),
+    toFinite(position?.y ?? position?.[1]),
+    toFinite(position?.z ?? position?.[2]),
+  );
+  root.metadata = { componentType, propellerVariant: variant };
+  tagFallbackMeshes(clones, componentType, variant);
+  clones.forEach((mesh) => {
+    mesh.metadata.assemblyFallback = false;
+  });
+  return root;
+};
+
+const getVisibleTopY = (root, fallbackY) => {
+  if (!root) return fallbackY;
+  const bounds = getGroupBounds(root.getChildMeshes());
+  return bounds ? bounds.max.y : fallbackY;
+};
+
+const createFrameFallback = (scene, frame = {}) => {
+  const root = new TransformNode("frame_fallback_root", scene);
+  const dimensions = getFallbackDimensionsMm("frame", frame).map((value) => value * MM_TO_SCENE);
+  const [width, height, depth] = dimensions;
+  const mounts = getFrameMountPointsMm(frame).map((point) => toSceneVectorMm(point));
+  const carbon = createMaterial(scene, "frame_carbon", "#17201e");
+  const edge = createMaterial(scene, "frame_edge", "#53d7c8", true);
+
+  const deck = MeshBuilder.CreateBox("frame_fallback_deck", {
+    width: Math.min(width * 0.34, 0.08),
+    height: Math.max(height * 0.22, 0.004),
+    depth: Math.min(depth * 0.4, 0.1),
+  }, scene);
+  deck.parent = root;
+  deck.position.y = height * 0.5;
+  deck.material = carbon;
+
+  const armThickness = Math.max(width * 0.045, 0.009);
+  mounts.forEach((mount, index) => {
+    const dx = mount.x;
+    const dz = mount.z;
+    const length = Math.hypot(dx, dz);
+    const arm = MeshBuilder.CreateBox(`frame_fallback_arm_${index}`, {
+      width: length,
+      height: Math.max(height * 0.12, 0.0025),
+      depth: armThickness,
+    }, scene);
+    arm.parent = root;
+    arm.position = new Vector3(dx * 0.5, Math.max(mount.y, height * 0.15), dz * 0.5);
+    arm.rotation.y = -Math.atan2(dz, dx);
+    arm.material = carbon;
+
+    const cap = MeshBuilder.CreateCylinder(`frame_fallback_mount_${index}`, {
+      height: 0.002,
+      diameter: Math.max(armThickness * 1.7, 0.012),
+      tessellation: 24,
+    }, scene);
+    cap.parent = root;
+    cap.position = new Vector3(dx, Math.max(mount.y, height * 0.15) + 0.001, dz);
+    cap.material = edge;
+  });
+
+  tagFallbackMeshes(root.getChildMeshes(), "frame");
+  root.metadata = { componentType: "frame", assemblyFallback: true };
+  return root;
+};
+
+const createMotorFallback = (scene, motor = {}, position, index) => {
+  const dimensions = getFallbackDimensionsMm("motor", motor).map((value) => value * MM_TO_SCENE);
+  const root = new TransformNode(`motor_${index}_root`, scene);
+  root.position = position;
+  const body = MeshBuilder.CreateCylinder(`motor_${index}_fallback_body`, {
+    height: Math.max(dimensions[1] * 0.62, 0.012),
+    diameter: Math.max(dimensions[0], 0.018),
+    tessellation: 28,
+  }, scene);
+  body.parent = root;
+  body.position.y = dimensions[1] * 0.31;
+  body.material = createMaterial(scene, `motor_${index}_body_mat`, "#202624");
+
+  const cap = MeshBuilder.CreateCylinder(`motor_${index}_fallback_cap`, {
+    height: Math.max(dimensions[1] * 0.18, 0.004),
+    diameter: Math.max(dimensions[0] * 0.72, 0.015),
+    tessellation: 28,
+  }, scene);
+  cap.parent = root;
+  cap.position.y = dimensions[1] * 0.59;
+  cap.material = createMaterial(scene, `motor_${index}_cap_mat`, "#d4b23c");
+
+  const shaft = MeshBuilder.CreateCylinder(`motor_${index}_fallback_shaft`, {
+    height: Math.max(dimensions[1] * 0.22, 0.005),
+    diameter: 0.004,
+    tessellation: 16,
+  }, scene);
+  shaft.parent = root;
+  shaft.position.y = dimensions[1] * 0.8;
+  shaft.material = createMaterial(scene, `motor_${index}_shaft_mat`, "#c7d2cc");
+  tagFallbackMeshes(root.getChildMeshes(), "motor");
+  root.metadata = { componentType: "motor", assemblyFallback: true };
+  return root;
+};
+
+const createPropellerFallback = (scene, propeller = {}, position, index) => {
+  const dimensions = getFallbackDimensionsMm("propeller", propeller).map((value) => value * MM_TO_SCENE);
+  const variant = getPropellerVariant(index);
+  const root = new TransformNode(`prop_${index}_root`, scene);
+  const bladeMaterial = createMaterial(scene, `prop_${index}_blade_mat`, variant === "CW" ? "#f1f3e9" : "#9ce5d8");
+  const hubMaterial = createMaterial(scene, `prop_${index}_hub_mat`, "#212a27");
+
+  const hub = MeshBuilder.CreateCylinder(`prop_${index}_fallback_hub`, {
+    height: Math.max(dimensions[1] * 0.35, 0.003),
+    diameter: Math.max(
+      getPropellerHubDiameterMm(propeller) * MM_TO_SCENE,
+      0.006,
+    ),
+    tessellation: 24,
+  }, scene);
+  hub.parent = root;
+  hub.material = hubMaterial;
+
+  const bladeCount = Math.max(Number(propeller.bladeCount) || 3, 2);
+  for (let bladeIndex = 0; bladeIndex < bladeCount; bladeIndex += 1) {
+    const blade = MeshBuilder.CreateBox(`prop_${index}_fallback_blade_${bladeIndex}`, {
+      width: dimensions[0] * 0.44,
+      height: Math.max(dimensions[1] * 0.14, 0.0018),
+      depth: Math.max(dimensions[0] * 0.065, 0.005),
+    }, scene);
+    blade.parent = root;
+    const angle = (Math.PI * 2 * bladeIndex) / bladeCount + (variant === "CW" ? 0.08 : -0.08);
+    blade.position = new Vector3(Math.cos(angle) * dimensions[0] * 0.23, 0.001, Math.sin(angle) * dimensions[0] * 0.23);
+    blade.rotation.y = -angle;
+    blade.rotation.z = variant === "CW" ? -0.08 : 0.08;
+    blade.material = bladeMaterial;
+  }
+
+  alignRootChildrenToBase(root);
+  root.position = position;
+  tagFallbackMeshes(root.getChildMeshes(), "propeller", variant);
+  root.metadata = { componentType: "propeller", propellerVariant: variant, assemblyFallback: true };
+  return root;
+};
+
+const createBoardFallback = (scene, type, part = {}, level, label) => {
+  const fallbackType = type === "flight_controller" ? "flight_controller" : type;
+  const dimensions = getFallbackDimensionsMm(fallbackType, part).map((value) => value * MM_TO_SCENE);
+  const root = new TransformNode(`${type}_fallback_root`, scene);
+  root.position.y = level;
+  const board = MeshBuilder.CreateBox(`${type}_fallback_board`, {
+    width: Math.max(dimensions[0], 0.02),
+    height: Math.max(dimensions[1], 0.003),
+    depth: Math.max(dimensions[2], 0.02),
+  }, scene);
+  board.parent = root;
+  board.position.y = Math.max(dimensions[1], 0.004) * 0.5;
+  const color = type === "esc" ? "#b64313" : type === "receiver" ? "#236f63" : "#1f4037";
+  board.material = createMaterial(scene, `${type}_${label}_mat`, color);
+  tagFallbackMeshes(root.getChildMeshes(), type);
+  root.metadata = { componentType: type, assemblyFallback: true };
+  return root;
+};
+
+const createBatteryFallback = (scene, battery = {}, placement) => {
+  const root = new TransformNode("battery_fallback_root", scene);
+  const [originX, originY, originZ] = toSceneVectorMm(placement.origin);
+  root.position = new Vector3(originX, originY, originZ);
+  const [width, height, depth] = placement.size.map((value) => value * MM_TO_SCENE);
+  const body = MeshBuilder.CreateBox("battery_fallback_body", {
+    width: Math.max(width, 0.02),
+    height: Math.max(height, 0.012),
+    depth: Math.max(depth, 0.02),
+  }, scene);
+  body.parent = root;
+  body.position.y = Math.max(height, 0.012) * 0.5;
+  body.material = createMaterial(scene, "battery_fallback_mat", "#be4b12");
+  tagFallbackMeshes(root.getChildMeshes(), "battery");
+  root.metadata = { componentType: "battery", assemblyFallback: true };
+  return root;
+};
 
 /**
  * BabylonViewer component
@@ -16,11 +325,13 @@ const FIXED_UNIT_SCALE = 0.001; // 1 mm -> 0.001 Babylon units (meters)
  *  - motorMountingPoint: [x,y,z] offset from motor model origin to mounting point
  *  - batteryUrl, fcUrl, escUrl, receiverUrl: optional individual component URLs (center stacked)
  *  - propellerUrl + propellerMountingPoint: optional prop mesh + offset for proper alignment
+ *  - exploded: boolean (separate inspection layers without changing X/Z mounts)
  */
 const BabylonViewer = ({
   modelUrl,
   modelUrls = [],
   autoRotate = true,
+  cameraView = "orbit",
   onLoaded,
   frameCornerPositions = [], // array of 4 corner positions from frame data
   motorUrl,
@@ -34,7 +345,11 @@ const BabylonViewer = ({
   receiverUrl,
   receiverMountingPoint = [0, 0, 0],
   propellerUrl,
+  propellerCWUrl,
+  propellerCCWUrl,
   propellerMountingPoint = [0, 0, 0], // offset from prop origin to mounting plane
+  assemblySpec = {},
+  exploded = false,
   groundClearance = 2, // millimeters to lift lowest point above ground
   resetKey = 0,
   debug = false,
@@ -45,12 +360,20 @@ const BabylonViewer = ({
   const sceneRef = useRef(null);
   const engineRef = useRef(null);
   const cameraRef = useRef(null);
-  const [loadedCount, setLoadedCount] = useState(0);
+  const autoRotateRef = useRef(autoRotate);
+  const explodedRef = useRef(exploded);
+  const [, setLoadedCount] = useState(0);
   const normalizeTimerRef = useRef(null);
   const [loadStatuses, setLoadStatuses] = useState({});
+  const [viewerError, setViewerError] = useState("");
   const previousUrlsRef = useRef(null);
   const pendingLoadsRef = useRef(0);
   const [cameraStatus, setCameraStatus] = useState({ alpha: 0, beta: 0, radius: 0 });
+  const [sceneMetrics, setSceneMetrics] = useState({
+    meshCount: 0,
+    maxDim: 0,
+    largest: [],
+  });
   const sampleAssemblyActiveRef = useRef(false);
   const onLoadedRef = useRef(onLoaded);
   const previousModelUrlsRef = useRef([]);
@@ -59,6 +382,43 @@ const BabylonViewer = ({
   const unitScaleRef = useRef(FIXED_UNIT_SCALE);
 
   const SAMPLE_CAMERA = { alpha: 7.85, beta: 1.2, radius: 460 };
+
+  useEffect(() => {
+    autoRotateRef.current = autoRotate;
+  }, [autoRotate]);
+
+  const applyExplodedAssembly = (scene, enabled) => {
+    if (!scene) return false;
+    let changed = false;
+    (scene.transformNodes || []).forEach((node) => {
+      const componentType = node.metadata?.componentType;
+      if (!componentType || !node.position) return;
+      if (!Number.isFinite(node.metadata.assembledY)) {
+        node.metadata.assembledY = node.position.y;
+      }
+      const nextY =
+        node.metadata.assembledY
+        + getExplodedOffsetMm(componentType, enabled) * FIXED_UNIT_SCALE;
+      if (Math.abs(node.position.y - nextY) > 1e-7) {
+        node.position.y = nextY;
+        changed = true;
+      }
+    });
+    return changed;
+  };
+
+  useEffect(() => {
+    explodedRef.current = exploded;
+    const scene = sceneRef.current;
+    if (!scene) return;
+    const changed = applyExplodedAssembly(scene, exploded);
+    if (!changed) return;
+    requestAnimationFrame(() => {
+      fitCameraToScene(exploded ? 1.8 : 1.5);
+    });
+    // The helper only mutates the current sketch's transform roots.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exploded]);
 
   const isSampleAssemblyUrl = (url) => typeof url === 'string' && url.toLowerCase().includes('sample_assembly');
   const waitForFrameReady = async () => {
@@ -69,6 +429,13 @@ const BabylonViewer = ({
       console.warn('[BabylonViewer] Frame load promise rejected:', err);
     }
   };
+  const waitForSceneFrame = () => new Promise((resolve) => {
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+      return;
+    }
+    setTimeout(resolve, 0);
+  });
 
   /*
   const clearanceToSceneUnits = (clearanceMm) => {
@@ -94,11 +461,23 @@ const BabylonViewer = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+    if (!supportsWebGL(canvas)) {
+      setViewerError(
+        "The 3D preview needs WebGL. Enable hardware acceleration or use a WebGL-capable browser.",
+      );
+      return;
+    }
+    setViewerError("");
+    let engine;
+    try {
+      engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+    } catch {
+      setViewerError(
+        "The 3D preview could not start WebGL. Enable hardware acceleration or use a WebGL-capable browser.",
+      );
+      return;
+    }
     const scene = new Scene(engine);
-    // Set background color
-    const bgColor = Color3.FromHexString(backgroundColor);
-    scene.clearColor = bgColor.toColor4(1.0);
     engineRef.current = engine;
     sceneRef.current = scene;
 
@@ -114,6 +493,23 @@ const BabylonViewer = ({
     camera.maxZ = 20000;
     cameraRef.current = camera;
 
+    let resumeRotationTimer = null;
+    const pauseAutoRotation = () => {
+      scene.__userInteracting = true;
+      if (resumeRotationTimer) clearTimeout(resumeRotationTimer);
+    };
+    const resumeAutoRotation = () => {
+      if (resumeRotationTimer) clearTimeout(resumeRotationTimer);
+      resumeRotationTimer = setTimeout(() => {
+        scene.__userInteracting = false;
+      }, 1200);
+    };
+    canvas.addEventListener("pointerdown", pauseAutoRotation);
+    canvas.addEventListener("pointerup", resumeAutoRotation);
+    canvas.addEventListener("pointercancel", resumeAutoRotation);
+    canvas.addEventListener("wheel", pauseAutoRotation, { passive: true });
+    canvas.addEventListener("wheel", resumeAutoRotation, { passive: true });
+
     // Lighting - brighter and more directional for better visibility
     const hemiLight = new HemisphericLight("hemi", new Vector3(0, 1, 0), scene);
     hemiLight.intensity = 0.8;
@@ -122,9 +518,9 @@ const BabylonViewer = ({
 
     // Render loop
     engine.runRenderLoop(() => {
-      if (autoRotate && scene.meshes) {
-        scene.meshes.forEach(m => { if (m.metadata?.autoSpin) m.rotation.y += 0.002; });
-      }
+      // Orbit the whole model. Rotating each mesh independently tears an
+      // assembly apart because every part has a different local origin.
+      if (autoRotateRef.current && !scene.__userInteracting) camera.alpha += 0.0014;
       setCameraStatus({ alpha: camera.alpha, beta: camera.beta, radius: camera.radius });
       scene.render();
     });
@@ -134,6 +530,12 @@ const BabylonViewer = ({
 
     return () => {
       window.removeEventListener("resize", onResize);
+      canvas.removeEventListener("pointerdown", pauseAutoRotation);
+      canvas.removeEventListener("pointerup", resumeAutoRotation);
+      canvas.removeEventListener("pointercancel", resumeAutoRotation);
+      canvas.removeEventListener("wheel", pauseAutoRotation);
+      canvas.removeEventListener("wheel", resumeAutoRotation);
+      if (resumeRotationTimer) clearTimeout(resumeRotationTimer);
       if (normalizeTimerRef.current) {
         clearTimeout(normalizeTimerRef.current);
         normalizeTimerRef.current = null;
@@ -141,7 +543,19 @@ const BabylonViewer = ({
       scene.dispose();
       engine.dispose();
     };
-  }, [autoRotate]);
+    // Scene initialization intentionally runs once. Auto-rotation is read from
+    // a ref so toggling inspection modes does not rebuild and reload the scene.
+  }, []);
+
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    if (!scene || !camera) return;
+    const view = getCameraView(cameraView);
+    camera.alpha = view.alpha;
+    camera.beta = view.beta;
+    scene.__userInteracting = !view.autoRotate;
+  }, [cameraView]);
 
   useEffect(() => {
     onLoadedRef.current = onLoaded;
@@ -160,43 +574,6 @@ const BabylonViewer = ({
       return framePos.add(offset);
     });
   };
-  const getMountOffsetVector = (mountingPoint, unitScale) => {
-    if (!Array.isArray(mountingPoint) || mountingPoint.length !== 3) return Vector3.Zero();
-    return new Vector3(
-      -mountingPoint[0] * unitScale,
-      -mountingPoint[1] * unitScale,
-      -mountingPoint[2] * unitScale
-    );
-  };
-  const setMeshesRootPosition = (meshes, positionVec) => {
-    const applied = new Set();
-    meshes.forEach(mesh => {
-      if (!mesh || mesh.name.startsWith("__")) return;
-      const root = getRootNode(mesh);
-      const target = root && !root.name.startsWith("__") ? root : mesh;
-      if (applied.has(target)) return;
-      if (!target.position) target.position = Vector3.Zero();
-      target.position.x = positionVec.x;
-      target.position.y = positionVec.y;
-      target.position.z = positionVec.z;
-      applied.add(target);
-    });
-  };
-  const getMeshesTopWorldY = (meshes) => {
-    let maxY = Number.NEGATIVE_INFINITY;
-    meshes.forEach(mesh => {
-      if (!mesh || typeof mesh.getBoundingInfo !== 'function') return;
-      mesh.computeWorldMatrix(true);
-      const info = mesh.getBoundingInfo();
-      if (!info) return;
-      const current = info.boundingBox.maximumWorld.y;
-      if (Number.isFinite(current)) {
-        maxY = Math.max(maxY, current);
-      }
-    });
-    return maxY === Number.NEGATIVE_INFINITY ? null : maxY;
-  };
-
   // Helper: fit camera to current scene meshes
   const isRenderableMesh = (mesh) => {
     if (!mesh || typeof mesh.getBoundingInfo !== 'function') return false;
@@ -221,6 +598,7 @@ const BabylonViewer = ({
     let minVec = new Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY);
     let maxVec = new Vector3(Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY);
 
+    const meshBounds = [];
     meshes.forEach(m => {
       // Update the mesh world matrix to ensure bounds are accurate
       m.computeWorldMatrix(true);
@@ -234,6 +612,11 @@ const BabylonViewer = ({
       maxVec.x = Math.max(maxVec.x, bmax.x);
       maxVec.y = Math.max(maxVec.y, bmax.y);
       maxVec.z = Math.max(maxVec.z, bmax.z);
+      meshBounds.push({
+        name: m.name || "(unnamed)",
+        componentType: m.metadata?.componentType || "",
+        maxDim: Math.max(bmax.x - bmin.x, bmax.y - bmin.y, bmax.z - bmin.z),
+      });
     });
 
     const sizeVec = maxVec.subtract(minVec);
@@ -261,6 +644,13 @@ const BabylonViewer = ({
     // 5. Fix clipping so it doesn't disappear
     camera.minZ = desiredRadius * 0.01;
     camera.maxZ = desiredRadius * 1000;
+    setSceneMetrics({
+      meshCount: meshes.length,
+      maxDim,
+      largest: meshBounds
+        .sort((a, b) => b.maxDim - a.maxDim)
+        .slice(0, 4),
+    });
   };
   const getRootNode = (node) => {
     if (!node) return null;
@@ -277,6 +667,9 @@ const BabylonViewer = ({
     const shiftNode = (node) => {
       if (!node || shifted.has(node) || !node.position) return;
       node.position.y += offset;
+      if (Number.isFinite(node.metadata?.assembledY)) {
+        node.metadata.assembledY += offset;
+      }
       shifted.add(node);
     };
 
@@ -355,6 +748,7 @@ const BabylonViewer = ({
     normalizeTimerRef.current = setTimeout(() => {
       const scene = sceneRef.current;
       if (!scene || scene.__currentLoadSession !== sessionToken) return;
+      if (scene.__assemblyInProgress) return;
       const clearanceSceneUnits = clearanceToSceneUnits(groundClearance);
       normalizeSceneY(clearanceSceneUnits);
       fitCameraToScene(); // refit after vertical shift
@@ -377,7 +771,7 @@ const BabylonViewer = ({
       if (!scene || scene.__currentLoadSession !== sessionToken) return;
       const clearanceSceneUnits = clearanceToSceneUnits(groundClearance);
       normalizeSceneY(clearanceSceneUnits);
-      fitCameraToScene();
+      fitCameraToScene(explodedRef.current ? 1.8 : 1.5);
 
       if (sampleAssemblyActiveRef.current) {
         const camera = cameraRef.current;
@@ -407,7 +801,6 @@ const BabylonViewer = ({
     scene.meshes.forEach(m => {
       const t = m.metadata?.componentType;
       if (t && clearedComponents.includes(t)) {
-        console.log(`[BabylonViewer] Clearing component: ${t} (mesh: ${m.name})`);
         m.dispose();
       }
     });
@@ -415,7 +808,6 @@ const BabylonViewer = ({
     (scene.transformNodes || []).forEach(n => {
       const t = n.metadata?.componentType;
       if (t && clearedComponents.includes(t)) {
-        console.log(`[BabylonViewer] Clearing component: ${t} (transform: ${n.name})`);
         n.dispose();
       }
     });
@@ -469,6 +861,8 @@ const BabylonViewer = ({
       escUrl,
       receiverUrl,
       propellerUrl,
+      propellerCWUrl,
+      propellerCCWUrl,
       frameUrl: modelUrls[0] || null,
       sampleUrl: (!modelUrls.length && modelUrl) ? modelUrl : null
     };
@@ -494,7 +888,6 @@ const BabylonViewer = ({
       // Selective disposal based on which URLs changed
       Object.keys(currentUrls).forEach(key => {
         if (currentUrls[key] !== previousUrls[key]) {
-          console.log(`[BabylonViewer] URL changed for ${key}: ${previousUrls[key]} -> ${currentUrls[key]}`);
           // Map key to a normalized component type
           const keyToType = {
             motorUrl: 'motor',
@@ -503,6 +896,8 @@ const BabylonViewer = ({
             escUrl: 'esc',
             receiverUrl: 'receiver',
             propellerUrl: 'propeller',
+            propellerCWUrl: 'propeller',
+            propellerCCWUrl: 'propeller',
             frameUrl: 'frame',
             sampleUrl: 'sample'
           };
@@ -513,14 +908,12 @@ const BabylonViewer = ({
             const tagged = m.metadata?.componentType === componentType;
             const byName = m.name.toLowerCase().includes(componentType) || m.name.startsWith(`${componentType}_`);
             if (!m.name.startsWith("__") && (tagged || byName)) {
-              console.log(`[BabylonViewer] Disposing ${m.name} due to ${key} change`);
               m.dispose();
             }
           });
           // Also dispose transform roots for this component type
           (scene.transformNodes || []).forEach(n => {
             if (n.metadata?.componentType === componentType) {
-              console.log(`[BabylonViewer] Disposing transform root ${n.name} for ${componentType}`);
               n.dispose();
             }
           });
@@ -533,25 +926,8 @@ const BabylonViewer = ({
 
     const dynamicUrls = [...modelUrls];
     const includeSampleUrl = !dynamicUrls.length && Boolean(modelUrl);
-    const previousModelUrls = previousModelUrlsRef.current;
-    const previousModelUrlSet = new Set(previousModelUrls);
-    const previousCleared = previousClearedComponentsRef.current || [];
 
-    // Check if frame or sample was unhidden
-    const frameUnhidden = previousCleared.includes('frame') && !clearedComponents.includes('frame');
-    const sampleUnhidden = previousCleared.includes('sample') && !clearedComponents.includes('sample');
-
-    const dynamicUrlsToLoad = resetTriggered
-      ? dynamicUrls
-      : dynamicUrls.filter(url => {
-        // If URL is new, load it
-        if (!previousModelUrlSet.has(url)) return true;
-        // If it's the frame URL and frame was just unhidden, reload it
-        if (frameUnhidden && url === currentUrls.frameUrl) return true;
-        // If it's sample and sample was unhidden
-        if (sampleUnhidden && (url === currentUrls.sampleUrl || isSampleAssemblyUrl(url))) return true;
-        return false;
-      });
+    const dynamicUrlsToLoad = dynamicUrls;
 
     const activeUrls = new Set([
       ...dynamicUrls,
@@ -561,6 +937,8 @@ const BabylonViewer = ({
       escUrl,
       receiverUrl,
       propellerUrl,
+      propellerCWUrl,
+      propellerCCWUrl,
       includeSampleUrl ? modelUrl : null
     ].filter(Boolean));
     setLoadStatuses(prev => {
@@ -581,6 +959,9 @@ const BabylonViewer = ({
         const root = getRootNode(mesh) || mesh;
         if (!root || !root.position || adjusted.has(root)) return;
         root.position.y += shift;
+        if (Number.isFinite(root.metadata?.assembledY)) {
+          root.metadata.assembledY += shift;
+        }
         adjusted.add(root);
       });
     };
@@ -596,10 +977,22 @@ const BabylonViewer = ({
     }
 
     // If no URLs and all component URLs are null, exit early after ensuring scene cleared
-    const noComponentUrls = !motorUrl && !batteryUrl && !fcUrl && !escUrl && !receiverUrl && !propellerUrl && dynamicUrls.length === 0 && !includeSampleUrl;
+    const hasFallbackAssembly = Boolean(
+      assemblySpec.frame ||
+      assemblySpec.motor ||
+      assemblySpec.propeller ||
+      assemblySpec.battery ||
+      assemblySpec.esc ||
+      assemblySpec.flightController ||
+      assemblySpec.receiver
+    );
+    const noComponentUrls = !motorUrl && !batteryUrl && !fcUrl && !escUrl && !receiverUrl &&
+      !propellerUrl && !propellerCWUrl && !propellerCCWUrl &&
+      dynamicUrls.length === 0 && !includeSampleUrl && !hasFallbackAssembly;
     if (noComponentUrls) {
       previousModelUrlsRef.current = [];
-      fitCameraToScene(); // optional small camera reset
+      scene.__assemblyInProgress = false;
+      fitCameraToScene(explodedRef.current ? 1.8 : 1.5);
       return; // nothing to load
     }
 
@@ -699,14 +1092,43 @@ const BabylonViewer = ({
       }
     };
 
+    const shouldAssemble = Boolean(assemblySpec?.frame);
+    if (shouldAssemble) {
+      scene.__assemblyInProgress = true;
+      ["frame", "motor", "propeller", "battery", "esc", "flight_controller", "receiver"]
+        .forEach(disposeComponentType);
+    }
+
     // Load non-motor components first (centered) - skip if in clearedComponents
     const frameUrlToLoad = dynamicUrlsToLoad.find(url => url === currentUrls.frameUrl && url);
-    const handleFrameLoaded = async () => {
+    const handleFrameLoaded = async (loadedMeshes) => {
       if (frameCornerPositions.length !== 4) return;
       unitScaleRef.current = FIXED_UNIT_SCALE;
+      const normalizedRoot = createNormalizedInstance({
+        scene,
+        sourceMeshes: loadedMeshes || [],
+        componentType: "frame",
+        prefix: "frame",
+        index: 0,
+        position: Vector3.Zero(),
+      });
+      if (normalizedRoot) {
+        scene.__frameRoot = normalizedRoot;
+        loadedMeshes.forEach((mesh) => mesh.dispose());
+      }
     };
     if (frameUrlToLoad && !clearedComponents.includes('frame')) {
-      frameLoadPromiseRef.current = loadSingle(frameUrlToLoad, handleFrameLoaded, 'frame');
+      frameLoadPromiseRef.current = loadSingle(frameUrlToLoad, handleFrameLoaded, 'frame').then((meshes) => {
+        if ((!meshes || meshes.length === 0) && assemblySpec.frame) {
+          createFrameFallback(scene, assemblySpec.frame);
+        }
+        return meshes;
+      });
+    } else if (assemblySpec.frame && !clearedComponents.includes('frame')) {
+      disposeComponentType('frame');
+      createFrameFallback(scene, assemblySpec.frame);
+      unitScaleRef.current = FIXED_UNIT_SCALE;
+      frameLoadPromiseRef.current = Promise.resolve();
     } else {
       frameLoadPromiseRef.current = Promise.resolve();
     }
@@ -721,208 +1143,230 @@ const BabylonViewer = ({
 
     previousModelUrlsRef.current = dynamicUrls;
 
-    // Dynamic vertical stacking: compress gaps when some components missing
-    // Stack FC, ESC, and receiver in center (battery is mounted on bottom plate separately)
-    const stackSpacing = 3; // mm spacing between stacked components
-    const stackEntries = [
-      { url: fcUrl, type: 'flight_controller', mountingPoint: fcMountingPoint },
-      { url: escUrl, type: 'esc', mountingPoint: escMountingPoint },
-      { url: receiverUrl, type: 'receiver', mountingPoint: receiverMountingPoint }
-    ];
+    const frameSpec = assemblySpec.frame || {};
+    const motorSpec = assemblySpec.motor || {};
+    const propellerSpec = assemblySpec.propeller || {};
+    const batterySpec = assemblySpec.battery || {};
+    const escSpec = assemblySpec.esc || {};
+    const flightControllerSpec = assemblySpec.flightController || {};
+    const receiverSpec = assemblySpec.receiver || {};
+    const unitScale = unitScaleRef.current || FIXED_UNIT_SCALE;
+
     const loadStackComponents = async () => {
-      const sceneInstance = sceneRef.current;
-      if (!sceneInstance || sceneInstance.isDisposed) return;
-      const unitScale = unitScaleRef.current || FIXED_UNIT_SCALE;
-      const spacingSceneUnits = stackSpacing * unitScale;
-
-      const activeEntries = stackEntries.filter(entry => entry.url && !clearedComponents.includes(entry.type));
-      if (!activeEntries.length) {
-        sceneInstance.__stackBaseType = null;
-        return;
-      }
-
-      const currentBaseType = sceneInstance.__stackBaseType;
-      if (!currentBaseType || !activeEntries.some(entry => entry.type === currentBaseType)) {
-        sceneInstance.__stackBaseType = activeEntries[0].type;
-      }
-
-      const orderedEntries = [
-        ...activeEntries.filter(entry => entry.type === sceneInstance.__stackBaseType),
-        ...activeEntries.filter(entry => entry.type !== sceneInstance.__stackBaseType)
+      const stackDefinitions = [
+        { url: escUrl, fallbackSpec: escSpec, type: "esc", key: "esc" },
+        { url: fcUrl, fallbackSpec: flightControllerSpec, type: "flight_controller", key: "flightController" },
+        { url: receiverUrl, fallbackSpec: receiverSpec, type: "receiver", key: "receiver" },
       ];
+      const levels = getStackLevelsMm(frameSpec, {
+        esc: escSpec,
+        flightController: flightControllerSpec,
+        receiver: receiverSpec,
+      });
+      const active = stackDefinitions.filter((entry) =>
+        !clearedComponents.includes(entry.type) && (entry.url || entry.fallbackSpec?.id)
+      );
+      active.forEach((entry) => disposeComponentType(entry.type));
 
-      // Remove old stack components so we can rebuild cleanly
-      orderedEntries.forEach(entry => disposeComponentType(entry.type));
+      const frameRoot = scene.__frameRoot
+        || (scene.transformNodes || []).find((node) => node.name === "frame_fallback_root");
+      const frameBounds = frameRoot ? getGroupBounds(frameRoot.getChildMeshes()) : null;
+      let nextLevelY = frameBounds?.max.y ?? levels.esc * unitScale;
+      nextLevelY += 1 * unitScale;
 
-      let stackTopY = null;
-      let basePosition = null;
-
-      for (const entry of orderedEntries) {
-        await loadSingle(entry.url, (meshes) => {
-          const shift = sceneInstance.__groundShift || 0;
-          const mountVec = getMountOffsetVector(entry.mountingPoint, unitScale);
-          const isBase = entry.type === sceneInstance.__stackBaseType;
-          const placementY = isBase
-            ? shift + mountVec.y
-            : ((stackTopY ?? (basePosition ? basePosition.y : shift)) + spacingSceneUnits);
-          const placement = new Vector3(
-            isBase ? mountVec.x : (basePosition ? basePosition.x : 0),
-            placementY,
-            isBase ? mountVec.z : (basePosition ? basePosition.z : 0)
-          );
-          setMeshesRootPosition(meshes, placement);
-          const topY = getMeshesTopWorldY(meshes);
-          stackTopY = Number.isFinite(topY) ? topY : placementY;
-          if (isBase) {
-            basePosition = placement.clone();
+      for (const entry of active) {
+        const mount = entry.key === "esc" ? escMountingPoint : entry.key === "flightController" ? fcMountingPoint : receiverMountingPoint;
+        const placement = new Vector3(-mount[0] * unitScale, nextLevelY, -mount[2] * unitScale);
+        let root = null;
+        if (entry.url) {
+          const meshes = await loadSingle(entry.url, null, entry.type);
+          if (meshes?.length) {
+            root = createNormalizedInstance({
+              scene,
+              sourceMeshes: meshes,
+              componentType: entry.type,
+              prefix: entry.key,
+              index: 0,
+              position: placement,
+            });
+            meshes.forEach((mesh) => mesh.dispose());
           }
-        }, entry.type);
+        } else if (entry.fallbackSpec?.id) {
+          root = createBoardFallback(scene, entry.type, entry.fallbackSpec, nextLevelY, entry.key);
+        }
+        await waitForSceneFrame();
+        const fallbackHeight = getFallbackDimensionsMm(entry.type, entry.fallbackSpec)[1] * unitScale;
+        const measuredTop = getVisibleTopY(root, nextLevelY + fallbackHeight);
+        nextLevelY = (Number.isFinite(measuredTop) ? measuredTop : nextLevelY + fallbackHeight) + (3.5 * unitScale);
+      }
+      scene.__stackTopY = Number.isFinite(nextLevelY) ? nextLevelY : frameBounds?.max.y || 0;
+    };
+    const loadBattery = async () => {
+      if (clearedComponents.includes("battery") || (!batteryUrl && !batterySpec?.id)) return;
+      disposeComponentType("battery");
+      const batteryPlacement = getBatteryPlacementMm(frameSpec, batterySpec, {
+        esc: escSpec,
+        flightController: flightControllerSpec,
+        receiver: receiverSpec,
+      });
+      const batteryOrigin = toSceneVectorMm(batteryPlacement.origin);
+      await waitForSceneFrame();
+      const stackMeshes = scene.meshes.filter((mesh) =>
+        ["esc", "flight_controller", "receiver"].includes(mesh.metadata?.componentType)
+      );
+      const stackBounds = getGroupBounds(stackMeshes);
+      const supportTop = stackBounds?.max.y ?? scene.__stackTopY ?? 0;
+      const supportY = Number.isFinite(supportTop) ? supportTop : 0;
+      batteryOrigin[1] = supportY + (1 * unitScale);
+      if (batteryUrl) {
+        const meshes = await loadSingle(batteryUrl, null, "battery");
+        if (meshes?.length) {
+          createNormalizedInstance({
+            scene,
+            sourceMeshes: meshes,
+            componentType: "battery",
+            prefix: "battery",
+            index: 0,
+            position: batteryOrigin,
+          });
+          meshes.forEach((mesh) => mesh.dispose());
+        }
+      } else {
+        createBatteryFallback(scene, batterySpec, {
+          ...batteryPlacement,
+          origin: [
+            batteryOrigin[0] / unitScale,
+            batteryOrigin[1] / unitScale,
+            batteryOrigin[2] / unitScale,
+          ],
+        });
       }
     };
-    loadStackComponents();
 
-    // Battery is mounted on bottom plate of frame, not stacked in center
-    if (batteryUrl && !clearedComponents.includes('battery')) {
-      loadSingle(batteryUrl, (meshes) => {
-        const unitScale = unitScaleRef.current || FIXED_UNIT_SCALE;
-        const batteryDropScene = -10 * unitScale;
-        const batteryOffsetVec = getMountOffsetVector(batteryMountingPoint, unitScale);
-        const shift = scene.__groundShift || 0;
-        const placement = new Vector3(
-          batteryOffsetVec.x,
-          batteryDropScene + shift + batteryOffsetVec.y,
-          batteryOffsetVec.z
-        );
-        setMeshesRootPosition(meshes, placement);
-      }, 'battery');
-    }
+    const buildMotors = async () => {
+      if (clearedComponents.includes("motor")) return;
+      const canBuildFallback = Boolean(motorSpec?.id);
+      if (!motorUrl && !canBuildFallback) return;
+      await waitForFrameReady();
 
-    // Load motors at frame corner positions with mounting point alignment
-    const motorPositions = computeMotorPositions(frameCornerPositions, motorMountingPoint);
-    console.log('[BabylonViewer] Motor positions computed:', motorPositions.map(p => `(${p.x}, ${p.y}, ${p.z})`));
-    console.log('[BabylonViewer] Frame corners:', frameCornerPositions);
-    console.log('[BabylonViewer] Mounting point:', motorMountingPoint);
-    console.log('[BabylonViewer] motorUrl:', motorUrl);
-    console.log('[BabylonViewer] Will load motors?', motorUrl && motorPositions.length === 4 && !clearedComponents.includes('motor'));
-    if (motorUrl && motorPositions.length === 4 && !clearedComponents.includes('motor')) {
-      disposeComponentType('motor');
-      loadSingle(motorUrl, async (loadedMeshes) => {
-        await waitForFrameReady();
-        const meshesToUse = loadedMeshes.filter(m => !m.name.startsWith("__"));
-        console.log('[BabylonViewer] Motor meshes loaded:', meshesToUse.length);
-        if (meshesToUse.length === 0) return;
+      const motorOriginsMm = frameSpec?.size || assemblySpec.frame
+        ? getMotorOriginsMm(frameSpec, motorSpec)
+        : computeMotorPositions(frameCornerPositions, motorMountingPoint).map((p) => [p.x, p.y, p.z]);
+      if (motorOriginsMm.length !== 4) return;
+      disposeComponentType("motor");
 
-        // Determine unit scale between mm (corner data) and scene units (GLB)
-        const unitScale = unitScaleRef.current || FIXED_UNIT_SCALE;
-        const scaledPositions = motorPositions.map(p => p.scale(unitScale));
+      const positions = motorOriginsMm.map((origin) =>
+        toSceneVectorMm(origin).reduce((vector, value, index) => {
+          if (index === 0) vector.x = value;
+          if (index === 1) vector.y = value;
+          if (index === 2) vector.z = value;
+          return vector;
+        }, new Vector3())
+      );
 
-        // Create a TransformNode per motor instance and parent all meshes to it
-        const createMotorInstance = (idx, position) => {
-          const root = new TransformNode(`motor_${idx}_root`, scene);
-          root.position = position.clone();
-          const shift = scene.__groundShift || 0;
-          if (shift) {
-            root.position.y += shift;
-          }
-          root.metadata = { componentType: 'motor' };
-
-          meshesToUse.forEach((mesh) => {
-            const inst = idx === 0 ? mesh : mesh.clone(`motor_${idx}_${mesh.name}`);
-            if (!inst) {
-              console.error(`[BabylonViewer] Failed to instantiate motor ${idx} from ${mesh.name}`);
-              return;
-            }
-            inst.parent = root;
-            inst.metadata = { ...(inst.metadata || {}), componentType: 'motor' };
-            if (idx > 0) {
-              console.log(`[BabylonViewer] Cloned motor ${idx} mesh: ${inst.name}`);
-            }
+      const motorRoots = [];
+      if (motorUrl) {
+        const meshes = await loadSingle(motorUrl, null, "motor");
+        const usable = (meshes || []).filter((mesh) => !mesh.name.startsWith("__"));
+        if (usable.length) {
+          positions.forEach((position, index) => {
+            const root = createNormalizedInstance({
+              scene,
+              sourceMeshes: usable,
+              componentType: "motor",
+              prefix: "motor",
+              index,
+              position,
+            });
+            if (root) motorRoots.push(root);
           });
-
-          return root;
-        };
-
-        // First instance uses original meshes
-        const firstRoot = createMotorInstance(0, scaledPositions[0]);
-        console.log('[BabylonViewer] Positioned first motor at:', firstRoot.position);
-
-        // Remaining instances clone meshes under separate roots
-        for (let i = 1; i < scaledPositions.length; i++) {
-          createMotorInstance(i, scaledPositions[i]);
+          usable.forEach((mesh) => mesh.dispose());
         }
-
-        setTimeout(() => {
-          const allMotorRoots = (scene.transformNodes || []).filter(n => n.name.includes('motor_') && n.metadata?.componentType === 'motor');
-          console.log(`[BabylonViewer] Total motor roots in scene: ${allMotorRoots.length}`);
-          allMotorRoots.forEach(n => {
-            console.log(`  - ${n.name} at (${n.position.x.toFixed(2)}, ${n.position.y.toFixed(2)}, ${n.position.z.toFixed(2)})`);
-          });
-        }, 400);
-      }, 'motor');
-    }
-
-    // Load propellers: clone to four corners, positioned above motors (or frame corners if motors absent)
-    if (propellerUrl && frameCornerPositions.length === 4 && !clearedComponents.includes('propeller')) {
-      disposeComponentType('propeller');
-      loadSingle(propellerUrl, async (loadedMeshes) => {
-        await waitForFrameReady();
-        const meshesToUse = loadedMeshes.filter(m => !m.name.startsWith("__"));
-        if (meshesToUse.length === 0) return;
-
-        // Infer unit scale and compute base positions
-        const unitScale = unitScaleRef.current || FIXED_UNIT_SCALE;
-        const motorRoots = (scene.transformNodes || []).filter(n => n.metadata?.componentType === 'motor')
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        const propLiftMm = 6; // ~6mm above motor origin as a safe default
-        const lift = unitScale * propLiftMm;
-
-        const propOffsetMm = new Vector3(-propellerMountingPoint[0], -propellerMountingPoint[1], -propellerMountingPoint[2]);
-        const propOffsetScene = propOffsetMm.scale(unitScale);
-        let basePositions;
-        if (motorRoots.length >= 4) {
-          basePositions = motorRoots.slice(0, 4).map(r => new Vector3(r.position.x, r.position.y, r.position.z));
-        } else {
-          // Fallback to frame corners (scaled) if motors not present
-          basePositions = frameCornerPositions.map(c => new Vector3(c[0] * unitScale, c[1] * unitScale, c[2] * unitScale));
-        }
-
-        const propPositions = basePositions.map(pos => {
-          const adjusted = pos.clone().add(propOffsetScene);
-          adjusted.y += lift;
-          return adjusted;
+      } else {
+        positions.forEach((position, index) => {
+          const root = createMotorFallback(scene, motorSpec, position, index);
+          if (root) motorRoots.push(root);
         });
+      }
+      scene.__motorRoots = motorRoots.sort((a, b) => a.name.localeCompare(b.name));
+      scene.__motorReady = true;
+    };
 
-        const createPropInstance = (idx, position) => {
-          const root = new TransformNode(`prop_${idx}_root`, scene);
-          root.position = position.clone();
-          const shift = scene.__groundShift || 0;
-          if (shift) {
-            root.position.y += shift;
-          }
-          root.metadata = { componentType: 'propeller' };
-          meshesToUse.forEach((mesh) => {
-            const inst = idx === 0 ? mesh : mesh.clone(`prop_${idx}_${mesh.name}`);
-            if (!inst) return;
-            inst.parent = root;
-            inst.metadata = { ...(inst.metadata || {}), componentType: 'propeller' };
+    const buildPropellers = async (motorAssemblyPromise) => {
+      if (clearedComponents.includes("propeller")) return;
+      if (!propellerUrl && !propellerCWUrl && !propellerCCWUrl && !propellerSpec?.id) return;
+      await motorAssemblyPromise;
+      disposeComponentType("propeller");
+
+      const originValues = getPropellerOriginsMm(frameSpec, motorSpec, propellerSpec);
+      const sources = {};
+      if (propellerCWUrl) sources.CW = (await loadSingle(propellerCWUrl, null, "propeller"))?.filter((mesh) => !mesh.name.startsWith("__")) || [];
+      if (propellerCCWUrl) sources.CCW = (await loadSingle(propellerCCWUrl, null, "propeller"))?.filter((mesh) => !mesh.name.startsWith("__")) || [];
+      if (!sources.CW?.length && !sources.CCW?.length && propellerUrl) {
+        sources.CCW = (await loadSingle(propellerUrl, null, "propeller"))?.filter((mesh) => !mesh.name.startsWith("__")) || [];
+      }
+
+      const motorRoots = (scene.__motorRoots || []).sort((a, b) => a.name.localeCompare(b.name));
+      await waitForSceneFrame();
+      const propellerHeightMm = getFallbackDimensionsMm("propeller", propellerSpec)[1];
+      const mountedRoots = [];
+      originValues.forEach((origin, index) => {
+        const variant = getPropellerVariant(index);
+        const meshes = sources[variant]?.length ? sources[variant] : sources[variant === "CW" ? "CCW" : "CW"] || [];
+        const motorRoot = motorRoots[index];
+        const motorTopY = getVisibleTopY(
+          motorRoot,
+          (origin[1] + propellerHeightMm) * unitScale,
+        );
+        const clearance = 0.65 * unitScale;
+        const position = motorRoot
+          ? new Vector3(motorRoot.position.x, motorTopY + clearance, motorRoot.position.z)
+          : new Vector3(origin[0] * unitScale, origin[1] * unitScale, origin[2] * unitScale);
+        if (meshes.length) {
+          const root = createNormalizedInstance({
+            scene,
+            sourceMeshes: meshes,
+            componentType: "propeller",
+            prefix: "prop",
+            index,
+            position,
+            variant,
           });
-          return root;
-        };
-
-        const firstRoot = createPropInstance(0, propPositions[0]);
-        for (let i = 1; i < 4; i++) {
-          createPropInstance(i, propPositions[i]);
+          if (root) mountedRoots.push(root);
+        } else {
+          const root = createPropellerFallback(scene, propellerSpec || {}, position, index);
+          if (root) mountedRoots.push(root);
         }
-      }, 'propeller');
-    }
+      });
+      scene.__propellerRoots = mountedRoots.sort((a, b) => a.name.localeCompare(b.name));
+      [...(sources.CW || []), ...(sources.CCW || [])].forEach((mesh) => mesh.dispose());
+    };
+
+    const assembleComponents = async () => {
+      try {
+        await waitForFrameReady();
+        await loadStackComponents();
+        const motorAssemblyPromise = buildMotors();
+        await buildPropellers(motorAssemblyPromise);
+        await loadBattery();
+        applyExplodedAssembly(scene, explodedRef.current);
+      } finally {
+        if (scene.__currentLoadSession === loadSession) {
+          scene.__assemblyInProgress = false;
+          scheduleNormalization(loadSession);
+        }
+      }
+    };
+    assembleComponents();
 
     if (includeSampleUrl && !clearedComponents.includes('sample')) {
       loadSingle(modelUrl, null, 'sample');
     }
 
     previousClearedComponentsRef.current = clearedComponents;
-  }, [modelUrl, modelUrls, frameCornerPositions, motorUrl, motorMountingPoint, batteryUrl, batteryMountingPoint, fcUrl, fcMountingPoint, escUrl, escMountingPoint, receiverUrl, receiverMountingPoint, propellerUrl, propellerMountingPoint, groundClearance, resetKey, clearedComponents]);
+    // Assembly helpers are local to this effect and intentionally stable for its lifecycle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modelUrl, modelUrls, frameCornerPositions, motorUrl, motorMountingPoint, batteryUrl, batteryMountingPoint, fcUrl, fcMountingPoint, escUrl, escMountingPoint, receiverUrl, receiverMountingPoint, propellerUrl, propellerCWUrl, propellerCCWUrl, propellerMountingPoint, assemblySpec, groundClearance, resetKey, clearedComponents]);
 
   return (
     <div
@@ -937,6 +1381,12 @@ const BabylonViewer = ({
       }}
     >
       <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+      {viewerError && (
+        <div className="viewer-webgl-fallback" role="alert">
+          <strong>3D preview unavailable</strong>
+          <span>{viewerError}</span>
+        </div>
+      )}
       {debug && (
         <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(0,0,0,0.6)', padding: '6px 8px', fontSize: 11, color: '#eee', maxWidth: 260, overflowY: 'auto', maxHeight: 180 }}>
           <div style={{ fontWeight: '600', marginBottom: 4 }}>Model Load Status</div>
@@ -953,6 +1403,12 @@ const BabylonViewer = ({
             <div>Camera α: {cameraStatus.alpha.toFixed(2)}</div>
             <div>Camera β: {cameraStatus.beta.toFixed(2)}</div>
             <div>Radius: {cameraStatus.radius.toFixed(2)}</div>
+            <div>Meshes: {sceneMetrics.meshCount} · Max: {sceneMetrics.maxDim.toFixed(3)}</div>
+            {sceneMetrics.largest.map((mesh) => (
+              <div key={`${mesh.name}-${mesh.maxDim}`} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {mesh.componentType || "mesh"} · {mesh.maxDim.toFixed(3)} · {mesh.name}
+              </div>
+            ))}
           </div>
         </div>
       )}
