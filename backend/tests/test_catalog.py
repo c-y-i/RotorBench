@@ -40,14 +40,14 @@ class CatalogContractTests(unittest.TestCase):
             {
                 "frames": 9,
                 "motors": 15,
-                "propellers": 9,
+                "propellers": 10,
                 "batteries": 9,
                 "escs": 7,
                 "flight_controllers": 8,
                 "receivers": 8,
             },
         )
-        self.assertEqual(sum(counts.values()), 65)
+        self.assertEqual(sum(counts.values()), 66)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 65)
+        self.assertEqual(len(records), 66)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -323,6 +323,21 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(propeller.shaft_mm, 1.5)
         self.assertEqual(propeller.hub_thickness_mm, 5.5)
         self.assertEqual(propeller.dimensions_mm, [64, 5.5, 64])
+        self.assertEqual(propeller.performance_data_status, "not_published")
+        self.assertEqual(propeller.thrust_data, [])
+
+    def test_pizzacutters_5037_use_published_mechanics(self):
+        propeller = next(
+            item for item in self.database.propellers
+            if item.id == "prop-hqprop-pizzacutters-5037-3"
+        )
+        self.assertEqual(propeller.size, 5.0)
+        self.assertEqual(propeller.pitch, 3.7)
+        self.assertEqual(propeller.weight, 4.0)
+        self.assertEqual(propeller.hub_diameter_mm, 13.3)
+        self.assertEqual(propeller.hub_thickness_mm, 7)
+        self.assertEqual(propeller.shaft_mm, 5)
+        self.assertEqual(propeller.dimensions_mm, [127, 7, 127])
         self.assertEqual(propeller.performance_data_status, "not_published")
         self.assertEqual(propeller.thrust_data, [])
 

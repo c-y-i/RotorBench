@@ -39,6 +39,8 @@ test("offers all complete source-backed platforms from an empty overview", async
   expect(screen.getByRole("heading", { name: "Start with a complete platform" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 3.5-inch source build" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 5.5-inch source build" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Open 5-inch Source One V5 source build" }))
+    .toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 5.5-inch diversity source build" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 3.5-inch 4600KV source build" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 5.5-inch XING2 6S build" })).toBeInTheDocument();
@@ -54,6 +56,9 @@ test("offers all complete source-backed platforms from an empty overview", async
   })).getByText("Thrust data unavailable")).toBeInTheDocument();
   expect(within(screen.getByRole("button", {
     name: "Open 2.5-inch AOS Cine25 source build",
+  })).getByText("Thrust data unavailable")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", {
+    name: "Open 5-inch Source One V5 source build",
   })).getByText("Thrust data unavailable")).toBeInTheDocument();
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);

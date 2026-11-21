@@ -260,6 +260,25 @@ test("AOS Cine25 and Gemfan 2520 add a source-backed compact platform", () => {
   });
 });
 
+test("HQProp PizzaCutters 5037 adds a source-backed five-inch propeller", () => {
+  const propeller = componentsData.propellers.find(
+    (item) => item.id === "prop-hqprop-pizzacutters-5037-3",
+  );
+
+  expect(propeller).toMatchObject({
+    size: 5,
+    pitch: 3.7,
+    weight: 4,
+    hubDiameterMm: 13.3,
+    hubThicknessMm: 7,
+    shaftMm: 5,
+    dimensionsMm: [127, 7, 127],
+    performanceDataStatus: "not_published",
+    thrustData: [],
+    sourceUrl: expect.stringContaining("hqprop.com"),
+  });
+});
+
 test("the model manifest binds legacy catalog IDs without prefix guessing", () => {
   const manifest = componentsData.modelManifest;
   const bound = Object.values(manifest.assets).flatMap((entries) => (

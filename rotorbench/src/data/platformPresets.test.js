@@ -7,14 +7,14 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(8);
+  expect(PLATFORM_PRESETS).toHaveLength(9);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
     expect(summarizeBuild({ componentIds: preset.componentIds })).toMatchObject({
       selectedCount: 7,
       sourceBackedCount: 7,
-      physicalFitStatus: "verified",
+      physicalFitStatus: preset.id === "source-5" ? "unverified" : "verified",
       electricalFitStatus: preset.id === "source-7-inch"
         ? "unverified"
         : "verified",
@@ -25,6 +25,14 @@ test("every starter platform references a complete catalog build", () => {
     componentIds: {
       flightControllerId: "fc-holybro-kakute-h7-v2",
       receiverId: "rx-radiomaster-rp4td",
+    },
+  });
+  expect(getPlatformPreset("source-5")).toMatchObject({
+    componentIds: {
+      frameId: "frame-tbs-source-one-v5",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      batteryId: "battery-tattu-rline-v3-6s-1050-120c",
     },
   });
   expect(getPlatformPreset("source-35-4600")).toMatchObject({
