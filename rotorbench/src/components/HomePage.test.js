@@ -94,19 +94,22 @@ test("starter platforms filter by frame size while preserving direct launch acti
     name: "Filter starter platforms by frame size",
   });
   expect(within(filters).getAllByRole("button")).toHaveLength(6);
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(15);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(16);
 
   const fiveInch = within(filters).getByRole("button", {
-    name: /^5-inch builds\s*7$/,
+    name: /^5-inch builds\s*8$/,
   });
   fireEvent.click(fiveInch);
   expect(fiveInch).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(7);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(8);
   expect(screen.getByRole("button", {
     name: "Open 5-inch Volador II VX5 51499 build",
   })).toBeInTheDocument();
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS F722 source build",
+  })).toBeInTheDocument();
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch AOS F722 900MHz build",
   })).toBeInTheDocument();
   expect(screen.queryByRole("button", {
     name: "Open 7-inch long-range source build",
@@ -121,24 +124,24 @@ test("starter platforms filter by frame size while preserving direct launch acti
   })).toBeInTheDocument();
 
   fireEvent.click(within(filters).getByRole("button", {
-    name: /^All builds\s*15$/,
+    name: /^All builds\s*16$/,
   }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(15);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(16);
 
   const evidenceFilters = screen.getByRole("group", {
     name: "Filter starter platforms by fit evidence",
   });
   const verifiedOnly = within(evidenceFilters).getByRole("button", {
-    name: /^Verified only\s*11$/,
+    name: /^Verified only\s*12$/,
   });
   fireEvent.click(verifiedOnly);
   expect(verifiedOnly).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(11);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(12);
 
   fireEvent.click(within(filters).getByRole("button", {
-    name: /^5-inch builds\s*7$/,
+    name: /^5-inch builds\s*8$/,
   }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(3);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(4);
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS 5 V5 source build",
   })).toBeInTheDocument();
