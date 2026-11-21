@@ -1,4 +1,7 @@
-import { summarizeHardwareReadiness } from "./hardwareReadiness";
+import {
+  describeNavigationSafety,
+  summarizeHardwareReadiness,
+} from "./hardwareReadiness";
 
 function memoryStorage(entries = {}) {
   const values = new Map(Object.entries(entries));
@@ -186,6 +189,9 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
     fcGyroRateHz: 3200,
     fcPidDenom: 2,
   });
+  expect(describeNavigationSafety(readiness)).toBe(
+    "Fence 250 m / 120 m ceiling · Floor 30 m · Pack RTH on",
+  );
 });
 
 test("plans for another FC or receiver are ignored", () => {

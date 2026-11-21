@@ -39,7 +39,10 @@ import {
   placementCheckMeasurementTarget,
   setMeasuredGeometryValue,
 } from "../utils/buildGeometry";
-import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
+import {
+  describeNavigationSafety,
+  summarizeHardwareReadiness,
+} from "../utils/hardwareReadiness";
 import { getRadioReceiverBandCompatibility, getRadioTarget } from "../data/radioProfiles";
 import {
   readBenchEvidenceAttachment,
@@ -726,6 +729,7 @@ export default function BuildPage() {
     }),
     [selectedFlightControllerPart, selectedReceiverPart, workingBuildId],
   );
+  const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
   const viewerPlacementAudit = useMemo(
     () => buildViewerPlacementAudit(assemblySpec.frame, assemblySpec),
     [assemblySpec],
@@ -1976,6 +1980,11 @@ export default function BuildPage() {
                     <small>
                       Motor order: {hardwareReadiness.fcMotorDirectionLabel} ·{" "}
                       {hardwareReadiness.fcMotorOrder}
+                    </small>
+                  )}
+                  {navigationSafetyLabel && (
+                    <small>
+                      Navigation safety: {navigationSafetyLabel}
                     </small>
                   )}
                   {hardwareReadiness.radioRegulatoryRegionLabel && (

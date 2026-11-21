@@ -631,6 +631,12 @@ export default function SavedConfigsPage() {
                                                 </span>
                                             )}
                                             {buildSummary.hasHardwareParts
+                                                && buildSummary.navigationSafetyLabel && (
+                                                <span>
+                                                    {buildSummary.navigationSafetyLabel}
+                                                </span>
+                                            )}
+                                            {buildSummary.hasHardwareParts
                                                 && buildSummary.radioRegulatoryRegionLabel && (
                                                 <span className={`is-power-${buildSummary.radioPowerCapStatus === "over" ? "unverified" : "documented"}`}>
                                                     {buildSummary.radioRegulatoryRegionLabel}

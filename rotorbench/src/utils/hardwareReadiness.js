@@ -332,3 +332,28 @@ export function sanitizeHardwareReadiness(readiness) {
     hardwareVerified: false,
   };
 }
+
+export function describeNavigationSafety(readiness) {
+  if (!readiness) return null;
+  const hasSafetyPlan = (
+    readiness.fcFenceEnabled != null
+    || readiness.fcRthMinAltM != null
+    || readiness.fcBatteryRthEnabled != null
+  );
+  if (!hasSafetyPlan) return null;
+
+  const fence = readiness.fcFenceEnabled
+    ? `Fence ${Number(readiness.fcFenceRadiusM) || 0} m${
+      Number(readiness.fcFenceCeilingM) > 0
+        ? ` / ${readiness.fcFenceCeilingM} m ceiling`
+        : ""
+    }`
+    : "Fence off";
+  const floor = Number(readiness.fcRthMinAltM) > 0
+    ? `Floor ${readiness.fcRthMinAltM} m`
+    : "No floor";
+  const packReturn = readiness.fcBatteryRthEnabled
+    ? "Pack RTH on"
+    : "Pack RTH off";
+  return `${fence} · ${floor} · ${packReturn}`;
+}

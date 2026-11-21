@@ -24,7 +24,10 @@ import {
   createAnalysisReport,
 } from "../utils/analysisReport";
 import { buildShareUrl } from "../utils/buildLink";
-import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
+import {
+  describeNavigationSafety,
+  summarizeHardwareReadiness,
+} from "../utils/hardwareReadiness";
 import {
   readBenchEvidenceAttachment,
   readCurrentBenchEvidenceScope,
@@ -250,6 +253,7 @@ export default function AnalysisPage() {
     flightController: selectedFlightControllerPart,
     receiver: selectedReceiverPart,
   }), [build?.id, selectedFlightControllerPart, selectedReceiverPart]);
+  const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
   const benchEvidence = useMemo(() => summarizeBenchEvidenceAttachment(
     readBenchEvidenceAttachment(build?.id),
     readCurrentBenchEvidenceScope(build),
@@ -514,6 +518,12 @@ export default function AnalysisPage() {
                     {hardwareReadiness.fcMotorDirectionLabel} ·{" "}
                     {hardwareReadiness.fcMotorOrder}
                   </dd>
+                </div>
+              )}
+              {hasHardwareSelection && navigationSafetyLabel && (
+                <div>
+                  <dt>Navigation safety</dt>
+                  <dd>{navigationSafetyLabel}</dd>
                 </div>
               )}
               {hasHardwareSelection

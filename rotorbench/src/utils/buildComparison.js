@@ -10,7 +10,10 @@ import {
   summarizeElectricalChecks,
 } from "./electricalCompatibility";
 import { applyMeasuredGeometry } from "./buildGeometry";
-import { summarizeHardwareReadiness } from "./hardwareReadiness";
+import {
+  describeNavigationSafety,
+  summarizeHardwareReadiness,
+} from "./hardwareReadiness";
 import {
   readBenchEvidenceAttachment,
   readCurrentBenchEvidenceScope,
@@ -178,6 +181,7 @@ export function summarizeBuild(build) {
     fcMotorDirection: hardwareReadiness.fcMotorDirection,
     fcMotorDirectionLabel: hardwareReadiness.fcMotorDirectionLabel,
     fcMotorOrder: hardwareReadiness.fcMotorOrder,
+    navigationSafetyLabel: describeNavigationSafety(hardwareReadiness),
     hardwareIssueCount: hardwareReadiness.configured
       ? hardwareReadiness.issueCount
       : null,
@@ -519,6 +523,13 @@ export function comparisonRows(left, right) {
       right: right.fcMotorOrder
         ? `${right.fcMotorDirectionLabel} · ${right.fcMotorOrder}`
         : right.fcMotorDirectionLabel || "No verified motor map",
+      format: (value) => value,
+    },
+    {
+      id: "navigation-safety",
+      label: "Navigation safety",
+      left: left.navigationSafetyLabel || "Not configured",
+      right: right.navigationSafetyLabel || "Not configured",
       format: (value) => value,
     },
     {

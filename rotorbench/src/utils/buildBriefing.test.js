@@ -76,6 +76,11 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       radioHostBayCompatible: false,
       fcMotorDirectionLabel: "Normal · props in",
       fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+      fcFenceEnabled: true,
+      fcFenceRadiusM: 250,
+      fcFenceCeilingM: 120,
+      fcRthMinAltM: 30,
+      fcBatteryRthEnabled: true,
       radioPowerDbm: 25,
       radioRegulatoryRegionLabel: "CE",
       radioRegulatoryMaxDbm: 20,
@@ -91,6 +96,9 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
   );
   expect(briefing.text).toContain(
     "Motor order: Normal · props in / 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+  );
+  expect(briefing.text).toContain(
+    "Navigation safety: Fence 250 m / 120 m ceiling · Floor 30 m · Pack RTH on",
   );
   expect(briefing.text).toContain(
     "RF limit: CE / 25 planned / 20 dBm max / OVER CAP",

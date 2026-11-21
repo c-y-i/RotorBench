@@ -46,6 +46,7 @@ test("comparison rows include all seven component categories", () => {
       "hardware-plan",
       "receiver-wiring",
       "radio-host",
+      "navigation-safety",
       "bench-evidence",
       "frame-size",
       "motor-kv",
@@ -157,6 +158,11 @@ test("comparison summaries expose documented versus unverified receiver wiring",
   expect(rows.find((row) => row.id === "fc-motor-order")).toMatchObject({
     changed: false,
     left: "Normal · props in · 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+  });
+  expect(rows.find((row) => row.id === "navigation-safety")).toMatchObject({
+    changed: false,
+    left: "Not configured",
+    right: "Not configured",
   });
   expect(rows.find((row) => row.id === "radio-power-limit")).toMatchObject({
     changed: false,

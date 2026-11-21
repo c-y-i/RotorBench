@@ -1,5 +1,6 @@
 import { summarizeMeasuredGeometry } from "./buildGeometry";
 import { summarizePowerPath } from "./physicalCompatibility";
+import { describeNavigationSafety } from "./hardwareReadiness";
 
 const partDefinitions = [
   ["frame", "Frame"],
@@ -76,6 +77,11 @@ export function createBuildBriefing({
       ...(hardwareReadiness.fcMotorOrder
         ? [
             `- Motor order: ${hardwareReadiness.fcMotorDirectionLabel} / ${hardwareReadiness.fcMotorOrder}`,
+          ]
+        : []),
+      ...(describeNavigationSafety(hardwareReadiness)
+        ? [
+            `- Navigation safety: ${describeNavigationSafety(hardwareReadiness)}`,
           ]
         : []),
       ...(hardwareReadiness.radioRegulatoryRegionLabel
