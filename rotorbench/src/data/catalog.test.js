@@ -184,6 +184,33 @@ test("Tattu R-Line V6 keeps published pack specs and estimates only the model cu
   expect(battery.estimatedFields).not.toContain("weight");
 });
 
+test("CNHL Black V2 battery separates published pack data from derived fields", () => {
+  const battery = componentsData.batteries.find(
+    (item) => item.id === "battery-cnhl-black-v2-6s-1300-130c",
+  );
+
+  expect(battery).toMatchObject({
+    name: "CNHL Black Series V2.0 6S 1300mAh 130C",
+    capacity: 1300,
+    voltage: 22.2,
+    cells: 6,
+    cRating: 130,
+    weight: 209,
+    dimensionsMm: [82, 39, 35.5],
+    dischargeConnector: "XT60",
+    price: 18.99,
+    modelStatus: "not_available",
+    sourceUrl: expect.stringContaining("chinahobbyline.com"),
+  });
+  expect(battery.estimatedFields).toEqual([
+    "mounting_point",
+    "dischargeProfile",
+    "price allocation",
+  ]);
+  expect(battery.estimatedFields).not.toContain("dimensionsMm");
+  expect(battery.estimatedFields).not.toContain("weight");
+});
+
 test("RP2 V2 keeps the manufacturer's physical dimensions distinct from estimates", () => {
   const receiver = componentsData.receivers.find(
     (item) => item.id === "rx-radiomaster-rp2-v2",

@@ -1513,6 +1513,39 @@
         { "percentage": 0, "voltage": 19.2 }
       ],
       "price": 39.99
+    },
+    {
+      "id": "battery-cnhl-black-v2-6s-1300-130c",
+      "name": "CNHL Black Series V2.0 6S 1300mAh 130C",
+      "capacity": 1300,
+      "voltage": 22.2,
+      "cells": 6,
+      "cRating": 130,
+      "weight": 209,
+      "mounting_point": [0, -20, 0],
+      "dimensionsMm": [82, 39, 35.5],
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://chinahobbyline.com/products/2-packs-cnhl-black-series-v2-0-1300mah-22-2v-6s-130c-lipo-battery-with-xt60-plug",
+      "priceSourceUrl": "https://chinahobbyline.com/products/2-packs-cnhl-black-series-v2-0-1300mah-22-2v-6s-130c-lipo-battery-with-xt60-plug",
+      "dischargeConnector": "XT60",
+      "connectorSourceUrl": "https://chinahobbyline.com/products/2-packs-cnhl-black-series-v2-0-1300mah-22-2v-6s-130c-lipo-battery-with-xt60-plug",
+      "dataStatus": "verified_specs_estimated_mounting_discharge_and_price_allocation",
+      "estimatedFields": ["mounting_point", "dischargeProfile", "price allocation"],
+      "dischargeProfile": [
+        { "percentage": 100, "voltage": 25.2 },
+        { "percentage": 90, "voltage": 24.6 },
+        { "percentage": 80, "voltage": 24.0 },
+        { "percentage": 70, "voltage": 23.4 },
+        { "percentage": 60, "voltage": 22.8 },
+        { "percentage": 50, "voltage": 22.2 },
+        { "percentage": 40, "voltage": 21.8 },
+        { "percentage": 30, "voltage": 21.2 },
+        { "percentage": 20, "voltage": 20.6 },
+        { "percentage": 10, "voltage": 20.0 },
+        { "percentage": 0, "voltage": 19.2 }
+      ],
+      "price": 18.99
     }
   ],
   "receivers": [

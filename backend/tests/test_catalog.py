@@ -41,13 +41,13 @@ class CatalogContractTests(unittest.TestCase):
                 "frames": 10,
                 "motors": 16,
                 "propellers": 10,
-                "batteries": 10,
+                "batteries": 11,
                 "escs": 7,
                 "flight_controllers": 8,
                 "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 71)
+        self.assertEqual(sum(counts.values()), 72)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 71)
+        self.assertEqual(len(records), 72)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -315,6 +315,25 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(battery.price, 39.99)
         self.assertIn("mounting_point", battery.estimated_fields)
         self.assertIn("dischargeProfile", battery.estimated_fields)
+        self.assertNotIn("dimensionsMm", battery.estimated_fields)
+        self.assertNotIn("weight", battery.estimated_fields)
+
+    def test_cnhl_black_v2_keeps_pack_specs_and_derived_fields_separate(self):
+        battery = next(
+            item for item in self.database.batteries
+            if item.id == "battery-cnhl-black-v2-6s-1300-130c"
+        )
+        self.assertEqual(battery.capacity, 1300)
+        self.assertEqual(battery.voltage, 22.2)
+        self.assertEqual(battery.cells, 6)
+        self.assertEqual(battery.c_rating, 130)
+        self.assertEqual(battery.weight, 209)
+        self.assertEqual(battery.dimensions_mm, [82, 39, 35.5])
+        self.assertEqual(battery.discharge_connector, "XT60")
+        self.assertEqual(battery.price, 18.99)
+        self.assertIn("mounting_point", battery.estimated_fields)
+        self.assertIn("dischargeProfile", battery.estimated_fields)
+        self.assertIn("price allocation", battery.estimated_fields)
         self.assertNotIn("dimensionsMm", battery.estimated_fields)
         self.assertNotIn("weight", battery.estimated_fields)
 
