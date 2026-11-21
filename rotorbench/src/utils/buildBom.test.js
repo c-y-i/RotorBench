@@ -51,3 +51,51 @@ test("partial builds keep missing BOM categories explicit", () => {
     dataStatus: "missing selection",
   });
 });
+
+test("connector mismatch adds an explicit adapter requirement", () => {
+  const rows = createBuildBomRows({
+    ...build,
+    componentIds: {
+      ...build.componentIds,
+      batteryId: "battery-tattu-rline-6s-1300-120c",
+    },
+  });
+  const adapter = rows.find((row) => row.category === "Power adapter");
+
+  expect(adapter).toMatchObject({
+    quantity: 1,
+    product: "XT60-to-XT30 adapter",
+    unitPrice: 0,
+    extendedPrice: 0,
+    sourceUrl: "",
+    catalogItem: false,
+  });
+  expect(adapter.dataStatus).toMatch(/verify current rating and polarity/i);
+
+  const csv = createBuildBomCsv({
+    ...build,
+    componentIds: {
+      ...build.componentIds,
+      batteryId: "battery-tattu-rline-6s-1300-120c",
+    },
+  });
+  expect(csv).toContain("Power adapter,1,XT60-to-XT30 adapter");
+  expect(csv).toContain("catalog estimate; excludes 1 derived requirement");
+});
+
+test("solder-pad ESC adds an explicit battery lead requirement", () => {
+  const rows = createBuildBomRows({
+    ...build,
+    componentIds: {
+      ...build.componentIds,
+      escId: "esc-holybro-tekko32-f4-65a",
+    },
+  });
+
+  expect(rows.find((row) => row.category === "Power lead")).toMatchObject({
+    quantity: 1,
+    product: "XT30-to-bare-wire power lead",
+    unitPrice: 0,
+    catalogItem: false,
+  });
+});

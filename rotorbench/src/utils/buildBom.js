@@ -1,4 +1,5 @@
 import componentsData from "../data/components.json";
+import { summarizePowerPath } from "./physicalCompatibility";
 
 const categories = [
   { key: "frameId", category: "frames", label: "Frame" },
@@ -17,6 +18,49 @@ function csvCell(value) {
     : text;
 }
 
+function createDerivedPowerRows(build) {
+  const ids = build?.componentIds || {};
+  const battery = componentsData.batteries?.find(
+    (part) => part.id === ids.batteryId,
+  );
+  const esc = componentsData.escs?.find((part) => part.id === ids.escId);
+  if (!battery || !esc) return [];
+  const powerPath = summarizePowerPath(battery, esc);
+  if (
+    powerPath.displayState === "conflict"
+    && powerPath.batteryConnector
+    && powerPath.escConnector
+  ) {
+    return [{
+      category: "Power adapter",
+      quantity: 1,
+      product: `${powerPath.batteryConnector}-to-${powerPath.escConnector} adapter`,
+      unitPrice: 0,
+      extendedPrice: 0,
+      sourceUrl: "",
+      dataStatus: "derived connector requirement; verify current rating and polarity",
+      estimatedFieldCount: 0,
+      catalogItem: false,
+    }];
+  }
+  if (powerPath.displayState === "manual") {
+    return [{
+      category: "Power lead",
+      quantity: 1,
+      product: powerPath.batteryConnector
+        ? `${powerPath.batteryConnector}-to-bare-wire power lead`
+        : "Battery-to-bare-wire power lead",
+      unitPrice: 0,
+      extendedPrice: 0,
+      sourceUrl: "",
+      dataStatus: "derived solder-pad requirement; verify wire gauge, polarity, and connector",
+      estimatedFieldCount: 0,
+      catalogItem: false,
+    }];
+  }
+  return [];
+}
+
 export function createBuildBomRows(build) {
   const ids = build?.componentIds || {};
   const frame = componentsData.frames?.find((part) => part.id === ids.frameId);
@@ -33,6 +77,7 @@ export function createBuildBomRows(build) {
         sourceUrl: "",
         dataStatus: "missing selection",
         estimatedFieldCount: 0,
+        catalogItem: true,
       }];
     }
     const quantity = ["motors", "propellers"].includes(category) ? motorCount : 1;
@@ -48,14 +93,23 @@ export function createBuildBomRows(build) {
       estimatedFieldCount: Array.isArray(part.estimatedFields)
         ? part.estimatedFields.length
         : 0,
+      catalogItem: true,
     }];
-  });
+  }).concat(createDerivedPowerRows(build));
 }
 
 export function createBuildBomCsv(build) {
   const rows = createBuildBomRows(build);
-  const totalQuantity = rows.reduce((total, row) => total + row.quantity, 0);
-  const totalPrice = rows.reduce((total, row) => total + row.extendedPrice, 0);
+  const catalogRows = rows.filter((row) => row.catalogItem);
+  const derivedRows = rows.filter((row) => !row.catalogItem);
+  const totalQuantity = catalogRows.reduce(
+    (total, row) => total + row.quantity,
+    0,
+  );
+  const totalPrice = catalogRows.reduce(
+    (total, row) => total + row.extendedPrice,
+    0,
+  );
   const header = [
     "Category",
     "Quantity",
@@ -85,7 +139,11 @@ export function createBuildBomCsv(build) {
       "",
       totalPrice.toFixed(2),
       "",
-      "catalog estimate",
+      derivedRows.length
+        ? `catalog estimate; excludes ${derivedRows.length} derived requirement${
+          derivedRows.length === 1 ? "" : "s"
+        }`
+        : "catalog estimate",
       "",
     ],
   ].map((row) => row.map(csvCell).join(",")).join("\r\n");
