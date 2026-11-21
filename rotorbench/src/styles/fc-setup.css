@@ -526,7 +526,7 @@
   line-height: 1.45;
 }
 
-.fc-battery-return {
+.fc-plan-toggle {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
@@ -540,40 +540,40 @@
   cursor: pointer;
 }
 
-.fc-battery-return:has(input:checked) {
+.fc-plan-toggle:has(input:checked) {
   background: var(--brand-soft);
   border-color: #b7d8d0;
 }
 
-.fc-battery-return input {
+.fc-plan-toggle input {
   width: 17px;
   height: 17px;
   accent-color: var(--brand);
 }
 
-.fc-battery-return > span {
+.fc-plan-toggle > span {
   display: grid;
   gap: 2px;
 }
 
-.fc-battery-return strong {
+.fc-plan-toggle strong {
   color: var(--ink);
   font-size: 11px;
 }
 
-.fc-battery-return small {
+.fc-plan-toggle small {
   color: var(--ink-soft);
   font-size: 10px;
   line-height: 1.4;
 }
 
-.fc-battery-return code {
+.fc-plan-toggle code {
   color: var(--ink);
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
 }
 
-.fc-battery-return em {
+.fc-plan-toggle em {
   color: var(--ink-soft);
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
@@ -582,7 +582,7 @@
   text-transform: uppercase;
 }
 
-.fc-battery-return:has(input:checked) em {
+.fc-plan-toggle:has(input:checked) em {
   color: var(--brand-strong);
 }
 
@@ -1548,11 +1548,11 @@
     justify-self: start;
   }
 
-  .fc-battery-return {
+  .fc-plan-toggle {
     grid-template-columns: 18px minmax(0, 1fr);
   }
 
-  .fc-battery-return em {
+  .fc-plan-toggle em {
     grid-column: 2;
     justify-self: start;
   }

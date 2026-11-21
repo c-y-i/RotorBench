@@ -250,6 +250,9 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "vbat_warn_cell=3.5 status=0",
     "vbat_min_cell=3.3 status=0",
     "battery_rth=1 status=0",
+    "fence_enable=1 status=0",
+    "fence_radius_m=250 status=0",
+    "fence_ceiling_m=120 status=0",
     "align_roll_deg=0 status=0",
     "align_pitch_deg=0 status=0",
     "align_yaw_deg=90 status=0",
@@ -267,6 +270,9 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     vbatWarnCell: 3.5,
     vbatMinCell: 3.3,
     batteryRthEnabled: false,
+    fenceEnabled: false,
+    fenceRadiusM: 200,
+    fenceCeilingM: 0,
     alignRollDeg: 0,
     alignPitchDeg: 0,
     alignYawDeg: 0,
@@ -286,6 +292,12 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
   expect(checks.find((check) => check.id === "fc-param-vbat-cells").status)
     .toBe("pass");
   expect(checks.find((check) => check.id === "fc-param-battery-rth").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-fence-enable").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-fence-radius-m").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-fence-ceiling-m").status)
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-align-yaw-deg").status)
     .toBe("fail");

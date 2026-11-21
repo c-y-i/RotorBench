@@ -24,6 +24,11 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByRole("checkbox", {
     name: /Return home on critical pack/i,
   })).not.toBeChecked();
+  expect(screen.getByRole("checkbox", {
+    name: /Enable Aerial Kit geofence/i,
+  })).not.toBeChecked();
+  expect(screen.getByLabelText("Fence radius")).toHaveValue(0);
+  expect(screen.getByLabelText("Fence ceiling")).toHaveValue(0);
   expect(screen.getByRole("heading", { name: "Sensor and power" })).toBeInTheDocument();
   expect(screen.getByLabelText("Alignment roll")).toHaveValue(0);
   expect(screen.getByLabelText("Alignment pitch")).toHaveValue(0);
@@ -403,6 +408,27 @@ test("critical-pack return reaches the parent plan with the documented latch cop
   );
   expect(screen.getByText(/latches until landing or disarm/i)).toBeInTheDocument();
   expect(screen.getByText(/stick movement does not cancel it/i)).toBeInTheDocument();
+});
+
+test("geofence settings reach the parent plan with trigger semantics", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+
+  fireEvent.click(screen.getByRole("checkbox", {
+    name: /Enable Aerial Kit geofence/i,
+  }));
+  fireEvent.change(screen.getByLabelText("Fence radius"), {
+    target: { value: "250" },
+  });
+  fireEvent.change(screen.getByLabelText("Fence ceiling"), {
+    target: { value: "120" },
+  });
+
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fenceEnabled: true }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fenceRadiusM: 250 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fenceCeilingM: 120 }));
+  expect(screen.getByText(/not a stick clamp/i)).toBeInTheDocument();
+  expect(screen.getByText(/holds 10 m below the lid/i)).toBeInTheDocument();
 });
 
 test("board alignment order and angles reach the parent plan", () => {

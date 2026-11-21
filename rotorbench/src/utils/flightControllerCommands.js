@@ -101,6 +101,9 @@ export function buildFlightControllerCommands(
     finite(config.vbatWarnCell) &&
     finite(config.vbatMinCell) &&
     typeof config.batteryRthEnabled === "boolean" &&
+    typeof config.fenceEnabled === "boolean" &&
+    finite(config.fenceRadiusM) &&
+    finite(config.fenceCeilingM) &&
     finite(config.alignRollDeg) &&
     finite(config.alignPitchDeg) &&
     finite(config.alignYawDeg) &&
@@ -149,6 +152,9 @@ export function buildFlightControllerCommands(
     `set vbat_warn_cell ${Number(config.vbatWarnCell)}`,
     `set vbat_min_cell ${Number(config.vbatMinCell)}`,
     `set battery_rth ${config.batteryRthEnabled ? 1 : 0}`,
+    `set fence_enable ${config.fenceEnabled ? 1 : 0}`,
+    `set fence_radius_m ${Number(config.fenceRadiusM)}`,
+    `set fence_ceiling_m ${Number(config.fenceCeilingM)}`,
     `set align_roll_deg ${Number(config.alignRollDeg)}`,
     `set align_pitch_deg ${Number(config.alignPitchDeg)}`,
     `set align_yaw_deg ${Number(config.alignYawDeg)}`,

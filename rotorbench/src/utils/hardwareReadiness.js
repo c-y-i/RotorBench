@@ -239,6 +239,15 @@ export function summarizeHardwareReadiness({
     fcBatteryRthEnabled: fcPlan.firmwareFamily === "aerialkit"
       ? Boolean(fcPlan.batteryRthEnabled)
       : null,
+    fcFenceEnabled: fcPlan.firmwareFamily === "aerialkit"
+      ? Boolean(fcPlan.fenceEnabled)
+      : null,
+    fcFenceRadiusM: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.fenceRadiusM
+      : null,
+    fcFenceCeilingM: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.fenceCeilingM
+      : null,
     fcAlignmentRollDeg: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.alignRollDeg
       : null,
@@ -308,6 +317,9 @@ export function sanitizeHardwareReadiness(readiness) {
     fcBatteryWarnCellV: readiness.fcBatteryWarnCellV ?? null,
     fcBatteryMinCellV: readiness.fcBatteryMinCellV ?? null,
     fcBatteryRthEnabled: readiness.fcBatteryRthEnabled ?? null,
+    fcFenceEnabled: readiness.fcFenceEnabled ?? null,
+    fcFenceRadiusM: readiness.fcFenceRadiusM ?? null,
+    fcFenceCeilingM: readiness.fcFenceCeilingM ?? null,
     fcAlignmentRollDeg: readiness.fcAlignmentRollDeg ?? null,
     fcAlignmentPitchDeg: readiness.fcAlignmentPitchDeg ?? null,
     fcAlignmentYawDeg: readiness.fcAlignmentYawDeg ?? null,

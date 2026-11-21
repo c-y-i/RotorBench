@@ -588,6 +588,9 @@ export function createDefaultFlightControllerConfig(
     vbatWarnCell: 3.5,
     vbatMinCell: 3.3,
     batteryRthEnabled: false,
+    fenceEnabled: false,
+    fenceRadiusM: 0,
+    fenceCeilingM: 0,
     alignRollDeg: 0,
     alignPitchDeg: 0,
     alignYawDeg: 0,
@@ -803,6 +806,36 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "battery-rth-without-gps",
         message: "Battery return-to-home requires the GPS feature and a documented GPS UART.",
+      });
+    }
+    if (
+      config.fenceEnabled &&
+      (!config.features?.gps || !profile.gpsUart)
+    ) {
+      issues.push({
+        severity: "error",
+        code: "fence-without-gps",
+        message: "Aerial Kit geofence requires the GPS feature and a documented GPS UART.",
+      });
+    }
+    if (!finite(config.fenceRadiusM) || Number(config.fenceRadiusM) < 0 || Number(config.fenceRadiusM) > 5000) {
+      issues.push({
+        severity: "error",
+        code: "fence-radius-range",
+        message: "Geofence radius must be between 0 and 5000 metres.",
+      });
+    } else if (config.fenceEnabled && Number(config.fenceRadiusM) <= 0) {
+      issues.push({
+        severity: "error",
+        code: "fence-radius-required",
+        message: "An enabled geofence requires a radius above 0 metres.",
+      });
+    }
+    if (!finite(config.fenceCeilingM) || Number(config.fenceCeilingM) < 0 || Number(config.fenceCeilingM) > 5000) {
+      issues.push({
+        severity: "error",
+        code: "fence-ceiling-range",
+        message: "Geofence ceiling must be between 0 and 5000 metres; 0 disables the ceiling.",
       });
     }
     for (const [key, code, label] of [
@@ -1181,6 +1214,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
           `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell, critical-pack return ${config.batteryRthEnabled ? "enabled" : "disabled"}`,
+          `Geofence: ${config.fenceEnabled ? "enabled" : "disabled"}; radius ${config.fenceRadiusM} m, ceiling ${Number(config.fenceCeilingM) === 0 ? "none" : `${config.fenceCeilingM} m`}`,
         ]
       : []),
     `Outputs: DShot ${config.dshotKhz} kHz`,

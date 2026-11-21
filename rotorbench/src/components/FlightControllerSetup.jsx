@@ -72,6 +72,10 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "vbat-min-range": { id: "fc-vbat-min", label: "battery minimum" },
   "vbat-threshold-order": { id: "fc-vbat-min", label: "battery thresholds" },
   "battery-rth-without-gps": { id: "fc-battery-rth", label: "battery return-to-home" },
+  "fence-without-gps": { id: "fc-fence-enabled", label: "geofence" },
+  "fence-radius-range": { id: "fc-fence-radius", label: "geofence radius" },
+  "fence-radius-required": { id: "fc-fence-radius", label: "geofence radius" },
+  "fence-ceiling-range": { id: "fc-fence-ceiling", label: "geofence ceiling" },
   "align-roll-range": { id: "fc-align-roll", label: "board alignment" },
   "align-pitch-range": { id: "fc-align-pitch", label: "board alignment" },
   "align-yaw-range": { id: "fc-align-yaw", label: "board alignment" },
@@ -1177,7 +1181,7 @@ export default function FlightControllerSetup({
                     />
                   </Field>
                 </div>
-                <label className="fc-battery-return" htmlFor="fc-battery-rth">
+                <label className="fc-plan-toggle" htmlFor="fc-battery-rth">
                   <input
                     id="fc-battery-rth"
                     type="checkbox"
@@ -1423,6 +1427,72 @@ export default function FlightControllerSetup({
                 </select>
               </Field>
             </div>
+
+            {config.firmwareFamily === "aerialkit" && (
+              <div className="fc-calibration fc-fence-plan">
+                <div className="fc-calibration-heading">
+                  <strong>Geofence return plan</strong>
+                  <span>
+                    Leaving the radius or climbing above the ceiling hands control
+                    to the return; control comes back once the aircraft is inside.
+                  </span>
+                </div>
+                <label className="fc-plan-toggle" htmlFor="fc-fence-enabled">
+                  <input
+                    id="fc-fence-enabled"
+                    type="checkbox"
+                    checked={Boolean(config.fenceEnabled)}
+                    onChange={(event) => update("fenceEnabled", event.target.checked)}
+                  />
+                  <span>
+                    <strong>Enable Aerial Kit geofence</strong>
+                    <small>
+                      Sets <code>fence_enable</code>. This is a trigger that takes
+                      control while outside the configured box, not a stick clamp.
+                    </small>
+                  </span>
+                  <em>{config.fenceEnabled ? "Enabled" : "Off"}</em>
+                </label>
+                <div className="fc-field-grid">
+                  <Field
+                    label="Fence radius"
+                    htmlFor="fc-fence-radius"
+                    hint="Metres from home, 0 to 5000; enabled fence requires above 0"
+                  >
+                    <input
+                      id="fc-fence-radius"
+                      type="number"
+                      min="0"
+                      max="5000"
+                      step="1"
+                      aria-invalid={numericInvalid(config.fenceRadiusM)}
+                      value={numericValue(config.fenceRadiusM)}
+                      onChange={(event) => update("fenceRadiusM", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field
+                    label="Fence ceiling"
+                    htmlFor="fc-fence-ceiling"
+                    hint="Metres above home, 0 to 5000; 0 means no ceiling"
+                  >
+                    <input
+                      id="fc-fence-ceiling"
+                      type="number"
+                      min="0"
+                      max="5000"
+                      step="1"
+                      aria-invalid={numericInvalid(config.fenceCeilingM)}
+                      value={numericValue(config.fenceCeilingM)}
+                      onChange={(event) => update("fenceCeilingM", numericInput(event.target.value))}
+                    />
+                  </Field>
+                </div>
+                <p className="fc-alignment-note">
+                  Set the radius wider than the aircraft's turn circle. At a
+                  configured ceiling, the navigator holds 10 m below the lid.
+                </p>
+              </div>
+            )}
           </section>
 
           <section className="fc-section" aria-labelledby="fc-channels-title">

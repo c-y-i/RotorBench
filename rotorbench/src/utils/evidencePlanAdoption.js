@@ -313,6 +313,38 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       },
     },
     {
+      key: "fenceEnabled",
+      source: "fence_enable",
+      snapshotKey: "fence_enable",
+      label: "Geofence enabled",
+      parse: (raw) => {
+        const number = integer(raw);
+        return number === 0 ? false : number === 1 ? true : null;
+      },
+    },
+    {
+      key: "fenceRadiusM",
+      source: "fence_radius_m",
+      snapshotKey: "fence_radius_m",
+      label: "Geofence radius",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 5000 ? number : null;
+      },
+      display: (value) => `${value} m`,
+    },
+    {
+      key: "fenceCeilingM",
+      source: "fence_ceiling_m",
+      snapshotKey: "fence_ceiling_m",
+      label: "Geofence ceiling",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 5000 ? number : null;
+      },
+      display: (value) => value === 0 ? "No ceiling" : `${value} m`,
+    },
+    {
       key: "alignRollDeg",
       source: "align_roll_deg",
       snapshotKey: "align_roll_deg",
