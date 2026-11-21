@@ -82,6 +82,12 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       fcRthMinAltM: 30,
       fcGpsMinSats: 8,
       fcBatteryRthEnabled: true,
+      fcAirframe: "elevonwing",
+      fcMissionChannel: 7,
+      fcLaunchChannel: 8,
+      fcLaunchThrottle: 0.65,
+      fcLaunchClimbDeg: 20,
+      fcLaunchTimeoutS: 6,
       radioPowerDbm: 25,
       radioRegulatoryRegionLabel: "CE",
       radioRegulatoryMaxDbm: 20,
@@ -100,6 +106,9 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
   );
   expect(briefing.text).toContain(
     "Navigation safety: Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",
+  );
+  expect(briefing.text).toContain(
+    "Mission controls: Mission CH7 · Launch CH8 · 65% · 20° · 6 s",
   );
   expect(briefing.text).toContain(
     "RF limit: CE / 25 planned / 20 dBm max / OVER CAP",

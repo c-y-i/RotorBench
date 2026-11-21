@@ -828,6 +828,7 @@ test("saved navigation safety remains visible on the build hardware plan", async
     rthMinAltM: 30,
     gpsMinSats: 8,
     batteryRthEnabled: true,
+    missionChannel: 7,
   }));
 
   render(
@@ -843,6 +844,9 @@ test("saved navigation safety remains visible on the build hardware plan", async
 
   expect(screen.getByText(
     "Navigation safety: Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",
+  )).toBeInTheDocument();
+  expect(screen.getByText(
+    "Mission controls: Mission CH7 · Launch N/A",
   )).toBeInTheDocument();
 });
 

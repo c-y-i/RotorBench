@@ -1,6 +1,9 @@
 import { summarizeMeasuredGeometry } from "./buildGeometry";
 import { summarizePowerPath } from "./physicalCompatibility";
-import { describeNavigationSafety } from "./hardwareReadiness";
+import {
+  describeMissionControls,
+  describeNavigationSafety,
+} from "./hardwareReadiness";
 
 const partDefinitions = [
   ["frame", "Frame"],
@@ -82,6 +85,11 @@ export function createBuildBriefing({
       ...(describeNavigationSafety(hardwareReadiness)
         ? [
             `- Navigation safety: ${describeNavigationSafety(hardwareReadiness)}`,
+          ]
+        : []),
+      ...(describeMissionControls(hardwareReadiness)
+        ? [
+            `- Mission controls: ${describeMissionControls(hardwareReadiness)}`,
           ]
         : []),
       ...(hardwareReadiness.radioRegulatoryRegionLabel

@@ -1,5 +1,7 @@
 import {
+  describeMissionControls,
   describeNavigationSafety,
+  sanitizeHardwareReadiness,
   summarizeHardwareReadiness,
 } from "./hardwareReadiness";
 
@@ -194,6 +196,56 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
   expect(describeNavigationSafety(readiness)).toBe(
     "Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",
   );
+});
+
+test("mission and launch controls remain available outside Setup", () => {
+  const buildId = "mission-launch-build";
+  const aerialKitFc = {
+    ...fc,
+    firmware: ["Aerial Kit"],
+  };
+  const storage = memoryStorage({
+    [`rotorbench:hardware-plan:${buildId}:fc`]: JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: aerialKitFc.id,
+      selectedReceiverId: receiver.id,
+      firmwareFamily: "aerialkit",
+      profileId: "esp32dev",
+      airframe: "elevonwing",
+      missionChannel: 7,
+      launchChannel: 8,
+      launchThrottle: 0.65,
+      launchClimbDeg: 20,
+      launchTimeoutS: 6,
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+    }),
+  });
+  const readiness = summarizeHardwareReadiness({
+    buildId,
+    flightController: aerialKitFc,
+    receiver,
+    storage,
+  });
+
+  expect(readiness).toMatchObject({
+    fcMissionChannel: 7,
+    fcLaunchChannel: 8,
+    fcLaunchThrottle: 0.65,
+    fcLaunchClimbDeg: 20,
+    fcLaunchTimeoutS: 6,
+  });
+  expect(describeMissionControls(readiness)).toBe(
+    "Mission CH7 · Launch CH8 · 65% · 20° · 6 s",
+  );
+  expect(sanitizeHardwareReadiness(readiness)).toMatchObject({
+    fcMissionChannel: 7,
+    fcLaunchChannel: 8,
+    fcLaunchThrottle: 0.65,
+    fcLaunchClimbDeg: 20,
+    fcLaunchTimeoutS: 6,
+  });
 });
 
 test("plans for another FC or receiver are ignored", () => {

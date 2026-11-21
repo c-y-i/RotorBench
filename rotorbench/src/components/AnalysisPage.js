@@ -25,6 +25,7 @@ import {
 } from "../utils/analysisReport";
 import { buildShareUrl } from "../utils/buildLink";
 import {
+  describeMissionControls,
   describeNavigationSafety,
   summarizeHardwareReadiness,
 } from "../utils/hardwareReadiness";
@@ -254,6 +255,7 @@ export default function AnalysisPage() {
     receiver: selectedReceiverPart,
   }), [build?.id, selectedFlightControllerPart, selectedReceiverPart]);
   const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
+  const missionControlsLabel = describeMissionControls(hardwareReadiness);
   const benchEvidence = useMemo(() => summarizeBenchEvidenceAttachment(
     readBenchEvidenceAttachment(build?.id),
     readCurrentBenchEvidenceScope(build),
@@ -524,6 +526,12 @@ export default function AnalysisPage() {
                 <div>
                   <dt>Navigation safety</dt>
                   <dd>{navigationSafetyLabel}</dd>
+                </div>
+              )}
+              {hasHardwareSelection && missionControlsLabel && (
+                <div>
+                  <dt>Mission controls</dt>
+                  <dd>{missionControlsLabel}</dd>
                 </div>
               )}
               {hasHardwareSelection

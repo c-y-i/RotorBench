@@ -47,6 +47,7 @@ test("comparison rows include all seven component categories", () => {
       "receiver-wiring",
       "radio-host",
       "navigation-safety",
+      "mission-controls",
       "bench-evidence",
       "frame-size",
       "motor-kv",
@@ -252,4 +253,45 @@ test("hardware plan status distinguishes complete, partial, and invalid plans", 
   expect(summarizeBuild(build).hardwarePlanStatus).toBe("saved");
   localStorage.setItem(`rotorbench:hardware-plan:build-a:radio`, "{");
   expect(readHardwarePlanStatus("build-a")).toBe("invalid");
+});
+
+test("saved build summaries and comparisons retain mission and launch controls", () => {
+  localStorage.clear();
+  localStorage.setItem(
+    "rotorbench:hardware-plan:mission-build:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-holybro-kakute-f7",
+      selectedReceiverId: "rx-elrs-24g",
+      firmwareFamily: "aerialkit",
+      profileId: "custom-board",
+      airframe: "elevonwing",
+      missionChannel: 7,
+      launchChannel: 8,
+      launchThrottle: 0.65,
+      launchClimbDeg: 20,
+      launchTimeoutS: 6,
+    }),
+  );
+  const left = summarizeBuild({
+    ...build,
+    id: "mission-build",
+    name: "Mission build",
+  });
+  const right = summarizeBuild({
+    ...build,
+    id: "mission-build-empty",
+    name: "Mission build without plan",
+  });
+
+  expect(left.missionControlsLabel).toBe(
+    "Mission CH7 · Launch CH8 · 65% · 20° · 6 s",
+  );
+  expect(comparisonRows(left, right).find(
+    (row) => row.id === "mission-controls",
+  )).toMatchObject({
+    changed: true,
+    left: "Mission CH7 · Launch CH8 · 65% · 20° · 6 s",
+    right: "Not configured",
+  });
 });

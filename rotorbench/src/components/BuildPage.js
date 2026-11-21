@@ -40,6 +40,7 @@ import {
   setMeasuredGeometryValue,
 } from "../utils/buildGeometry";
 import {
+  describeMissionControls,
   describeNavigationSafety,
   summarizeHardwareReadiness,
 } from "../utils/hardwareReadiness";
@@ -731,6 +732,7 @@ export default function BuildPage() {
     [selectedFlightControllerPart, selectedReceiverPart, workingBuildId],
   );
   const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
+  const missionControlsLabel = describeMissionControls(hardwareReadiness);
   const viewerPlacementAudit = useMemo(
     () => buildViewerPlacementAudit(assemblySpec.frame, assemblySpec),
     [assemblySpec],
@@ -1990,6 +1992,11 @@ export default function BuildPage() {
                   {navigationSafetyLabel && (
                     <small>
                       Navigation safety: {navigationSafetyLabel}
+                    </small>
+                  )}
+                  {missionControlsLabel && (
+                    <small>
+                      Mission controls: {missionControlsLabel}
                     </small>
                   )}
                   {hardwareReadiness.radioRegulatoryRegionLabel && (

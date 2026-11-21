@@ -264,6 +264,32 @@ test("shows saved hardware-plan review state in the analysis report", async () =
   expect(within(hardwareSection).queryByText("Plan not saved")).not.toBeInTheDocument();
 });
 
+test("keeps mission controls visible in the saved analysis hardware context", async () => {
+  localStorage.setItem(
+    "rotorbench:hardware-plan:analysis-build:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-speedybee-f405-mini",
+      selectedReceiverId: null,
+      firmwareFamily: "aerialkit",
+      profileId: "custom-board",
+      airframe: "quadx",
+      missionChannel: 7,
+      receiverProtocol: "crsf",
+      receiverUart: "UART1",
+      receiverBaud: 420000,
+    }),
+  );
+  renderAnalysis();
+
+  const hardwareSection = await screen.findByRole("region", {
+    name: /Aerial Kit Firmware · CRSF \/ ExpressLRS/i,
+  });
+  expect(within(hardwareSection).getByText("Mission controls")).toBeInTheDocument();
+  expect(within(hardwareSection).getByText("Mission CH7 · Launch N/A"))
+    .toBeInTheDocument();
+});
+
 test("shows imported bench evidence without changing hardware verification", async () => {
   const evidenceScope = createBenchEvidenceScope({ build });
   localStorage.setItem(

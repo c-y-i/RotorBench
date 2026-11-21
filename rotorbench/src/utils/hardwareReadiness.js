@@ -8,6 +8,7 @@ import {
   getBoardProfile,
   getMotorOutputByCorner,
   getPropellerDirectionForOutputMap,
+  supportsAerialKitLaunch,
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
 import {
@@ -78,6 +79,8 @@ export function summarizeHardwareReadiness({
       flightMode: fcPlan.modeChannel ?? null,
       arm: fcPlan.armChannel ?? null,
       velocity: fcPlan.velocityChannel ?? null,
+      mission: fcPlan.missionChannel ?? null,
+      launch: fcPlan.launchChannel ?? null,
       beeper: fcPlan.beeperChannel ?? null,
     },
   };
@@ -239,6 +242,21 @@ export function summarizeHardwareReadiness({
     fcBatteryRthEnabled: fcPlan.firmwareFamily === "aerialkit"
       ? Boolean(fcPlan.batteryRthEnabled)
       : null,
+    fcMissionChannel: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.missionChannel ?? null
+      : null,
+    fcLaunchChannel: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.launchChannel ?? null
+      : null,
+    fcLaunchThrottle: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.launchThrottle ?? null
+      : null,
+    fcLaunchClimbDeg: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.launchClimbDeg ?? null
+      : null,
+    fcLaunchTimeoutS: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.launchTimeoutS ?? null
+      : null,
     fcFenceEnabled: fcPlan.firmwareFamily === "aerialkit"
       ? Boolean(fcPlan.fenceEnabled)
       : null,
@@ -323,6 +341,11 @@ export function sanitizeHardwareReadiness(readiness) {
     fcBatteryWarnCellV: readiness.fcBatteryWarnCellV ?? null,
     fcBatteryMinCellV: readiness.fcBatteryMinCellV ?? null,
     fcBatteryRthEnabled: readiness.fcBatteryRthEnabled ?? null,
+    fcMissionChannel: readiness.fcMissionChannel ?? null,
+    fcLaunchChannel: readiness.fcLaunchChannel ?? null,
+    fcLaunchThrottle: readiness.fcLaunchThrottle ?? null,
+    fcLaunchClimbDeg: readiness.fcLaunchClimbDeg ?? null,
+    fcLaunchTimeoutS: readiness.fcLaunchTimeoutS ?? null,
     fcFenceEnabled: readiness.fcFenceEnabled ?? null,
     fcFenceRadiusM: readiness.fcFenceRadiusM ?? null,
     fcFenceCeilingM: readiness.fcFenceCeilingM ?? null,
@@ -363,4 +386,21 @@ export function describeNavigationSafety(readiness) {
     ? `GPS ${readiness.fcGpsMinSats} sats`
     : "GPS gate unverified";
   return `${fence} · ${floor} · ${gpsGate} · ${packReturn}`;
+}
+
+export function describeMissionControls(readiness) {
+  if (!readiness || readiness.fcLaunchTimeoutS == null) return null;
+  const mission = Number.isInteger(readiness.fcMissionChannel)
+    ? `Mission CH${readiness.fcMissionChannel}`
+    : "Mission off";
+  const launch = Number.isInteger(readiness.fcLaunchChannel)
+    ? supportsAerialKitLaunch(readiness.fcAirframe)
+      ? `Launch CH${readiness.fcLaunchChannel} · ${
+        Math.round(Number(readiness.fcLaunchThrottle) * 100)
+      }% · ${readiness.fcLaunchClimbDeg}° · ${readiness.fcLaunchTimeoutS} s`
+      : `Launch CH${readiness.fcLaunchChannel} · airframe mismatch`
+    : supportsAerialKitLaunch(readiness.fcAirframe)
+      ? "Launch off"
+      : "Launch N/A";
+  return `${mission} · ${launch}`;
 }

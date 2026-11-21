@@ -11,6 +11,7 @@ import {
 } from "./electricalCompatibility";
 import { applyMeasuredGeometry } from "./buildGeometry";
 import {
+  describeMissionControls,
   describeNavigationSafety,
   summarizeHardwareReadiness,
 } from "./hardwareReadiness";
@@ -182,6 +183,7 @@ export function summarizeBuild(build) {
     fcMotorDirectionLabel: hardwareReadiness.fcMotorDirectionLabel,
     fcMotorOrder: hardwareReadiness.fcMotorOrder,
     navigationSafetyLabel: describeNavigationSafety(hardwareReadiness),
+    missionControlsLabel: describeMissionControls(hardwareReadiness),
     hardwareIssueCount: hardwareReadiness.configured
       ? hardwareReadiness.issueCount
       : null,
@@ -530,6 +532,13 @@ export function comparisonRows(left, right) {
       label: "Navigation safety",
       left: left.navigationSafetyLabel || "Not configured",
       right: right.navigationSafetyLabel || "Not configured",
+      format: (value) => value,
+    },
+    {
+      id: "mission-controls",
+      label: "Mission controls",
+      left: left.missionControlsLabel || "Not configured",
+      right: right.missionControlsLabel || "Not configured",
       format: (value) => value,
     },
     {
