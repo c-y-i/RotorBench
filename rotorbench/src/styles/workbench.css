@@ -5320,7 +5320,8 @@
 }
 
 .starter-platform-evidence,
-.starter-platform-fit {
+.starter-platform-fit,
+.starter-platform-geometry {
   justify-self: start;
   padding: 2px 5px;
   color: var(--brand-strong);
@@ -5345,6 +5346,16 @@
 .starter-platform-fit.is-measured {
   color: var(--ok);
   background: #e8f5ee;
+}
+
+.starter-platform-geometry.is-fallback {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.starter-platform-geometry.is-catalog {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
 }
 
 .starter-platform-action {

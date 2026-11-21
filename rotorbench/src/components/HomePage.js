@@ -7,6 +7,7 @@ import TwoDViewer from "./TwoDViewer";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
 import { summarizeBuild } from "../utils/buildComparison";
 import {
+  hasCatalogModel,
   resolveModelForComponent,
   resolvePropellerModelPair,
 } from "../utils/modelAssets";
@@ -36,6 +37,33 @@ const PLATFORM_FIT_LABELS = {
   conflict: "Fit conflict",
   pending: "Fit unchecked",
 };
+const PLATFORM_COMPONENT_CATEGORIES = {
+  frameId: "frames",
+  motorId: "motors",
+  propellerId: "propellers",
+  escId: "escs",
+  flightControllerId: "flight_controllers",
+  batteryId: "batteries",
+  receiverId: "receivers",
+};
+
+function platformGeometryCoverage(preset) {
+  const parts = Object.entries(preset.componentIds || {})
+    .map(([key, id]) => {
+      const category = PLATFORM_COMPONENT_CATEGORIES[key];
+      const part = componentsData[category]?.find((item) => item.id === id);
+      return part ? { category, part } : null;
+    })
+    .filter(Boolean);
+  const catalogModelCount = parts.filter(({ category, part }) => (
+    hasCatalogModel(part, category)
+  )).length;
+  return {
+    total: parts.length,
+    catalogModelCount,
+    fallbackCount: parts.length - catalogModelCount,
+  };
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -354,12 +382,25 @@ export default function HomePage() {
               const hasThrustData = (propeller?.thrustData?.length || 0) > 0;
               const estimatedThrust = propeller?.estimatedFields?.includes("thrustData");
               const fitStatus = platformSummaries[preset.id]?.physicalFitStatus || "pending";
+              const geometry = platformGeometryCoverage(preset);
+              const thrustLabel = hasThrustData
+                ? estimatedThrust
+                  ? "Estimated thrust data"
+                  : "Thrust data available"
+                : "Thrust data unavailable";
+              const geometryLabel = geometry.fallbackCount === 0
+                ? `${geometry.total} catalog models`
+                : geometry.catalogModelCount === 0
+                  ? `${geometry.total} fallback meshes`
+                  : `${geometry.catalogModelCount}/${geometry.total} catalog models`;
+              const statusId = `starter-platform-status-${preset.id}`;
               return (
                 <button
                   key={preset.id}
                   type="button"
                   className="starter-platform-option"
                   aria-label={`Open ${preset.name}`}
+                  aria-describedby={statusId}
                   onClick={() => navigate(`/build?preset=${encodeURIComponent(preset.id)}`)}
                 >
                   <span className="starter-platform-size" aria-hidden="true">
@@ -375,15 +416,18 @@ export default function HomePage() {
                           hasThrustData ? "is-estimated" : "is-unavailable"
                         }`}
                       >
-                        {hasThrustData
-                          ? estimatedThrust
-                            ? "Estimated thrust data"
-                            : "Thrust data available"
-                          : "Thrust data unavailable"}
+                        {thrustLabel}
                       </span>
                       <span className={`starter-platform-fit is-${fitStatus}`}>
                         {PLATFORM_FIT_LABELS[fitStatus]}
                       </span>
+                      <span className={`starter-platform-geometry is-${geometry.fallbackCount === 0 ? "catalog" : "fallback"}`}>
+                        {geometryLabel}
+                      </span>
+                    </span>
+                    <span id={statusId} className="visually-hidden">
+                      {thrustLabel}. {PLATFORM_FIT_LABELS[fitStatus]}.{" "}
+                      {geometryLabel}.
                     </span>
                   </span>
                   <span className="starter-platform-action" aria-hidden="true">

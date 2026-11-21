@@ -65,6 +65,12 @@ test("offers all complete source-backed platforms from an empty overview", async
   expect(within(screen.getByRole("button", {
     name: "Open 5-inch Source One V5 source build",
   })).getByText("Fit review")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", {
+    name: "Open 5-inch AOS 5 V5 source build",
+  })).getByText("7 fallback meshes")).toBeInTheDocument();
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch AOS 5 V5 source build",
+  })).toHaveAccessibleDescription(/7 fallback meshes/i);
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
 });
