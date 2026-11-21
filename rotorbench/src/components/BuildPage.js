@@ -29,6 +29,7 @@ import {
   matchesPlatformPreset,
 } from "../data/platformPresets";
 import { summarizeBuildEvidence } from "../utils/buildEvidence";
+import { createBuildBriefing } from "../utils/buildBriefing";
 import {
   applyMeasuredGeometryToAssemblySpec,
   clearMeasuredGeometry,
@@ -59,6 +60,7 @@ import {
   Check,
   ChevronRight,
   CircleAlert,
+  Clipboard,
   Cog,
   Cpu,
   Download,
@@ -888,6 +890,40 @@ export default function BuildPage() {
           : physicalFit.verified ? "verified" : "unverified";
   const compatibilityConflict = !physicalFit.ok || !electricalFit.ok;
 
+  const copyBuildBriefing = async () => {
+    const briefing = createBuildBriefing({
+      build: {
+        id: workingBuildId,
+        name: workingBuildName,
+        note: buildNote,
+        geometryOverrides,
+      },
+      assemblySpec,
+      viewerPlacement: viewerPlacementAudit,
+      hardwareReadiness,
+    });
+    if (!navigator.clipboard?.writeText) {
+      setMessage({
+        type: "error",
+        text: "Clipboard access is unavailable in this browser.",
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(briefing.text);
+      setMessage({
+        type: "success",
+        text: "Build briefing copied. Hardware and flight readiness are not verified.",
+      });
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+    } catch {
+      setMessage({
+        type: "error",
+        text: "The browser refused clipboard access.",
+      });
+    }
+  };
+
   const exportBuildSheet = () => {
     const exportedBuild = {
       id: workingBuildId,
@@ -1711,6 +1747,10 @@ export default function BuildPage() {
             </small>
           </div>
           <div className="build-evidence-actions">
+            <button type="button" onClick={copyBuildBriefing}>
+              <Clipboard size={15} aria-hidden="true" />
+              Copy briefing
+            </button>
             <button type="button" onClick={exportBuildSheet}>
               <Download size={15} aria-hidden="true" />
               Export build sheet

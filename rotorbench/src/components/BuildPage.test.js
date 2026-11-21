@@ -445,6 +445,46 @@ test("the power path surfaces source-backed manual termination", async () => {
     .toBeInTheDocument();
 });
 
+test("copies a sanitized human-readable build briefing", async () => {
+  const originalClipboard = navigator.clipboard;
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+
+  try {
+    render(
+      <MemoryRouter initialEntries={["/build?preset=source-35"]}>
+        <BuildProvider>
+          <BuildPage />
+        </BuildProvider>
+      </MemoryRouter>,
+    );
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    fireEvent.click(screen.getByText("Build provenance"));
+    fireEvent.click(screen.getByRole("button", { name: "Copy briefing" }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const briefing = writeText.mock.calls[0][0];
+    expect(briefing).toContain("# RotorBench briefing:");
+    expect(briefing).toContain("## Parts");
+    expect(briefing).toContain("XT30 match");
+    expect(briefing).toContain("Hardware, wiring, continuity, RF link, and flight readiness are not verified.");
+  } finally {
+    if (originalClipboard) {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: originalClipboard,
+      });
+    } else {
+      delete navigator.clipboard;
+    }
+  }
+});
+
 test("an invalid starter-platform deep link leaves the required build gates intact", async () => {
   render(
     <MemoryRouter initialEntries={["/build?preset=not-a-platform"]}>
