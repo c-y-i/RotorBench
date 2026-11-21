@@ -1462,6 +1462,36 @@
   text-wrap: pretty;
 }
 
+.prop-map-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 11px;
+  color: #f7f8f1;
+  background: transparent;
+  border: 1px solid #66736e;
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.prop-map-copy:hover {
+  color: #101816;
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
+.prop-rotation-map > div > .prop-map-message {
+  color: #dce5df;
+  text-align: start;
+}
+
 .assembly-stack-map {
   overflow: hidden;
   background: var(--surface-raised);

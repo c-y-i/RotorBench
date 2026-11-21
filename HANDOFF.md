@@ -104,6 +104,8 @@ For a saved plan with a supported four-corner output map, the Build viewer and p
 
 The prop-rotation map also accepts the saved plan's corner-to-output mapping for conventional FL/FR/RR/RL layouts. It labels `OUT 1` through `OUT 4` on the matching physical corners in the accessible description and visible SVG. Non-corner mixer families omit output numbers rather than forcing their labels onto an X-frame diagram.
 
+The expanded prop map can copy a portable handoff containing the selected motor and propeller, handedness profile, each physical corner's CW/CCW direction, mapped output number/role when available, and the explicit requirement to verify wiring and propeller direction before flight. This is copy-only and does not persist or send hardware state.
+
 The shared hardware-readiness model now carries `receiverPins`, `wiringStatus`, and the planning-only `wiringScope`. Build’s hardware card shows `Pins documented` or `Verify pins`; Analysis adds a wiring fact; Saved adds a wiring chip; Compare adds a wiring row; build sheets and analysis reports retain the sanitized fields. A documented pin route therefore remains visible across routes without becoming an electrical verification claim.
 
 Documented board profiles lock their compiled receiver UART and baud. Custom boards leave those fields editable. The preferred Aerial Kit with ExpressLRS preset uses arm channel 5 and flight-mode channel 6; a separate legacy preset preserves the firmware's arm 6 / mode 5 defaults.

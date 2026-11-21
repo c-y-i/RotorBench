@@ -1,4 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import PropRotationMap from "./PropRotationMap";
 
 test("renders the four alternating propeller directions without vendor numbering", () => {
@@ -68,4 +73,40 @@ test("saved flight-controller outputs label the corresponding corners", () => {
   })).toHaveAccessibleDescription(/UL output 4 \(CW\).*LL output 3 \(CCW\)/i);
   expect(screen.getByText(/Output numbers follow the saved flight-controller QUAD X plan/i))
     .toBeInTheDocument();
+});
+
+test("copies a portable prop-map handoff with the output mapping and boundary", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  render(
+    <PropRotationMap
+      motor={{ id: "motor-test", name: "Test motor" }}
+      propeller={{ id: "prop-test", name: "Test propeller" }}
+      direction="props-in"
+      motorOutputByCorner={{
+        upperLeft: { output: 4, label: "FL", spin: "CW" },
+        upperRight: { output: 2, label: "FR", spin: "CCW" },
+        lowerRight: { output: 1, label: "RR", spin: "CW" },
+        lowerLeft: { output: 3, label: "RL", spin: "CCW" },
+      }}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Copy prop map" }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+  const text = writeText.mock.calls[0][0];
+  expect(text).toContain("Motor: Test motor");
+  expect(text).toContain("Propeller: Test propeller");
+  expect(text).toContain("Direction: props in");
+  expect(text).toContain("- Front-left: CW · output 4 (FL)");
+  expect(text).toContain("- Rear-right: CW · output 1 (RR)");
+  expect(text).toContain(
+    "Planning data only. Confirm motor order, wiring, propeller markings, and direction",
+  );
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "Prop map copied. Nothing was sent to hardware.",
+  );
 });

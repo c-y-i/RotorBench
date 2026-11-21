@@ -1,5 +1,5 @@
-import React, { useId } from "react";
-import { Fan } from "lucide-react";
+import React, { useId, useState } from "react";
+import { Clipboard, Fan } from "lucide-react";
 import {
   MOTOR_CORNER_ORDER,
   getPropellerHandedness,
@@ -11,6 +11,13 @@ const CORNER_LABELS = {
   upperRight: "UR",
   lowerRight: "LR",
   lowerLeft: "LL",
+};
+
+const CORNER_NAMES = {
+  upperLeft: "Front-left",
+  upperRight: "Front-right",
+  lowerRight: "Rear-right",
+  lowerLeft: "Rear-left",
 };
 
 const CORNER_POSITIONS = {
@@ -27,6 +34,7 @@ export default function PropRotationMap({
   motorOutputByCorner = null,
 }) {
   const id = useId().replace(/:/g, "");
+  const [copyMessage, setCopyMessage] = useState("");
   const directionProfile = normalizePropellerDirection(direction);
   const directionLabel = directionProfile === "props-in" ? "props in" : "props out";
   const outputDescription = motorOutputByCorner
@@ -38,6 +46,35 @@ export default function PropRotationMap({
       .join(", ")
     : "";
   if (!motor?.id || !propeller?.id) return null;
+  const copyText = [
+    "# RotorBench prop rotation plan - planning only",
+    `Motor: ${motor.name || motor.id}`,
+    `Propeller: ${propeller.name || propeller.id}`,
+    `Direction: ${directionLabel}`,
+    "",
+    ...MOTOR_CORNER_ORDER.map((corner) => {
+      const output = motorOutputByCorner?.[corner];
+      return `- ${CORNER_NAMES[corner]}: ${getPropellerHandedness(corner, directionProfile)}${
+        output
+          ? ` · output ${output.output} (${output.label})`
+          : " · output number not mapped"
+      }`;
+    }),
+    "",
+    "Planning data only. Confirm motor order, wiring, propeller markings, and direction with props removed before flight.",
+  ].join("\n");
+  const copyMap = async () => {
+    if (!navigator.clipboard?.writeText) {
+      setCopyMessage("Clipboard access is unavailable in this browser.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(copyText);
+      setCopyMessage("Prop map copied. Nothing was sent to hardware.");
+    } catch {
+      setCopyMessage("The browser refused clipboard access.");
+    }
+  };
 
   return (
     <details className="prop-rotation-map">
@@ -120,6 +157,13 @@ export default function PropRotationMap({
           {" "}Confirm the flight-controller direction, airframe, and propeller
           markings before wiring or flight.
         </p>
+        <button type="button" className="prop-map-copy" onClick={copyMap}>
+          <Clipboard size={14} aria-hidden="true" />
+          Copy prop map
+        </button>
+        {copyMessage && (
+          <p className="prop-map-message" role="status">{copyMessage}</p>
+        )}
       </div>
     </details>
   );
