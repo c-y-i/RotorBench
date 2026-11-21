@@ -6,7 +6,10 @@ import {
   buildRadioSummary,
   buildRadioWarnings,
   getAvailableSwitchModes,
+  getDefaultHostTransport,
+  getDefaultPowerDbm,
   getPacketRatesForTarget,
+  getRadioHostTransports,
   getRadioTarget,
   getRadioTargetForRole,
   getSuggestedTelemetryRatio,
@@ -58,6 +61,61 @@ test("packet-rate choices stay within the selected target's packaged modes", () 
     expect.arrayContaining(["50", "100-full", "333-full", "d250", "f1000"]),
   );
   expect(getPacketRatesForTarget("missing-target")).toHaveLength(10);
+});
+
+test("Ranger Nano keeps its manufacturer-published module-bay and power bounds", () => {
+  const target = getRadioTarget("radiomaster-ranger-nano-elrs-24-tx");
+
+  expect(target).toMatchObject({
+    frequency: "2.4 GHz",
+    roles: ["tx"],
+    defaultHostTransport: "module-bay",
+    sourceUrl: "https://radiomasterrc.com/products/ranger-nano-2-4ghz-elrs-module",
+    power: {
+      defaultDbm: 20,
+      defaultMw: 100,
+      menuVerified: false,
+      regulatoryMaxima: [
+        { region: "FCC", dbm: 30, mw: 1000 },
+        { region: "CE", dbm: 20, mw: 100 },
+      ],
+    },
+  });
+  expect(target.hostLink.moduleBay.pins).toMatch(/CRSF, GND, 5-12 V/i);
+  expect(target.serial.txBaud).toBeNull();
+  expect(getDefaultHostTransport(target.id)).toBe("module-bay");
+  expect(getRadioHostTransports(target.id).map((transport) => transport.value))
+    .toEqual(["module-bay", "unspecified"]);
+  expect(getDefaultPowerDbm(target.id)).toBe(20);
+  expect(getRadioHostTransports("generic-elrs-24-tx").map((transport) => transport.value))
+    .toEqual(["native-usb", "uart", "module-bay", "unspecified"]);
+});
+
+test("Ranger Nano warns on regional power bounds without inventing a menu", () => {
+  const warnings = buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    hostTransport: "module-bay",
+    powerDbm: 31,
+  });
+
+  expect(warnings).toEqual(expect.arrayContaining([
+    expect.stringMatching(/FCC 30 dBm \/ 1000 mW.*CE 20 dBm \/ 100 mW/i),
+    expect.stringMatching(/exceeds every published maximum of 30 dBm/i),
+  ]));
+
+  const summary = buildRadioSummary({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    hostTransport: "module-bay",
+    powerDbm: 20,
+  });
+  expect(summary.target.power).toMatchObject({
+    defaultDbm: 20,
+    menuVerified: false,
+  });
+  expect(summary.configuration.powerMenuMw).toBeNull();
+  expect(summary.target.sourceUrl).toContain("radiomasterrc.com");
 });
 
 test("default radio plan has deployment warnings and is not hardware verified", () => {

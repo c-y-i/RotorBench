@@ -328,6 +328,10 @@
   font-size: 11px;
 }
 
+.radio-target-specific small {
+  color: var(--ink-soft);
+}
+
 .radio-field + .radio-field-wide {
   margin-top: 12px;
 }
@@ -395,6 +399,17 @@
 .radio-source-note code {
   color: var(--ink-soft);
   word-break: break-all;
+}
+
+.radio-source-note a {
+  color: var(--brand-strong);
+  font-weight: 650;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.radio-source-note a:hover {
+  color: var(--ink);
 }
 
 .radio-endpoint-plan {

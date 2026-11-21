@@ -144,3 +144,29 @@ test("imported radio enums fail closed against the selected target", () => {
   expect(() => parseCombinedHardwarePlanJson(JSON.stringify(nullPower)))
     .toThrow(/valid power setting/i);
 });
+
+test("Ranger Nano imports only its module-bay transport and published power ceiling", () => {
+  const exported = samplePlan();
+  exported.radio.target.id = "radiomaster-ranger-nano-elrs-24-tx";
+  exported.radio.configuration.role = "tx";
+  exported.radio.configuration.hostTransport = "module-bay";
+  exported.radio.configuration.powerDbm = 20;
+
+  const imported = parseCombinedHardwarePlanJson(JSON.stringify(exported));
+  expect(imported.radioPlan).toMatchObject({
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    role: "tx",
+    hostTransport: "module-bay",
+    powerDbm: 20,
+  });
+
+  const wrongTransport = JSON.parse(JSON.stringify(exported));
+  wrongTransport.radio.configuration.hostTransport = "native-usb";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(wrongTransport)))
+    .toThrow(/host transport is unsupported/i);
+
+  const overLimit = JSON.parse(JSON.stringify(exported));
+  overLimit.radio.configuration.powerDbm = 31;
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(overLimit)))
+    .toThrow(/published maximum/i);
+});

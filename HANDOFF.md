@@ -2,7 +2,7 @@
 
 ## How to use this document
 
-Read this file before changing the project. The work is currently uncommitted on `main`, based on commit `bc6fb6f Modernize bench workflows and assembly verification`. Preserve the existing worktree unless you have a clear reason to replace a specific part of it.
+Read this file before changing the project. Inspect `git status --short --branch` and `git log -1 --oneline`; do not assume a stale worktree or commit from this document. Preserve unrelated existing changes unless you have a clear reason to replace a specific part of them.
 
 `PRODUCT.md` and `DESIGN.md` are now the durable Impeccable product and visual-system context. `DESIGN.md` records the incumbent Flight Bench world, exact color/type/spacing tokens, responsive layout, component rules, and machine-readable frontmatter. `.impeccable/design.json` is its component/token sidecar. Preserve these files when modernizing the interface.
 
@@ -82,7 +82,7 @@ The visual direction is a flight-bench dashboard, not a generic SaaS dashboard. 
 The `/setup` route now combines two local configuration planners:
 
 * **Flight controller:** firmware family, documented or custom board profile, airframe, DShot rate, receiver protocol, UART and baud, channel preset, arm/failsafe values, and feature toggles.
-* **Radio transceiver:** TX/RX role, Aerial Kit Rev A3 or generic ExpressLRS target, packet rate, SX1280 drive power, telemetry ratio, switch mode, link mode, model match, binding phrase or UID staging, and channel mapping.
+* **Radio transceiver:** TX/RX role, Aerial Kit Rev A3, RadioMaster Ranger Nano, or generic ExpressLRS target, packet rate, target-local drive power, telemetry ratio, switch mode, link mode, model match, binding phrase or UID staging, and channel mapping.
 
 The form starts from the flight controller and receiver selected in the active RotorBench build. It infers a commercial board's first listed firmware family and uses the documented Betaflight bench mapping when appropriate. Receiver changes and protocol/profile changes synchronize the line rate and SBUS input-only telemetry rule.
 
@@ -90,7 +90,7 @@ The FC planner now also shows a source-backed `Control path` strip: selected rad
 
 The receiver section now expands into a board-specific `Receiver wiring` checklist. Documented profiles name the UART, pins, protocol, and baud; custom or placeholder mappings stay `Verify pins`. CRSF adds the telemetry return path, SBUS adds input-only and external-inverter steps when documented, and every plan includes common-ground, receiver-supply, and pre-power continuity checks. The checklist is copy-only and explicitly records that RotorBench has not tested continuity, polarity, receiver supply, or hardware readiness.
 
-The radio planner now separates host transport from the RF path. A `Host transport` field distinguishes native USB CDC, target-specific host UART, and an explicitly unverified generic transport. Rev A3’s documented host UART is 400000 baud, 8N1, non-inverted and full duplex on J3.4/GPIO44 host TX and J3.3/GPIO43 host RX; the RX-to-FC CRSF UART remains 420000 baud. An `Endpoint checklist` covers role/image selection, antenna or RF load, host transport, the separate FC UART for RX role, and the requirement to observe receiver RC plus link statistics before claiming RF success.
+The radio planner now separates host transport from the RF path. A `Host transport` field distinguishes native USB CDC, target-specific host UART, a handset module bay, and an explicitly unverified generic transport. Rev A3’s documented host UART is 400000 baud, 8N1, non-inverted and full duplex on J3.4/GPIO44 host TX and J3.3/GPIO43 host RX; the RX-to-FC CRSF UART remains 420000 baud. An `Endpoint checklist` covers role/image selection, antenna or RF load, host transport, the separate FC UART for RX role, and the requirement to observe receiver RC plus link statistics before claiming RF success.
 
 Shared hardware readiness now also carries the selected radio host transport, its display label, and whether that transport is documented. Build shows the host path beneath the receiver route; Analysis includes a Radio host fact; Saved includes the host chip; Compare adds a radio-host row; sanitized hardware plans retain the same fields. None of these fields imply USB, UART, or RF verification.
 
@@ -103,6 +103,8 @@ Stored plans use schema version 3 so older inferred channel maps are discarded i
 The Rev A3 power selector stores the SX1280 drive value in dBm and shows the corresponding ExpressLRS menu label. Those labels are not calibrated radiated-power measurements. A 250 Hz / 25 mW plan is labeled only as a documented bench-setting match; the summary always reports RF as unverified because RotorBench does not observe link statistics.
 
 Public Aerial Kit firmware registers arm, flight mode, and an optional velocity switch. The workspace-source WeAct and GHF435 profiles instead expose manual, control, and system-ID switches. RotorBench no longer presents unsupported beeper or controller fields as Aerial Kit runtime parameters. Arm, mode, and profile-specific control switches are limited to CH5–8, and the radio planner exposes only roles the selected FC route can actually decode. Hidden stale roles are excluded from validation, summaries, and mapping-copy actions. Packet-rate/switch-mode and MAVLink forcing rules come from the pinned ExpressLRS 4.1.0 source; MAVLink uses Hybrid for normal-width rates and 16ch Rate/2 for 100 Full and 333 Full. Generic ExpressLRS targets do not inherit the Rev A3 power menu and expose a target-local dBm input instead.
+
+The radio target library now includes the transmitter-only RadioMaster Ranger Nano 2.4 GHz ELRS module. Its profile is sourced from the official RadioMaster product page and Ranger Nano manual. It records the Nano 8-pin bay labels (CRSF, GND, 5–12 V, five NC), a 100 mW / 20 dBm default, and region-dependent maxima of 30 dBm / 1000 mW (FCC) and 20 dBm / 100 mW (CE). The planner uses a handset-module-bay transport and free dBm field because the manufacturer does not publish a RotorBench-manageable USB CDC contract, Lua menu table, or host baud here. Import validation rejects unsupported host transports and power above the published absolute maximum; UI and import warnings still require the user to identify the fitted regulatory variant.
 
 Documented Aerial Kit boards now show their internal flight log as a read-only capability with the correct backing, such as internal flash or the ESP32 `aerialkit` partition, plus retained RAM. The Aerial Kit bench discovery stage includes the read-only `ak fc logs` command. The generic Blackbox checkbox remains unavailable for Aerial Kit because it refers to an external configurable logging feature; it no longer implies that the internal aircraft log is absent.
 
@@ -716,7 +718,7 @@ The axe CLI needs a matching Chrome/ChromeDriver. The working pair installed dur
 
 You are continuing work on RotorBench, an FPV drone build configurator and analysis tool at `/home/cy/Projects/RotorBench`.
 
-Read `/home/cy/Projects/RotorBench/HANDOFF.md` first. The current worktree contains uncommitted UI, catalog, backend schema, measured-geometry, part-picker, and 3D assembly changes built on commit `bc6fb6f`. Preserve those changes.
+Read `/home/cy/Projects/RotorBench/HANDOFF.md` first. Run `git status --short --branch` and `git log -1 --oneline` before assuming what is committed or uncommitted. Preserve unrelated worktree changes.
 
 The current goal is to keep improving RotorBench without breaking the working build, analysis, 3D assembly, or hardware-planning flows. The catalog has 66 products, including complete 2.5-inch, 3.5-inch, 5-inch, 5.5-inch, and 7-inch platforms, eight ExpressLRS receiver choices, seven ESC choices, eight flight controllers, three source-backed F1404 KV variants, iFlight XING2 1855KV/2755KV options, and Tattu 4S/6S R-Line packs. Twenty-three original products load explicit manifest-bound usable GLBs; the remaining products use parametric fallbacks because they do not have product-specific assets.
 

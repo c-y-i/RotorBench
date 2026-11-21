@@ -8,6 +8,7 @@ export const RADIO_TARGETS = [
     name: "Aerial Kit ELRS USB TX Rev A3",
     description: "ESP32-S3, SX1280 and RFX2401C board with separate TX and RX images.",
     frequency: "2.4 GHz",
+    defaultHostTransport: "native-usb",
     firmwareVersion: "ExpressLRS 4.1.0",
     benchArtifact: "9b48f01f522783d872b72f36c69c7171bcc851e2fcbfe5f60cb717efcb0331b4",
     benchScope: "Props-off, close-range Rev A3 link validation. Flight and range remain untested.",
@@ -41,10 +42,46 @@ export const RADIO_TARGETS = [
     source: "aerial-kit/firmware/elrs-usb-tx-rev-a3/docs/HOST-LINK.md",
   },
   {
+    id: "radiomaster-ranger-nano-elrs-24-tx",
+    name: "RadioMaster Ranger Nano 2.4 GHz ELRS",
+    description: "Nano-bay ExpressLRS transmitter with a 100 mW default output and F-1000 Hz capability.",
+    frequency: "2.4 GHz",
+    defaultHostTransport: "module-bay",
+    roles: ["tx"],
+    serial: {
+      txBaud: null,
+      rxBaud: null,
+      frame: "CRSF on Nano 8-pin module bay; confirm handset pinout and rate",
+      note: "The official manual labels CRSF, GND, and 5-12 V on the Nano bay. It does not publish a host UART baud or USB CDC contract.",
+    },
+    hostLink: {
+      nativeUsb: false,
+      uart: null,
+      moduleBay: {
+        pins: "Nano 8-pin: CRSF, GND, 5-12 V, five NC",
+        voltage: "5-12 V",
+        note: "Use a compatible handset Nano bay. Confirm ground, supply, CRSF direction, and the fitted RF-region variant before power.",
+      },
+    },
+    power: {
+      defaultDbm: 20,
+      defaultMw: 100,
+      regulatoryMaxima: [
+        { region: "FCC", dbm: 30, mw: 1000 },
+        { region: "CE", dbm: 20, mw: 100 },
+      ],
+      menuVerified: false,
+      note: "Official listing says output is adjustable by Lua and defaults to 100 mW. RotorBench does not bundle a verified menu table.",
+    },
+    source: "RadioMaster Ranger Nano product page and official user manual",
+    sourceUrl: "https://radiomasterrc.com/products/ranger-nano-2-4ghz-elrs-module",
+  },
+  {
     id: "generic-elrs-24-tx",
     name: "Generic ExpressLRS 2.4 GHz TX",
     description: "Planning profile for a handset or USB ExpressLRS transmitter.",
     frequency: "2.4 GHz",
+    allowUnverifiedHostTransports: true,
     roles: ["tx"],
     serial: {
       txBaud: 400000,
@@ -59,6 +96,7 @@ export const RADIO_TARGETS = [
     name: "Generic ExpressLRS 2.4 GHz RX",
     description: "Planning profile for a receiver connected to the flight controller.",
     frequency: "2.4 GHz",
+    allowUnverifiedHostTransports: true,
     roles: ["rx"],
     serial: {
       txBaud: null,
@@ -159,6 +197,11 @@ export const RADIO_HOST_TRANSPORTS = [
     note: "Use the target-specific host UART and confirm its electrical level and pinout.",
   },
   {
+    value: "module-bay",
+    label: "Handset module bay",
+    note: "Seat the module in a compatible bay and verify its supply, ground, and CRSF pin direction against both devices.",
+  },
+  {
     value: "unspecified",
     label: "Verify target transport",
     note: "No host-signal map is bundled for this planning target.",
@@ -209,6 +252,27 @@ export function getRadioTargetsForRole(role) {
   return RADIO_TARGETS.filter((target) => target.roles.includes(role));
 }
 
+export function getRadioHostTransports(targetId) {
+  const target = getRadioTarget(targetId);
+  if (target.allowUnverifiedHostTransports) return [...RADIO_HOST_TRANSPORTS];
+  return RADIO_HOST_TRANSPORTS.filter((transport) => {
+    if (transport.value === "unspecified") return true;
+    if (transport.value === target.defaultHostTransport) return true;
+    if (transport.value === "native-usb") return Boolean(target.hostLink?.nativeUsb);
+    if (transport.value === "uart") return Boolean(target.hostLink?.uart);
+    if (transport.value === "module-bay") return Boolean(target.hostLink?.moduleBay);
+    return false;
+  });
+}
+
+export function getDefaultHostTransport(targetId) {
+  const target = getRadioTarget(targetId);
+  const transports = getRadioHostTransports(target.id);
+  return transports.some((transport) => transport.value === target.defaultHostTransport)
+    ? target.defaultHostTransport
+    : transports[transports.length - 1]?.value || "unspecified";
+}
+
 export function getRadioTargetForRole(role, preferredTargetId = null) {
   const preferred = RADIO_TARGETS.find(
     (target) => target.id === preferredTargetId && target.roles.includes(role),
@@ -235,6 +299,16 @@ export function getAvailableSwitchModes(packetRateMode, linkMode) {
 
 export function getRadioPowerLevels(targetId) {
   return targetId === "aerialkit-elrs-rev-a3" ? RADIO_POWER_LEVELS : null;
+}
+
+export function getRadioPowerSpec(targetId) {
+  return getRadioTarget(targetId).power || null;
+}
+
+export function getDefaultPowerDbm(targetId) {
+  const defaultPower = getRadioPowerSpec(targetId)?.defaultDbm;
+  if (Number.isFinite(defaultPower)) return defaultPower;
+  return getRadioPowerLevels(targetId)?.[0]?.value ?? null;
 }
 
 export function getRadioChannelRoles(channelLimit = 16, controlRoles = null) {
@@ -434,9 +508,30 @@ export function buildRadioWarnings(
     warnings.push("Model Match is enabled without a staged binding identity.");
   }
   if (target.id !== "aerialkit-elrs-rev-a3") {
-    warnings.push(
-      "No verified target-specific RF power menu is bundled for this device. Confirm its power table against the module firmware.",
-    );
+    const powerSpec = getRadioPowerSpec(target.id);
+    if (powerSpec?.regulatoryMaxima?.length) {
+      const maxima = powerSpec.regulatoryMaxima
+        .map((limit) => `${limit.region} ${limit.dbm} dBm / ${limit.mw} mW`)
+        .join(", ");
+      const absoluteMax = Math.max(
+        ...powerSpec.regulatoryMaxima.map((limit) => Number(limit.dbm)),
+      );
+      warnings.push(
+        `Confirm the module's RF-region variant and local limit. Published maxima: ${maxima}.`,
+      );
+      if (
+        Number.isFinite(Number(normalized.powerDbm)) &&
+        Number(normalized.powerDbm) > absoluteMax
+      ) {
+        warnings.push(
+          `${target.name} power exceeds every published maximum of ${absoluteMax} dBm.`,
+        );
+      }
+    } else {
+      warnings.push(
+        "No verified target-specific RF power menu is bundled for this device. Confirm its power table against the module firmware.",
+      );
+    }
   }
 
   const requiredRoles = visibleChannelRoles.filter((role) => !role.optional);
@@ -505,6 +600,8 @@ export function buildRadioSummary(config, options = {}) {
       benchArtifact: target.benchArtifact || null,
       serial: target.serial,
       hostLink: target.hostLink || null,
+      power: target.power || null,
+      sourceUrl: target.sourceUrl || null,
     },
     configuration: {
       role: normalized.role,

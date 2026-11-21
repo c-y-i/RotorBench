@@ -3,6 +3,7 @@ import { buildRadioEndpointPlan } from "./radioEndpointPlan";
 
 const revA3 = getRadioTarget("aerialkit-elrs-rev-a3");
 const genericTx = getRadioTarget("generic-elrs-24-tx");
+const rangerNano = getRadioTarget("radiomaster-ranger-nano-elrs-24-tx");
 
 test("native USB keeps baud semantics and RF evidence separate", () => {
   const plan = buildRadioEndpointPlan({
@@ -60,4 +61,24 @@ test("generic targets remain explicitly unmapped", () => {
     hostTransportLabel: "Verify target transport",
   });
   expect(plan.steps[2]).toMatchObject({ id: "host-unknown" });
+});
+
+test("Ranger Nano documents the module bay without claiming a host UART rate", () => {
+  const plan = buildRadioEndpointPlan({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: rangerNano.id,
+    role: "tx",
+    hostTransport: "module-bay",
+  }, rangerNano);
+
+  expect(plan).toMatchObject({
+    documented: true,
+    hostTransportLabel: "Handset module bay",
+    roleLabel: "transmitter",
+    rfVerified: false,
+  });
+  const step = plan.steps.find((candidate) => candidate.id === "host-module-bay");
+  expect(step.detail).toMatch(/Nano 8-pin: CRSF, GND, 5-12 V/i);
+  expect(step.detail).not.toMatch(/baud/i);
+  expect(plan.copyText).not.toMatch(/baud/i);
 });

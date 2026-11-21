@@ -15,11 +15,14 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
   const hostTransport = config.hostTransport || "unspecified";
   const transport = transportOption(hostTransport);
   const hostUart = radioTarget.hostLink?.uart || null;
+  const moduleBay = radioTarget.hostLink?.moduleBay || null;
   const documented = hostTransport === "native-usb"
     ? Boolean(radioTarget.hostLink?.nativeUsb)
     : hostTransport === "uart"
       ? Boolean(hostUart)
-      : false;
+      : hostTransport === "module-bay"
+        ? Boolean(moduleBay)
+        : false;
   const steps = [
     {
       id: "role",
@@ -50,6 +53,14 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
       detail: hostUart
         ? `${hostUart.pins} at ${hostUart.baud} baud, ${hostUart.frame}. Confirm logic level, ground, and TX/RX crossing before powering.`
         : "No host UART pin map is bundled. Verify baud, framing, logic level, ground, and TX/RX direction in the target documentation.",
+    });
+  } else if (hostTransport === "module-bay") {
+    steps.push({
+      id: "host-module-bay",
+      label: "Verify the handset module-bay interface",
+      detail: moduleBay
+        ? `${moduleBay.pins}; supply ${moduleBay.voltage}. Confirm the handset pinout, ground, CRSF direction, and whether the module is seated without forcing the bay.`
+        : "The target's handset module-bay pinout is not bundled. Verify the connector, supply voltage, ground, and CRSF direction before powering.",
     });
   } else {
     steps.push({

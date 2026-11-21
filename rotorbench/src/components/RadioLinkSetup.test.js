@@ -69,6 +69,31 @@ test("generic radio targets require transport verification", () => {
   expect(screen.getByText("Verify target")).toBeInTheDocument();
 });
 
+test("Ranger Nano selects its documented module bay and regional power bounds", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-ranger-nano-elrs-24-tx" },
+  });
+
+  expect(screen.getByLabelText("Host transport")).toHaveValue("module-bay");
+  expect(screen.getByRole("spinbutton", { name: /TX power \(dBm\)/i })).toHaveValue(20);
+  expect(screen.getByText(/Official default: 20 dBm \/ 100 mW/i)).toBeInTheDocument();
+  expect(screen.getByText(/FCC 30 dBm, CE 20 dBm/i)).toBeInTheDocument();
+  expect(screen.getByText("Published max")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Open manufacturer source" }))
+    .toHaveAttribute("href", "https://radiomasterrc.com/products/ranger-nano-2-4ghz-elrs-module");
+
+  fireEvent.click(screen.getByText("Endpoint checklist"));
+  const checklist = screen.getByRole("list", {
+    name: "Radio endpoint checklist",
+  });
+  expect(within(checklist).getByText("Verify the handset module-bay interface"))
+    .toBeInTheDocument();
+  expect(within(checklist).getByText(/Nano 8-pin: CRSF, GND, 5-12 V/i))
+    .toBeInTheDocument();
+  expect(within(checklist).queryByText(/baud/i)).not.toBeInTheDocument();
+});
+
 test("binding material is not written to local storage", () => {
   render(<RadioLinkSetup />);
   fireEvent.change(screen.getByLabelText("Binding phrase"), {

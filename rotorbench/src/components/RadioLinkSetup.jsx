@@ -18,7 +18,6 @@ import {
 import {
   DEFAULT_RADIO_CONFIG,
   RADIO_DYNAMIC_POWER,
-  RADIO_HOST_TRANSPORTS,
   RADIO_LINK_MODES,
   RADIO_STORAGE_KEY,
   RADIO_SWITCH_MODES,
@@ -27,9 +26,13 @@ import {
   buildRadioWarnings,
   bindingPhraseByteLength,
   getAvailableSwitchModes,
+  getDefaultHostTransport,
+  getDefaultPowerDbm,
   getPacketRatesForTarget,
   getRadioChannelRoles,
+  getRadioHostTransports,
   getRadioPowerLevels,
+  getRadioPowerSpec,
   getRadioTarget,
   getRadioTargetForRole,
   getRadioTargetsForRole,
@@ -82,6 +85,7 @@ export default function RadioLinkSetup({
   const receiverLabel = selectedReceiver?.name || receiverName;
   const target = getRadioTarget(config.targetId);
   const availableTargets = getRadioTargetsForRole(config.role);
+  const availableHostTransports = getRadioHostTransports(target.id);
   const warnings = useMemo(
     () => buildRadioWarnings(config, { channelLimit, controlRoles }),
     [channelLimit, config, controlRoles],
@@ -112,6 +116,7 @@ export default function RadioLinkSetup({
   const allowedSwitchModeSet = new Set(allowedSwitchModes);
   const visibleChannelRoles = getRadioChannelRoles(channelLimit, controlRoles);
   const powerLevels = getRadioPowerLevels(target.id);
+  const powerSpec = getRadioPowerSpec(target.id);
   const channelAssignments = Array.from(
     { length: channelLimit },
     (_, index) => {
@@ -151,18 +156,15 @@ export default function RadioLinkSetup({
     updateConfig((current) => {
       if (key === "targetId") {
         const nextPowerLevels = getRadioPowerLevels(value);
+        const nextDefaultPower = getDefaultPowerDbm(value);
         return {
           ...current,
           targetId: value,
-          hostTransport: value === "aerialkit-elrs-rev-a3"
-            ? current.hostTransport === "unspecified"
-              ? "native-usb"
-              : current.hostTransport
-            : "unspecified",
+          hostTransport: getDefaultHostTransport(value),
           powerDbm: nextPowerLevels
             && !nextPowerLevels.some((level) => level.value === current.powerDbm)
             ? nextPowerLevels[0].value
-            : current.powerDbm,
+            : nextDefaultPower ?? current.powerDbm,
         };
       }
       if (key === "linkMode") {
@@ -211,11 +213,19 @@ export default function RadioLinkSetup({
 
   const changeRole = (role) => {
     setMessage("");
-    updateConfig((current) => ({
-      ...current,
-      role,
-      targetId: getRadioTargetForRole(role, current.targetId).id,
-    }));
+    updateConfig((current) => {
+      const nextTarget = getRadioTargetForRole(role, current.targetId);
+      if (nextTarget.id === current.targetId) {
+        return { ...current, role };
+      }
+      return {
+        ...current,
+        role,
+        targetId: nextTarget.id,
+        hostTransport: getDefaultHostTransport(nextTarget.id),
+        powerDbm: getDefaultPowerDbm(nextTarget.id) ?? current.powerDbm,
+      };
+    });
   };
 
   const savePlan = () => {
@@ -378,7 +388,7 @@ export default function RadioLinkSetup({
                 value={config.hostTransport}
                 onChange={(event) => update("hostTransport", event.target.value)}
               >
-                {RADIO_HOST_TRANSPORTS.map((option) => (
+                {availableHostTransports.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -389,7 +399,9 @@ export default function RadioLinkSetup({
 
             <div className="radio-target-summary">
               <span><strong>{target.frequency}</strong> link</span>
-              <span>ISM domain compiled into firmware</span>
+              <span>{powerSpec?.regulatoryMaxima?.length
+                ? `${powerSpec.defaultDbm} dBm default`
+                : "ISM domain compiled into firmware"}</span>
               <span><Cable size={14} aria-hidden="true" />{target.serial.frame}</span>
               <span><Usb size={14} aria-hidden="true" />{serialBaud ? `${serialBaud} baud logical` : "Serial rate not established"}</span>
             </div>
@@ -401,6 +413,14 @@ export default function RadioLinkSetup({
             </p>
             <p className="radio-source-note">
               {target.description} Source: <code>{target.source}</code>.
+              {target.sourceUrl && (
+                <>
+                  {" "}
+                  <a href={target.sourceUrl} target="_blank" rel="noreferrer">
+                    Open manufacturer source
+                  </a>
+                </>
+              )}
             </p>
             <details className="radio-endpoint-plan">
               <summary>
@@ -494,8 +514,11 @@ export default function RadioLinkSetup({
                     )}
                   />
                   <small id="radio-power-target-help">
-                    No verified power menu is bundled for this target. Enter the
-                    value required by its own firmware documentation.
+                    {powerSpec?.regulatoryMaxima?.length
+                      ? `Official default: ${powerSpec.defaultDbm} dBm / ${powerSpec.defaultMw} mW. Published maxima: ${powerSpec.regulatoryMaxima
+                        .map((limit) => `${limit.region} ${limit.dbm} dBm`)
+                        .join(", ")}. Confirm the fitted RF-region variant and firmware menu.`
+                      : "No verified power menu is bundled for this target. Enter the value required by its own firmware documentation."}
                   </small>
                 </label>
               )}
@@ -788,6 +811,16 @@ export default function RadioLinkSetup({
                     : " (target-local setting)"}`}
               </dd>
             </div>
+            {powerSpec?.regulatoryMaxima?.length ? (
+              <div>
+                <dt>Published max</dt>
+                <dd>
+                  {powerSpec.regulatoryMaxima
+                    .map((limit) => `${limit.region} ${limit.dbm} dBm / ${limit.mw} mW`)
+                    .join(" · ")}
+                </dd>
+              </div>
+            ) : null}
             <div>
               <dt>Telemetry</dt>
               <dd>

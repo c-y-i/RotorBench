@@ -1,14 +1,15 @@
 import {
   DEFAULT_RADIO_CONFIG,
   RADIO_DYNAMIC_POWER,
-  RADIO_HOST_TRANSPORTS,
   RADIO_LINK_MODES,
   RADIO_TARGETS,
   RADIO_TELEMETRY_RATIOS,
   buildRadioSummary,
   getAvailableSwitchModes,
   getPacketRatesForTarget,
+  getRadioHostTransports,
   getRadioPowerLevels,
+  getRadioPowerSpec,
   normalizeRadioConfig,
 } from "../data/radioProfiles";
 import {
@@ -99,6 +100,15 @@ export function parseCombinedHardwarePlanJson(text) {
   ) {
     throw new Error("The radio power setting is not valid for this target.");
   }
+  const powerSpec = getRadioPowerSpec(target.id);
+  if (powerSpec?.regulatoryMaxima?.length) {
+    const absoluteMax = Math.max(
+      ...powerSpec.regulatoryMaxima.map((limit) => Number(limit.dbm)),
+    );
+    if (configuration.powerDbm > absoluteMax) {
+      throw new Error("The radio power setting exceeds the target's published maximum.");
+    }
+  }
   const packetRate = configuration.packetRateMode || DEFAULT_RADIO_CONFIG.packetRateMode;
   if (!getPacketRatesForTarget(target.id).some((rate) => rate.value === packetRate)) {
     throw new Error("The radio packet rate is not valid for this target.");
@@ -127,7 +137,7 @@ export function parseCombinedHardwarePlanJson(text) {
     throw new Error("The radio channel map is invalid.");
   }
   const hostTransport = configuration.hostTransport || DEFAULT_RADIO_CONFIG.hostTransport;
-  if (!RADIO_HOST_TRANSPORTS.some((option) => option.value === hostTransport)) {
+  if (!getRadioHostTransports(target.id).some((option) => option.value === hostTransport)) {
     throw new Error("The radio host transport is unsupported.");
   }
   const fcDefaults = createDefaultFlightControllerConfig();
