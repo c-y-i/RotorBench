@@ -516,6 +516,18 @@ export default function AnalysisPage() {
                   </dd>
                 </div>
               )}
+              {hasHardwareSelection
+                && hardwareReadiness.radioRegulatoryRegionLabel && (
+                  <div>
+                    <dt>RF limit</dt>
+                    <dd>
+                      {hardwareReadiness.radioRegulatoryRegionLabel}
+                      {hardwareReadiness.radioRegulatoryMaxDbm != null
+                        ? ` · ${hardwareReadiness.radioPowerDbm ?? "unset"} / ${hardwareReadiness.radioRegulatoryMaxDbm} dBm`
+                        : " · verify variant"}
+                    </dd>
+                  </div>
+                )}
               <div>
                 <dt>Power path</dt>
                 <dd>

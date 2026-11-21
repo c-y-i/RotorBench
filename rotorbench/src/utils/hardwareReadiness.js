@@ -15,6 +15,8 @@ import {
   buildChannelMappingWarnings,
   buildRadioWarnings,
   getRadioHostBay,
+  getRadioRegulatoryLimit,
+  getRadioRegulatoryOptions,
   getRadioTarget,
   isRadioHostBayCompatible,
   normalizeRadioConfig,
@@ -128,6 +130,23 @@ export function summarizeHardwareReadiness({
     radioTarget.id,
     radioPlan.hostBay,
   );
+  const radioRegulatoryOptions = getRadioRegulatoryOptions(radioTarget.id);
+  const radioRegulatoryLimit = getRadioRegulatoryLimit(
+    radioTarget.id,
+    radioPlan.regulatoryRegion,
+  );
+  const radioPowerDbm = Number.isFinite(Number(radioPlan.powerDbm))
+    ? Number(radioPlan.powerDbm)
+    : null;
+  const radioRegulatoryRegionLabel = radioRegulatoryLimit?.label
+    || (radioRegulatoryOptions.length ? "Verify fitted module" : null);
+  const radioPowerCapStatus = !radioRegulatoryOptions.length
+    ? null
+    : !radioRegulatoryLimit
+      ? "verify"
+      : radioPowerDbm != null && radioPowerDbm > radioRegulatoryLimit.dbm
+        ? "over"
+        : "within";
   const motorLayout = getAirframeMotorLayout(
     fcPlan.airframe,
     fcPlan.firmwareFamily,
@@ -179,6 +198,12 @@ export function summarizeHardwareReadiness({
     radioHostBay: radioPlan.hostBay,
     radioHostBayLabel: radioHostBay.label,
     radioHostBayCompatible,
+    radioPowerDbm,
+    radioRegulatoryRegion: radioPlan.regulatoryRegion || null,
+    radioRegulatoryRegionLabel,
+    radioRegulatoryMaxDbm: radioRegulatoryLimit?.dbm ?? null,
+    radioRegulatoryMaxMw: radioRegulatoryLimit?.mw ?? null,
+    radioPowerCapStatus,
     fcAirframe: fcPlan.airframe,
     fcAirframeLabel: AIRFRAMES.find((airframe) => airframe.value === fcPlan.airframe)?.label
       || fcPlan.airframe,
@@ -218,6 +243,12 @@ export function sanitizeHardwareReadiness(readiness) {
     radioHostBay: readiness.radioHostBay || null,
     radioHostBayLabel: readiness.radioHostBayLabel || null,
     radioHostBayCompatible: Boolean(readiness.radioHostBayCompatible),
+    radioPowerDbm: readiness.radioPowerDbm ?? null,
+    radioRegulatoryRegion: readiness.radioRegulatoryRegion || null,
+    radioRegulatoryRegionLabel: readiness.radioRegulatoryRegionLabel || null,
+    radioRegulatoryMaxDbm: readiness.radioRegulatoryMaxDbm ?? null,
+    radioRegulatoryMaxMw: readiness.radioRegulatoryMaxMw ?? null,
+    radioPowerCapStatus: readiness.radioPowerCapStatus || null,
     fcAirframe: readiness.fcAirframe || null,
     fcAirframeLabel: readiness.fcAirframeLabel || null,
     fcMotorDirection: readiness.fcMotorDirection || null,

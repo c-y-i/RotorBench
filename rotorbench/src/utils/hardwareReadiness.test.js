@@ -189,6 +189,7 @@ test("saved module-bay plans expose physical fit across hardware readiness", () 
       hostTransport: "module-bay",
       hostBay: "jr-standard-5",
       powerDbm: 20,
+      regulatoryRegion: "fcc",
     }),
   });
 
@@ -205,6 +206,12 @@ test("saved module-bay plans expose physical fit across hardware readiness", () 
     radioHostBay: "jr-standard-5",
     radioHostBayLabel: "JR standard 5-pin bay",
     radioHostBayCompatible: false,
+    radioPowerDbm: 20,
+    radioRegulatoryRegion: "fcc",
+    radioRegulatoryRegionLabel: "FCC",
+    radioRegulatoryMaxDbm: 30,
+    radioRegulatoryMaxMw: 1000,
+    radioPowerCapStatus: "within",
   });
 });
 

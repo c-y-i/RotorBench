@@ -78,6 +78,19 @@ export function createBuildBriefing({
             `- Motor order: ${hardwareReadiness.fcMotorDirectionLabel} / ${hardwareReadiness.fcMotorOrder}`,
           ]
         : []),
+      ...(hardwareReadiness.radioRegulatoryRegionLabel
+        ? [
+            `- RF limit: ${hardwareReadiness.radioRegulatoryRegionLabel}${
+              hardwareReadiness.radioRegulatoryMaxDbm != null
+                ? ` / ${hardwareReadiness.radioPowerDbm ?? "unset"} planned / ${hardwareReadiness.radioRegulatoryMaxDbm} dBm max`
+                : " / verify regional variant"
+            }${
+              hardwareReadiness.radioPowerCapStatus === "over"
+                ? " / OVER CAP"
+                : ""
+            }`,
+          ]
+        : []),
     );
   }
 

@@ -167,6 +167,11 @@ export function summarizeBuild(build) {
     radioHostBay: hardwareReadiness.radioHostBay,
     radioHostBayLabel: hardwareReadiness.radioHostBayLabel,
     radioHostBayCompatible: hardwareReadiness.radioHostBayCompatible,
+    radioPowerDbm: hardwareReadiness.radioPowerDbm,
+    radioRegulatoryRegionLabel: hardwareReadiness.radioRegulatoryRegionLabel,
+    radioRegulatoryMaxDbm: hardwareReadiness.radioRegulatoryMaxDbm,
+    radioRegulatoryMaxMw: hardwareReadiness.radioRegulatoryMaxMw,
+    radioPowerCapStatus: hardwareReadiness.radioPowerCapStatus,
     fcMotorDirection: hardwareReadiness.fcMotorDirection,
     fcMotorDirectionLabel: hardwareReadiness.fcMotorDirectionLabel,
     fcMotorOrder: hardwareReadiness.fcMotorOrder,
@@ -255,6 +260,11 @@ export function createComparisonReport(
       radioHostBay: build.radioHostBay,
       radioHostBayLabel: build.radioHostBayLabel,
       radioHostBayCompatible: build.radioHostBayCompatible,
+      radioPowerDbm: build.radioPowerDbm,
+      radioRegulatoryRegionLabel: build.radioRegulatoryRegionLabel,
+      radioRegulatoryMaxDbm: build.radioRegulatoryMaxDbm,
+      radioRegulatoryMaxMw: build.radioRegulatoryMaxMw,
+      radioPowerCapStatus: build.radioPowerCapStatus,
       fcMotorDirection: build.fcMotorDirection,
       fcMotorDirectionLabel: build.fcMotorDirectionLabel,
       fcMotorOrder: build.fcMotorOrder,
@@ -503,6 +513,25 @@ export function comparisonRows(left, right) {
       right: right.fcMotorOrder
         ? `${right.fcMotorDirectionLabel} · ${right.fcMotorOrder}`
         : right.fcMotorDirectionLabel || "No verified motor map",
+      format: (value) => value,
+    },
+    {
+      id: "radio-power-limit",
+      label: "Radio RF limit",
+      left: left.radioRegulatoryRegionLabel
+        ? `${left.radioRegulatoryRegionLabel}${
+          left.radioRegulatoryMaxDbm != null
+            ? ` · ${left.radioPowerDbm ?? "power unset"} / ${left.radioRegulatoryMaxDbm} dBm`
+            : ` · ${left.radioPowerDbm ?? "power unset"} dBm`
+        }`
+        : "No region-specific limit",
+      right: right.radioRegulatoryRegionLabel
+        ? `${right.radioRegulatoryRegionLabel}${
+          right.radioRegulatoryMaxDbm != null
+            ? ` · ${right.radioPowerDbm ?? "power unset"} / ${right.radioRegulatoryMaxDbm} dBm`
+            : ` · ${right.radioPowerDbm ?? "power unset"} dBm`
+        }`
+        : "No region-specific limit",
       format: (value) => value,
     },
     {

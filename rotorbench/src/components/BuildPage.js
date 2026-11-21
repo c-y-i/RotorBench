@@ -1939,6 +1939,17 @@ export default function BuildPage() {
                       {hardwareReadiness.fcMotorOrder}
                     </small>
                   )}
+                  {hardwareReadiness.radioRegulatoryRegionLabel && (
+                    <small>
+                      RF limit: {hardwareReadiness.radioRegulatoryRegionLabel}
+                      {hardwareReadiness.radioRegulatoryMaxDbm != null
+                        ? ` · ${hardwareReadiness.radioPowerDbm ?? "unset"} / ${hardwareReadiness.radioRegulatoryMaxDbm} dBm`
+                        : " · verify regional variant"}
+                      {hardwareReadiness.radioPowerCapStatus === "over"
+                        ? " · over cap"
+                        : ""}
+                    </small>
+                  )}
                 </>
               )}
             </div>

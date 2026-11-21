@@ -630,6 +630,15 @@ export default function SavedConfigsPage() {
                                                     {buildSummary.fcMotorDirectionLabel}
                                                 </span>
                                             )}
+                                            {buildSummary.hasHardwareParts
+                                                && buildSummary.radioRegulatoryRegionLabel && (
+                                                <span className={`is-power-${buildSummary.radioPowerCapStatus === "over" ? "unverified" : "documented"}`}>
+                                                    {buildSummary.radioRegulatoryRegionLabel}
+                                                    {buildSummary.radioRegulatoryMaxDbm != null
+                                                        ? ` ≤ ${buildSummary.radioRegulatoryMaxDbm} dBm`
+                                                        : " · verify"}
+                                                </span>
+                                            )}
                                             {hasPowerPath && (
                                                 <span className={`is-power-${buildSummary.powerPathStatus}`}>
                                                     {buildSummary.powerPathLabel}

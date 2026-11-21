@@ -76,6 +76,10 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       radioHostBayCompatible: false,
       fcMotorDirectionLabel: "Normal · props in",
       fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+      radioPowerDbm: 25,
+      radioRegulatoryRegionLabel: "CE",
+      radioRegulatoryMaxDbm: 20,
+      radioPowerCapStatus: "over",
     },
   });
 
@@ -84,6 +88,9 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
   );
   expect(briefing.text).toContain(
     "Motor order: Normal · props in / 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+  );
+  expect(briefing.text).toContain(
+    "RF limit: CE / 25 planned / 20 dBm max / OVER CAP",
   );
   expect(briefing.text).toContain("readiness are not verified");
 });

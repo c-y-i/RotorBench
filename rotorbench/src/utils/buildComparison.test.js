@@ -155,6 +155,10 @@ test("comparison summaries expose documented versus unverified receiver wiring",
     changed: false,
     left: "Normal · props in · 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
   });
+  expect(rows.find((row) => row.id === "radio-power-limit")).toMatchObject({
+    changed: false,
+    left: "No region-specific limit",
+  });
   expect(rows.find((row) => row.id === "power-path")).toMatchObject({
     changed: false,
     left: expect.any(String),
