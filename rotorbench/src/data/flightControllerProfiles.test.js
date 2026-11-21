@@ -439,6 +439,34 @@ test("Kakute H7 V2 selects its documented Betaflight mapping", () => {
   expect(profile.notes.join(" ")).toMatch(/no internal current sensor/i);
 });
 
+test("Kakute F7 AIO selects its documented Betaflight mapping", () => {
+  const selected = {
+    id: "fc-holybro-kakute-f7",
+    name: "Kakute F7 AIO",
+    processor: "STM32F745",
+    imu: "ICM20689 or MPU6000",
+    firmware: ["Betaflight", "ArduPilot"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config).toMatchObject({
+    firmwareFamily: "betaflight",
+    profileId: "kakute-f7-aio",
+    airframe: "quadx",
+  });
+  expect(profile).toMatchObject({
+    label: "Holybro Kakute F7 AIO",
+    board: "KAKUTEF7",
+    receiverUart: "UART6",
+    gpsUart: "UART3",
+    sbusNeedsInverter: false,
+    outputs: { motors: 6, servos: 6 },
+    sharedPwmOutputs: 6,
+  });
+  expect(profile.notes.join(" ")).toMatch(/BRD_ALT_CONFIG=1/i);
+});
+
 test("SpeedyBee F405 Mini selects its documented Betaflight target", () => {
   const selected = {
     id: "fc-speedybee-f405-mini",

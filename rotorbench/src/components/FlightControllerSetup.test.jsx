@@ -253,6 +253,38 @@ test("selecting Kakute H7 V2 exposes its documented Betaflight mapping", () => {
   expect(screen.getByText(/128 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
+test("selecting Kakute F7 AIO exposes its documented mapping", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-holybro-kakute-f7",
+        name: "Kakute F7 AIO",
+        processor: "STM32F745",
+        imu: "ICM20689 or MPU6000",
+        firmware: ["Betaflight", "ArduPilot"],
+      }}
+    />,
+  );
+
+  expect(screen.getByLabelText("Firmware family")).toHaveValue("betaflight");
+  expect(screen.getByLabelText("Board profile")).toHaveValue("kakute-f7-aio");
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART6");
+  expect(screen.getByLabelText("Receiver UART")).toBeDisabled();
+  expect(screen.getByRole("checkbox", { name: "GPS navigation" }))
+    .toBeChecked();
+  expect(screen.getByText("6 shared PWM pads")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Serial allocation"));
+  const ports = screen.getByRole("list", {
+    name: "Documented serial port allocation",
+  });
+  expect(within(ports).getByText("T3 / R3").closest("li"))
+    .toHaveTextContent("GPS");
+  expect(within(ports).getByText("ESC telemetry").closest("li"))
+    .toHaveTextContent("R7 on each AIO corner");
+  expect(screen.getByText(/MicroSD blackbox · card required/i))
+    .toBeInTheDocument();
+});
+
 test("selecting SpeedyBee F405 Mini exposes its documented BT stack", () => {
   render(
     <FlightControllerSetup

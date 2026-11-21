@@ -891,14 +891,16 @@
       "id": "fc-holybro-kakute-f7",
       "name": "Kakute F7 AIO",
       "manufacturer": "Holybro",
-      "processor": "STM32F722",
+      "processor": "STM32F745",
       "weight": 5.8,
       "mounting_point": [0, -15, 0],
-      "firmware": ["Betaflight", "Ardupilot"],
-      "imu": "MPU6000",
+      "firmware": ["Betaflight", "ArduPilot"],
+      "imu": "ICM20689 or MPU6000",
       "maxVoltage": 25.2,
       "features": ["OSD", "Blackbox", "Barometer"],
-      "price": 49.99
+      "price": 49.99,
+      "sourceUrl": "https://ardupilot.org/plane/docs/common-holybro-kakutef7aio.html",
+      "dataStatus": "verified_specs_estimated_mounting"
     },
     {
       "id": "fc-mamba-f722",

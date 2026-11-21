@@ -316,6 +316,20 @@ test("expanded ESCs and flight controller preserve published limits", () => {
   });
 });
 
+test("Kakute F7 AIO reflects the documented processor and IMU set", () => {
+  const flightController = componentsData.flight_controllers.find(
+    (item) => item.id === "fc-holybro-kakute-f7",
+  );
+
+  expect(flightController).toMatchObject({
+    processor: "STM32F745",
+    imu: "ICM20689 or MPU6000",
+    firmware: ["Betaflight", "ArduPilot"],
+    sourceUrl: expect.stringContaining("ardupilot.org"),
+    dataStatus: "verified_specs_estimated_mounting",
+  });
+});
+
 test("SpeedyBee F405 V5 preserves current controller specifications", () => {
   const flightController = componentsData.flight_controllers.find(
     (item) => item.id === "fc-speedybee-f405-v5",
