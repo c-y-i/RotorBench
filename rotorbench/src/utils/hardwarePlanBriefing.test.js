@@ -35,6 +35,9 @@ test("creates a concise hardware briefing without binding material", () => {
   expect(briefing.text).toContain("Aerial Kit ELRS USB TX Rev A3");
   expect(briefing.text).toContain("- Arm: CH6");
   expect(briefing.text).toContain("- Flight mode: CH5");
+  expect(briefing.text).toContain(
+    "- Motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW",
+  );
   expect(briefing.text).toContain("-18 dBm / 10 mW menu");
   expect(briefing.text).toContain("FC warning: Custom-board mapping requires review.");
   expect(briefing.text).toContain("Nothing was connected, written, flashed, calibrated, or armed.");

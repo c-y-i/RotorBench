@@ -993,6 +993,9 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
   const aerialKitSwitches = aerialKitRoles
     .map((role) => `${role.label} ${aerialKitChannelValues[role.key] ?? "off"}`)
     .join(", ");
+  const motorLayout = config.firmwareFamily === "aerialkit"
+    ? getAirframeMotorLayout(config.airframe)
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -1005,6 +1008,13 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
         ]
       : []),
     `Outputs: DShot ${config.dshotKhz} kHz`,
+    ...(motorLayout
+      ? [
+          `Motor order: ${motorLayout.motors
+            .map((motor) => `${motor.output} ${motor.label} ${motor.spin}`)
+            .join(", ")}`,
+        ]
+      : []),
     config.firmwareFamily === "aerialkit"
       ? `Switches: ${aerialKitSwitches}`
       : `Channels: mode ${config.modeChannel ?? "not mapped"}, arm ${config.armChannel ?? "not mapped"}, beeper ${config.beeperChannel ?? "not mapped"}`,

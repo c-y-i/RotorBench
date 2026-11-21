@@ -118,7 +118,18 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain("arm 6");
   expect(summary).toContain("velocity mode off");
   expect(summary).toContain("arm, flight mode, velocity mode only");
+  expect(summary).toContain("Motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW");
   expect(summary).toContain("Failsafe: Firmware-derived");
+});
+
+test("non-Aerial-Kit summary does not fingerprint Aerial Kit motor order", () => {
+  const profile = getBoardProfile("custom-board");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    firmwareFamily: "betaflight",
+  };
+  const summary = buildFlightControllerSummary(config, profile).join("\n");
+  expect(summary).not.toContain("Motor order:");
 });
 
 test("selected SBUS receiver drives the initial serial plan", () => {

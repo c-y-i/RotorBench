@@ -244,7 +244,9 @@ export default function FlightControllerSetup({
   const channelMinimum = config.firmwareFamily === "aerialkit" ? 5 : 1;
   const channelMaximum = config.firmwareFamily === "aerialkit" ? 8 : 16;
   const protocol = RECEIVER_PROTOCOLS.find((item) => item.value === config.receiverProtocol);
-  const motorLayout = getAirframeMotorLayout(config.airframe);
+  const motorLayout = config.firmwareFamily === "aerialkit"
+    ? getAirframeMotorLayout(config.airframe)
+    : null;
   const motorLayoutNodes = motorLayout
     ? motorLayout.motors.map((motor, index) => {
         const duplicateIndex = motorLayout.motors

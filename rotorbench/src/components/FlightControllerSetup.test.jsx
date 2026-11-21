@@ -54,6 +54,7 @@ test("does not show Aerial Kit live gates for another firmware family", () => {
     target: { value: "betaflight" },
   });
   expect(screen.queryByRole("heading", { name: "Arm-gate preview" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Motor output map")).not.toBeInTheDocument();
 });
 
 test("changing to an ESP32 profile exposes its documented UART", () => {
