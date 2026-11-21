@@ -471,6 +471,8 @@ Analysis reports also include the eight-check Viewer placement audit with all ge
 
 If the route is refreshed or opened directly, Analysis falls back to the persisted current build and reruns the analysis instead of showing “No build selected.”
 
+When there is genuinely no current build, Analysis now uses a task-oriented empty state instead of a red error banner. It offers `Start a build` and `Open saved builds`, explains that analysis converts a complete catalog build into an estimated flight profile, and separates required parts, fit/electrical review, and hardware/evidence boundaries. The state rendered as two workbench panels at 1440×900 and one stacked column at 390×844, with 44px actions and no overflow.
+
 For builds without an FC or receiver, the Analysis hardware card reports `No hardware selected` and `Not selected` instead of presenting fallback firmware, UART, or radio defaults as if they belonged to the build.
 
 A test build using the expanded catalog completed successfully and rendered a real analysis result. The backend currently records component metadata but does not require a matching mesh to analyse a component.

@@ -48,9 +48,11 @@ import {
   Fan,
   FileText,
   Flag,
+  FolderOpen,
   Gauge,
   Link2,
   Package,
+  Plus,
   Printer,
   Radio,
   Rocket,
@@ -332,12 +334,56 @@ export default function AnalysisPage() {
         <div className="page-header">
           <h1 className="page-title">Analysis</h1>
         </div>
-        <div className="error-message">
-          <p>No build selected. Please go back and select a build.</p>
-          <button className="action-btn analysis" onClick={() => navigate("/build")}>
-            Back to Build
-          </button>
-        </div>
+        <section
+          className="analysis-empty-state"
+          aria-labelledby="analysis-empty-title"
+        >
+          <div className="analysis-empty-main">
+            <span className="analysis-empty-icon">
+              <ChartNoAxesCombined size={24} aria-hidden="true" />
+            </span>
+            <h2 id="analysis-empty-title">Choose an aircraft to analyze</h2>
+            <p>
+              Analysis evaluates a complete catalog build and turns its selected
+              propulsion and power parts into an estimated flight profile.
+            </p>
+            <div className="analysis-empty-actions">
+              <button
+                type="button"
+                className="action-btn analysis"
+                onClick={() => navigate("/build?new=1")}
+              >
+                <Plus size={16} aria-hidden="true" />
+                Start a build
+              </button>
+              <button
+                type="button"
+                className="analysis-empty-secondary"
+                onClick={() => navigate("/saved")}
+              >
+                <FolderOpen size={16} aria-hidden="true" />
+                Open saved builds
+              </button>
+            </div>
+          </div>
+          <div className="analysis-empty-guide">
+            <strong>What analysis needs</strong>
+            <ul>
+              <li>
+                <Box size={15} aria-hidden="true" />
+                <span>Frame, motors, propellers, and battery selected.</span>
+              </li>
+              <li>
+                <Scale size={15} aria-hidden="true" />
+                <span>Fit and electrical checks reviewed before trusting totals.</span>
+              </li>
+              <li>
+                <FileText size={15} aria-hidden="true" />
+                <span>Hardware plans and bench evidence stay separate from the performance estimate.</span>
+              </li>
+            </ul>
+          </div>
+        </section>
       </div>
     );
   }

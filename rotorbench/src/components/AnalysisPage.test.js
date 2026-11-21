@@ -351,6 +351,20 @@ test("recovers the persisted build after a direct analysis refresh", async () =>
   );
 });
 
+test("empty analysis teaches build and saved-build recovery paths", () => {
+  renderAnalysisWithoutRouteState();
+
+  expect(screen.getByRole("heading", {
+    name: "Choose an aircraft to analyze",
+  })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Start a build" }))
+    .toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Open saved builds" }))
+    .toBeInTheDocument();
+  expect(screen.getByText("What analysis needs")).toBeInTheDocument();
+  expect(screen.queryByText(/No build selected/i)).not.toBeInTheDocument();
+});
+
 test("does not present fallback hardware defaults when no FC or receiver is selected", async () => {
   const partialBuild = {
     ...build,
