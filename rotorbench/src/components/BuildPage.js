@@ -4,6 +4,7 @@ import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
 import componentsData from "../data/components.json";
 import PartPicker from "./PartPicker";
+import AssemblyStackMap from "./AssemblyStackMap";
 import MeasuredGeometryPanel from "./MeasuredGeometryPanel";
 import PropRotationMap from "./PropRotationMap";
 import API_BASE from "../config/api";
@@ -1363,6 +1364,13 @@ export default function BuildPage() {
           <PropRotationMap
             motor={assemblySpec.motor}
             propeller={assemblySpec.propeller}
+          />
+          <AssemblyStackMap
+            frame={assemblySpec.frame}
+            esc={assemblySpec.esc}
+            flightController={assemblySpec.flightController}
+            receiver={assemblySpec.receiver}
+            battery={assemblySpec.battery}
           />
           <MeasuredGeometryPanel
             parts={measuredGeometryParts}
