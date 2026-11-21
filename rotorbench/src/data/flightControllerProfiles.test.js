@@ -355,6 +355,42 @@ test("SpeedyBee F405 V5 selects its documented Betaflight board profile", () => 
   });
 });
 
+test("Matek F405-WMN selects its documented INAV wing profile", () => {
+  const selected = {
+    id: "fc-matek-f405-wmn",
+    name: "Matek F405-WMN",
+    processor: "STM32F405RGT6",
+    imu: "ICM42688-P",
+    firmware: ["INAV", "ArduPilot"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config).toMatchObject({
+    firmwareFamily: "inav",
+    profileId: "matek-f405-wmn",
+    airframe: "elevonwing",
+  });
+  expect(profile).toMatchObject({
+    label: "Matek F405-WMN",
+    board: "MATEKF405TE",
+    receiverUart: "UART2",
+    receiverBaud: 420000,
+    sbusNeedsInverter: false,
+    gpsUart: "UART4",
+    sharedPwmOutputs: 12,
+    outputs: { motors: 12, servos: 12 },
+  });
+  expect(profile.serialPorts.map((port) => port.id)).toEqual([
+    "UART1",
+    "UART2",
+    "UART3",
+    "UART4",
+    "UART5",
+  ]);
+  expect(profile.notes.join(" ")).toMatch(/shared between motors and servos/i);
+});
+
 test.each(FC_BOARD_PROFILES)(
   "$label serial map includes its documented receiver and GPS routes",
   (profile) => {

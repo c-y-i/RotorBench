@@ -54,6 +54,7 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "workspace-profile": { id: "fc-profile", label: "board profile" },
   "output-count": { id: "fc-airframe", label: "airframe" },
   "servo-count": { id: "fc-airframe", label: "airframe" },
+  "pwm-output-count": { id: "fc-airframe", label: "airframe" },
   "build-airframe-mismatch": { id: "fc-airframe", label: "airframe" },
   "sbus-inverter": { id: "fc-protocol", label: "receiver protocol" },
   "sbus-no-telemetry": { id: "fc-protocol", label: "receiver protocol" },
@@ -700,7 +701,11 @@ export default function FlightControllerSetup({
             <span>
               <small>Motor protocol</small>
               <strong>DShot {config.dshotKhz} kHz</strong>
-              <b>{profile.outputs.motors} documented motor outputs</b>
+              <b>
+                {profile.sharedPwmOutputs
+                  ? `${profile.sharedPwmOutputs} shared PWM outputs`
+                  : `${profile.outputs.motors} documented motor outputs`}
+              </b>
             </span>
           </li>
         </ol>
@@ -886,7 +891,14 @@ export default function FlightControllerSetup({
               <div><span>Processor</span><strong>{profile.processor}</strong></div>
               <div><span>IMU</span><strong>{profile.imu}</strong></div>
               <div><span>IMU bus</span><strong>{profile.imuBus}</strong></div>
-              <div><span>Outputs</span><strong>{profile.outputs.motors} motors / {profile.outputs.servos} servos</strong></div>
+              <div>
+                <span>Outputs</span>
+                <strong>
+                  {profile.sharedPwmOutputs
+                    ? `${profile.sharedPwmOutputs} shared PWM pads`
+                    : `${profile.outputs.motors} motors / ${profile.outputs.servos} servos`}
+                </strong>
+              </div>
             </div>
 
             {serialPorts.length > 0 && (

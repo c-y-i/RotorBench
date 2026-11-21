@@ -216,6 +216,33 @@ test("selecting the SpeedyBee F405 V5 uses its documented board mapping", () => 
   expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
+test("selecting Matek F405-WMN exposes its documented INAV wing mapping", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-matek-f405-wmn",
+        name: "Matek F405-WMN",
+        processor: "STM32F405RGT6",
+        imu: "ICM42688-P",
+        firmware: ["INAV", "ArduPilot"],
+      }}
+    />,
+  );
+
+  expect(screen.getByLabelText("Firmware family")).toHaveValue("inav");
+  expect(screen.getByLabelText("Board profile")).toHaveValue("matek-f405-wmn");
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART2");
+  expect(screen.getByLabelText("Receiver UART")).toBeDisabled();
+  expect(screen.getByText("12 shared PWM pads")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Serial allocation"));
+  const ports = screen.getByRole("list", {
+    name: "Documented serial port allocation",
+  });
+  expect(within(ports).getAllByText("GPS-capable user serial")).toHaveLength(2);
+  expect(within(ports).getByText("TX5 / RX5").closest("li"))
+    .toHaveTextContent("Documented");
+});
+
 test("shows the documented serial map and marks active plan routes", async () => {
   const { container } = render(
     <FlightControllerSetup

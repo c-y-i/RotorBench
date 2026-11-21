@@ -255,6 +255,80 @@ export const FC_BOARD_PROFILES = [
     ],
   },
   {
+    id: "matek-f405-wmn",
+    family: "inav",
+    availability: "public",
+    buildScope: "planning",
+    catalogFlightControllerIds: ["fc-matek-f405-wmn"],
+    label: "Matek F405-WMN",
+    board: "MATEKF405TE",
+    processor: "STM32F405RGT6",
+    imu: "ICM42688-P",
+    imuBus: "Not published",
+    receiverUart: "UART2",
+    receiverPins: "TX2 / RX2; SBUS pad = RX2 + inverter",
+    receiverBaud: 420000,
+    sbusBaud: 100000,
+    sbusNeedsInverter: false,
+    gpsUart: "UART4",
+    gpsPins: "TX4 / RX4 documented user UART",
+    outputs: { motors: 12, servos: 12 },
+    sharedPwmOutputs: 12,
+    defaultAirframe: "elevonwing",
+    receiverUartLocked: true,
+    serialPorts: [
+      {
+        id: "UART1",
+        role: "User serial",
+        detail: "TX1 / RX1",
+      },
+      {
+        id: "UART2",
+        role: "Receiver",
+        detail: "TX2 / RX2; SBUS pad = RX2 + inverter",
+        pins: "TX2 / RX2; SBUS pad = RX2 + inverter",
+      },
+      {
+        id: "UART3",
+        role: "User serial",
+        detail: "TX3 / RX3",
+      },
+      {
+        id: "UART4",
+        role: "GPS-capable user serial",
+        detail: "TX4 / RX4",
+      },
+      {
+        id: "UART5",
+        role: "GPS-capable user serial",
+        detail: "TX5 / RX5",
+      },
+    ],
+    flightLog: {
+      available: true,
+      label: "16 MB onboard blackbox",
+      retention: "The onboard flash stores blackbox data.",
+    },
+    featureSupport: {
+      telemetry: true,
+      osd: true,
+      blackbox: true,
+      gps: true,
+      barometer: true,
+      rangefinder: false,
+    },
+    sourceRefs: [
+      "https://www.mateksys.com/?portfolio=f405-wmn",
+    ],
+    notes: [
+      "Official mapping: UART2 receiver/RC input, UART1/UART3/UART4/UART5 user serial, and a built-in inverter on UART2 RX.",
+      "Twelve PWM pads are shared between motors and servos; this is a capability ceiling, not twelve simultaneous motors plus twelve servos.",
+      "The documented ArduPilot mapping uses UART5 as GPS1 and UART4 as GPS2, while INAV labels them user serial. Confirm the selected firmware's port assignment before wiring.",
+      "Six to thirty volts input covers 2S-6S, with a separate 5 V/6 V servo BEC.",
+      "The board ships unsoldered; verify pad continuity and the final harness before power.",
+    ],
+  },
+  {
     id: "speedybee-f405-v5",
     family: "betaflight",
     availability: "public",
@@ -875,6 +949,18 @@ export function validateFlightControllerConfig(
       severity: "error",
       code: "servo-count",
       message: `${airframe.label} needs ${airframe.servos} servo outputs; ${profile.label} exposes ${profile.outputs.servos}.`,
+    });
+  }
+
+  if (
+    airframe &&
+    Number.isInteger(profile.sharedPwmOutputs) &&
+    airframe.motors + airframe.servos > profile.sharedPwmOutputs
+  ) {
+    issues.push({
+      severity: "error",
+      code: "pwm-output-count",
+      message: `${airframe.label} needs ${airframe.motors + airframe.servos} PWM outputs; ${profile.label} exposes ${profile.sharedPwmOutputs} shared PWM pads.`,
     });
   }
 
