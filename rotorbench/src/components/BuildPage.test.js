@@ -149,6 +149,8 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
   expect(viewer).toHaveAttribute("data-frame", "frame-aos-35-v51");
   expect(viewer).toHaveAttribute("data-motor", "motor-tmotor-f1404-3800kv");
   expect(viewer).toHaveAttribute("data-battery", "battery-tattu-rline-4s-850-95c");
+  expect(screen.getByText("Mounting interfaces")).toBeInTheDocument();
+  expect(screen.getByText("5 matched")).toBeInTheDocument();
 
   fireEvent.click(screen.getByText("Physical fit checks"));
   expect(screen.getByText("SpeedyBee BLS 35A Mini V2 stack mount")).toBeInTheDocument();

@@ -1300,6 +1300,199 @@
   color: var(--warn);
 }
 
+.assembly-interface-map {
+  margin-top: 10px;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.assembly-interface-map > summary {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 50px;
+  padding: 9px 11px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.assembly-interface-map > summary::-webkit-details-marker {
+  display: none;
+}
+
+.assembly-interface-map > summary:hover {
+  background: var(--surface-soft);
+}
+
+.assembly-interface-map > summary > svg {
+  color: var(--brand);
+}
+
+.assembly-interface-map > summary > span {
+  display: grid;
+  gap: 1px;
+}
+
+.assembly-interface-map > summary strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.assembly-interface-map > summary small {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.assembly-interface-map > summary em {
+  padding: 4px 7px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.assembly-interface-map > summary em.is-review {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.assembly-interface-map > summary em.is-conflict {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 9%, var(--surface-raised));
+}
+
+.assembly-interface-map-body {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.assembly-interface-map-body > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.assembly-interface-map-body ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assembly-interface-map-body li {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.assembly-interface-endpoints {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+}
+
+.assembly-interface-endpoints > svg {
+  color: var(--ink-faint);
+}
+
+.assembly-interface-endpoints > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.assembly-interface-endpoints small,
+.assembly-interface-result small {
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.assembly-interface-endpoints small {
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.assembly-interface-endpoints strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.assembly-interface-endpoints em {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-style: normal;
+}
+
+.assembly-interface-result {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr);
+  align-items: start;
+  gap: 7px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.assembly-interface-result > svg {
+  margin-top: 1px;
+  color: var(--ink-faint);
+}
+
+.assembly-interface-result > span {
+  display: grid;
+  gap: 2px;
+}
+
+.assembly-interface-result strong {
+  color: var(--ink);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.assembly-interface-map-body li.is-compatible .assembly-interface-result > svg,
+.assembly-interface-map-body li.is-compatible .assembly-interface-result strong {
+  color: var(--ok);
+}
+
+.assembly-interface-map-body li.is-measured .assembly-interface-result > svg,
+.assembly-interface-map-body li.is-measured .assembly-interface-result strong {
+  color: var(--brand);
+}
+
+.assembly-interface-map-body li.is-conflict .assembly-interface-result > svg,
+.assembly-interface-map-body li.is-conflict .assembly-interface-result strong {
+  color: var(--danger);
+}
+
+.assembly-interface-map-body li.is-conflict {
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface-soft));
+  border-color: color-mix(in srgb, var(--danger) 26%, var(--line));
+}
+
+.assembly-interface-map-body li.is-unknown .assembly-interface-result > svg,
+.assembly-interface-map-body li.is-unknown .assembly-interface-result strong {
+  color: var(--warn);
+}
+
 .prop-rotation-map {
   margin-top: 10px;
   overflow: hidden;
@@ -4853,6 +5046,24 @@
     max-width: 100%;
     line-height: 1.35;
     white-space: normal;
+  }
+
+  .assembly-interface-map > summary {
+    grid-template-columns: 16px minmax(0, 1fr);
+    align-items: start;
+    row-gap: 6px;
+  }
+
+  .assembly-interface-map > summary em {
+    grid-column: 2;
+    justify-self: start;
+    max-width: 100%;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  .assembly-interface-map-body ol {
+    grid-template-columns: 1fr;
   }
 
   .viewer-check-actions {
