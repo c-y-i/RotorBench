@@ -1880,6 +1880,30 @@
       "dataStatus": "verified_specs_estimated_current_channels",
       "estimatedFields": ["currentDraw", "channels", "mounting_point"],
       "price": 34.99
+    },
+    {
+      "id": "rx-radiomaster-bandit-br3-900",
+      "name": "RadioMaster Bandit BR3 ExpressLRS 900MHz Receiver",
+      "manufacturer": "RadioMaster",
+      "protocol": "CRSF",
+      "frequencyBands": ["Sub-G 900 MHz"],
+      "weight": 5.5,
+      "mounting_point": [0, 0, 0],
+      "currentDraw": 50,
+      "channels": 16,
+      "planformMm": [24, 14.2],
+      "rfChips": "Semtech SX1276",
+      "telemetryPowerMw": 500,
+      "workingVoltage": "4.5-8.4 V",
+      "antenna": "2 × 915/868 MHz T antenna",
+      "wifiUpdates": true,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://radiomasterrc.com/products/bandit-br3-expresslrs-receiver",
+      "priceSourceUrl": "https://radiomasterrc.com/products/bandit-br3-expresslrs-receiver",
+      "dataStatus": "verified_specs_estimated_current_channels_and_mounting",
+      "estimatedFields": ["currentDraw", "channels", "mounting_point"],
+      "price": 24.99
     }
   ]
 }

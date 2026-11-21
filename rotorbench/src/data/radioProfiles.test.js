@@ -28,6 +28,7 @@ import {
   isRadioHostBayCompatible,
   normalizeRadioConfig,
 } from "./radioProfiles";
+import componentsData from "./components.json";
 
 test("Aerial Kit defaults preserve the documented serial roles", () => {
   const target = getRadioTarget("aerialkit-elrs-rev-a3");
@@ -194,10 +195,9 @@ test("Bandit family preserves sub-GHz bands, packet rates, and module formats", 
   }
   expect(getRadioReceiverBandCompatibility(
     nano.id,
-    {
-      id: "rx-radiomaster-xr4-gemini",
-      frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
-    },
+    componentsData.receivers.find(
+      (receiver) => receiver.id === "rx-radiomaster-bandit-br3-900",
+    ),
   ).status).toBe("compatible");
   expect(getRadioHandsetBayCompatibility(
     "radiomaster-pocket",

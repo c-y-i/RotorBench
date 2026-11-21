@@ -380,12 +380,37 @@ test("Kakute F722 keeps official specs and price with only mounting estimated", 
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
-  expect(componentsData.receivers).toHaveLength(10);
+  expect(componentsData.receivers).toHaveLength(11);
   for (const receiver of componentsData.receivers) {
     expect(receiver.protocol).toBeTruthy();
     expect(receiver.frequencyBands?.length).toBeGreaterThan(0);
     expect(receiver.sourceUrl).toMatch(/^https:\/\//);
   }
+});
+
+test("Bandit BR3 adds a source-backed sub-GHz receiver", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-radiomaster-bandit-br3-900",
+  );
+
+  expect(receiver).toMatchObject({
+    name: "RadioMaster Bandit BR3 ExpressLRS 900MHz Receiver",
+    protocol: "CRSF",
+    frequencyBands: ["Sub-G 900 MHz"],
+    weight: 5.5,
+    planformMm: [24, 14.2],
+    rfChips: "Semtech SX1276",
+    telemetryPowerMw: 500,
+    workingVoltage: "4.5-8.4 V",
+    price: 24.99,
+    modelStatus: "not_available",
+    sourceUrl: "https://radiomasterrc.com/products/bandit-br3-expresslrs-receiver",
+  });
+  expect(receiver.estimatedFields).toEqual([
+    "currentDraw",
+    "channels",
+    "mounting_point",
+  ]);
 });
 
 test("legacy receiver asset is identified as the JHEMCU EP24S", () => {
