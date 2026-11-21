@@ -32,7 +32,15 @@ function getMeta(category, part) {
     case "frames":
       return [`${part.size} mm wheelbase`, `${part.weight} g`, `up to ${part.maxPropSize}" props`];
     case "motors":
-      return [`${part.kv} KV`, part.size, `${part.voltage.min}-${part.voltage.max} V`, `${part.weight} g`];
+      return [
+        `${part.kv} KV`,
+        part.size,
+        `${part.voltage.min}-${part.voltage.max} V`,
+        `${part.weight} g`,
+        part.performanceDataStatus === "published_prop_specific_tables_not_normalized"
+          ? "Published prop tests not normalized"
+          : null,
+      ].filter(Boolean);
     case "propellers":
       return [
         `${part.size}"`,

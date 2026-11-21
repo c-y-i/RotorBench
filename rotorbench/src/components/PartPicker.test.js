@@ -214,6 +214,34 @@ test("propeller options expose missing thrust data before selection", () => {
   expect(screen.getByText(/Thrust data unavailable/)).toBeInTheDocument();
 });
 
+test("motor options disclose prop-specific tests that are not normalized", () => {
+  render(
+    <PartPicker
+      category="motors"
+      parts={[
+        {
+          id: "motor-tested",
+          name: "Test 2207",
+          kv: 1980,
+          size: "2207",
+          voltage: { min: 18.5, max: 25.2 },
+          weight: 31,
+          price: 34.99,
+          performanceDataStatus: "published_prop_specific_tables_not_normalized",
+          sourceUrl: "https://example.com/motor",
+        },
+      ]}
+      value=""
+      onChange={jest.fn()}
+      placeholder="Choose a motor"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a motor/i }));
+  expect(screen.getByText(/Published prop tests not normalized/i))
+    .toBeInTheDocument();
+});
+
 test("catalog options can be sorted by price without hiding conflicts", () => {
   render(
     <PartPicker
