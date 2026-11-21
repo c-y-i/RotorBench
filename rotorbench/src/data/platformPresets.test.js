@@ -7,14 +7,16 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(10);
+  expect(PLATFORM_PRESETS).toHaveLength(11);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
     expect(summarizeBuild({ componentIds: preset.componentIds })).toMatchObject({
       selectedCount: 7,
       sourceBackedCount: 7,
-      physicalFitStatus: preset.id === "source-5" ? "unverified" : "verified",
+      physicalFitStatus: ["source-5", "source-5-aos-supernova"].includes(preset.id)
+        ? "unverified"
+        : "verified",
       electricalFitStatus: preset.id === "source-7-inch"
         ? "unverified"
         : "verified",
@@ -45,6 +47,18 @@ test("every starter platform references a complete catalog build", () => {
       flightControllerId: "fc-holybro-kakute-h7-v2",
       batteryId: "battery-tattu-rline-v3-6s-1050-120c",
       receiverId: "rx-radiomaster-rp4td",
+    },
+  });
+  expect(getPlatformPreset("source-5-aos-supernova")).toMatchObject({
+    name: "5-inch AOS Supernova 6S build",
+    componentIds: {
+      frameId: "frame-aos-5-v5",
+      motorId: "motor-aos-supernova-2207-1980kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      escId: "esc-holybro-tekko32-f4-65a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-v6-6s-1480-160c",
+      receiverId: "rx-radiomaster-rp4td-m",
     },
   });
   expect(getPlatformPreset("source-35-4600")).toMatchObject({
