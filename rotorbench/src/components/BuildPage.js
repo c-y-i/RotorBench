@@ -1950,6 +1950,16 @@ export default function BuildPage() {
                         : ""}
                     </small>
                   )}
+                  {hardwareReadiness.radioReceiverBands.length > 0 && (
+                    <small>
+                      Receiver RF: {hardwareReadiness.radioReceiverBands.join(" / ")} ·{" "}
+                      {hardwareReadiness.radioReceiverBandStatus === "compatible"
+                        ? `shared with TX: ${hardwareReadiness.radioSharedBands.join(" / ")}`
+                        : hardwareReadiness.radioReceiverBandStatus === "conflict"
+                          ? "no shared documented band"
+                          : "target band unverified"}
+                    </small>
+                  )}
                 </>
               )}
             </div>

@@ -80,6 +80,9 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       radioRegulatoryRegionLabel: "CE",
       radioRegulatoryMaxDbm: 20,
       radioPowerCapStatus: "over",
+      radioReceiverBands: ["2.4 GHz", "Sub-G 900 MHz"],
+      radioReceiverBandStatus: "compatible",
+      radioSharedBands: ["2.4 GHz"],
     },
   });
 
@@ -91,6 +94,9 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
   );
   expect(briefing.text).toContain(
     "RF limit: CE / 25 planned / 20 dBm max / OVER CAP",
+  );
+  expect(briefing.text).toContain(
+    "Receiver RF bands: 2.4 GHz / Sub-G 900 MHz / compatible / shared with TX: 2.4 GHz",
   );
   expect(briefing.text).toContain("readiness are not verified");
 });

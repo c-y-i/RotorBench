@@ -172,6 +172,9 @@ export function summarizeBuild(build) {
     radioRegulatoryMaxDbm: hardwareReadiness.radioRegulatoryMaxDbm,
     radioRegulatoryMaxMw: hardwareReadiness.radioRegulatoryMaxMw,
     radioPowerCapStatus: hardwareReadiness.radioPowerCapStatus,
+    radioReceiverBandStatus: hardwareReadiness.radioReceiverBandStatus,
+    radioReceiverBands: hardwareReadiness.radioReceiverBands,
+    radioSharedBands: hardwareReadiness.radioSharedBands,
     fcMotorDirection: hardwareReadiness.fcMotorDirection,
     fcMotorDirectionLabel: hardwareReadiness.fcMotorDirectionLabel,
     fcMotorOrder: hardwareReadiness.fcMotorOrder,
@@ -265,6 +268,9 @@ export function createComparisonReport(
       radioRegulatoryMaxDbm: build.radioRegulatoryMaxDbm,
       radioRegulatoryMaxMw: build.radioRegulatoryMaxMw,
       radioPowerCapStatus: build.radioPowerCapStatus,
+      radioReceiverBandStatus: build.radioReceiverBandStatus,
+      radioReceiverBands: build.radioReceiverBands,
+      radioSharedBands: build.radioSharedBands,
       fcMotorDirection: build.fcMotorDirection,
       fcMotorDirectionLabel: build.fcMotorDirectionLabel,
       fcMotorOrder: build.fcMotorOrder,
@@ -532,6 +538,17 @@ export function comparisonRows(left, right) {
             : ` · ${right.radioPowerDbm ?? "power unset"} dBm`
         }`
         : "No region-specific limit",
+      format: (value) => value,
+    },
+    {
+      id: "radio-receiver-bands",
+      label: "Radio receiver bands",
+      left: left.radioReceiverBands?.length
+        ? `${left.radioReceiverBands.join(" / ")} · ${left.radioReceiverBandStatus}`
+        : "Receiver bands unverified",
+      right: right.radioReceiverBands?.length
+        ? `${right.radioReceiverBands.join(" / ")} · ${right.radioReceiverBandStatus}`
+        : "Receiver bands unverified",
       format: (value) => value,
     },
     {

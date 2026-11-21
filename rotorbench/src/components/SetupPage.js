@@ -155,8 +155,11 @@ export default function SetupPage() {
     [fcPlan, fcProfile, selectedFrame],
   );
   const radioWarnings = useMemo(
-    () => buildRadioWarnings(radioPlan, radioRoleOptions),
-    [radioPlan, radioRoleOptions],
+    () => buildRadioWarnings(radioPlan, {
+      ...radioRoleOptions,
+      receiver: selectedReceiver,
+    }),
+    [radioPlan, radioRoleOptions, selectedReceiver],
   );
   const mappingWarnings = useMemo(
     () => buildChannelMappingWarnings(fcPlan, radioPlan, radioRoleOptions),

@@ -528,6 +528,16 @@ export default function AnalysisPage() {
                     </dd>
                   </div>
                 )}
+              {hasHardwareSelection
+                && hardwareReadiness.radioReceiverBands.length > 0 && (
+                  <div>
+                    <dt>Receiver RF</dt>
+                    <dd>
+                      {hardwareReadiness.radioReceiverBands.join(" / ")} ·{" "}
+                      {hardwareReadiness.radioReceiverBandStatus}
+                    </dd>
+                  </div>
+                )}
               <div>
                 <dt>Power path</dt>
                 <dd>

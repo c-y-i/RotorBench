@@ -15,6 +15,7 @@ import {
   getRadioHostBay,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
+  getRadioReceiverBandCompatibility,
   getRadioTarget,
   getRadioTargetForRole,
   getSuggestedTelemetryRatio,
@@ -232,6 +233,46 @@ test("Ranger Nano applies the selected regulatory ceiling", () => {
     targetId: "radiomaster-ranger-nano-elrs-24-tx",
     regulatoryRegion: "world",
   }).regulatoryRegion).toBe("verify");
+});
+
+test("radio receiver bands remain source-backed and fail closed", () => {
+  const receiver = {
+    id: "rx-24",
+    name: "2.4 GHz receiver",
+    frequencyBands: ["2.4 GHz"],
+  };
+  const dualBand = {
+    id: "rx-dual",
+    name: "Dual-band receiver",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+  };
+  expect(getRadioReceiverBandCompatibility(
+    "aerialkit-elrs-rev-a3",
+    receiver,
+  )).toMatchObject({
+    status: "compatible",
+    sharedBands: ["2.4 ghz"],
+  });
+  expect(getRadioReceiverBandCompatibility(
+    "aerialkit-elrs-rev-a3",
+    dualBand,
+  ).status).toBe("compatible");
+  expect(getRadioReceiverBandCompatibility(
+    "aerialkit-elrs-rev-a3",
+    { id: "rx-900", frequencyBands: ["Sub-G 900 MHz"] },
+  ).status).toBe("conflict");
+  expect(getRadioReceiverBandCompatibility(
+    "aerialkit-elrs-rev-a3",
+    { id: "rx-unknown" },
+  ).status).toBe("unverified");
+
+  expect(buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+  }, {
+    receiver: { id: "rx-900", name: "900 receiver", frequencyBands: ["Sub-G 900 MHz"] },
+  })).toEqual(expect.arrayContaining([
+    expect.stringMatching(/does not share a documented RF band/i),
+  ]));
 });
 
 test("default radio plan has deployment warnings and is not hardware verified", () => {

@@ -18,6 +18,7 @@ const receiver = {
   id: "rx-test",
   name: "ELRS RX",
   protocol: "CRSF",
+  frequencyBands: ["2.4 GHz"],
 };
 
 test("an unsaved hardware plan is identified without claiming hardware readiness", () => {
@@ -49,6 +50,9 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
     fcMotorLayoutSource: "Betaflight",
     fcPropellerDirection: "props-in",
+    radioReceiverBandStatus: "compatible",
+    radioReceiverBands: ["2.4 GHz"],
+    radioSharedBands: ["2.4 GHz"],
     fcMotorOutputByCorner: {
       upperLeft: { output: 4, label: "FL", spin: "CW" },
       upperRight: { output: 2, label: "FR", spin: "CCW" },
@@ -241,5 +245,34 @@ test("Betaflight plan direction and order propagate through readiness", () => {
     fcMotorOrder: "1 RR CCW · 2 FR CW · 3 RL CW · 4 FL CCW",
     fcMotorLayoutSource: "Betaflight",
     fcPropellerDirection: "props-out",
+  });
+});
+
+test("hardware readiness flags a receiver with no shared transmitter band", () => {
+  const base = "rotorbench:hardware-plan:build-rf-conflict";
+  const storage = memoryStorage({
+    [`${base}:radio`]: JSON.stringify({
+      planVersion: 3,
+      selectedReceiverId: "rx-900",
+      targetId: "aerialkit-elrs-rev-a3",
+      role: "tx",
+    }),
+  });
+
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-rf-conflict",
+    flightController: fc,
+    receiver: {
+      id: "rx-900",
+      name: "900 MHz receiver",
+      protocol: "CRSF",
+      frequencyBands: ["Sub-G 900 MHz"],
+    },
+    storage,
+  });
+  expect(readiness).toMatchObject({
+    radioReceiverBandStatus: "conflict",
+    radioReceiverBands: ["Sub-G 900 MHz"],
+    radioSharedBands: [],
   });
 });

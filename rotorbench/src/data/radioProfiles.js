@@ -8,6 +8,7 @@ export const RADIO_TARGETS = [
     name: "Aerial Kit ELRS USB TX Rev A3",
     description: "ESP32-S3, SX1280 and RFX2401C board with separate TX and RX images.",
     frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
     defaultHostTransport: "native-usb",
     defaultHostBay: "native-usb",
     supportedHostBays: ["native-usb"],
@@ -48,6 +49,7 @@ export const RADIO_TARGETS = [
     name: "RadioMaster Ranger Nano 2.4 GHz ELRS",
     description: "Nano-bay ExpressLRS transmitter with a 100 mW default output and F-1000 Hz capability.",
     frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
     defaultHostTransport: "module-bay",
     defaultHostBay: "nano-8",
     supportedHostBays: ["nano-8"],
@@ -86,6 +88,7 @@ export const RADIO_TARGETS = [
     name: "RadioMaster Ranger Micro 2.4 GHz ELRS",
     description: "JR-style micro-bay ExpressLRS transmitter with a 100 mW default output and F-1000 Hz capability.",
     frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
     defaultHostTransport: "module-bay",
     defaultHostBay: "jr-micro-5",
     supportedHostBays: ["jr-micro-5"],
@@ -124,6 +127,7 @@ export const RADIO_TARGETS = [
     name: "RadioMaster Ranger 2.4 GHz ELRS",
     description: "Full-size ExpressLRS transmitter with JR and Nano adapters, OLED controls, and a 100 mW default output.",
     frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
     defaultHostTransport: "module-bay",
     defaultHostBay: "jr-standard-5",
     supportedHostBays: ["jr-standard-5", "nano-8"],
@@ -162,6 +166,7 @@ export const RADIO_TARGETS = [
     name: "Generic ExpressLRS 2.4 GHz TX",
     description: "Planning profile for a handset or USB ExpressLRS transmitter.",
     frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
     allowUnverifiedHostTransports: true,
     allowUnverifiedHostBays: true,
     defaultHostBay: "verify",
@@ -179,6 +184,7 @@ export const RADIO_TARGETS = [
     name: "Generic ExpressLRS 2.4 GHz RX",
     description: "Planning profile for a receiver connected to the flight controller.",
     frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
     allowUnverifiedHostTransports: true,
     allowUnverifiedHostBays: true,
     defaultHostBay: "verify",
@@ -365,6 +371,46 @@ export function getRadioTarget(targetId) {
 
 export function getRadioTargetsForRole(role) {
   return RADIO_TARGETS.filter((target) => target.roles.includes(role));
+}
+
+function normalizedFrequencyBand(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+export function getRadioReceiverBandCompatibility(targetId, receiver = null) {
+  const target = getRadioTarget(targetId);
+  const targetBandLabels = Array.isArray(target.frequencyBands)
+    ? target.frequencyBands.filter(Boolean)
+    : [];
+  const receiverBandLabels = Array.isArray(receiver?.frequencyBands)
+    ? receiver.frequencyBands.filter(Boolean)
+    : [];
+  const targetBands = targetBandLabels.map(normalizedFrequencyBand);
+  const receiverBands = receiverBandLabels.map(normalizedFrequencyBand);
+  if (!receiver?.id || targetBands.length === 0 || receiverBands.length === 0) {
+    return {
+      status: "unverified",
+      targetBands,
+      receiverBands,
+      sharedBands: [],
+      targetBandLabels,
+      receiverBandLabels,
+      sharedBandLabels: [],
+    };
+  }
+  const sharedBands = targetBands.filter((band) => receiverBands.includes(band));
+  const sharedBandLabels = targetBandLabels.filter(
+    (label) => sharedBands.includes(normalizedFrequencyBand(label)),
+  );
+  return {
+    status: sharedBands.length ? "compatible" : "conflict",
+    targetBands,
+    receiverBands,
+    sharedBands,
+    targetBandLabels,
+    receiverBandLabels,
+    sharedBandLabels,
+  };
 }
 
 export function getRadioHostTransports(targetId) {
@@ -572,7 +618,7 @@ export function hasStagedBinding(config) {
 
 export function buildRadioWarnings(
   config,
-  { channelLimit = 16, controlRoles = null } = {},
+  { channelLimit = 16, controlRoles = null, receiver = null } = {},
 ) {
   const base = normalizeRadioConfig(config);
   const normalized = {
@@ -603,6 +649,15 @@ export function buildRadioWarnings(
       .join(" or ");
     warnings.push(
       `${target.name} does not fit the selected ${getRadioHostBay(normalized.hostBay).label}.${supported ? ` Use ${supported}.` : ""}`,
+    );
+  }
+  const bandCompatibility = getRadioReceiverBandCompatibility(
+    target.id,
+    receiver,
+  );
+  if (bandCompatibility.status === "conflict") {
+    warnings.push(
+      `${receiver.name || "The selected receiver"} does not share a documented RF band with ${target.name}.`,
     );
   }
   if (!packetRates.some((rate) => rate.value === normalized.packetRateMode)) {
@@ -777,6 +832,10 @@ export function buildRadioSummary(config, options = {}) {
     ...options,
     channelLimit,
   });
+  const receiverBandCompatibility = getRadioReceiverBandCompatibility(
+    target.id,
+    options.receiver || null,
+  );
   const uid = normalizedUid(normalized.uid);
   const powerLevels = getRadioPowerLevels(target.id);
   const power = powerLevels?.find((level) => level.value === normalized.powerDbm)
@@ -829,6 +888,7 @@ export function buildRadioSummary(config, options = {}) {
       modelMatch: normalized.modelMatch,
       channelMap,
       selectedReceiverId: normalized.selectedReceiverId || null,
+      receiverBandCompatibility,
       bindingPhraseStaged: Boolean(String(normalized.bindingPhrase || "").trim()),
       uidStaged: Boolean(isValidUidFormat(normalized.uid) && uid && !isUnboundUid(uid)),
       antennaConfirmed: normalized.antennaConfirmed,

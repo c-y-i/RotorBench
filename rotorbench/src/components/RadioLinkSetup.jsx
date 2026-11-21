@@ -99,12 +99,20 @@ export default function RadioLinkSetup({
     config.hostBay,
   );
   const warnings = useMemo(
-    () => buildRadioWarnings(config, { channelLimit, controlRoles }),
-    [channelLimit, config, controlRoles],
+    () => buildRadioWarnings(config, {
+      channelLimit,
+      controlRoles,
+      receiver: selectedReceiver,
+    }),
+    [channelLimit, config, controlRoles, selectedReceiver],
   );
   const summary = useMemo(
-    () => buildRadioSummary(config, { channelLimit, controlRoles }),
-    [channelLimit, config, controlRoles],
+    () => buildRadioSummary(config, {
+      channelLimit,
+      controlRoles,
+      receiver: selectedReceiver,
+    }),
+    [channelLimit, config, controlRoles, selectedReceiver],
   );
   const endpointPlan = useMemo(
     () => buildRadioEndpointPlan(config, target),

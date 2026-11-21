@@ -639,6 +639,12 @@ export default function SavedConfigsPage() {
                                                         : " · verify"}
                                                 </span>
                                             )}
+                                            {buildSummary.hasHardwareParts
+                                                && buildSummary.radioReceiverBandStatus === "conflict" && (
+                                                <span className="is-host-unverified">
+                                                    RF band conflict
+                                                </span>
+                                            )}
                                             {hasPowerPath && (
                                                 <span className={`is-power-${buildSummary.powerPathStatus}`}>
                                                     {buildSummary.powerPathLabel}

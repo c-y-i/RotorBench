@@ -91,6 +91,15 @@ export function createBuildBriefing({
             }`,
           ]
         : []),
+      ...(hardwareReadiness.radioReceiverBands?.length
+        ? [
+            `- Receiver RF bands: ${hardwareReadiness.radioReceiverBands.join(" / ")} / ${hardwareReadiness.radioReceiverBandStatus}${
+              hardwareReadiness.radioSharedBands?.length
+                ? ` / shared with TX: ${hardwareReadiness.radioSharedBands.join(" / ")}`
+                : ""
+            }`,
+          ]
+        : []),
     );
   }
 

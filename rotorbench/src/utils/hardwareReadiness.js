@@ -17,6 +17,7 @@ import {
   getRadioHostBay,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
+  getRadioReceiverBandCompatibility,
   getRadioTarget,
   isRadioHostBayCompatible,
   normalizeRadioConfig,
@@ -93,6 +94,7 @@ export function summarizeHardwareReadiness({
   const fcIssues = validateFlightControllerConfig(fcPlan, profile);
   const radioWarnings = buildRadioWarnings(radioPlan, {
     channelLimit: fcPlan.firmwareFamily === "aerialkit" ? 8 : 16,
+    receiver,
   });
   const mappingWarnings = buildChannelMappingWarnings(fcPlan, radioPlan);
   const blockerCount = fcIssues.filter((issue) => issue.severity === "error").length;
@@ -131,6 +133,10 @@ export function summarizeHardwareReadiness({
     radioPlan.hostBay,
   );
   const radioRegulatoryOptions = getRadioRegulatoryOptions(radioTarget.id);
+  const radioReceiverBands = getRadioReceiverBandCompatibility(
+    radioTarget.id,
+    receiver,
+  );
   const radioRegulatoryLimit = getRadioRegulatoryLimit(
     radioTarget.id,
     radioPlan.regulatoryRegion,
@@ -204,6 +210,9 @@ export function summarizeHardwareReadiness({
     radioRegulatoryMaxDbm: radioRegulatoryLimit?.dbm ?? null,
     radioRegulatoryMaxMw: radioRegulatoryLimit?.mw ?? null,
     radioPowerCapStatus,
+    radioReceiverBandStatus: radioReceiverBands.status,
+    radioReceiverBands: radioReceiverBands.receiverBandLabels,
+    radioSharedBands: radioReceiverBands.sharedBandLabels,
     fcAirframe: fcPlan.airframe,
     fcAirframeLabel: AIRFRAMES.find((airframe) => airframe.value === fcPlan.airframe)?.label
       || fcPlan.airframe,
@@ -249,6 +258,13 @@ export function sanitizeHardwareReadiness(readiness) {
     radioRegulatoryMaxDbm: readiness.radioRegulatoryMaxDbm ?? null,
     radioRegulatoryMaxMw: readiness.radioRegulatoryMaxMw ?? null,
     radioPowerCapStatus: readiness.radioPowerCapStatus || null,
+    radioReceiverBandStatus: readiness.radioReceiverBandStatus || null,
+    radioReceiverBands: Array.isArray(readiness.radioReceiverBands)
+      ? readiness.radioReceiverBands
+      : [],
+    radioSharedBands: Array.isArray(readiness.radioSharedBands)
+      ? readiness.radioSharedBands
+      : [],
     fcAirframe: readiness.fcAirframe || null,
     fcAirframeLabel: readiness.fcAirframeLabel || null,
     fcMotorDirection: readiness.fcMotorDirection || null,
