@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import AssemblyStackMap from "./AssemblyStackMap";
 
 const frame = {
@@ -86,4 +86,26 @@ test("marks measured dimensions and does not render without a frame", () => {
 
   rerender(<AssemblyStackMap frame={null} esc={esc} />);
   expect(container).toBeEmptyDOMElement();
+});
+
+test("toggles component visibility through the 3D layer controls", () => {
+  const onToggleComponent = jest.fn();
+  render(
+    <AssemblyStackMap
+      frame={frame}
+      motor={motor}
+      propeller={propeller}
+      battery={battery}
+      clearedComponents={["motor"]}
+      onToggleComponent={onToggleComponent}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", {
+    name: "Show Motors ×4 in 3D",
+  }));
+  expect(onToggleComponent).toHaveBeenCalledWith("motor");
+  expect(screen.getByRole("button", {
+    name: "Hide Battery in 3D",
+  })).toHaveAttribute("aria-pressed", "true");
 });

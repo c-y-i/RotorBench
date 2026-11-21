@@ -1576,7 +1576,13 @@
   font-size: 8px;
 }
 
-.assembly-stack-map-body li > em {
+.assembly-stack-map-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.assembly-stack-map-actions > em {
   padding: 3px 5px;
   color: var(--brand-strong);
   background: var(--brand-soft);
@@ -1588,14 +1594,43 @@
   text-transform: uppercase;
 }
 
-.assembly-stack-map-body li > em.is-estimated {
+.assembly-stack-map-actions > em.is-estimated {
   color: var(--warn);
   background: var(--accent-soft);
 }
 
-.assembly-stack-map-body li > em.is-measured {
+.assembly-stack-map-actions > em.is-measured {
   color: #0d5d55;
   background: #d8efeb;
+}
+
+.assembly-stack-map-actions > button {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.assembly-stack-map-actions > button:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.assembly-stack-map-actions > button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
+.assembly-stack-map-actions > button[aria-pressed="false"] {
+  color: var(--warn);
+  background: var(--accent-soft);
+  border-color: #e2bd9e;
 }
 
 .assembly-stack-map-body > p {

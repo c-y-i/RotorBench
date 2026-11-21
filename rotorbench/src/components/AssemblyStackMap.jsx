@@ -1,5 +1,5 @@
 import React, { useId } from "react";
-import { Layers } from "lucide-react";
+import { Eye, EyeOff, Layers } from "lucide-react";
 import {
   getBatteryPlacementMm,
   getFallbackDimensionsMm,
@@ -9,13 +9,13 @@ import {
 } from "../assembly/assemblyTransforms";
 
 const STACK_PARTS = [
-  { key: "propeller", label: "Propellers" },
-  { key: "motor", label: "Motors" },
-  { key: "battery", label: "Battery" },
-  { key: "receiver", label: "Receiver" },
-  { key: "flightController", label: "Flight controller" },
-  { key: "esc", label: "ESC" },
-  { key: "frame", label: "Frame" },
+  { key: "propeller", label: "Propellers", componentType: "propeller" },
+  { key: "motor", label: "Motors", componentType: "motor" },
+  { key: "battery", label: "Battery", componentType: "battery" },
+  { key: "receiver", label: "Receiver", componentType: "receiver" },
+  { key: "flightController", label: "Flight controller", componentType: "flight_controller" },
+  { key: "esc", label: "ESC", componentType: "esc" },
+  { key: "frame", label: "Frame", componentType: "frame" },
 ];
 
 function confidenceLabel(part) {
@@ -37,6 +37,8 @@ export default function AssemblyStackMap({
   battery = null,
   motor = null,
   propeller = null,
+  clearedComponents = [],
+  onToggleComponent = null,
 }) {
   const id = useId().replace(/:/g, "");
   if (!frame?.id) return null;
@@ -60,7 +62,7 @@ export default function AssemblyStackMap({
     motor,
     propeller,
   };
-  const entries = STACK_PARTS.flatMap(({ key, label }) => {
+  const entries = STACK_PARTS.flatMap(({ key, label, componentType }) => {
     const part = parts[key];
     if (!part?.id) return [];
     let height;
@@ -83,6 +85,7 @@ export default function AssemblyStackMap({
     }
     return [{
       key,
+      componentType,
       label: ["motor", "propeller"].includes(key)
         ? `${label} ×${motorCount}`
         : label,
@@ -118,9 +121,25 @@ export default function AssemblyStackMap({
                   {entry.y.toFixed(1)}–{entry.top.toFixed(1)} mm
                 </small>
               </span>
-              <em className={`is-${entry.confidence.toLowerCase().replace(" ", "-")}`}>
-                {entry.confidence}
-              </em>
+              <span className="assembly-stack-map-actions">
+                <em className={`is-${entry.confidence.toLowerCase().replace(" ", "-")}`}>
+                  {entry.confidence}
+                </em>
+                {onToggleComponent && (
+                  <button
+                    type="button"
+                    aria-pressed={!clearedComponents.includes(entry.componentType)}
+                    aria-label={`${
+                      clearedComponents.includes(entry.componentType) ? "Show" : "Hide"
+                    } ${entry.label} in 3D`}
+                    onClick={() => onToggleComponent(entry.componentType)}
+                  >
+                    {clearedComponents.includes(entry.componentType)
+                      ? <EyeOff size={15} aria-hidden="true" />
+                      : <Eye size={15} aria-hidden="true" />}
+                  </button>
+                )}
+              </span>
             </li>
           ))}
         </ol>

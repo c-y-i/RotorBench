@@ -1035,6 +1035,14 @@ export default function BuildPage() {
     });
   };
 
+  const toggleComponentVisibility = (componentType) => {
+    setClearedComponents((current) => (
+      current.includes(componentType)
+        ? current.filter((type) => type !== componentType)
+        : [...current, componentType]
+    ));
+  };
+
   return (
     <div className="app-container">
       {message.text && (
@@ -1187,11 +1195,7 @@ export default function BuildPage() {
                       type="button"
                       className={`visibility-chip ${isHidden ? "is-hidden" : ""}`}
                       aria-pressed={!isHidden}
-                      onClick={() => {
-                        setClearedComponents((prev) =>
-                          isHidden ? prev.filter((c) => c !== id) : [...prev, id],
-                        );
-                      }}
+                      onClick={() => toggleComponentVisibility(id)}
                     >
                       <Icon size={14} aria-hidden="true" />
                       <span>{label}</span>
@@ -1373,6 +1377,8 @@ export default function BuildPage() {
             battery={assemblySpec.battery}
             motor={assemblySpec.motor}
             propeller={assemblySpec.propeller}
+            clearedComponents={clearedComponents}
+            onToggleComponent={toggleComponentVisibility}
           />
           <MeasuredGeometryPanel
             parts={measuredGeometryParts}
