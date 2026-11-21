@@ -1422,6 +1422,14 @@
   font-weight: 700;
 }
 
+.prop-map-output {
+  fill: #dce5df;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .prop-map-rotation {
   font-family: "IBM Plex Mono", monospace;
   font-size: 8px;

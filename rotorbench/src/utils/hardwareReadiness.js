@@ -6,6 +6,7 @@ import {
   createDefaultFlightControllerConfig,
   getAirframeMotorLayout,
   getBoardProfile,
+  getMotorOutputByCorner,
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
 import {
@@ -144,6 +145,7 @@ export function summarizeHardwareReadiness({
       .map((motor) => `${motor.output} ${motor.label} ${motor.spin}`)
       .join(" · ")
     : null;
+  const motorOutputByCorner = getMotorOutputByCorner(motorLayout);
 
   return {
     status,
@@ -179,6 +181,7 @@ export function summarizeHardwareReadiness({
     fcMotorDirection: fcPlan.motorDirection || null,
     fcMotorDirectionLabel: motorDirectionLabel,
     fcMotorOrder: motorOrder,
+    fcMotorOutputByCorner: motorOutputByCorner,
     fcMotorLayoutSource: motorLayout
       ? fcPlan.firmwareFamily === "betaflight" ? "Betaflight" : "Aerial Kit"
       : null,
@@ -215,6 +218,7 @@ export function sanitizeHardwareReadiness(readiness) {
     fcMotorDirection: readiness.fcMotorDirection || null,
     fcMotorDirectionLabel: readiness.fcMotorDirectionLabel || null,
     fcMotorOrder: readiness.fcMotorOrder || null,
+    fcMotorOutputByCorner: readiness.fcMotorOutputByCorner || null,
     fcMotorLayoutSource: readiness.fcMotorLayoutSource || null,
     hardwareVerified: false,
   };

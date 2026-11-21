@@ -312,7 +312,7 @@ test("a starter-platform deep link selects all seven components and consumes the
   expect(screen.getByRole("img", {
     name: "Propeller rotation by frame corner",
   })).toBeVisible();
-  expect(screen.getByText(/not labeled as vendor motor numbers/i))
+  expect(screen.getByText(/Output numbers are omitted until a supported saved/i))
     .toBeVisible();
   fireEvent.click(screen.getByText("Viewer placement"));
   expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
@@ -734,7 +734,9 @@ test("saved Betaflight QUAD X direction drives the assembly prop handedness", as
 
   expect(screen.getByTestId("assembly-viewer"))
     .toHaveAttribute("data-propeller-direction", "props-in");
-  expect(screen.getByText("props in · CW / CCW")).toBeInTheDocument();
+  expect(screen.getByText("props in · outputs mapped")).toBeInTheDocument();
+  expect(screen.getByText("OUT 1")).toBeInTheDocument();
+  expect(screen.getByText("OUT 4")).toBeInTheDocument();
 });
 
 test("new build requests ignore and consume an existing draft", async () => {

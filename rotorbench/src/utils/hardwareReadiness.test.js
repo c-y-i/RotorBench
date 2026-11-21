@@ -48,6 +48,12 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     fcMotorDirectionLabel: "Normal · props in",
     fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
     fcMotorLayoutSource: "Betaflight",
+    fcMotorOutputByCorner: {
+      upperLeft: { output: 4, label: "FL", spin: "CW" },
+      upperRight: { output: 2, label: "FR", spin: "CCW" },
+      lowerRight: { output: 1, label: "RR", spin: "CW" },
+      lowerLeft: { output: 3, label: "RL", spin: "CCW" },
+    },
   });
   expect(readiness.firmwareLabel).toBe("Betaflight");
   expect(readiness.protocolLabel).toBe("CRSF / ExpressLRS");

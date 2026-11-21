@@ -5,6 +5,7 @@ import {
   getAirframeMotorLayout,
   getBoardProfile,
   getChannelPreset,
+  getMotorOutputByCorner,
   validateFlightControllerConfig,
 } from "./flightControllerProfiles";
 
@@ -58,6 +59,15 @@ test("Aerial Kit motor layouts preserve the firmware output order", () => {
       { output: 4, label: "FL", spin: "CCW" },
     ],
   });
+  expect(getMotorOutputByCorner(getAirframeMotorLayout("quadx", "betaflight")))
+    .toEqual({
+      upperLeft: { output: 4, label: "FL", spin: "CW" },
+      upperRight: { output: 2, label: "FR", spin: "CCW" },
+      lowerRight: { output: 1, label: "RR", spin: "CW" },
+      lowerLeft: { output: 3, label: "RL", spin: "CCW" },
+    });
+  expect(getMotorOutputByCorner(getAirframeMotorLayout("quadp", "aerialkit")))
+    .toBeNull();
   expect(getAirframeMotorLayout("quadp", "betaflight")).toBeNull();
   expect(getAirframeMotorLayout("quadx", "inav")).toBeNull();
   expect(getAirframeMotorLayout("unknown")).toBeNull();

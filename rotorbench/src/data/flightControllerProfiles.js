@@ -395,6 +395,28 @@ export function getAirframeMotorLayout(
   return AIRFRAME_MOTOR_LAYOUTS[airframe] || null;
 }
 
+const CORNER_BY_MOTOR_LABEL = Object.freeze({
+  FL: "upperLeft",
+  FR: "upperRight",
+  RR: "lowerRight",
+  RL: "lowerLeft",
+});
+
+export function getMotorOutputByCorner(layout) {
+  if (!layout?.motors?.length) return null;
+  const outputByCorner = {};
+  for (const motor of layout.motors) {
+    const corner = CORNER_BY_MOTOR_LABEL[motor.label];
+    if (!corner) return null;
+    outputByCorner[corner] = {
+      output: motor.output,
+      label: motor.label,
+      spin: motor.spin,
+    };
+  }
+  return Object.keys(outputByCorner).length === 4 ? outputByCorner : null;
+}
+
 export const RECEIVER_PROTOCOLS = [
   {
     value: "crsf",

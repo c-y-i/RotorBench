@@ -1418,6 +1418,11 @@ export default function BuildPage() {
             motor={assemblySpec.motor}
             propeller={assemblySpec.propeller}
             direction={assemblyPropellerDirection}
+            motorOutputByCorner={
+              hardwareReadiness.configured
+                ? hardwareReadiness.fcMotorOutputByCorner
+                : null
+            }
           />
           <AssemblyStackMap
             frame={assemblySpec.frame}
