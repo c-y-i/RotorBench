@@ -43,11 +43,11 @@ class CatalogContractTests(unittest.TestCase):
                 "propellers": 11,
                 "batteries": 11,
                 "escs": 7,
-                "flight_controllers": 8,
+                "flight_controllers": 9,
                 "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 74)
+        self.assertEqual(sum(counts.values()), 75)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 74)
+        self.assertEqual(len(records), 75)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -299,6 +299,22 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(supplied_cable.power_connection, "supplied-cable")
         self.assertIsNone(supplied_cable.included_power_connector)
         self.assertIn("shop.iflight.com", supplied_cable.connector_source_url)
+
+    def test_speedybee_f405_v5_preserves_controller_specs_and_estimate_boundary(self):
+        flight_controller = next(
+            item for item in self.database.flight_controllers
+            if item.id == "fc-speedybee-f405-v5"
+        )
+        self.assertEqual(flight_controller.processor, "STM32F405")
+        self.assertEqual(flight_controller.imu, "ICM42688P")
+        self.assertEqual(flight_controller.weight, 8.1)
+        self.assertEqual(flight_controller.max_voltage, 25.2)
+        self.assertEqual(flight_controller.mounting_pattern_mm, [30.5, 30.5])
+        self.assertEqual(flight_controller.dimensions_mm, [39, 4.9, 39])
+        self.assertEqual(flight_controller.price, 73.99)
+        self.assertEqual(flight_controller.estimated_fields, ["mounting_point"])
+        self.assertNotIn("dimensionsMm", flight_controller.estimated_fields)
+        self.assertNotIn("weight", flight_controller.estimated_fields)
 
     def test_tattu_rline_v6_keeps_specs_and_estimated_curve_separate(self):
         battery = next(

@@ -316,6 +316,32 @@ test("expanded ESCs and flight controller preserve published limits", () => {
   });
 });
 
+test("SpeedyBee F405 V5 preserves current controller specifications", () => {
+  const flightController = componentsData.flight_controllers.find(
+    (item) => item.id === "fc-speedybee-f405-v5",
+  );
+
+  expect(flightController).toMatchObject({
+    name: "SpeedyBee F405 V5",
+    processor: "STM32F405",
+    imu: "ICM42688P",
+    weight: 8.1,
+    maxVoltage: 25.2,
+    mountingPatternMm: [30.5, 30.5],
+    dimensionsMm: [39, 4.9, 39],
+    price: 73.99,
+    sourceUrl: expect.stringContaining("speedybee.com"),
+    estimatedFields: ["mounting_point"],
+  });
+  expect(flightController.features).toEqual(expect.arrayContaining([
+    "OSD",
+    "Blackbox",
+    "Barometer",
+    "Bluetooth",
+    "6 UARTs",
+  ]));
+});
+
 test("AOS 7 and XING 2806.5 add source-backed long-range mechanics", () => {
   const frame = componentsData.frames.find(
     (item) => item.id === "frame-aos-7-evo-v12",
