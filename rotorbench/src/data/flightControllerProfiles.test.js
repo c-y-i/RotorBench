@@ -467,6 +467,39 @@ test("Kakute F7 AIO selects its documented Betaflight mapping", () => {
   expect(profile.notes.join(" ")).toMatch(/BRD_ALT_CONFIG=1/i);
 });
 
+test("MAMBA F722 MK2 exposes its target map without invented defaults", () => {
+  const selected = {
+    id: "fc-mamba-f722",
+    name: "MAMBA F722 MK2",
+    processor: "STM32F722",
+    imu: "ICM42688P",
+    firmware: ["Betaflight"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config).toMatchObject({
+    firmwareFamily: "betaflight",
+    profileId: "mamba-f722-mk2",
+    airframe: "quadx",
+  });
+  expect(profile).toMatchObject({
+    label: "MAMBA F722 MK2",
+    board: "MAMBAF722_I2C",
+    receiverUart: "UART5",
+    receiverUartLocked: false,
+    gpsUart: "UART6",
+    outputs: { motors: 4, servos: 0 },
+    flightLog: { label: "16 MB onboard blackbox" },
+  });
+  expect(profile.notes.join(" ")).toMatch(/does not compile a default serial receiver/i);
+  expect(validateFlightControllerConfig(config, profile))
+    .not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "receiver-uart-role" }),
+      expect.objectContaining({ code: "receiver-uart-pins-unmapped" }),
+    ]));
+});
+
 test("SpeedyBee F405 Mini selects its documented Betaflight target", () => {
   const selected = {
     id: "fc-speedybee-f405-mini",

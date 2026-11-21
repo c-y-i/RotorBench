@@ -330,6 +330,25 @@ test("Kakute F7 AIO reflects the documented processor and IMU set", () => {
   });
 });
 
+test("MAMBA F722 MK2 carries the target flash and sensor feature set", () => {
+  const flightController = componentsData.flight_controllers.find(
+    (item) => item.id === "fc-mamba-f722",
+  );
+
+  expect(flightController).toMatchObject({
+    processor: "STM32F722",
+    imu: "ICM42688P",
+    sourceUrl: expect.stringContaining("MAMBAF722_I2C"),
+    dataStatus: "verified_target_estimated_mounting",
+    estimatedFields: ["mounting_point"],
+  });
+  expect(flightController.features).toEqual(expect.arrayContaining([
+    "OSD",
+    "Blackbox",
+    "Barometer",
+  ]));
+});
+
 test("SpeedyBee F405 V5 preserves current controller specifications", () => {
   const flightController = componentsData.flight_controllers.find(
     (item) => item.id === "fc-speedybee-f405-v5",

@@ -912,8 +912,11 @@
       "firmware": ["Betaflight"],
       "imu": "ICM42688P",
       "maxVoltage": 25.2,
-      "features": ["OSD", "Blackbox"],
-      "price": 44.99
+      "features": ["OSD", "Blackbox", "Barometer"],
+      "price": 44.99,
+      "sourceUrl": "https://raw.githubusercontent.com/betaflight/config/master/configs/DIAT/MAMBAF722_I2C/config.h",
+      "dataStatus": "verified_target_estimated_mounting",
+      "estimatedFields": ["mounting_point"]
     },
     {
       "id": "fc-speedybee-f405-v4",
