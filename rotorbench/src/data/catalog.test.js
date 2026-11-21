@@ -23,6 +23,7 @@ test("expanded receivers keep source and estimated fields explicit", () => {
     ["rx-radiomaster-rp2-v2", "radiomasterrc.com", 0.55],
     ["rx-radiomaster-rp3-v2", "radiomasterrc.com", 4.6],
     ["rx-radiomaster-rp4td", "radiomasterrc.com", 1.4],
+    ["rx-radiomaster-rp4td-m", "radiomasterrc.com", 1.0],
     ["rx-radiomaster-xr4-gemini", "radiomasterrc.com", 1.7],
   ];
   for (const [id, sourceHost, weight] of expected) {
@@ -37,6 +38,36 @@ test("expanded receivers keep source and estimated fields explicit", () => {
       estimatedFields: expect.arrayContaining(["currentDraw", "mounting_point"]),
     });
   }
+});
+
+test("RP4TD-M keeps published RF specs separate from inferred board fields", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-radiomaster-rp4td-m",
+  );
+
+  expect(receiver).toMatchObject({
+    name: "RadioMaster RP4TD-M ExpressLRS Mini Diversity",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz"],
+    weight: 1.0,
+    dimensionsMm: [18.1, 4, 16],
+    rfChips: "SX1281 ×2",
+    telemetryPowerMw: 10,
+    receiverRefreshRate: "500 Hz / F1000 Hz maximum",
+    workingVoltage: "5 V",
+    firmwareVersion: "ExpressLRS 3.4.3 pre-installed",
+    antenna: "2 × 65 mm 2.4 GHz T antenna",
+    wifiUpdates: true,
+    price: 19.99,
+    modelStatus: "not_available",
+    sourceUrl: "https://radiomasterrc.com/products/rp4td-m-expresslrs-2-4ghz-mini-true-diversity-receiver",
+  });
+  expect(receiver.estimatedFields).toEqual([
+    "dimensionsMm",
+    "currentDraw",
+    "channels",
+    "mounting_point",
+  ]);
 });
 
 test("iFlight XING2 2207 keeps published mechanics and estimates explicit", () => {

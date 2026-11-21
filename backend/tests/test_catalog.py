@@ -44,10 +44,10 @@ class CatalogContractTests(unittest.TestCase):
                 "batteries": 9,
                 "escs": 7,
                 "flight_controllers": 8,
-                "receivers": 9,
+                "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 67)
+        self.assertEqual(sum(counts.values()), 68)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 67)
+        self.assertEqual(len(records), 68)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -144,6 +144,25 @@ class CatalogContractTests(unittest.TestCase):
         self.assertIn("currentDraw", receiver.estimated_fields)
         self.assertIn("channels", receiver.estimated_fields)
         self.assertNotIn("dimensionsMm", receiver.estimated_fields)
+        self.assertNotIn("weight", receiver.estimated_fields)
+
+    def test_rp4td_m_keeps_published_rf_specs_and_board_estimates_separate(self):
+        receiver = next(
+            item for item in self.database.receivers
+            if item.id == "rx-radiomaster-rp4td-m"
+        )
+        self.assertEqual(receiver.protocol, "CRSF")
+        self.assertEqual(receiver.weight, 1.0)
+        self.assertEqual(receiver.dimensions_mm, [18.1, 4, 16])
+        self.assertEqual(receiver.price, 19.99)
+        self.assertIn(
+            "radiomasterrc.com/products/rp4td-m",
+            receiver.source_url,
+        )
+        self.assertIn("dimensionsMm", receiver.estimated_fields)
+        self.assertIn("currentDraw", receiver.estimated_fields)
+        self.assertIn("channels", receiver.estimated_fields)
+        self.assertIn("mounting_point", receiver.estimated_fields)
         self.assertNotIn("weight", receiver.estimated_fields)
 
     def test_xr4_keeps_dual_band_specs_and_estimates_separate(self):
