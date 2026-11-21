@@ -11,6 +11,7 @@ import {
   getRadioHostBay,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
+  getRadioReceiverBandCompatibility,
   getRadioTarget,
 } from "../data/radioProfiles";
 
@@ -48,6 +49,10 @@ export function createHardwarePlanBriefing({
     radioTarget.id,
     radioPlan?.regulatoryRegion,
   );
+  const receiverBands = getRadioReceiverBandCompatibility(
+    radioTarget.id,
+    receiver,
+  );
   const reviewItems = [
     ...fcIssues.map((issue) => `- FC ${issue.severity || "review"}: ${issue.message}`),
     ...radioWarnings.map((warning) => `- Radio: ${warning}`),
@@ -83,6 +88,17 @@ export function createHardwarePlanBriefing({
     }`,
     ...(radioPlan?.hostTransport === "module-bay"
       ? [`- Handset bay: ${getRadioHostBay(radioPlan?.hostBay).label}`]
+      : []),
+    ...(receiver?.id
+      ? [
+          `- Receiver RF bands: ${
+            receiverBands.receiverBandLabels.join(" / ") || "not catalogued"
+          } · ${receiverBands.status}${
+            receiverBands.sharedBandLabels.length
+              ? ` · shared with TX: ${receiverBands.sharedBandLabels.join(" / ")}`
+              : ""
+          }`,
+        ]
       : []),
     `- Packet rate: ${
       selectedLabel(RADIO_PACKET_RATES, radioPlan?.packetRateMode)

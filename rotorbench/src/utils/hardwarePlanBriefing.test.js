@@ -69,6 +69,11 @@ test("briefs the selected radio regulatory ceiling", () => {
   const briefing = createHardwarePlanBriefing({
     fcPlan,
     fcProfile,
+    receiver: {
+      id: "rx-xr4",
+      name: "RadioMaster XR4 Gemini Xrossband",
+      frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    },
     radioPlan: {
       ...DEFAULT_RADIO_CONFIG,
       targetId: "radiomaster-ranger-nano-elrs-24-tx",
@@ -84,4 +89,7 @@ test("briefs the selected radio regulatory ceiling", () => {
     "- RF region: FCC · 30 dBm / 1000 mW maximum",
   );
   expect(briefing.text).toContain("- Handset bay: Nano 8-pin bay");
+  expect(briefing.text).toContain(
+    "- Receiver RF bands: 2.4 GHz / Sub-G 900 MHz · compatible · shared with TX: 2.4 GHz",
+  );
 });
