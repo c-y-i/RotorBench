@@ -416,6 +416,7 @@ export default function RadioLinkSetup({
           { id: "radio-link-heading", label: "Link" },
           { id: "radio-binding-heading", label: "Binding" },
           { id: "radio-channels-heading", label: "Channels" },
+          { id: "radio-plan-summary-heading", label: "Summary" },
         ]}
       />
 
@@ -931,7 +932,7 @@ export default function RadioLinkSetup({
           <div className="radio-plan-panel-heading">
             <div>
               <span>Plan status</span>
-              <h3>Not hardware-verified</h3>
+              <h3 id="radio-plan-summary-heading">Not hardware-verified</h3>
             </div>
             <Radio size={20} aria-hidden="true" />
           </div>

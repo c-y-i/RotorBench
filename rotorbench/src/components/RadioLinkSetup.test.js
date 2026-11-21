@@ -13,6 +13,16 @@ test("renders the radio plan without claiming a hardware connection", () => {
   expect(screen.getByText("ELRS 2.4G RX")).toBeInTheDocument();
   expect(screen.getByText(/Radio · .*checks? before deployment/i)).toBeInTheDocument();
   expect(screen.getByText("Std (1:64)")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Summary" })).toBeInTheDocument();
+});
+
+test("jumps from the section strip to the radio plan summary", () => {
+  render(<RadioLinkSetup />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Summary" }));
+
+  expect(screen.getByRole("heading", { name: "Not hardware-verified" }))
+    .toHaveFocus();
 });
 
 test("can switch role and save a local plan", () => {
