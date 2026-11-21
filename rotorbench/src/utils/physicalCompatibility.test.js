@@ -1,5 +1,6 @@
 import {
   checkBatteryEnvelope,
+  checkBoardFootprint,
   checkBoardStack,
   checkMotorMount,
   checkPowerConnector,
@@ -35,6 +36,24 @@ test("prop bore and motor shaft data detect an exact mismatch", () => {
     { name: "Prop", shaftMm: 4, hubDiameterMm: 13 },
     { name: "Motor", propShaftMm: 5, bellDiameterMm: 27.5 },
   )).toMatchObject({ status: "conflict" });
+});
+
+test("source-backed board planforms stay conservative about usable stack clearance", () => {
+  expect(checkBoardFootprint(
+    { name: "Tekko32", planformMm: [43, 44] },
+    { name: "AOS 5 V5", dimensionsMm: [180, 34, 140] },
+  )).toBeNull();
+  expect(checkBoardFootprint(
+    { name: "Oversized board", planformMm: [160, 160] },
+    { name: "Small frame", dimensionsMm: [133, 30, 93] },
+  )).toMatchObject({
+    status: "conflict",
+    message: expect.stringMatching(/exceeds the Small frame's overall/i),
+  });
+  expect(checkBoardFootprint(
+    { name: "Board without planform" },
+    { name: "Frame", dimensionsMm: [180, 34, 140] },
+  )).toBeNull();
 });
 
 test("build-local measurements stay measured instead of becoming verified", () => {

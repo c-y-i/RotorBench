@@ -66,6 +66,35 @@ export function checkBoardStack(part, frame) {
   );
 }
 
+export function checkBoardFootprint(part, frame) {
+  const planform = asPattern(part?.planformMm);
+  if (!planform) return null;
+
+  const frameDimensions = frame?.dimensionsMm;
+  const frameFootprint = Array.isArray(frameDimensions)
+    && frameDimensions.length === 3
+    && frameDimensions[0] > 0
+    && frameDimensions[2] > 0
+      ? [Number(frameDimensions[0]), Number(frameDimensions[2])].sort((a, b) => a - b)
+      : null;
+  if (!frameFootprint) return null;
+
+  const impossible =
+    planform[0] > frameFootprint[0]
+    || planform[1] > frameFootprint[1];
+  if (impossible) {
+    return check(
+      "conflict",
+      `${part.name}'s ${planform[0]} × ${planform[1]} mm footprint exceeds the ${frame.name}'s overall ${frameFootprint[0]} × ${frameFootprint[1]} mm envelope.`,
+      `${part.name} board footprint`,
+    );
+  }
+
+  // Staying inside the overall frame envelope does not prove usable stack-deck
+  // clearance. Leave that positive state unreported until a deck is measured.
+  return null;
+}
+
 export function checkMotorMount(motor, frame) {
   const motorPattern = asPattern(motor?.mountingPatternMm);
   const framePatterns = patternsFor(frame, "motorMountPatternsMm");
@@ -317,6 +346,7 @@ export function physicalChecksFor(category, part, selected = {}) {
   }
   if (category === "escs" || category === "flight_controllers") {
     checks.push(checkBoardStack(part, selected.frame));
+    checks.push(checkBoardFootprint(part, selected.frame));
   }
   if (category === "batteries") {
     checks.push(checkPowerConnector(part, selected.esc));

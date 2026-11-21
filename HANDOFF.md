@@ -706,7 +706,7 @@ Most newer source-backed products do not have a matching GLB in `backend/assets`
 
 The fallbacks communicate proportion and placement, not exact product appearance.
 
-Source-backed 2D board planforms can now feed the shared transform contract when thickness is unpublished. Holybro's Tekko32 F4 Metal 65A supplies a 43 × 44 mm planform, iFlight's Borg 5S RX supplies 34 × 27 mm, and Holybro's Kakute H7 V2 supplies 35 × 35 mm. Generated meshes use that exact footprint with the existing generic board height; the interface labels these parts `Footprint only`, and neither the catalog nor UI presents the fallback height as a manufacturer dimension.
+Source-backed 2D board planforms can now feed the shared transform contract when thickness is unpublished. Holybro's Tekko32 F4 Metal 65A supplies a 43 × 44 mm planform, iFlight's Borg 5S RX supplies 34 × 27 mm, and Holybro's Kakute H7 V2 supplies 35 × 35 mm. Generated meshes use that exact footprint with the existing generic board height; the interface labels these parts `Footprint only`, and neither the catalog nor UI presents the fallback height as a manufacturer dimension. Physical fit uses the planform as a conservative conflict guard against the frame's overall envelope. Staying inside that envelope does not claim usable stack-deck clearance, so no positive planform result is reported until a deck is measured.
 
 ### Compatibility data still has gaps
 
