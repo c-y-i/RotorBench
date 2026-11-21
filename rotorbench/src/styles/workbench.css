@@ -2151,6 +2151,7 @@
 
 .saved-page .saved-toolbar {
   display: flex;
+  flex-wrap: wrap;
   flex: 1;
   justify-content: flex-end;
   gap: 8px;
@@ -2180,6 +2181,42 @@
 .saved-search-field .input-field {
   max-width: none;
   padding-inline-start: 36px;
+}
+
+.saved-status-filter {
+  position: relative;
+  display: flex;
+  flex: 0 0 188px;
+  align-items: center;
+  min-width: 0;
+}
+
+.saved-status-filter > svg {
+  position: absolute;
+  inset-inline-start: 12px;
+  z-index: 1;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.saved-status-filter select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 30px 0 36px;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.saved-status-filter select:focus-visible {
+  border-color: var(--brand);
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
 }
 
 .saved-page .saved-list {
@@ -2533,6 +2570,11 @@
   }
 
   .saved-page .saved-toolbar .action-btn {
+    width: 100%;
+  }
+
+  .saved-status-filter {
+    flex-basis: 100%;
     width: 100%;
   }
 

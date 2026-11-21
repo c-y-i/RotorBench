@@ -1035,6 +1035,12 @@
     max-width: none;
   }
 
+  .saved-status-filter {
+    grid-column: 1 / -1;
+    flex: none;
+    width: 100%;
+  }
+
   .saved-page .saved-toolbar .action-btn {
     width: 100%;
   }

@@ -155,4 +155,27 @@ test("saved builds show explicitly attached imported evidence", async () => {
   );
 
   expect(await screen.findByText("Imported evidence correlated")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Filter saved builds by status"), {
+    target: { value: "evidence" },
+  });
+  expect(screen.getByRole("heading", { name: "Offline build" })).toBeInTheDocument();
+});
+
+test("status filters isolate hardware-plan review from clear plans", async () => {
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("heading", { name: "Offline build" });
+  const filter = screen.getByLabelText("Filter saved builds by status");
+
+  fireEvent.change(filter, { target: { value: "hardware-review" } });
+  expect(screen.getByRole("heading", { name: "Offline build" })).toBeInTheDocument();
+
+  fireEvent.change(filter, { target: { value: "hardware-clear" } });
+  expect(screen.getByText("No matching builds")).toBeInTheDocument();
+
+  fireEvent.change(filter, { target: { value: "all" } });
+  expect(screen.getByRole("heading", { name: "Offline build" })).toBeInTheDocument();
 });

@@ -18,6 +18,7 @@ import {
   Copy,
   Cpu,
   Fan,
+  Filter,
   FolderOpen,
   Pencil,
   Plus,
@@ -77,6 +78,7 @@ export default function SavedConfigsPage() {
     const [items, setItems] = useState([]);
     const [error, setError] = useState(null);
     const [q, setQ] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [expandedId, setExpandedId] = useState(null);
     const [comparisonIds, setComparisonIds] = useState([]);
     const [message, setMessage] = useState({ type: "", text: "" });
@@ -302,7 +304,6 @@ export default function SavedConfigsPage() {
 
     const filtered = useMemo(() => {
         const term = q.trim().toLowerCase();
-        if (!term) return items;
         return items.filter((it) => {
             const idx = items.indexOf(it);
             const fallbackName = `Saved Config #${idx + 1}`;
@@ -312,9 +313,38 @@ export default function SavedConfigsPage() {
                 .map(({ part }) => part?.name || "")
                 .join(" ")
                 .toLowerCase();
-            return name.includes(term) || note.includes(term) || componentNames.includes(term);
+            const matchesSearch = !term
+                || name.includes(term)
+                || note.includes(term)
+                || componentNames.includes(term);
+            if (!matchesSearch) return false;
+            if (statusFilter === "all") return true;
+
+            const summary = summarizeBuild(it);
+            if (statusFilter === "fit-review") {
+                return summary.physicalFitStatus === "conflict"
+                    || summary.electricalFitStatus === "conflict";
+            }
+            if (statusFilter === "hardware-review") {
+                return summary.hardwarePlanStatus !== "saved"
+                    || summary.hardwareIssueCount > 0
+                    || summary.receiverWiringStatus === "unverified";
+            }
+            if (statusFilter === "hardware-clear") {
+                return summary.hardwarePlanStatus === "saved"
+                    && summary.hardwareIssueCount === 0;
+            }
+            if (statusFilter === "power-review") {
+                return ["conflict", "manual", "review"].includes(
+                    summary.powerPathStatus,
+                );
+            }
+            if (statusFilter === "evidence") {
+                return summary.benchEvidenceConfigured;
+            }
+            return true;
         });
-    }, [items, q]);
+    }, [items, q, statusFilter]);
 
     const displayName = (it) => {
         const idx = items.indexOf(it);
@@ -382,6 +412,21 @@ export default function SavedConfigsPage() {
                             onChange={(e) => setQ(e.target.value)}
                         />
                     </label>
+                    <label className="saved-status-filter">
+                        <Filter size={16} aria-hidden="true" />
+                        <select
+                            aria-label="Filter saved builds by status"
+                            value={statusFilter}
+                            onChange={(event) => setStatusFilter(event.target.value)}
+                        >
+                            <option value="all">All statuses</option>
+                            <option value="fit-review">Fit conflicts</option>
+                            <option value="power-review">Power-path review</option>
+                            <option value="hardware-review">Hardware plan review</option>
+                            <option value="hardware-clear">Hardware plan clear</option>
+                            <option value="evidence">Imported evidence</option>
+                        </select>
+                    </label>
                     <button className="action-btn analysis" onClick={() => navigate("/build?new=1")}>
                         <Plus size={17} aria-hidden="true" />
                         New build
@@ -430,7 +475,7 @@ export default function SavedConfigsPage() {
                         <div className="empty-state">
                             <FolderOpen size={28} strokeWidth={1.5} aria-hidden="true" />
                             <h3>{items.length ? "No matching builds" : "No saved builds yet"}</h3>
-                            <p>{items.length ? "Try a different search term." : "Configure your first airframe and save it here."}</p>
+                            <p>{items.length ? "Try another search term or status filter." : "Configure your first airframe and save it here."}</p>
                             <button className="action-btn analysis" onClick={() => navigate("/build?new=1")}>
                                 <Plus size={17} aria-hidden="true" />
                                 Create a build
