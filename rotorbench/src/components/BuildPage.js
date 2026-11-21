@@ -5,6 +5,7 @@ import "../styles/home.css";
 import componentsData from "../data/components.json";
 import PartPicker from "./PartPicker";
 import MeasuredGeometryPanel from "./MeasuredGeometryPanel";
+import PropRotationMap from "./PropRotationMap";
 import API_BASE from "../config/api";
 import {
   physicalChecksFor,
@@ -1311,6 +1312,10 @@ export default function BuildPage() {
               </div>
             </details>
           )}
+          <PropRotationMap
+            motor={assemblySpec.motor}
+            propeller={assemblySpec.propeller}
+          />
           <MeasuredGeometryPanel
             parts={measuredGeometryParts}
             overrides={geometryOverrides}

@@ -190,6 +190,12 @@ test("a starter-platform deep link selects all seven components and consumes the
   expect(within(powerPath).getByText("XT30 match")).toBeInTheDocument();
   expect(within(powerPath).getByText("Tattu R-Line 4S 850mAh 95C"))
     .toBeInTheDocument();
+  fireEvent.click(screen.getByText("Prop rotation map"));
+  expect(screen.getByRole("img", {
+    name: "Propeller rotation by frame corner",
+  })).toBeVisible();
+  expect(screen.getByText(/not labeled as vendor motor numbers/i))
+    .toBeVisible();
   fireEvent.click(screen.getByText("Viewer placement"));
   expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
     "Propeller-to-shaft alignment",
