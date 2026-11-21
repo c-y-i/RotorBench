@@ -67,7 +67,15 @@ function getMeta(category, part) {
     case "flight_controllers":
       return [part.processor, part.imu, `${part.weight} g`];
     case "receivers":
-      return [part.protocol, `${part.channels} channels`, `${part.weight} g`];
+      return [
+        part.protocol,
+        part.frequencyBands?.join(" / "),
+        part.telemetryPowerMw
+          ? `${part.telemetryPowerMw} mW telemetry`
+          : null,
+        `${part.channels} channels`,
+        `${part.weight} g`,
+      ].filter(Boolean);
     default:
       return [];
   }

@@ -108,6 +108,40 @@ test("recently selected parts are available through an explicit filter", () => {
   expect(screen.getByText(/Recent · Source-backed/)).toBeInTheDocument();
 });
 
+test("receiver metadata exposes published dual-band and telemetry details", () => {
+  render(
+    <PartPicker
+      category="receivers"
+      parts={[{
+        id: "rx-xr4",
+        name: "RadioMaster XR4 Gemini Xrossband",
+        protocol: "CRSF",
+        frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+        telemetryPowerMw: 100,
+        channels: 16,
+        weight: 1.7,
+        price: 34.99,
+        sourceUrl: "https://example.com/xr4",
+        modelStatus: "not_available",
+        estimatedFields: ["currentDraw", "channels", "mounting_point"],
+      }]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({
+        ok: true,
+        verified: false,
+        reason: "No known conflict; fit data is incomplete.",
+      })}
+      placeholder="Choose a receiver"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a receiver/i }));
+  expect(screen.getByText(
+    "CRSF · 2.4 GHz / Sub-G 900 MHz · 100 mW telemetry · 16 channels · 1.7 g",
+  )).toBeInTheDocument();
+});
+
 test("verified-fit and conflict filters keep evidence states separate", () => {
   render(
     <PartPicker

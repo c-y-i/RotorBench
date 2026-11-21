@@ -23,6 +23,7 @@ test("expanded receivers keep source and estimated fields explicit", () => {
     ["rx-radiomaster-rp2-v2", "radiomasterrc.com", 0.55],
     ["rx-radiomaster-rp3-v2", "radiomasterrc.com", 4.6],
     ["rx-radiomaster-rp4td", "radiomasterrc.com", 1.4],
+    ["rx-radiomaster-xr4-gemini", "radiomasterrc.com", 1.7],
   ];
   for (const [id, sourceHost, weight] of expected) {
     const receiver = componentsData.receivers.find((item) => item.id === id);
@@ -127,6 +128,33 @@ test("RP3 V2 adds published dual-antenna dimensions without hidden estimates", (
   });
   expect(receiver.estimatedFields).toContain("currentDraw");
   expect(receiver.estimatedFields).toContain("channels");
+  expect(receiver.estimatedFields).not.toContain("dimensionsMm");
+  expect(receiver.estimatedFields).not.toContain("weight");
+});
+
+test("XR4 keeps dual-band RF specifications separate from estimated fields", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-radiomaster-xr4-gemini",
+  );
+  expect(receiver).toMatchObject({
+    name: "RadioMaster XR4 Gemini Xrossband",
+    protocol: "CRSF",
+    weight: 1.7,
+    dimensionsMm: [22, 4, 18],
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    rfChips: "Semtech LR1121 ×2",
+    telemetryPowerMw: 100,
+    workingVoltage: "4.5-8.4 V",
+    firmwareVersion: "ExpressLRS 3.5.1 pre-installed",
+    price: 34.99,
+    modelStatus: "not_available",
+    sourceUrl: "https://radiomasterrc.com/products/xr4-gemini-xrossband-dual-band-expresslrs-receiver",
+  });
+  expect(receiver.estimatedFields).toEqual([
+    "currentDraw",
+    "channels",
+    "mounting_point",
+  ]);
   expect(receiver.estimatedFields).not.toContain("dimensionsMm");
   expect(receiver.estimatedFields).not.toContain("weight");
 });

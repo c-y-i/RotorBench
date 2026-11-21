@@ -4381,6 +4381,7 @@
 .part-option-copy {
   display: grid;
   min-width: 0;
+  max-width: 100%;
   gap: 3px;
 }
 
@@ -4389,9 +4390,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  min-width: 0;
 }
 
 .part-option-name strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   font-size: 13px;
   line-height: 1.25;
@@ -4406,9 +4411,11 @@
 
 .part-option-meta,
 .part-option-status {
+  min-width: 0;
   color: var(--ink-soft);
   font-size: 10px;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .part-option-status {
@@ -4436,10 +4443,12 @@
 }
 
 .part-option-provenance {
+  min-width: 0;
   color: var(--ink-faint);
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
   line-height: 1.35;
+  overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 
@@ -4557,6 +4566,24 @@
   .part-picker-results {
     grid-template-columns: 1fr;
     padding: 7px 12px 14px;
+  }
+
+  .part-option {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .part-option-price {
+    grid-column: 2;
+    grid-auto-flow: column;
+    align-items: center;
+    justify-content: start;
+    justify-items: start;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .part-option-price small {
+    text-align: start;
   }
 
   .part-picker-footer {
