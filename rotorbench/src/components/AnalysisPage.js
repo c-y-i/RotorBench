@@ -23,6 +23,7 @@ import {
   analysisReportFilename,
   createAnalysisReport,
 } from "../utils/analysisReport";
+import { buildShareUrl } from "../utils/buildLink";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
 import {
   readBenchEvidenceAttachment,
@@ -44,6 +45,7 @@ import {
   FileText,
   Flag,
   Gauge,
+  Link2,
   Package,
   Printer,
   Radio,
@@ -60,6 +62,7 @@ export default function AnalysisPage() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [shareMessage, setShareMessage] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const { currentBuild, updateAnalysis } = useBuild();
@@ -291,6 +294,23 @@ export default function AnalysisPage() {
     URL.revokeObjectURL(url);
   };
 
+  const copyConfigurationLink = async () => {
+    try {
+      const link = buildShareUrl({
+        componentIds: build?.componentIds,
+        geometryOverrides: build?.geometryOverrides,
+      });
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("clipboard access is unavailable");
+      }
+      await navigator.clipboard.writeText(link);
+      setShareMessage("Config link copied · analysis excluded");
+      setTimeout(() => setShareMessage(""), 4000);
+    } catch (err) {
+      setShareMessage(`Could not copy config link: ${err.message}`);
+    }
+  };
+
   if (!build) {
     return (
       <div className="app-container analysis-page">
@@ -333,11 +353,24 @@ export default function AnalysisPage() {
             <button
               type="button"
               className="analysis-print"
+              onClick={copyConfigurationLink}
+            >
+              <Link2 size={16} aria-hidden="true" />
+              Share build link
+            </button>
+            <button
+              type="button"
+              className="analysis-print"
               onClick={() => window.print()}
             >
               <Printer size={16} aria-hidden="true" />
               Print report
             </button>
+            {shareMessage && (
+              <span className="report-status is-clear" role="status">
+                {shareMessage}
+              </span>
+            )}
           </div>
         )}
       </div>

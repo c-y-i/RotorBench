@@ -181,6 +181,24 @@ test("analysis receives build-local measured geometry", async () => {
   });
 });
 
+test("copies a configuration link without claiming analysis was shared", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  renderAnalysis();
+
+  await screen.findByRole("button", { name: /print report/i });
+  await userEvent.click(screen.getByRole("button", { name: "Share build link" }));
+
+  expect(writeText).toHaveBeenCalledWith(
+    expect.stringContaining("/build?share="),
+  );
+  expect(await screen.findByText(/Config link copied · analysis excluded/i))
+    .toBeInTheDocument();
+});
+
 test("keeps missing thrust and flight data visibly unavailable", async () => {
   const unavailableNote =
     "The selected propeller has no published or reviewed thrust curve.";
