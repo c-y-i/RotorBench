@@ -202,6 +202,8 @@ test("documented handset profiles distinguish JR bays from Nano adapters", () =>
     "verify",
     "radiomaster-boxer",
     "radiomaster-tx16s-mkii",
+    "radiomaster-tx12-mkii",
+    "radiomaster-pocket",
   ]);
   const boxer = getRadioHandset("radiomaster-boxer");
   expect(boxer).toMatchObject({
@@ -223,6 +225,30 @@ test("documented handset profiles distinguish JR bays from Nano adapters", () =>
     ...DEFAULT_RADIO_CONFIG,
     handsetId: "unknown-handset",
   }).handsetId).toBe("verify");
+
+  const tx12 = getRadioHandset("radiomaster-tx12-mkii");
+  expect(tx12).toMatchObject({
+    name: "RadioMaster TX12 MKII",
+    supportedHostBays: ["jr-standard-5"],
+    sourceUrl: "https://radiomasterrc.com/products/tx12-mark-ii-radio-controller",
+  });
+  expect(tx12.manualUrl).toContain("TX12MKII_A2.0.pdf");
+
+  const pocket = getRadioHandset("radiomaster-pocket");
+  expect(pocket).toMatchObject({
+    name: "RadioMaster Pocket",
+    supportedHostBays: ["nano-8"],
+    sourceUrl: "https://radiomasterrc.com/products/pocket-radio-controller-m2",
+  });
+  expect(pocket.manualUrl).toContain("Pocket_A1.8.pdf");
+  expect(getRadioHandsetBayCompatibility(
+    "radiomaster-pocket",
+    "nano-8",
+  ).status).toBe("compatible");
+  expect(getRadioHandsetBayCompatibility(
+    "radiomaster-pocket",
+    "jr-standard-5",
+  ).status).toBe("conflict");
 
   const warnings = buildRadioWarnings({
     ...DEFAULT_RADIO_CONFIG,

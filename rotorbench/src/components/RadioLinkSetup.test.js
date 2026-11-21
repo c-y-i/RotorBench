@@ -154,6 +154,12 @@ test("handset profiles expose source-backed bay mismatches before power", () => 
     target: { value: "radiomaster-ranger-elrs-24-tx" },
   });
   expect(screen.getByLabelText("Handset")).toHaveValue("verify");
+  expect(within(screen.getByLabelText("Handset")).getByRole("option", {
+    name: "RadioMaster Pocket",
+  })).toBeInTheDocument();
+  expect(within(screen.getByLabelText("Handset")).getByRole("option", {
+    name: "RadioMaster TX12 MKII",
+  })).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("Handset"), {
     target: { value: "radiomaster-boxer" },
   });
@@ -176,6 +182,26 @@ test("handset profiles expose source-backed bay mismatches before power", () => 
     .toBeInTheDocument();
   expect(screen.getByText(/RadioMaster Boxer · Nano 8-pin bay · mismatch/i))
     .toBeInTheDocument();
+});
+
+test("Pocket fills an unverified bay with its documented Nano interface", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "generic-elrs-24-tx" },
+  });
+  fireEvent.change(screen.getByLabelText("Host transport"), {
+    target: { value: "module-bay" },
+  });
+  expect(screen.getByLabelText("Handset bay")).toHaveValue("verify");
+
+  fireEvent.change(screen.getByLabelText("Handset"), {
+    target: { value: "radiomaster-pocket" },
+  });
+  expect(screen.getByLabelText("Handset bay")).toHaveValue("nano-8");
+  expect(screen.getByText(/external module bay as Nano compatible/i))
+    .toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Open manual" }))
+    .toHaveAttribute("href", expect.stringContaining("Pocket_A1.8.pdf"));
 });
 
 test("binding material is not written to local storage", () => {

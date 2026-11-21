@@ -352,6 +352,24 @@ export const RADIO_HANDSETS = [
     sourceUrl: "https://radiomasterrc.com/products/tx16s-mark-ii-radio-controller",
     manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX16SMKII_2.0.pdf?v=1770617496",
   },
+  {
+    id: "radiomaster-tx12-mkii",
+    name: "RadioMaster TX12 MKII",
+    firmware: "EdgeTX",
+    supportedHostBays: ["jr-standard-5"],
+    note: "The official manual identifies the external module bay as JR compatible.",
+    sourceUrl: "https://radiomasterrc.com/products/tx12-mark-ii-radio-controller",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX12MKII_A2.0.pdf?v=1770617495",
+  },
+  {
+    id: "radiomaster-pocket",
+    name: "RadioMaster Pocket",
+    firmware: "EdgeTX",
+    supportedHostBays: ["nano-8"],
+    note: "The official manual identifies the external module bay as Nano compatible.",
+    sourceUrl: "https://radiomasterrc.com/products/pocket-radio-controller-m2",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/Pocket_A1.8.pdf?v=1770617495",
+  },
 ];
 
 export const RADIO_CHANNEL_ROLES = [
