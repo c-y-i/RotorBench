@@ -547,6 +547,7 @@ const PARAMETER_PLAN_KEYS = {
   vbat_cells: "vbatCells",
   vbat_warn_cell: "vbatWarnCell",
   vbat_min_cell: "vbatMinCell",
+  battery_rth: "batteryRthEnabled",
   align_roll_deg: "alignRollDeg",
   align_pitch_deg: "alignPitchDeg",
   align_yaw_deg: "alignYawDeg",

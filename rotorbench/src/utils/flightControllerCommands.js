@@ -100,6 +100,7 @@ export function buildFlightControllerCommands(
     integer(config.vbatCells) &&
     finite(config.vbatWarnCell) &&
     finite(config.vbatMinCell) &&
+    typeof config.batteryRthEnabled === "boolean" &&
     finite(config.alignRollDeg) &&
     finite(config.alignPitchDeg) &&
     finite(config.alignYawDeg) &&
@@ -147,6 +148,7 @@ export function buildFlightControllerCommands(
     `set vbat_cells ${Number(config.vbatCells)}`,
     `set vbat_warn_cell ${Number(config.vbatWarnCell)}`,
     `set vbat_min_cell ${Number(config.vbatMinCell)}`,
+    `set battery_rth ${config.batteryRthEnabled ? 1 : 0}`,
     `set align_roll_deg ${Number(config.alignRollDeg)}`,
     `set align_pitch_deg ${Number(config.alignPitchDeg)}`,
     `set align_yaw_deg ${Number(config.alignYawDeg)}`,

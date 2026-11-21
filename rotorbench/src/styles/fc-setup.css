@@ -526,6 +526,66 @@
   line-height: 1.45;
 }
 
+.fc-battery-return {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 52px;
+  padding: 9px 10px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.fc-battery-return:has(input:checked) {
+  background: var(--brand-soft);
+  border-color: #b7d8d0;
+}
+
+.fc-battery-return input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--brand);
+}
+
+.fc-battery-return > span {
+  display: grid;
+  gap: 2px;
+}
+
+.fc-battery-return strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.fc-battery-return small {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.fc-battery-return code {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.fc-battery-return em {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.fc-battery-return:has(input:checked) em {
+  color: var(--brand-strong);
+}
+
 .fc-loop-plan {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) auto;
@@ -1484,6 +1544,15 @@
   }
 
   .fc-loop-plan em {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .fc-battery-return {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .fc-battery-return em {
     grid-column: 2;
     justify-self: start;
   }

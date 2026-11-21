@@ -21,6 +21,9 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Cell override")).toHaveValue(0);
   expect(screen.getByLabelText("Warning threshold")).toHaveValue(3.5);
   expect(screen.getByLabelText("Minimum threshold")).toHaveValue(3.3);
+  expect(screen.getByRole("checkbox", {
+    name: /Return home on critical pack/i,
+  })).not.toBeChecked();
   expect(screen.getByRole("heading", { name: "Sensor and power" })).toBeInTheDocument();
   expect(screen.getByLabelText("Alignment roll")).toHaveValue(0);
   expect(screen.getByLabelText("Alignment pitch")).toHaveValue(0);
@@ -385,6 +388,21 @@ test("battery telemetry parameters reach the parent plan", () => {
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatCells: 4 }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatWarnCell: 3.4 }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatMinCell: 3.2 }));
+});
+
+test("critical-pack return reaches the parent plan with the documented latch copy", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+
+  fireEvent.click(screen.getByRole("checkbox", {
+    name: /Return home on critical pack/i,
+  }));
+
+  expect(onChange).toHaveBeenCalledWith(
+    expect.objectContaining({ batteryRthEnabled: true }),
+  );
+  expect(screen.getByText(/latches until landing or disarm/i)).toBeInTheDocument();
+  expect(screen.getByText(/stick movement does not cancel it/i)).toBeInTheDocument();
 });
 
 test("board alignment order and angles reach the parent plan", () => {

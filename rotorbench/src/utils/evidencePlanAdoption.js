@@ -303,6 +303,16 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => `${value} V/cell`,
     },
     {
+      key: "batteryRthEnabled",
+      source: "battery_rth",
+      snapshotKey: "battery_rth",
+      label: "Critical-pack return",
+      parse: (raw) => {
+        const number = integer(raw);
+        return number === 0 ? false : number === 1 ? true : null;
+      },
+    },
+    {
       key: "alignRollDeg",
       source: "align_roll_deg",
       snapshotKey: "align_roll_deg",

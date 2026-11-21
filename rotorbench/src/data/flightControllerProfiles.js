@@ -587,6 +587,7 @@ export function createDefaultFlightControllerConfig(
     vbatCells: 0,
     vbatWarnCell: 3.5,
     vbatMinCell: 3.3,
+    batteryRthEnabled: false,
     alignRollDeg: 0,
     alignPitchDeg: 0,
     alignYawDeg: 0,
@@ -792,6 +793,16 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "vbat-threshold-order",
         message: "Battery minimum threshold must be below the warning threshold.",
+      });
+    }
+    if (
+      config.batteryRthEnabled &&
+      (!config.features?.gps || !profile.gpsUart)
+    ) {
+      issues.push({
+        severity: "error",
+        code: "battery-rth-without-gps",
+        message: "Battery return-to-home requires the GPS feature and a documented GPS UART.",
       });
     }
     for (const [key, code, label] of [
@@ -1169,7 +1180,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Receiver calibration: min ${config.rcMin}, mid ${config.rcMid}, max ${config.rcMax}, deadband ${config.rcDeadband}`,
           `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
           `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
-          `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell`,
+          `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell, critical-pack return ${config.batteryRthEnabled ? "enabled" : "disabled"}`,
         ]
       : []),
     `Outputs: DShot ${config.dshotKhz} kHz`,

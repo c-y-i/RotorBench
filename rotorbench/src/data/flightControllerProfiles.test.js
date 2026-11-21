@@ -161,7 +161,7 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain("Motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW");
   expect(summary).toContain("Failsafe: Firmware-derived");
   expect(summary).toContain(
-    "Battery telemetry: divider 11:1, cells auto, warning 3.5 V/cell, minimum 3.3 V/cell",
+    "Battery telemetry: divider 11:1, cells auto, warning 3.5 V/cell, minimum 3.3 V/cell, critical-pack return disabled",
   );
   expect(summary).toContain(
     "Board alignment: roll 0°, pitch 0°, yaw 0° (applied roll, then pitch, then yaw; verify sensor signs)",
@@ -179,6 +179,8 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     vbatCells: 9,
     vbatWarnCell: 3.2,
     vbatMinCell: 3.4,
+    batteryRthEnabled: true,
+    features: { ...defaults.features, gps: false },
     alignRollDeg: -181,
     alignPitchDeg: 181,
     alignYawDeg: null,
@@ -195,6 +197,7 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     "align-yaw-range",
     "gyro-rate-range",
     "pid-denom-range",
+    "battery-rth-without-gps",
   ]));
 });
 

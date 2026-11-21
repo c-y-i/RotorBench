@@ -71,6 +71,7 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "vbat-warn-range": { id: "fc-vbat-warn", label: "battery warning" },
   "vbat-min-range": { id: "fc-vbat-min", label: "battery minimum" },
   "vbat-threshold-order": { id: "fc-vbat-min", label: "battery thresholds" },
+  "battery-rth-without-gps": { id: "fc-battery-rth", label: "battery return-to-home" },
   "align-roll-range": { id: "fc-align-roll", label: "board alignment" },
   "align-pitch-range": { id: "fc-align-pitch", label: "board alignment" },
   "align-yaw-range": { id: "fc-align-yaw", label: "board alignment" },
@@ -1176,6 +1177,22 @@ export default function FlightControllerSetup({
                     />
                   </Field>
                 </div>
+                <label className="fc-battery-return" htmlFor="fc-battery-rth">
+                  <input
+                    id="fc-battery-rth"
+                    type="checkbox"
+                    checked={Boolean(config.batteryRthEnabled)}
+                    onChange={(event) => update("batteryRthEnabled", event.target.checked)}
+                  />
+                  <span>
+                    <strong>Return home on critical pack</strong>
+                    <small>
+                      Sets <code>battery_rth</code>. Requires a GPS fix; the return latches
+                      until landing or disarm, and stick movement does not cancel it.
+                    </small>
+                  </span>
+                  <em>{config.batteryRthEnabled ? "Enabled" : "Off"}</em>
+                </label>
               </div>
             </section>
           )}
