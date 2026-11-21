@@ -152,6 +152,33 @@ test("source-backed filtering excludes legacy catalog entries", () => {
   expect(within(results).queryByText("Frame B")).not.toBeInTheDocument();
 });
 
+test("propeller options expose missing thrust data before selection", () => {
+  render(
+    <PartPicker
+      category="propellers"
+      parts={[
+        {
+          id: "prop-no-curve",
+          name: "7-inch test prop",
+          size: 7,
+          pitch: 4,
+          bladeCount: 3,
+          weight: 7.9,
+          price: 7.99,
+          performanceDataStatus: "not_published",
+          sourceUrl: "https://example.com/prop",
+        },
+      ]}
+      value=""
+      onChange={jest.fn()}
+      placeholder="Choose a propeller"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a propeller/i }));
+  expect(screen.getByText(/Thrust data unavailable/)).toBeInTheDocument();
+});
+
 test("catalog options can be sorted by price without hiding conflicts", () => {
   render(
     <PartPicker

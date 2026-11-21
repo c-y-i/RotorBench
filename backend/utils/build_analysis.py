@@ -3,7 +3,7 @@ Utility functions for build analysis.
 Calculates performance metrics and flight time simulations.
 """
 import math
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from models.components import (
     DroneBuild,
     PerformanceMetrics,
@@ -17,15 +17,17 @@ from models.components import (
 )
 
 
-def calculate_thrust_for_motor_prop_combo(motor, propeller) -> float:
+def calculate_thrust_for_motor_prop_combo(motor, propeller) -> Optional[float]:
     """
     Calculate thrust for a specific motor-propeller combination
     Uses interpolation if exact KV not in propeller's thrust data
     """
     if not motor or not propeller:
-        return 0.0
+        return None
     
     thrust_data = propeller.thrust_data
+    if not thrust_data:
+        return None
     motor_kv = motor.kv
     
     # Find exact match
@@ -93,16 +95,18 @@ def calculate_total_weight(build: DroneBuild) -> float:
     return round(total, 1)
 
 
-def calculate_max_thrust(build: DroneBuild) -> float:
+def calculate_max_thrust(build: DroneBuild) -> Optional[float]:
     """Calculate maximum thrust in grams (all motors at full throttle)"""
     if not build.components.motors or not build.components.propellers:
-        return 0.0
+        return None
     
     motor_count = build.components.frame.motor_count if build.components.frame else 4
     thrust_per_motor = calculate_thrust_for_motor_prop_combo(
         build.components.motors,
         build.components.propellers
     )
+    if thrust_per_motor is None:
+        return None
     
     max_thrust = thrust_per_motor * motor_count
     
@@ -182,21 +186,28 @@ def calculate_performance_metrics(build: DroneBuild) -> PerformanceMetrics:
     """Calculate all performance metrics"""
     total_weight = calculate_total_weight(build)
     max_thrust = calculate_max_thrust(build)
+    performance_available = max_thrust is not None
+    effective_thrust = max_thrust or 0.0
     
     # Thrust-to-weight ratio
-    twr = max_thrust / total_weight if total_weight > 0 else 0.0
+    twr = effective_thrust / total_weight if total_weight > 0 else 0.0
     
     # Average power draw at 50% throttle
     power_draw = calculate_power_draw(build, throttle_percentage=0.5)
     
     return PerformanceMetrics(
         total_weight=total_weight,
-        max_thrust=max_thrust,
+        max_thrust=round(effective_thrust, 1),
         thrust_to_weight_ratio=round(twr, 2),
         power_draw=power_draw,
         rating=PerformanceRating(
             weight=get_weight_rating(total_weight),
             thrust_to_weight=get_thrust_rating(twr)
+        ),
+        data_available=performance_available,
+        data_note=(
+            None if performance_available
+            else "The selected propeller has no published or reviewed thrust curve; thrust, hover, and flight-performance estimates are unavailable."
         )
     )
 
@@ -214,6 +225,8 @@ def calculate_throttle_profile(build: DroneBuild) -> List[ThrottleProfilePoint]:
         build.components.motors,
         build.components.propellers
     )
+    if thrust_per_motor is None:
+        return []
     voltage = build.components.battery.voltage
     
     # Generate points from 0% to 100% throttle
@@ -293,7 +306,7 @@ def calculate_hover_time(build: DroneBuild) -> float:
     total_weight = calculate_total_weight(build)
     max_thrust = calculate_max_thrust(build)
     
-    if max_thrust == 0:
+    if not max_thrust:
         return 0.0
     
     # Hover throttle is when thrust equals weight
@@ -445,6 +458,22 @@ def calculate_flight_simulation(build: DroneBuild) -> FlightSimulation:
     
     total_weight = calculate_total_weight(build)
     max_thrust = calculate_max_thrust(build)
+
+    if max_thrust is None:
+        return FlightSimulation(
+            battery_capacity=build.components.battery.capacity,
+            avg_current_draw=0,
+            estimated_flight_time=0,
+            estimated_range=0,
+            avg_speed=0,
+            hover_time=0,
+            max_speed=0,
+            efficiency=0,
+            discharge_data=[],
+            throttle_profile=[],
+            data_available=False,
+            data_note="The selected propeller has no published or reviewed thrust curve; flight-performance estimates are unavailable.",
+        )
     
     avg_speed = 45.0  # km/h for sport flying
     max_speed = calculate_max_speed(total_weight, max_thrust)
@@ -539,6 +568,14 @@ def validate_build(build: DroneBuild) -> Tuple[bool, List[str], List[str]]:
             errors.append(
                 f"Propeller size ({prop_size}\") exceeds frame maximum ({max_prop}\")"
             )
+
+    if (
+        build.components.propellers
+        and not build.components.propellers.thrust_data
+    ):
+        warnings.append(
+            "The selected propeller has no published or reviewed thrust curve; performance analysis is unavailable."
+        )
     
     is_valid = len(errors) == 0
     return is_valid, errors, warnings
@@ -595,7 +632,9 @@ def analyze_build(build: DroneBuild) -> BuildAnalysis:
             rating=PerformanceRating(
                 weight=WeightRating.MEDIUM,
                 thrust_to_weight=ThrustRating.POOR
-            )
+            ),
+            data_available=False,
+            data_note="Required components are incomplete.",
         )
         flight_sim = FlightSimulation(
             battery_capacity=0,
@@ -607,7 +646,9 @@ def analyze_build(build: DroneBuild) -> BuildAnalysis:
             max_speed=0,
             efficiency=0,
             discharge_data=[],
-            throttle_profile=[]
+            throttle_profile=[],
+            data_available=False,
+            data_note="Required components are incomplete.",
         )
     
     total_cost = calculate_total_cost(build)

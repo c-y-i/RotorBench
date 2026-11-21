@@ -180,6 +180,9 @@ test("AOS 7 and XING 2806.5 add source-backed long-range mechanics", () => {
   const motor = componentsData.motors.find(
     (item) => item.id === "motor-iflight-xing-2806-5-1300kv",
   );
+  const propeller = componentsData.propellers.find(
+    (item) => item.id === "prop-gemfan-flash-7040-3",
+  );
 
   expect(frame).toMatchObject({
     size: 293,
@@ -211,6 +214,17 @@ test("AOS 7 and XING 2806.5 add source-backed long-range mechanics", () => {
     "mounting_point",
     "voltage",
   ]));
+  expect(propeller).toMatchObject({
+    size: 7,
+    pitch: 4,
+    weight: 7.9,
+    dimensionsMm: [178.43, 7.5, 178.43],
+    shaftMm: 5,
+    hubThicknessMm: 7.5,
+    performanceDataStatus: "not_published",
+    thrustData: [],
+    sourceUrl: expect.stringContaining("gemfanhobby.com"),
+  });
 });
 
 test("source-backed fit metadata is not mislabeled as estimated", () => {

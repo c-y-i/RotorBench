@@ -228,6 +228,11 @@ export default function AnalysisPage() {
   }, [build]);
 
   const noticeCount = (analysis?.errors?.length || 0) + (analysis?.warnings?.length || 0);
+  const performanceAvailable = analysis?.performance?.dataAvailable !== false;
+  const flightAvailable = analysis?.flightSimulation?.dataAvailable !== false;
+  const performanceDataNote = analysis?.performance?.dataNote
+    || analysis?.flightSimulation?.dataNote
+    || "The selected components do not have enough reviewed performance data.";
   const selectedFlightControllerPart = componentRows.find(
     (row) => row.label === "Flight controller",
   )?.part;
@@ -371,16 +376,30 @@ export default function AnalysisPage() {
           <section className="analysis-summary" aria-label="Analysis summary">
             <div className="analysis-summary-verdict">
               <span>Build verdict</span>
-              <strong>{getRatingLabel(analysis.performance.rating.thrustToWeight)}</strong>
-              <small>Power-to-weight assessment for this configuration</small>
+              <strong>
+                {performanceAvailable
+                  ? getRatingLabel(analysis.performance.rating.thrustToWeight)
+                  : "Unavailable"}
+              </strong>
+              <small>
+                {performanceAvailable
+                  ? "Power-to-weight assessment for this configuration"
+                  : performanceDataNote}
+              </small>
             </div>
             <div className="analysis-summary-stat">
               <span>Flight time</span>
-              <strong>{analysis.flightSimulation.estimatedFlightTime}<small>min</small></strong>
+              <strong>
+                {flightAvailable ? analysis.flightSimulation.estimatedFlightTime : "—"}
+                {flightAvailable && <small>min</small>}
+              </strong>
             </div>
             <div className="analysis-summary-stat">
               <span>Max thrust</span>
-              <strong>{analysis.performance.maxThrust}<small>g</small></strong>
+              <strong>
+                {performanceAvailable ? analysis.performance.maxThrust : "—"}
+                {performanceAvailable && <small>g</small>}
+              </strong>
             </div>
             <div className="analysis-summary-stat">
               <span>Build cost</span>
@@ -496,6 +515,15 @@ export default function AnalysisPage() {
           {/* Performance Metrics */}
           <div className="metrics-section">
             <h3 className="section-header"><ChartNoAxesCombined size={18} aria-hidden="true" />Performance metrics</h3>
+            {!performanceAvailable && (
+              <div className="analysis-data-unavailable" role="status">
+                <CircleAlert size={17} aria-hidden="true" />
+                <span>
+                  <strong>Flight performance unavailable</strong>
+                  <small>{performanceDataNote}</small>
+                </span>
+              </div>
+            )}
 
             <div className="metric-card">
               <div className="metric-icon weight-icon"><Scale size={20} aria-hidden="true" /></div>
@@ -510,8 +538,16 @@ export default function AnalysisPage() {
               <div className="metric-icon thrust-icon"><Rocket size={20} aria-hidden="true" /></div>
               <div className="metric-content">
                 <div className="metric-label">Max Thrust</div>
-                <div className="metric-value">{analysis.performance.maxThrust}g</div>
-                <div className="metric-subtitle">All motors at full throttle</div>
+                <div className="metric-value">
+                  {performanceAvailable
+                    ? `${analysis.performance.maxThrust}g`
+                    : "Unavailable"}
+                </div>
+                <div className="metric-subtitle">
+                  {performanceAvailable
+                    ? "All motors at full throttle"
+                    : "No thrust curve"}
+                </div>
               </div>
             </div>
 
@@ -519,15 +555,21 @@ export default function AnalysisPage() {
               <div className="metric-icon ratio-icon"><Gauge size={20} aria-hidden="true" /></div>
               <div className="metric-content">
                 <div className="metric-label">T/W Ratio</div>
-                <div className="metric-value-large">{analysis.performance.thrustToWeightRatio}:1</div>
-                <div
-                  className="metric-badge"
-                  style={{
-                    backgroundColor: getRatingColor(analysis.performance.rating.thrustToWeight),
-                  }}
-                >
-                  {getRatingLabel(analysis.performance.rating.thrustToWeight)}
+                <div className="metric-value-large">
+                  {performanceAvailable
+                    ? `${analysis.performance.thrustToWeightRatio}:1`
+                    : "Unavailable"}
                 </div>
+                {performanceAvailable && (
+                  <div
+                    className="metric-badge"
+                    style={{
+                      backgroundColor: getRatingColor(analysis.performance.rating.thrustToWeight),
+                    }}
+                  >
+                    {getRatingLabel(analysis.performance.rating.thrustToWeight)}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -555,37 +597,61 @@ export default function AnalysisPage() {
               <div className="flight-card">
                 <div className="flight-icon"><Zap size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Avg Current Draw</div>
-                <div className="flight-value">{analysis.flightSimulation.avgCurrentDraw}A</div>
+                <div className="flight-value">
+                  {flightAvailable
+                    ? `${analysis.flightSimulation.avgCurrentDraw}A`
+                    : "Unavailable"}
+                </div>
               </div>
 
               <div className="flight-card highlight">
                 <div className="flight-icon"><Timer size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Estimated Flight Time</div>
-                <div className="flight-value-large">{analysis.flightSimulation.estimatedFlightTime} min</div>
+                <div className="flight-value-large">
+                  {flightAvailable
+                    ? `${analysis.flightSimulation.estimatedFlightTime} min`
+                    : "Unavailable"}
+                </div>
               </div>
 
               <div className="flight-card">
                 <div className="flight-icon"><Route size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Estimated Range</div>
-                <div className="flight-value">{analysis.flightSimulation.estimatedRange} km</div>
+                <div className="flight-value">
+                  {flightAvailable
+                    ? `${analysis.flightSimulation.estimatedRange} km`
+                    : "Unavailable"}
+                </div>
               </div>
 
               <div className="flight-card">
                 <div className="flight-icon"><Flag size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Hover Time</div>
-                <div className="flight-value">{analysis.flightSimulation.hoverTime} min</div>
+                <div className="flight-value">
+                  {flightAvailable
+                    ? `${analysis.flightSimulation.hoverTime} min`
+                    : "Unavailable"}
+                </div>
               </div>
 
               <div className="flight-card">
                 <div className="flight-icon"><Wind size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Max Speed</div>
-                <div className="flight-value">{analysis.flightSimulation.maxSpeed} km/h</div>
+                <div className="flight-value">
+                  {flightAvailable
+                    ? `${analysis.flightSimulation.maxSpeed} km/h`
+                    : "Unavailable"}
+                </div>
               </div>
 
               <div className="flight-card">
                 <div className="flight-icon"><ChartNoAxesCombined size={20} aria-hidden="true" /></div>
                 <div className="flight-label">Efficiency</div>
-                <div className="flight-value">{analysis.flightSimulation.efficiency} mAh/km</div>
+                <div className="flight-value">
+                  {flightAvailable
+                    ? `${analysis.flightSimulation.efficiency} mAh/km`
+                    : "Unavailable"}
+                </div>
               </div>
             </div>
           </div>
@@ -593,71 +659,81 @@ export default function AnalysisPage() {
           {/* Battery Discharge Curve */}
           <div className="chart-section">
             <h3 className="section-header"><ChartNoAxesCombined size={18} aria-hidden="true" />Battery discharge</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={analysis.flightSimulation.dischargeData}
-                margin={{ top: 20, right: 40, left: 60, bottom: 30 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#d6e1e2" />
-                <XAxis
-                  dataKey="time"
-                  label={{
-                    value: "Flight time (minutes)",
-                    position: "insideBottom",
-                    offset: -5,
-                  }}
-                  tick={{ fontSize: 12 }}
-                  tickFormatter={(value) => (value * 60).toFixed(1)}
-                />
-                <YAxis
-                  yAxisId="left"
-                  label={{
-                    value: "Voltage (V)",
-                    angle: -90,
-                    position: "insideLeft",
-                    offset: -10,
-                  }}
-                  tick={{ fontSize: 12 }}
-                  domain={["dataMin - 0.5", "dataMax + 0.5"]}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  label={{
-                    value: "Capacity (mAh)",
-                    angle: 90,
-                    position: "insideRight",
-                    offset: -5,
-                  }}
-                  tick={{ fontSize: 12 }}
-                  domain={[0, "dataMax + 100"]}
-                />
-                <Tooltip
-                  labelFormatter={(value) => `Time: ${(value * 60).toFixed(1)} min`}
-                />
-                <Legend verticalAlign="top" height={36} />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="voltage"
-                  stroke="#0b766d"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  name="Battery voltage (V)"
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="remainingCapacity"
-                  stroke="var(--warn)"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  name="Remaining capacity (mAh)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {flightAvailable ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart
+                  data={analysis.flightSimulation.dischargeData}
+                  margin={{ top: 20, right: 40, left: 60, bottom: 30 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#d6e1e2" />
+                  <XAxis
+                    dataKey="time"
+                    label={{
+                      value: "Flight time (minutes)",
+                      position: "insideBottom",
+                      offset: -5,
+                    }}
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => (value * 60).toFixed(1)}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    label={{
+                      value: "Voltage (V)",
+                      angle: -90,
+                      position: "insideLeft",
+                      offset: -10,
+                    }}
+                    tick={{ fontSize: 12 }}
+                    domain={["dataMin - 0.5", "dataMax + 0.5"]}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    label={{
+                      value: "Capacity (mAh)",
+                      angle: 90,
+                      position: "insideRight",
+                      offset: -5,
+                    }}
+                    tick={{ fontSize: 12 }}
+                    domain={[0, "dataMax + 100"]}
+                  />
+                  <Tooltip
+                    labelFormatter={(value) => `Time: ${(value * 60).toFixed(1)} min`}
+                  />
+                  <Legend verticalAlign="top" height={36} />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="voltage"
+                    stroke="#0b766d"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                    name="Battery voltage (V)"
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="remainingCapacity"
+                    stroke="var(--warn)"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                    name="Remaining capacity (mAh)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="analysis-data-unavailable is-chart" role="status">
+                <CircleAlert size={17} aria-hidden="true" />
+                <span>
+                  <strong>Discharge curve unavailable</strong>
+                  <small>{analysis.flightSimulation.dataNote || performanceDataNote}</small>
+                </span>
+              </div>
+            )}
           </div>
 
           {(analysis.errors.length > 0 || analysis.warnings.length > 0) && (

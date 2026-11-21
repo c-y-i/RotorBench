@@ -33,7 +33,15 @@ function getMeta(category, part) {
     case "motors":
       return [`${part.kv} KV`, part.size, `${part.voltage.min}-${part.voltage.max} V`, `${part.weight} g`];
     case "propellers":
-      return [`${part.size}"`, `${part.pitch}" pitch`, `${part.bladeCount} blades`, `${part.weight} g`];
+      return [
+        `${part.size}"`,
+        `${part.pitch}" pitch`,
+        `${part.bladeCount} blades`,
+        `${part.weight} g`,
+        part.performanceDataStatus === "not_published"
+          ? "Thrust data unavailable"
+          : null,
+      ].filter(Boolean);
     case "batteries":
       return [
         `${part.cells}S`,

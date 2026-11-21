@@ -7,7 +7,7 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(6);
+  expect(PLATFORM_PRESETS).toHaveLength(7);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
@@ -15,7 +15,9 @@ test("every starter platform references a complete catalog build", () => {
       selectedCount: 7,
       sourceBackedCount: 7,
       physicalFitStatus: "verified",
-      electricalFitStatus: "verified",
+      electricalFitStatus: preset.id === "source-7-inch"
+        ? "unverified"
+        : "verified",
     });
   });
   expect(getPlatformPreset("source-35")?.name).toBe("3.5-inch source build");
@@ -43,6 +45,14 @@ test("every starter platform references a complete catalog build", () => {
       motorId: "motor-iflight-xing2-2207-2755kv",
       batteryId: "battery-cnhl-black-4s-1500-100c",
       escId: "esc-speedybee-bl32-50a",
+    },
+  });
+  expect(getPlatformPreset("source-7-inch")).toMatchObject({
+    componentIds: {
+      frameId: "frame-aos-7-evo-v12",
+      motorId: "motor-iflight-xing-2806-5-1300kv",
+      propellerId: "prop-gemfan-flash-7040-3",
+      batteryId: "battery-tattu-rline-6s-1300-120c",
     },
   });
 });

@@ -276,6 +276,51 @@
   margin: 0;
 }
 
+.analysis-data-unavailable {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  color: var(--ink);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, var(--line));
+  border-radius: var(--radius-control);
+}
+
+.analysis-data-unavailable > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--warn);
+}
+
+.analysis-data-unavailable > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.analysis-data-unavailable strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--type-label);
+  letter-spacing: 0.045em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.analysis-data-unavailable small {
+  max-width: 75ch;
+  color: var(--ink-soft);
+  font-size: var(--type-meta);
+  line-height: 1.45;
+}
+
+.analysis-data-unavailable.is-chart {
+  min-height: 120px;
+  align-content: center;
+  padding: 18px;
+}
+
 .analysis-report .flight-section {
   grid-area: flight;
   margin: 0;
@@ -1502,6 +1547,18 @@
     color: #000 !important;
     background: #fff !important;
     border: 1px solid #000;
+  }
+
+  .analysis-report .analysis-data-unavailable {
+    color: #000;
+    background: #fff;
+    border-color: #aaa;
+  }
+
+  .analysis-report .analysis-data-unavailable > svg,
+  .analysis-report .analysis-data-unavailable strong,
+  .analysis-report .analysis-data-unavailable small {
+    color: #000;
   }
 
   .analysis-report .section-header {

@@ -85,6 +85,20 @@ export const PLATFORM_PRESETS = [
       receiverId: "rx-radiomaster-rp4td",
     },
   },
+  {
+    id: "source-7-inch",
+    name: "7-inch long-range source build",
+    description: "AOS 7 EVO V1.2, XING 2806.5 1300KV, Gemfan 7040, SpeedyBee 50A, Kakute H7 V2, Tattu 6S",
+    componentIds: {
+      frameId: "frame-aos-7-evo-v12",
+      motorId: "motor-iflight-xing-2806-5-1300kv",
+      propellerId: "prop-gemfan-flash-7040-3",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-6s-1300-120c",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  },
 ];
 
 const idCategory = {

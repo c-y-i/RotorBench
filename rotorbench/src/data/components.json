@@ -494,6 +494,29 @@
         { "kv": 3800, "thrust": 835 },
         { "kv": 4200, "thrust": 890 }
       ]
+    },
+    {
+      "id": "prop-gemfan-flash-7040-3",
+      "name": "Gemfan Flash 7040 3-Blade",
+      "size": 7.0,
+      "pitch": 4.0,
+      "bladeCount": 3,
+      "weight": 7.9,
+      "material": "Polycarbonate",
+      "price": 7.99,
+      "mounting_point": [0, 0, 0],
+      "hubThicknessMm": 7.5,
+      "shaftMm": 5,
+      "dimensionsMm": [178.43, 7.5, 178.43],
+      "modelCW": null,
+      "modelCCW": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://www.gemfanhobby.com/7040-flash-pc-3-blade.html",
+      "priceSourceUrl": "https://shop.iflight.com/2RAW-Series-cat380/motion-control-systems-cat34/batteries-cat138/fpv-propellers-cat115/gemfan-7040-tri-blades-fpv-propellers-cw-ccw-2sets-pro1338",
+      "dataStatus": "verified_specs_thrust_data_unavailable",
+      "performanceDataStatus": "not_published",
+      "estimatedFields": ["mounting_point"],
+      "thrustData": []
     }
   ],
   "escs": [

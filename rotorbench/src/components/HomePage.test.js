@@ -42,6 +42,8 @@ test("offers all complete source-backed platforms from an empty overview", async
   expect(screen.getByRole("button", { name: "Open 3.5-inch 4600KV source build" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 5.5-inch XING2 6S build" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 5.5-inch XING2 4S build" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Open 7-inch long-range source build" }))
+    .toBeInTheDocument();
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
 });
 

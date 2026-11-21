@@ -3,6 +3,7 @@ import unittest
 from pydantic import ValidationError
 
 from models.components import DroneBuildConfig
+from utils.build_analysis import analyze_build
 from utils.component_data import (
     get_all_components_db,
     hydrate_build,
@@ -26,14 +27,14 @@ class CatalogContractTests(unittest.TestCase):
             {
                 "frames": 8,
                 "motors": 15,
-                "propellers": 7,
+                "propellers": 8,
                 "batteries": 9,
                 "escs": 7,
                 "flight_controllers": 8,
                 "receivers": 8,
             },
         )
-        self.assertEqual(sum(counts.values()), 62)
+        self.assertEqual(sum(counts.values()), 63)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -53,7 +54,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 62)
+        self.assertEqual(len(records), 63)
         self.assertTrue(all(record.id for record in records))
 
     def test_rp2_keeps_published_and_estimated_fields_separate(self):
@@ -211,6 +212,38 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(motor.prop_shaft_mm, 5)
         self.assertIn("voltage", motor.estimated_fields)
         self.assertIn("mounting_point", motor.estimated_fields)
+
+    def test_seven_inch_propeller_preserves_mechanics_without_fabricating_thrust(self):
+        propeller = next(
+            item for item in self.database.propellers
+            if item.id == "prop-gemfan-flash-7040-3"
+        )
+        self.assertEqual(propeller.size, 7.0)
+        self.assertEqual(propeller.pitch, 4.0)
+        self.assertEqual(propeller.weight, 7.9)
+        self.assertEqual(propeller.dimensions_mm, [178.43, 7.5, 178.43])
+        self.assertEqual(propeller.shaft_mm, 5)
+        self.assertEqual(propeller.performance_data_status, "not_published")
+        self.assertEqual(propeller.thrust_data, [])
+
+        config = DroneBuildConfig(
+            id="build-seven-inch",
+            name="Seven inch",
+            componentIds={
+                "frameId": "frame-aos-7-evo-v12",
+                "motorId": "motor-iflight-xing-2806-5-1300kv",
+                "propellerId": "prop-gemfan-flash-7040-3",
+                "batteryId": "battery-tattu-rline-6s-1300-120c",
+            },
+        )
+        analysis = analyze_build(hydrate_build(config))
+        self.assertFalse(analysis.performance.data_available)
+        self.assertEqual(analysis.performance.max_thrust, 0)
+        self.assertFalse(analysis.flight_simulation.data_available)
+        self.assertIn(
+            "performance analysis is unavailable",
+            " ".join(analysis.warnings),
+        )
 
 
 if __name__ == "__main__":

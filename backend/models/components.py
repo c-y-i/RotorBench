@@ -50,6 +50,7 @@ class ComponentCatalogMetadata(BaseModel):
     price_source_url: Optional[str] = Field(None, alias="priceSourceUrl")
     connector_source_url: Optional[str] = Field(None, alias="connectorSourceUrl")
     data_status: Optional[str] = Field(None, alias="dataStatus")
+    performance_data_status: Optional[str] = Field(None, alias="performanceDataStatus")
     estimated_fields: Optional[List[str]] = Field(None, alias="estimatedFields")
 
     class Config:
@@ -357,6 +358,8 @@ class PerformanceMetrics(BaseModel):
     thrust_to_weight_ratio: float = Field(..., alias="thrustToWeightRatio")
     power_draw: float = Field(..., alias="powerDraw", description="Average power draw in watts")
     rating: PerformanceRating
+    data_available: bool = Field(True, alias="dataAvailable")
+    data_note: Optional[str] = Field(None, alias="dataNote")
 
     class Config:
         populate_by_name = True
@@ -390,6 +393,8 @@ class FlightSimulation(BaseModel):
     efficiency: float = Field(..., description="Efficiency in mAh per km")
     discharge_data: List[DischargeDataPoint] = Field(..., alias="dischargeData")
     throttle_profile: List[ThrottleProfilePoint] = Field(..., alias="throttleProfile")
+    data_available: bool = Field(True, alias="dataAvailable")
+    data_note: Optional[str] = Field(None, alias="dataNote")
 
     class Config:
         populate_by_name = True

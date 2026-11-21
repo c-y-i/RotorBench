@@ -9,6 +9,7 @@ export interface ComponentCatalogMetadata {
   priceSourceUrl?: string;
   connectorSourceUrl?: string;
   dataStatus?: string;
+  performanceDataStatus?: string;
   estimatedFields?: string[];
 }
 

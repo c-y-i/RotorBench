@@ -181,6 +181,43 @@ test("analysis receives build-local measured geometry", async () => {
   });
 });
 
+test("keeps missing thrust and flight data visibly unavailable", async () => {
+  const unavailableNote =
+    "The selected propeller has no published or reviewed thrust curve.";
+  global.fetch.mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      ...analysis,
+      performance: {
+        ...analysis.performance,
+        maxThrust: 0,
+        thrustToWeightRatio: 0,
+        dataAvailable: false,
+        dataNote: unavailableNote,
+      },
+      flightSimulation: {
+        ...analysis.flightSimulation,
+        avgCurrentDraw: 0,
+        estimatedFlightTime: 0,
+        estimatedRange: 0,
+        hoverTime: 0,
+        maxSpeed: 0,
+        efficiency: 0,
+        dischargeData: [],
+        dataAvailable: false,
+        dataNote: unavailableNote,
+      },
+    }),
+  });
+  renderAnalysis();
+
+  expect(await screen.findByText("Flight performance unavailable")).toBeInTheDocument();
+  expect(screen.getByText("Discharge curve unavailable")).toBeInTheDocument();
+  expect(screen.getAllByText(unavailableNote)).toHaveLength(3);
+  expect(screen.getAllByRole("status")).toHaveLength(2);
+  expect(screen.getByText("Build verdict").parentElement).toHaveTextContent("Unavailable");
+});
+
 test("shows saved hardware-plan review state in the analysis report", async () => {
   localStorage.setItem(
     "rotorbench:hardware-plan:analysis-build:fc",
