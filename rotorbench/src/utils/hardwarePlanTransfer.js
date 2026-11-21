@@ -1,6 +1,7 @@
 import {
   DEFAULT_RADIO_CONFIG,
   RADIO_DYNAMIC_POWER,
+  RADIO_HANDSETS,
   RADIO_HOST_BAYS,
   RADIO_LINK_MODES,
   RADIO_TARGETS,
@@ -8,6 +9,8 @@ import {
   buildRadioSummary,
   getAvailableSwitchModes,
   getDefaultHostBay,
+  getRadioHandset,
+  getRadioHandsetBayCompatibility,
   getPacketRatesForTarget,
   getRadioHostTransports,
   getRadioHostBay,
@@ -201,6 +204,17 @@ export function parseCombinedHardwarePlanJson(text) {
   ) {
     throw new Error("The radio handset bay is incompatible with the target.");
   }
+  const requestedHandsetId = configuration.handsetId || "verify";
+  if (!RADIO_HANDSETS.some((handset) => handset.id === requestedHandsetId)) {
+    throw new Error("The radio handset profile is unsupported.");
+  }
+  const handsetId = getRadioHandset(requestedHandsetId).id;
+  if (
+    hostTransport === "module-bay" &&
+    getRadioHandsetBayCompatibility(handsetId, hostBay).status === "conflict"
+  ) {
+    throw new Error("The radio handset profile does not match the selected bay.");
+  }
   const fcDefaults = createDefaultFlightControllerConfig();
   const fcPlan = {
     ...fcDefaults,
@@ -238,6 +252,7 @@ export function parseCombinedHardwarePlanJson(text) {
     role,
     hostTransport,
     hostBay,
+    handsetId,
     packetRateMode: packetRate,
     powerDbm: Number(configuration.powerDbm),
     regulatoryRegion,

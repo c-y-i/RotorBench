@@ -16,6 +16,8 @@ import {
   DEFAULT_RADIO_CONFIG,
   buildChannelMappingWarnings,
   buildRadioWarnings,
+  getRadioHandset,
+  getRadioHandsetBayCompatibility,
   getRadioHostBay,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
@@ -135,6 +137,11 @@ export function summarizeHardwareReadiness({
   const radioTarget = getRadioTarget(radioPlan.targetId);
   const radioEndpoint = buildRadioEndpointPlan(radioPlan, radioTarget);
   const radioHostBay = getRadioHostBay(radioPlan.hostBay);
+  const radioHandset = getRadioHandset(radioPlan.handsetId);
+  const radioHandsetBayCompatibility = getRadioHandsetBayCompatibility(
+    radioPlan.handsetId,
+    radioPlan.hostBay,
+  );
   const radioHostBayCompatible = isRadioHostBayCompatible(
     radioTarget.id,
     radioPlan.hostBay,
@@ -228,6 +235,13 @@ export function summarizeHardwareReadiness({
     radioHostBay: radioPlan.hostBay,
     radioHostBayLabel: radioHostBay.label,
     radioHostBayCompatible,
+    radioHandsetId: radioHandset.id,
+    radioHandsetName: radioHandset.name,
+    radioHandsetBayStatus: radioHandsetBayCompatibility.status,
+    radioHandsetBayCompatible:
+      radioHandsetBayCompatibility.status !== "conflict",
+    radioHandsetSourceUrl: radioHandset.sourceUrl || null,
+    radioHandsetManualUrl: radioHandset.manualUrl || null,
     radioPowerDbm,
     radioRegulatoryRegion: radioPlan.regulatoryRegion || null,
     radioRegulatoryRegionLabel,
@@ -340,6 +354,12 @@ export function sanitizeHardwareReadiness(readiness) {
     radioHostBay: readiness.radioHostBay || null,
     radioHostBayLabel: readiness.radioHostBayLabel || null,
     radioHostBayCompatible: Boolean(readiness.radioHostBayCompatible),
+    radioHandsetId: readiness.radioHandsetId || null,
+    radioHandsetName: readiness.radioHandsetName || null,
+    radioHandsetBayStatus: readiness.radioHandsetBayStatus || null,
+    radioHandsetBayCompatible: Boolean(readiness.radioHandsetBayCompatible),
+    radioHandsetSourceUrl: readiness.radioHandsetSourceUrl || null,
+    radioHandsetManualUrl: readiness.radioHandsetManualUrl || null,
     radioPowerDbm: readiness.radioPowerDbm ?? null,
     radioRegulatoryRegion: readiness.radioRegulatoryRegion || null,
     radioRegulatoryRegionLabel: readiness.radioRegulatoryRegionLabel || null,

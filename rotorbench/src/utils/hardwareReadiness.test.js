@@ -390,6 +390,41 @@ test("saved module-bay plans expose physical fit across hardware readiness", () 
   });
 });
 
+test("saved handset identity exposes a bay mismatch across hardware readiness", () => {
+  const base = "rotorbench:hardware-plan:build-boxer";
+  const storage = memoryStorage({
+    [`${base}:radio`]: JSON.stringify({
+      planVersion: 3,
+      selectedReceiverId: receiver.id,
+      targetId: "radiomaster-ranger-elrs-24-tx",
+      role: "tx",
+      hostTransport: "module-bay",
+      hostBay: "nano-8",
+      handsetId: "radiomaster-boxer",
+      powerDbm: 20,
+      regulatoryRegion: "fcc",
+    }),
+  });
+
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-boxer",
+    flightController: fc,
+    receiver,
+    storage,
+  });
+
+  expect(readiness).toMatchObject({
+    radioHostBay: "nano-8",
+    radioHostBayCompatible: true,
+    radioHandsetId: "radiomaster-boxer",
+    radioHandsetName: "RadioMaster Boxer",
+    radioHandsetBayStatus: "conflict",
+    radioHandsetBayCompatible: false,
+    radioHandsetSourceUrl:
+      "https://radiomasterrc.com/products/boxer-radio-controller-m2",
+  });
+});
+
 test("Betaflight plan direction and order propagate through readiness", () => {
   const base = "rotorbench:hardware-plan:build-props-out";
   const storage = memoryStorage({

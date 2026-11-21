@@ -74,6 +74,7 @@ export function createBuildBriefing({
       `- Radio host: ${hardwareReadiness.radioHostTransportLabel || "verify target"} / ${hardwareReadiness.radioHostDocumented ? "documented" : "verify target"}`,
       ...(hardwareReadiness.radioHostTransport === "module-bay"
         ? [
+            `- Handset: ${hardwareReadiness.radioHandsetName || "Verify handset"} / ${hardwareReadiness.radioHandsetBayStatus || "verify"}`,
             `- Handset bay: ${hardwareReadiness.radioHostBayLabel || "verify bay"} / ${hardwareReadiness.radioHostBayCompatible ? "supported" : "mismatch"}`,
           ]
         : []),

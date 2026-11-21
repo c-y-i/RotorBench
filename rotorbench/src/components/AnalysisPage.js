@@ -571,10 +571,12 @@ export default function AnalysisPage() {
               {hasHardwareSelection
                 && hardwareReadiness.radioHostTransport === "module-bay" && (
                   <div>
-                    <dt>Handset bay</dt>
+                    <dt>Handset / bay</dt>
                     <dd>
+                      {hardwareReadiness.radioHandsetName} ·{" "}
                       {hardwareReadiness.radioHostBayLabel} ·{" "}
                       {hardwareReadiness.radioHostBayCompatible
+                        && hardwareReadiness.radioHandsetBayCompatible
                         ? "supported"
                         : "mismatch"}
                     </dd>

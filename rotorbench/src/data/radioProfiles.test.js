@@ -1,5 +1,6 @@
 import {
   DEFAULT_RADIO_CONFIG,
+  RADIO_HANDSETS,
   applyFlightControllerChannelMap,
   bindingPhraseByteLength,
   buildChannelMappingWarnings,
@@ -13,6 +14,8 @@ import {
   getPacketRatesForTarget,
   getRadioHostTransports,
   getRadioHostBay,
+  getRadioHandset,
+  getRadioHandsetBayCompatibility,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioReceiverBandCompatibility,
@@ -192,6 +195,61 @@ test("Ranger module-bay plans reject a physically incompatible handset", () => {
     targetId: "aerialkit-elrs-rev-a3",
     hostTransport: "native-usb",
   }).hostBay).toBe("native-usb");
+});
+
+test("documented handset profiles distinguish JR bays from Nano adapters", () => {
+  expect(RADIO_HANDSETS.map((handset) => handset.id)).toEqual([
+    "verify",
+    "radiomaster-boxer",
+    "radiomaster-tx16s-mkii",
+  ]);
+  const boxer = getRadioHandset("radiomaster-boxer");
+  expect(boxer).toMatchObject({
+    name: "RadioMaster Boxer",
+    firmware: "EdgeTX",
+    supportedHostBays: ["jr-standard-5"],
+    sourceUrl: "https://radiomasterrc.com/products/boxer-radio-controller-m2",
+  });
+  expect(boxer.manualUrl).toContain("BOXER_A1.9.pdf");
+  expect(getRadioHandsetBayCompatibility(
+    "radiomaster-boxer",
+    "jr-standard-5",
+  ).status).toBe("compatible");
+  expect(getRadioHandsetBayCompatibility(
+    "radiomaster-boxer",
+    "nano-8",
+  ).status).toBe("conflict");
+  expect(normalizeRadioConfig({
+    ...DEFAULT_RADIO_CONFIG,
+    handsetId: "unknown-handset",
+  }).handsetId).toBe("verify");
+
+  const warnings = buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-elrs-24-tx",
+    hostTransport: "module-bay",
+    hostBay: "nano-8",
+    handsetId: "radiomaster-boxer",
+    powerDbm: 20,
+  });
+  expect(warnings).toEqual(expect.arrayContaining([
+    expect.stringMatching(/RadioMaster Boxer.*JR standard 5-pin bay.*Nano 8-pin bay.*adapter/i),
+  ]));
+
+  const summary = buildRadioSummary({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-elrs-24-tx",
+    hostTransport: "module-bay",
+    hostBay: "nano-8",
+    handsetId: "radiomaster-boxer",
+    powerDbm: 20,
+  });
+  expect(summary.configuration).toMatchObject({
+    handsetId: "radiomaster-boxer",
+    handsetName: "RadioMaster Boxer",
+    handsetBayCompatible: false,
+    handsetBayStatus: "conflict",
+  });
 });
 
 test("Ranger Nano applies the selected regulatory ceiling", () => {

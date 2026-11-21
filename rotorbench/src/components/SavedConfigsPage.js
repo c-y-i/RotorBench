@@ -629,8 +629,8 @@ export default function SavedConfigsPage() {
                                             )}
                                             {buildSummary.hasHardwareParts
                                                 && buildSummary.radioHostTransport === "module-bay" && (
-                                                <span className={`is-host-${buildSummary.radioHostBayCompatible ? "documented" : "unverified"}`}>
-                                                    {buildSummary.radioHostBayLabel}
+                                                <span className={`is-host-${buildSummary.radioHostBayCompatible && buildSummary.radioHandsetBayCompatible ? "documented" : "unverified"}`}>
+                                                    {buildSummary.radioHandsetName} · {buildSummary.radioHostBayLabel}
                                                 </span>
                                             )}
                                             {buildSummary.hasHardwareParts

@@ -18,6 +18,7 @@ import {
 import {
   DEFAULT_RADIO_CONFIG,
   RADIO_DYNAMIC_POWER,
+  RADIO_HANDSETS,
   RADIO_HOST_BAYS,
   RADIO_LINK_MODES,
   RADIO_STORAGE_KEY,
@@ -35,6 +36,8 @@ import {
   getRadioChannelRoles,
   getRadioHostTransports,
   getRadioHostBay,
+  getRadioHandset,
+  getRadioHandsetBayCompatibility,
   getRadioPowerLevels,
   getRadioPowerSpec,
   getRadioReceiverBandCompatibility,
@@ -96,10 +99,16 @@ export default function RadioLinkSetup({
   const availableTargets = getRadioTargetsForRole(config.role);
   const availableHostTransports = getRadioHostTransports(target.id);
   const selectedHostBay = getRadioHostBay(config.hostBay);
+  const selectedHandset = getRadioHandset(config.handsetId);
   const hostBayCompatible = isRadioHostBayCompatible(
     target.id,
     config.hostBay,
   );
+  const handsetBayCompatibility = getRadioHandsetBayCompatibility(
+    config.handsetId,
+    config.hostBay,
+  );
+  const handsetBayCompatible = handsetBayCompatibility.status !== "conflict";
   const warnings = useMemo(
     () => buildRadioWarnings(config, {
       channelLimit,
@@ -225,6 +234,17 @@ export default function RadioLinkSetup({
             : value === "native-usb"
               ? "native-usb"
               : current.hostBay,
+        };
+      }
+      if (key === "handsetId") {
+        const nextHandset = getRadioHandset(value);
+        return {
+          ...current,
+          handsetId: nextHandset.id,
+          hostBay: current.hostBay === "verify"
+            && nextHandset.supportedHostBays.length > 0
+            ? nextHandset.supportedHostBays[0]
+            : current.hostBay,
         };
       }
       if (key === "packetRateMode") {
@@ -457,36 +477,83 @@ export default function RadioLinkSetup({
             </label>
 
             {config.hostTransport === "module-bay" && (
-              <label className="radio-field radio-field-wide">
-                <span>Handset bay</span>
-                <select
-                  aria-label="Handset bay"
-                  aria-invalid={!hostBayCompatible}
-                  aria-describedby="radio-host-bay-help"
-                  value={config.hostBay || "verify"}
-                  onChange={(event) => update("hostBay", event.target.value)}
-                >
-                  {RADIO_HOST_BAYS
-                    .filter((option) => option.value !== "native-usb")
-                    .map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
+              <>
+                <label className="radio-field radio-field-wide">
+                  <span>Handset</span>
+                  <select
+                    aria-label="Handset"
+                    value={config.handsetId || "verify"}
+                    onChange={(event) => update("handsetId", event.target.value)}
+                  >
+                    {RADIO_HANDSETS.map((handset) => (
+                      <option key={handset.id} value={handset.id}>
+                        {handset.name}
                       </option>
                     ))}
-                </select>
-                <small
-                  id="radio-host-bay-help"
-                  className={hostBayCompatible ? "" : "radio-field-error"}
-                >
-                  {hostBayCompatible
-                    ? selectedHostBay.note
-                    : `${target.name} requires ${
-                      (target.supportedHostBays || [])
-                        .map((bay) => getRadioHostBay(bay).label)
-                        .join(" or ")
-                    }.`}
-                </small>
-              </label>
+                  </select>
+                  <small>{selectedHandset.note}</small>
+                </label>
+                {selectedHandset.id !== "verify" && (
+                  <p className="radio-source-note radio-handset-source">
+                    {selectedHandset.firmware} handset profile.{" "}
+                    <a
+                      href={selectedHandset.manualUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open manual
+                    </a>
+                    {" · "}
+                    <a
+                      href={selectedHandset.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open manufacturer source
+                    </a>
+                  </p>
+                )}
+                <label className="radio-field radio-field-wide">
+                  <span>Handset bay</span>
+                  <select
+                    aria-label="Handset bay"
+                    aria-invalid={!hostBayCompatible || !handsetBayCompatible}
+                    aria-describedby="radio-host-bay-help"
+                    value={config.hostBay || "verify"}
+                    onChange={(event) => update("hostBay", event.target.value)}
+                  >
+                    {RADIO_HOST_BAYS
+                      .filter((option) => option.value !== "native-usb")
+                      .map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                  </select>
+                  <small
+                    id="radio-host-bay-help"
+                    className={
+                      hostBayCompatible && handsetBayCompatible
+                        ? ""
+                        : "radio-field-error"
+                    }
+                  >
+                    {!hostBayCompatible
+                      ? `${target.name} requires ${
+                        (target.supportedHostBays || [])
+                          .map((bay) => getRadioHostBay(bay).label)
+                          .join(" or ")
+                      }.`
+                      : !handsetBayCompatible
+                        ? `${selectedHandset.name} is documented with ${
+                          selectedHandset.supportedHostBays
+                            .map((bay) => getRadioHostBay(bay).label)
+                            .join(" or ")
+                        }. Verify any adapter before fitting the module.`
+                        : selectedHostBay.note}
+                  </small>
+                </label>
+              </>
             )}
 
             <div className="radio-target-summary">
@@ -958,8 +1025,13 @@ export default function RadioLinkSetup({
               <div>
                 <dt>Handset bay</dt>
                 <dd>
-                  {selectedHostBay.label} ·{" "}
-                  {hostBayCompatible ? "supported" : "mismatch"}
+                  {selectedHandset.id === "verify"
+                    ? selectedHostBay.label
+                    : `${selectedHandset.name} · ${selectedHostBay.label}`}
+                  {" · "}
+                  {hostBayCompatible && handsetBayCompatible
+                    ? "supported"
+                    : "mismatch"}
                 </dd>
               </div>
             )}

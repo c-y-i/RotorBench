@@ -4,6 +4,7 @@ import { buildRadioEndpointPlan } from "./radioEndpointPlan";
 const revA3 = getRadioTarget("aerialkit-elrs-rev-a3");
 const genericTx = getRadioTarget("generic-elrs-24-tx");
 const rangerNano = getRadioTarget("radiomaster-ranger-nano-elrs-24-tx");
+const ranger = getRadioTarget("radiomaster-ranger-elrs-24-tx");
 
 test("native USB keeps baud semantics and RF evidence separate", () => {
   const plan = buildRadioEndpointPlan({
@@ -81,4 +82,25 @@ test("Ranger Nano documents the module bay without claiming a host UART rate", (
   expect(step.detail).toMatch(/Nano 8-pin: CRSF, GND, 5-12 V/i);
   expect(step.detail).not.toMatch(/baud/i);
   expect(plan.copyText).not.toMatch(/baud/i);
+});
+
+test("module-bay handoff names the selected handset and bay state", () => {
+  const plan = buildRadioEndpointPlan({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: ranger.id,
+    role: "tx",
+    hostTransport: "module-bay",
+    hostBay: "nano-8",
+    handsetId: "radiomaster-boxer",
+  }, ranger);
+
+  expect(plan).toMatchObject({
+    handsetId: "radiomaster-boxer",
+    handsetName: "RadioMaster Boxer",
+    handsetBayCompatibility: "conflict",
+  });
+  expect(plan.copyText).toContain("# Handset: RadioMaster Boxer");
+  expect(plan.copyText).toContain("# Handset bay: conflict");
+  expect(plan.steps.find((step) => step.id === "host-module-bay").detail)
+    .toMatch(/RadioMaster Boxer \(conflict\).*without forcing the bay/i);
 });

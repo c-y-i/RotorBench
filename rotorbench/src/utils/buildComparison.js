@@ -174,6 +174,10 @@ export function summarizeBuild(build) {
     radioHostBay: hardwareReadiness.radioHostBay,
     radioHostBayLabel: hardwareReadiness.radioHostBayLabel,
     radioHostBayCompatible: hardwareReadiness.radioHostBayCompatible,
+    radioHandsetId: hardwareReadiness.radioHandsetId,
+    radioHandsetName: hardwareReadiness.radioHandsetName,
+    radioHandsetBayStatus: hardwareReadiness.radioHandsetBayStatus,
+    radioHandsetBayCompatible: hardwareReadiness.radioHandsetBayCompatible,
     radioPowerDbm: hardwareReadiness.radioPowerDbm,
     radioRegulatoryRegionLabel: hardwareReadiness.radioRegulatoryRegionLabel,
     radioRegulatoryMaxDbm: hardwareReadiness.radioRegulatoryMaxDbm,
@@ -274,6 +278,10 @@ export function createComparisonReport(
       radioHostBay: build.radioHostBay,
       radioHostBayLabel: build.radioHostBayLabel,
       radioHostBayCompatible: build.radioHostBayCompatible,
+      radioHandsetId: build.radioHandsetId,
+      radioHandsetName: build.radioHandsetName,
+      radioHandsetBayStatus: build.radioHandsetBayStatus,
+      radioHandsetBayCompatible: build.radioHandsetBayCompatible,
       radioPowerDbm: build.radioPowerDbm,
       radioRegulatoryRegionLabel: build.radioRegulatoryRegionLabel,
       radioRegulatoryMaxDbm: build.radioRegulatoryMaxDbm,
@@ -523,13 +531,25 @@ export function comparisonRows(left, right) {
     },
     {
       id: "radio-host-bay",
-      label: "Radio handset bay",
-      left: `${left.radioHostBayLabel || "Verify bay"} · ${
-        left.radioHostBayCompatible ? "supported" : "mismatch"
-      }`,
-      right: `${right.radioHostBayLabel || "Verify bay"} · ${
-        right.radioHostBayCompatible ? "supported" : "mismatch"
-      }`,
+      label: "Radio handset / bay",
+      left: left.radioHostTransport === "module-bay"
+        ? `${left.radioHandsetName || "Verify handset"} · ${left.radioHostBayLabel || "Verify bay"} · ${
+          left.radioHostBayCompatible && left.radioHandsetBayCompatible
+            ? "supported"
+            : "mismatch"
+        }`
+        : `${left.radioHostBayLabel || "Verify bay"} · ${
+          left.radioHostBayCompatible ? "supported" : "mismatch"
+        }`,
+      right: right.radioHostTransport === "module-bay"
+        ? `${right.radioHandsetName || "Verify handset"} · ${right.radioHostBayLabel || "Verify bay"} · ${
+          right.radioHostBayCompatible && right.radioHandsetBayCompatible
+            ? "supported"
+            : "mismatch"
+        }`
+        : `${right.radioHostBayLabel || "Verify bay"} · ${
+          right.radioHostBayCompatible ? "supported" : "mismatch"
+        }`,
       format: (value) => value,
     },
     {

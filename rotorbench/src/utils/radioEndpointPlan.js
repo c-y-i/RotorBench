@@ -1,5 +1,7 @@
 import {
   RADIO_HOST_TRANSPORTS,
+  getRadioHandset,
+  getRadioHandsetBayCompatibility,
   getRadioTarget,
 } from "../data/radioProfiles";
 
@@ -16,6 +18,11 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
   const transport = transportOption(hostTransport);
   const hostUart = radioTarget.hostLink?.uart || null;
   const moduleBay = radioTarget.hostLink?.moduleBay || null;
+  const handset = getRadioHandset(config.handsetId);
+  const handsetBayCompatibility = getRadioHandsetBayCompatibility(
+    config.handsetId,
+    config.hostBay,
+  );
   const documented = hostTransport === "native-usb"
     ? Boolean(radioTarget.hostLink?.nativeUsb)
     : hostTransport === "uart"
@@ -59,7 +66,7 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
       id: "host-module-bay",
       label: "Verify the handset module-bay interface",
       detail: moduleBay
-        ? `${moduleBay.pins}; supply ${moduleBay.voltage}. Confirm the handset pinout, ground, CRSF direction, and whether the module is seated without forcing the bay.`
+        ? `${moduleBay.pins}; supply ${moduleBay.voltage}. Handset: ${handset.name} (${handsetBayCompatibility.status}). Confirm the handset pinout, ground, CRSF direction, and whether the module is seated without forcing the bay.`
         : "The target's handset module-bay pinout is not bundled. Verify the connector, supply voltage, ground, and CRSF direction before powering.",
     });
   } else {
@@ -89,6 +96,12 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
     `# Target: ${radioTarget.name}`,
     `# Role: ${roleLabel}`,
     `# Host transport: ${transport.label}`,
+    ...(hostTransport === "module-bay"
+      ? [
+          `# Handset: ${handset.name}`,
+          `# Handset bay: ${handsetBayCompatibility.status}`,
+        ]
+      : []),
     ...steps.map((step, index) => `${index + 1}. ${step.label}: ${step.detail}`),
     "",
     "# Props off. Antenna or RF load fitted. RotorBench did not test RF or hardware state.",
@@ -102,6 +115,9 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
     hostTransport,
     hostTransportLabel: transport.label,
     hostTransportNote: transport.note,
+    handsetId: handset.id,
+    handsetName: handset.name,
+    handsetBayCompatibility: handsetBayCompatibility.status,
     documented,
     steps,
     copyText,

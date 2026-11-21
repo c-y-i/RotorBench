@@ -2053,8 +2053,10 @@ export default function BuildPage() {
                   </small>
                   {hardwareReadiness.radioHostTransport === "module-bay" && (
                     <small>
-                      Handset bay: {hardwareReadiness.radioHostBayLabel} ·{" "}
+                      Handset: {hardwareReadiness.radioHandsetName} ·{" "}
+                      {hardwareReadiness.radioHostBayLabel} ·{" "}
                       {hardwareReadiness.radioHostBayCompatible
+                        && hardwareReadiness.radioHandsetBayCompatible
                         ? "supported"
                         : "mismatch"}
                     </small>

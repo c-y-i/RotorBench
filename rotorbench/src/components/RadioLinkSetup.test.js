@@ -148,6 +148,36 @@ test("full-size Ranger can use either included JR or Nano adapter", () => {
   expect(screen.getByText("Nano 8-pin bay · supported")).toBeInTheDocument();
 });
 
+test("handset profiles expose source-backed bay mismatches before power", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-ranger-elrs-24-tx" },
+  });
+  expect(screen.getByLabelText("Handset")).toHaveValue("verify");
+  fireEvent.change(screen.getByLabelText("Handset"), {
+    target: { value: "radiomaster-boxer" },
+  });
+
+  expect(screen.getByText(/official manual identifies the external module bay as JR compatible/i))
+    .toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Open manual" }))
+    .toHaveAttribute("href", expect.stringContaining("BOXER_A1.9.pdf"));
+  expect(screen.getByLabelText("Handset bay")).toHaveValue("jr-standard-5");
+  expect(screen.getByLabelText("Handset bay")).toHaveAttribute("aria-invalid", "false");
+
+  fireEvent.change(screen.getByLabelText("Handset bay"), {
+    target: { value: "nano-8" },
+  });
+  expect(screen.getByLabelText("Handset bay")).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getAllByText(
+    /RadioMaster Boxer is documented with JR standard 5-pin bay/i,
+  )).toHaveLength(2);
+  expect(screen.getByText(/not the selected Nano 8-pin bay/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/RadioMaster Boxer · Nano 8-pin bay · mismatch/i))
+    .toBeInTheDocument();
+});
+
 test("binding material is not written to local storage", () => {
   render(<RadioLinkSetup />);
   fireEvent.change(screen.getByLabelText("Binding phrase"), {

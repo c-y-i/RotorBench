@@ -327,6 +327,33 @@ export const RADIO_HOST_BAYS = [
   },
 ];
 
+export const RADIO_HANDSETS = [
+  {
+    id: "verify",
+    name: "Verify handset",
+    supportedHostBays: [],
+    note: "No handset model is selected. Verify the physical module bay before powering.",
+  },
+  {
+    id: "radiomaster-boxer",
+    name: "RadioMaster Boxer",
+    firmware: "EdgeTX",
+    supportedHostBays: ["jr-standard-5"],
+    note: "The official manual identifies the external module bay as JR compatible.",
+    sourceUrl: "https://radiomasterrc.com/products/boxer-radio-controller-m2",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/BOXER_A1.9.pdf?v=1770617495",
+  },
+  {
+    id: "radiomaster-tx16s-mkii",
+    name: "RadioMaster TX16S MKII",
+    firmware: "EdgeTX",
+    supportedHostBays: ["jr-standard-5"],
+    note: "The official manual identifies the external module bay as JR compatible.",
+    sourceUrl: "https://radiomasterrc.com/products/tx16s-mark-ii-radio-controller",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX16SMKII_2.0.pdf?v=1770617496",
+  },
+];
+
 export const RADIO_CHANNEL_ROLES = [
   { key: "roll", fcRole: null, label: "Roll", channel: 1, aerialKitSupported: true },
   { key: "pitch", fcRole: null, label: "Pitch", channel: 2, aerialKitSupported: true },
@@ -350,6 +377,7 @@ export const DEFAULT_RADIO_CONFIG = {
   role: "tx",
   hostTransport: "native-usb",
   hostBay: "native-usb",
+  handsetId: "verify",
   packetRateMode: "250",
   powerDbm: -18,
   regulatoryRegion: null,
@@ -439,6 +467,24 @@ export function getDefaultHostTransport(targetId) {
 export function getRadioHostBay(hostBay) {
   return RADIO_HOST_BAYS.find((option) => option.value === hostBay)
     || RADIO_HOST_BAYS.find((option) => option.value === "verify");
+}
+
+export function getRadioHandset(handsetId) {
+  return RADIO_HANDSETS.find((handset) => handset.id === handsetId)
+    || RADIO_HANDSETS[0];
+}
+
+export function getRadioHandsetBayCompatibility(handsetId, hostBay) {
+  const handset = getRadioHandset(handsetId);
+  if (handset.id === "verify" || hostBay === "verify") {
+    return { status: "unverified", handset };
+  }
+  return {
+    status: handset.supportedHostBays.includes(hostBay)
+      ? "compatible"
+      : "conflict",
+    handset,
+  };
 }
 
 export function getDefaultHostBay(targetId) {
@@ -559,6 +605,7 @@ export function normalizeRadioConfig(config = {}) {
   const hostBay = getRadioHostBay(
     config.hostBay || getDefaultHostBay(targetId),
   ).value;
+  const handsetId = getRadioHandset(config.handsetId).id;
   return {
     ...DEFAULT_RADIO_CONFIG,
     ...config,
@@ -570,6 +617,7 @@ export function normalizeRadioConfig(config = {}) {
         : "verify"
       : null,
     hostBay,
+    handsetId,
     hostTransport: RADIO_HOST_TRANSPORTS.some(
       (transport) => transport.value === config.hostTransport,
     )
@@ -631,6 +679,11 @@ export function buildRadioWarnings(
     }),
   };
   const target = getRadioTarget(normalized.targetId);
+  const handset = getRadioHandset(normalized.handsetId);
+  const handsetBayCompatibility = getRadioHandsetBayCompatibility(
+    normalized.handsetId,
+    normalized.hostBay,
+  );
   const visibleChannelRoles = getRadioChannelRoles(channelLimit, controlRoles);
   const packetRates = getPacketRatesForTarget(target.id);
   const powerLevels = getRadioPowerLevels(target.id);
@@ -651,6 +704,16 @@ export function buildRadioWarnings(
       .join(" or ");
     warnings.push(
       `${target.name} does not fit the selected ${getRadioHostBay(normalized.hostBay).label}.${supported ? ` Use ${supported}.` : ""}`,
+    );
+  }
+  if (
+    normalized.hostTransport === "module-bay" &&
+    handsetBayCompatibility.status === "conflict"
+  ) {
+    warnings.push(
+      `${handset.name} is documented with ${handset.supportedHostBays
+        .map((bay) => getRadioHostBay(bay).label)
+        .join(" or ")}, not the selected ${getRadioHostBay(normalized.hostBay).label}. Verify any adapter before fitting the module.`,
     );
   }
   const bandCompatibility = getRadioReceiverBandCompatibility(
@@ -855,6 +918,11 @@ export function buildRadioSummary(config, options = {}) {
     target.id,
     normalized.hostBay,
   );
+  const handset = getRadioHandset(normalized.handsetId);
+  const handsetBayCompatibility = getRadioHandsetBayCompatibility(
+    normalized.handsetId,
+    normalized.hostBay,
+  );
   return {
     schema: "rotorbench.radio-plan.v1",
     status: "draft",
@@ -876,6 +944,12 @@ export function buildRadioSummary(config, options = {}) {
       hostBay: normalized.hostBay,
       hostBayLabel: hostBay.label,
       hostBayCompatible,
+      handsetId: handset.id,
+      handsetName: handset.name,
+      handsetSourceUrl: handset.sourceUrl || null,
+      handsetManualUrl: handset.manualUrl || null,
+      handsetBayCompatible: handsetBayCompatibility.status !== "conflict",
+      handsetBayStatus: handsetBayCompatibility.status,
       packetRateMode: normalized.packetRateMode,
       packetRateHz: packetRate?.hz ?? null,
       powerDbm: normalized.powerDbm,

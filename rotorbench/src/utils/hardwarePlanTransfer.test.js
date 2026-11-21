@@ -287,6 +287,18 @@ test("Ranger Nano imports only its module-bay transport and published power ceil
   expect(() => parseCombinedHardwarePlanJson(JSON.stringify(wrongBay)))
     .toThrow(/handset bay is incompatible/i);
 
+  const fullRanger = JSON.parse(JSON.stringify(exported));
+  fullRanger.radio.target.id = "radiomaster-ranger-elrs-24-tx";
+  fullRanger.radio.configuration.hostBay = "nano-8";
+  fullRanger.radio.configuration.handsetId = "radiomaster-boxer";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(fullRanger)))
+    .toThrow(/handset profile does not match/i);
+
+  const unknownHandset = JSON.parse(JSON.stringify(exported));
+  unknownHandset.radio.configuration.handsetId = "not-a-radio";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(unknownHandset)))
+    .toThrow(/handset profile is unsupported/i);
+
   const overLimit = JSON.parse(JSON.stringify(exported));
   overLimit.radio.configuration.powerDbm = 31;
   expect(() => parseCombinedHardwarePlanJson(JSON.stringify(overLimit)))
