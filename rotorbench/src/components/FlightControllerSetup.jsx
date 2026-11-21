@@ -26,6 +26,7 @@ import {
   FC_BOARD_PROFILES,
   FC_FEATURES,
   FIRMWARE_FAMILIES,
+  MOTOR_DIRECTIONS,
   RECEIVER_PROTOCOLS,
   buildArmingGatePreview,
   buildFlightControllerSummary,
@@ -247,12 +248,18 @@ export default function FlightControllerSetup({
   const motorLayout = getAirframeMotorLayout(
     config.airframe,
     config.firmwareFamily,
+    config.motorDirection,
   );
+  const motorDirection = MOTOR_DIRECTIONS.find(
+    (option) => option.value === config.motorDirection,
+  ) || MOTOR_DIRECTIONS[0];
   const motorLayoutSource = config.firmwareFamily === "betaflight"
-    ? "Betaflight normal QUAD X"
+    ? `Betaflight ${motorDirection.label} QUAD X`
     : "Aerial Kit mixer order";
   const motorLayoutBoundary = config.firmwareFamily === "betaflight"
-    ? "Normal Betaflight QUAD X assumes props-in at the front. For props-out, enable reversed motor direction and verify every output in Motor Test with props removed."
+    ? config.motorDirection === "props-out"
+      ? "Reversed Betaflight QUAD X uses props-out at the front. Motor wiring/direction and the yaw-reversed setting must both match; verify every output in Motor Test with props removed."
+      : "Normal Betaflight QUAD X assumes props-in at the front. Verify every output in Motor Test with props removed."
     : "Confirm the physical motor positions and prop directions before power.";
   const motorLayoutNodes = motorLayout
     ? motorLayout.motors.map((motor, index) => {
@@ -341,6 +348,7 @@ export default function FlightControllerSetup({
       firmwareFamily: familyId,
       profileId: nextProfile.id,
       airframe: nextProfile.defaultAirframe,
+      motorDirection: "props-in",
       receiverUart: nextProfile.receiverUart,
       receiverBaud: config.receiverProtocol === "sbus"
         ? nextProfile.sbusBaud
@@ -666,6 +674,29 @@ export default function FlightControllerSetup({
                   {[150, 300, 600].map((rate) => <option key={rate} value={rate}>{rate} kHz</option>)}
                 </select>
               </Field>
+
+              {config.firmwareFamily === "betaflight" && (
+                <Field
+                  label="Motor direction"
+                  htmlFor="fc-motor-direction"
+                  hint={motorDirection.note}
+                >
+                  <select
+                    id="fc-motor-direction"
+                    value={config.motorDirection || "props-in"}
+                    onChange={(event) => update(
+                      "motorDirection",
+                      event.target.value,
+                    )}
+                  >
+                    {MOTOR_DIRECTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
             </div>
 
             <div className="fc-board-facts">

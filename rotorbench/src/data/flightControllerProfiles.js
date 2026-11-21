@@ -250,6 +250,19 @@ export const AIRFRAMES = [
   { value: "elevonwingsingle", label: "Single-motor elevon wing", motors: 1, servos: 2 },
 ];
 
+export const MOTOR_DIRECTIONS = [
+  {
+    value: "props-in",
+    label: "Normal · props in",
+    note: "Front propellers spin inward. This is the Betaflight normal default.",
+  },
+  {
+    value: "props-out",
+    label: "Reversed · props out",
+    note: "Front propellers spin outward. Betaflight must also know that yaw is reversed.",
+  },
+];
+
 const AIRFRAME_LAYOUT_SOURCES = Object.freeze([
   "aerial-kit/firmware/src/core/flight/ak_mixer.c",
   "aerial-kit/apps/configurator/src/ui/views/airframes.ts",
@@ -360,9 +373,23 @@ export const BETAFLIGHT_AIRFRAME_MOTOR_LAYOUTS = Object.freeze({
   }),
 });
 
-export function getAirframeMotorLayout(airframe, firmwareFamily = "aerialkit") {
+export function getAirframeMotorLayout(
+  airframe,
+  firmwareFamily = "aerialkit",
+  motorDirection = "props-in",
+) {
   if (firmwareFamily === "betaflight") {
-    return BETAFLIGHT_AIRFRAME_MOTOR_LAYOUTS[airframe] || null;
+    const layout = BETAFLIGHT_AIRFRAME_MOTOR_LAYOUTS[airframe];
+    if (!layout) return null;
+    if (motorDirection !== "props-out") return layout;
+    return {
+      ...layout,
+      directionProfile: "props-out",
+      motors: layout.motors.map((motor) => ({
+        ...motor,
+        spin: motor.spin === "CW" ? "CCW" : "CW",
+      })),
+    };
   }
   if (firmwareFamily !== "aerialkit") return null;
   return AIRFRAME_MOTOR_LAYOUTS[airframe] || null;
@@ -518,6 +545,7 @@ export function createDefaultFlightControllerConfig(
     selectedFlightControllerId: selectedFlightController?.id || null,
     selectedReceiverId: selectedReceiver?.id || null,
     airframe: catalogProfile.defaultAirframe,
+    motorDirection: "props-in",
     receiverProtocol,
     receiverUart: catalogProfile.receiverUart,
     receiverBaud: receiverProtocol === "sbus"
@@ -1020,9 +1048,12 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
   const motorLayout = getAirframeMotorLayout(
     config.airframe,
     config.firmwareFamily,
+    config.motorDirection,
   );
   const motorOrderLabel = config.firmwareFamily === "betaflight"
-    ? "Betaflight normal QUAD X motor order"
+    ? `Betaflight ${config.motorDirection === "props-out"
+      ? "reversed props-out"
+      : "normal props-in"} QUAD X motor order`
     : "Motor order";
 
   return [

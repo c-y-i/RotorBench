@@ -55,13 +55,35 @@ test("does not show Aerial Kit live gates for another firmware family", () => {
   });
   expect(screen.queryByRole("heading", { name: "Arm-gate preview" })).not.toBeInTheDocument();
   expect(screen.getByText("Motor output map")).toBeInTheDocument();
-  expect(screen.getByText("Betaflight normal QUAD X")).toBeInTheDocument();
+  expect(screen.getByText("Betaflight Normal · props in QUAD X")).toBeInTheDocument();
+  expect(screen.getByLabelText("Motor direction")).toHaveValue("props-in");
+});
+
+test("Betaflight props-out flips the motor map directions", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "betaflight" },
+  });
+  fireEvent.change(screen.getByLabelText("Motor direction"), {
+    target: { value: "props-out" },
+  });
+
+  const outputs = screen.getByRole("list", { name: "Quad X motor outputs" });
+  const items = within(outputs).getAllByRole("listitem");
+  expect(items[0]).toHaveTextContent("1RRCCW");
+  expect(items[1]).toHaveTextContent("2FRCW");
+  expect(screen.getByText("Betaflight Reversed · props out QUAD X"))
+    .toBeInTheDocument();
+  expect(screen.getByText(/uses props-out at the front/i)).toBeInTheDocument();
 });
 
 test("Betaflight exposes a missing map for unsupported mixer orders", () => {
   render(<FlightControllerSetup />);
   fireEvent.change(screen.getByLabelText("Firmware family"), {
     target: { value: "betaflight" },
+  });
+  fireEvent.change(screen.getByLabelText("Motor direction"), {
+    target: { value: "props-out" },
   });
   fireEvent.change(screen.getByLabelText("Airframe"), {
     target: { value: "quadp" },

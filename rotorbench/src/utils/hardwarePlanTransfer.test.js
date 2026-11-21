@@ -103,6 +103,17 @@ test("unsupported or incomplete hardware plans fail closed", () => {
   }))).toThrow(/unsupported plan version/i);
 });
 
+test("hardware-plan import validates the motor-direction enum", () => {
+  const exported = samplePlan();
+  exported.flightController.config.motorDirection = "props-out";
+  expect(parseCombinedHardwarePlanJson(JSON.stringify(exported)).fcPlan)
+    .toMatchObject({ motorDirection: "props-out" });
+
+  exported.flightController.config.motorDirection = "both";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(exported)))
+    .toThrow(/motor direction is unsupported/i);
+});
+
 test("older partial v1 plans merge over safe configurator defaults", () => {
   const exported = samplePlan();
   delete exported.flightController.config.features;

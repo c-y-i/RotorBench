@@ -22,6 +22,7 @@ import {
   buildFlightControllerSummary,
   createDefaultFlightControllerConfig,
   getBoardProfile,
+  MOTOR_DIRECTIONS,
 } from "../data/flightControllerProfiles";
 import { buildReceiverWiringPlan } from "./receiverWiring";
 
@@ -186,6 +187,11 @@ export function parseCombinedHardwarePlanJson(text) {
       ...(importedFcPlan.features || {}),
     },
   };
+  if (!MOTOR_DIRECTIONS.some(
+    (option) => option.value === fcPlan.motorDirection,
+  )) {
+    throw new Error("The flight-controller motor direction is unsupported.");
+  }
   if (!getBoardProfile(fcPlan.profileId) && !fcPlan.profileId) {
     throw new Error("The flight-controller profile ID is missing.");
   }

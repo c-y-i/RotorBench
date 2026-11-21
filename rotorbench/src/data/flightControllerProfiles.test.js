@@ -49,6 +49,15 @@ test("Aerial Kit motor layouts preserve the firmware output order", () => {
       { output: 4, label: "FL", spin: "CW" },
     ],
   });
+  expect(getAirframeMotorLayout("quadx", "betaflight", "props-out")).toMatchObject({
+    directionProfile: "props-out",
+    motors: [
+      { output: 1, label: "RR", spin: "CCW" },
+      { output: 2, label: "FR", spin: "CW" },
+      { output: 3, label: "RL", spin: "CW" },
+      { output: 4, label: "FL", spin: "CCW" },
+    ],
+  });
   expect(getAirframeMotorLayout("quadp", "betaflight")).toBeNull();
   expect(getAirframeMotorLayout("quadx", "inav")).toBeNull();
   expect(getAirframeMotorLayout("unknown")).toBeNull();
@@ -141,7 +150,13 @@ test("Betaflight summary fingerprints its own normal QUAD X motor order", () => 
   };
   const summary = buildFlightControllerSummary(config, profile).join("\n");
   expect(summary).toContain(
-    "Betaflight normal QUAD X motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW",
+    "Betaflight normal props-in QUAD X motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW",
+  );
+  expect(buildFlightControllerSummary({
+    ...config,
+    motorDirection: "props-out",
+  }, profile).join("\n")).toContain(
+    "Betaflight reversed props-out QUAD X motor order: 1 RR CCW, 2 FR CW, 3 RL CW, 4 FL CCW",
   );
   const inav = buildFlightControllerSummary({
     ...config,
