@@ -449,6 +449,31 @@ test("HQProp PizzaCutters 5037 adds a source-backed five-inch propeller", () => 
   });
 });
 
+test("Gemfan 51499 preserves published mechanics without inventing thrust", () => {
+  const propeller = componentsData.propellers.find(
+    (item) => item.id === "prop-gemfan-hurricane-51499-3",
+  );
+
+  expect(propeller).toMatchObject({
+    name: "Gemfan Hurricane 51499 3-Blade",
+    size: 5.1,
+    pitch: 4.99,
+    bladeCount: 3,
+    weight: 4.96,
+    hubThicknessMm: 7,
+    shaftMm: 5,
+    dimensionsMm: [128.8, 7, 128.8],
+    performanceDataStatus: "not_published",
+    thrustData: [],
+    price: 1.25,
+    sourceUrl: expect.stringContaining("gemfanhobby.com"),
+  });
+  expect(propeller.estimatedFields).toEqual([
+    "mounting_point",
+    "price allocation",
+  ]);
+});
+
 test("the model manifest binds legacy catalog IDs without prefix guessing", () => {
   const manifest = componentsData.modelManifest;
   const bound = Object.values(manifest.assets).flatMap((entries) => (

@@ -40,14 +40,14 @@ class CatalogContractTests(unittest.TestCase):
             {
                 "frames": 10,
                 "motors": 16,
-                "propellers": 10,
+                "propellers": 11,
                 "batteries": 11,
                 "escs": 7,
                 "flight_controllers": 8,
                 "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 72)
+        self.assertEqual(sum(counts.values()), 73)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 72)
+        self.assertEqual(len(records), 73)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -458,6 +458,23 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(propeller.dimensions_mm, [127, 7, 127])
         self.assertEqual(propeller.performance_data_status, "not_published")
         self.assertEqual(propeller.thrust_data, [])
+
+    def test_gemfan_51499_preserves_published_mechanics_without_fabricated_thrust(self):
+        propeller = next(
+            item for item in self.database.propellers
+            if item.id == "prop-gemfan-hurricane-51499-3"
+        )
+        self.assertEqual(propeller.size, 5.1)
+        self.assertEqual(propeller.pitch, 4.99)
+        self.assertEqual(propeller.blade_count, 3)
+        self.assertEqual(propeller.weight, 4.96)
+        self.assertEqual(propeller.hub_thickness_mm, 7)
+        self.assertEqual(propeller.shaft_mm, 5)
+        self.assertEqual(propeller.dimensions_mm, [128.8, 7, 128.8])
+        self.assertEqual(propeller.performance_data_status, "not_published")
+        self.assertEqual(propeller.thrust_data, [])
+        self.assertIn("mounting_point", propeller.estimated_fields)
+        self.assertIn("price allocation", propeller.estimated_fields)
 
 
 if __name__ == "__main__":
