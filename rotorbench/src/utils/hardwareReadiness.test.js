@@ -52,6 +52,9 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     radioHostBayCompatible: true,
     fcMotorDirection: "props-in",
     fcMotorDirectionLabel: "Normal · props in",
+    fcBoardProfile: "custom-board",
+    fcBoardName: "Test FC",
+    fcBoardDocumented: false,
     fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
     fcMotorLayoutSource: "Betaflight",
     fcPropellerDirection: "props-in",
@@ -134,6 +137,9 @@ test("documented board profiles expose a documented wiring readiness state", () 
   });
 
   expect(readiness).toMatchObject({
+    fcBoardProfile: "esp32dev",
+    fcBoardName: "ESP32DEV",
+    fcBoardDocumented: true,
     receiverPins: "GPIO17 TX / GPIO16 RX",
     wiringStatus: "documented",
     wiringScope: "planning continuity checklist; hardware not tested",

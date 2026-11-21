@@ -485,6 +485,18 @@ export default function AnalysisPage() {
                 </dd>
               </div>
               <div>
+                <dt>Board map</dt>
+                <dd>
+                  {hasHardwareSelection
+                    ? `${hardwareReadiness.fcBoardName || "Not mapped"} · ${
+                      hardwareReadiness.fcBoardDocumented
+                        ? "documented"
+                        : "custom mapping"
+                    }`
+                    : "Not selected"}
+                </dd>
+              </div>
+              <div>
                 <dt>Radio</dt>
                 <dd>{hasHardwareSelection ? hardwareReadiness.radioTargetName : "Not selected"}</dd>
               </div>

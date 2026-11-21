@@ -129,6 +129,8 @@ test("renders the completed analysis and opens the browser print dialog", async 
   expect(within(hardwareSection).getByText("Plan not saved")).toBeInTheDocument();
   expect(within(hardwareSection).getByText("Local plan · hardware not tested"))
     .toBeInTheDocument();
+  expect(within(hardwareSection).getByText("SPEEDYBEEF405MINI · documented"))
+    .toBeInTheDocument();
   expect(within(hardwareSection).getByText("Pins documented")).toBeInTheDocument();
   expect(within(hardwareSection).getByText("Native USB CDC · documented"))
     .toBeInTheDocument();
@@ -372,6 +374,6 @@ test("does not present fallback hardware defaults when no FC or receiver is sele
   const hardwareSection = await screen.findByRole("region", {
     name: "No hardware selected",
   });
-  expect(within(hardwareSection).getAllByText("Not selected")).toHaveLength(4);
+  expect(within(hardwareSection).getAllByText("Not selected")).toHaveLength(5);
   expect(within(hardwareSection).queryByText(/Aerial Kit Firmware/i)).not.toBeInTheDocument();
 });

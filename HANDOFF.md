@@ -88,6 +88,8 @@ Each Build page owns a stable working identity, including unsaved drafts. Openin
 
 Setup’s `Edit build` action carries that same draft object back to Build, preserving the selected component set and working identity through the round trip.
 
+The shared hardware-readiness model now also retains the resolved board profile ID, board target name, and whether that target is documented or custom. Build renders a compact `Board map` line such as `SPEEDYBEEF405V5 · documented`, and Analysis adds a `Board map` fact beside UART and receiver wiring. The values use the same profile resolver as Setup and survive sanitized hardware readiness, so saved and analyzed builds continue to identify the actual board target rather than only the commercial controller name.
+
 Build selections are also written to `rotorbench:build-draft:v1` and recovered after refresh or ordinary navigation, with a visible restoration notice. Route build state and starter-platform deep links remain authoritative. New Build actions use `/build?new=1`, which ignores the stored draft, consumes the query, and starts clean. The reset also works when New Build is clicked while already on the Build route: it creates a fresh identity and clears current selections rather than only changing the URL. Saving a build clears the recovered draft.
 
 Build provenance now includes a 600-character build-local note field. Notes are recovered with drafts, included in save and Analysis handoffs, displayed on Saved cards, rendered as a note strip on Analysis, and carried in `rotorbench.build-sheet.v1` and `rotorbench.analysis-report.v1` exports. The field is explicitly described as build context, not hardware verification.

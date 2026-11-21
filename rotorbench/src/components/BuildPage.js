@@ -1976,6 +1976,12 @@ export default function BuildPage() {
                       : "Verify pins"}
                   </small>
                   <small>
+                    Board map: {hardwareReadiness.fcBoardName || "Not mapped"} ·{" "}
+                    {hardwareReadiness.fcBoardDocumented
+                      ? "documented"
+                      : "custom mapping"}
+                  </small>
+                  <small>
                     Radio host: {hardwareReadiness.radioHostTransportLabel} ·{" "}
                     {hardwareReadiness.radioHostDocumented
                       ? "Transport documented"

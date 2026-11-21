@@ -730,6 +730,8 @@ test("hardware setup carries the unsaved draft identity and selected FC/receiver
   expect(screen.getByText("Plan not saved")).toBeInTheDocument();
   expect(screen.getByText(/Betaflight · CRSF \/ ExpressLRS · UART2 \/ 420000 baud/i))
     .toBeInTheDocument();
+  expect(screen.getByText(/Board map: SPEEDYBEEF405MINI · documented/i))
+    .toBeInTheDocument();
   expect(screen.getByText(/Pins documented/i)).toBeInTheDocument();
   expect(screen.getByText(/Native USB CDC · Transport documented/i))
     .toBeInTheDocument();
