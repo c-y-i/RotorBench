@@ -8,6 +8,7 @@ import {
   RADIO_SWITCH_MODES,
   RADIO_TELEMETRY_RATIOS,
   getRadioChannelRoles,
+  getRadioHostBay,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioTarget,
@@ -80,6 +81,9 @@ export function createHardwarePlanBriefing({
     `- Host transport: ${
       selectedLabel(RADIO_HOST_TRANSPORTS, radioPlan?.hostTransport)
     }`,
+    ...(radioPlan?.hostTransport === "module-bay"
+      ? [`- Handset bay: ${getRadioHostBay(radioPlan?.hostBay).label}`]
+      : []),
     `- Packet rate: ${
       selectedLabel(RADIO_PACKET_RATES, radioPlan?.packetRateMode)
     }`,

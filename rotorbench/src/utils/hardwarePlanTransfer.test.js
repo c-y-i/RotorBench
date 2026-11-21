@@ -150,6 +150,7 @@ test("Ranger Nano imports only its module-bay transport and published power ceil
   exported.radio.target.id = "radiomaster-ranger-nano-elrs-24-tx";
   exported.radio.configuration.role = "tx";
   exported.radio.configuration.hostTransport = "module-bay";
+  exported.radio.configuration.hostBay = "nano-8";
   exported.radio.configuration.powerDbm = 20;
   exported.radio.configuration.regulatoryRegion = "fcc";
 
@@ -158,6 +159,7 @@ test("Ranger Nano imports only its module-bay transport and published power ceil
     targetId: "radiomaster-ranger-nano-elrs-24-tx",
     role: "tx",
     hostTransport: "module-bay",
+    hostBay: "nano-8",
     powerDbm: 20,
     regulatoryRegion: "fcc",
   });
@@ -165,12 +167,20 @@ test("Ranger Nano imports only its module-bay transport and published power ceil
   const missingRegion = JSON.parse(JSON.stringify(exported));
   delete missingRegion.radio.configuration.regulatoryRegion;
   expect(parseCombinedHardwarePlanJson(JSON.stringify(missingRegion)).radioPlan)
-    .toMatchObject({ regulatoryRegion: "verify" });
+    .toMatchObject({
+      regulatoryRegion: "verify",
+      hostBay: "nano-8",
+    });
 
   const wrongTransport = JSON.parse(JSON.stringify(exported));
   wrongTransport.radio.configuration.hostTransport = "native-usb";
   expect(() => parseCombinedHardwarePlanJson(JSON.stringify(wrongTransport)))
     .toThrow(/host transport is unsupported/i);
+
+  const wrongBay = JSON.parse(JSON.stringify(exported));
+  wrongBay.radio.configuration.hostBay = "jr-standard-5";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(wrongBay)))
+    .toThrow(/handset bay is incompatible/i);
 
   const overLimit = JSON.parse(JSON.stringify(exported));
   overLimit.radio.configuration.powerDbm = 31;

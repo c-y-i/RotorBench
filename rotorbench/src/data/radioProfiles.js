@@ -9,6 +9,8 @@ export const RADIO_TARGETS = [
     description: "ESP32-S3, SX1280 and RFX2401C board with separate TX and RX images.",
     frequency: "2.4 GHz",
     defaultHostTransport: "native-usb",
+    defaultHostBay: "native-usb",
+    supportedHostBays: ["native-usb"],
     firmwareVersion: "ExpressLRS 4.1.0",
     benchArtifact: "9b48f01f522783d872b72f36c69c7171bcc851e2fcbfe5f60cb717efcb0331b4",
     benchScope: "Props-off, close-range Rev A3 link validation. Flight and range remain untested.",
@@ -47,6 +49,8 @@ export const RADIO_TARGETS = [
     description: "Nano-bay ExpressLRS transmitter with a 100 mW default output and F-1000 Hz capability.",
     frequency: "2.4 GHz",
     defaultHostTransport: "module-bay",
+    defaultHostBay: "nano-8",
+    supportedHostBays: ["nano-8"],
     roles: ["tx"],
     serial: {
       txBaud: null,
@@ -58,6 +62,7 @@ export const RADIO_TARGETS = [
       nativeUsb: false,
       uart: null,
       moduleBay: {
+        bayType: "nano-8",
         pins: "Nano 8-pin: CRSF, GND, 5-12 V, five NC",
         voltage: "5-12 V",
         note: "Use a compatible handset Nano bay. Confirm ground, supply, CRSF direction, and the fitted RF-region variant before power.",
@@ -82,6 +87,8 @@ export const RADIO_TARGETS = [
     description: "JR-style micro-bay ExpressLRS transmitter with a 100 mW default output and F-1000 Hz capability.",
     frequency: "2.4 GHz",
     defaultHostTransport: "module-bay",
+    defaultHostBay: "jr-micro-5",
+    supportedHostBays: ["jr-micro-5"],
     roles: ["tx"],
     serial: {
       txBaud: null,
@@ -93,6 +100,7 @@ export const RADIO_TARGETS = [
       nativeUsb: false,
       uart: null,
       moduleBay: {
+        bayType: "jr-micro-5",
         pins: "JR-style micro 5-pin: NC, NC, 5-12 V, GND, CRSF",
         voltage: "5-12 V",
         note: "Use a compatible JR-style micro bay. Confirm the handset pinout, CRSF direction, and fitted RF-region variant before power.",
@@ -117,6 +125,8 @@ export const RADIO_TARGETS = [
     description: "Full-size ExpressLRS transmitter with JR and Nano adapters, OLED controls, and a 100 mW default output.",
     frequency: "2.4 GHz",
     defaultHostTransport: "module-bay",
+    defaultHostBay: "jr-standard-5",
+    supportedHostBays: ["jr-standard-5", "nano-8"],
     roles: ["tx"],
     serial: {
       txBaud: null,
@@ -128,6 +138,7 @@ export const RADIO_TARGETS = [
       nativeUsb: false,
       uart: null,
       moduleBay: {
+        bayType: "jr-standard-5",
         pins: "Included JR 5-pin and Nano 8-pin adapters; confirm CRSF, ground, and supply against the handset",
         voltage: "DC 6-16.8 V",
         note: "Choose the adapter that fits the handset. Confirm pin direction, ground, supply, and the fitted RF-region variant before power.",
@@ -152,6 +163,8 @@ export const RADIO_TARGETS = [
     description: "Planning profile for a handset or USB ExpressLRS transmitter.",
     frequency: "2.4 GHz",
     allowUnverifiedHostTransports: true,
+    allowUnverifiedHostBays: true,
+    defaultHostBay: "verify",
     roles: ["tx"],
     serial: {
       txBaud: 400000,
@@ -167,6 +180,8 @@ export const RADIO_TARGETS = [
     description: "Planning profile for a receiver connected to the flight controller.",
     frequency: "2.4 GHz",
     allowUnverifiedHostTransports: true,
+    allowUnverifiedHostBays: true,
+    defaultHostBay: "verify",
     roles: ["rx"],
     serial: {
       txBaud: null,
@@ -278,6 +293,34 @@ export const RADIO_HOST_TRANSPORTS = [
   },
 ];
 
+export const RADIO_HOST_BAYS = [
+  {
+    value: "native-usb",
+    label: "Native USB",
+    note: "Connect directly through the documented native USB endpoint.",
+  },
+  {
+    value: "nano-8",
+    label: "Nano 8-pin bay",
+    note: "Nano-style module bay with the documented CRSF, ground, and supply pins.",
+  },
+  {
+    value: "jr-micro-5",
+    label: "JR-style micro 5-pin bay",
+    note: "Micro-sized JR-style module bay with the documented five-pin interface.",
+  },
+  {
+    value: "jr-standard-5",
+    label: "JR standard 5-pin bay",
+    note: "Full JR-style module bay; verify the adapter and handset pinout.",
+  },
+  {
+    value: "verify",
+    label: "Verify handset bay",
+    note: "No physical handset-bay fit is selected.",
+  },
+];
+
 export const RADIO_CHANNEL_ROLES = [
   { key: "roll", fcRole: null, label: "Roll", channel: 1, aerialKitSupported: true },
   { key: "pitch", fcRole: null, label: "Pitch", channel: 2, aerialKitSupported: true },
@@ -298,6 +341,7 @@ export const DEFAULT_RADIO_CONFIG = {
   selectedReceiverId: null,
   role: "tx",
   hostTransport: "native-usb",
+  hostBay: "native-usb",
   packetRateMode: "250",
   powerDbm: -18,
   regulatoryRegion: null,
@@ -342,6 +386,23 @@ export function getDefaultHostTransport(targetId) {
   return transports.some((transport) => transport.value === target.defaultHostTransport)
     ? target.defaultHostTransport
     : transports[transports.length - 1]?.value || "unspecified";
+}
+
+export function getRadioHostBay(hostBay) {
+  return RADIO_HOST_BAYS.find((option) => option.value === hostBay)
+    || RADIO_HOST_BAYS.find((option) => option.value === "verify");
+}
+
+export function getDefaultHostBay(targetId) {
+  const target = getRadioTarget(targetId);
+  return getRadioHostBay(target.defaultHostBay).value;
+}
+
+export function isRadioHostBayCompatible(targetId, hostBay) {
+  const target = getRadioTarget(targetId);
+  if (target.allowUnverifiedHostBays) return true;
+  if (!Array.isArray(target.supportedHostBays)) return true;
+  return target.supportedHostBays.includes(hostBay);
 }
 
 export function getRadioTargetForRole(role, preferredTargetId = null) {
@@ -447,6 +508,9 @@ export function normalizeRadioConfig(config = {}) {
   const targetId = config.targetId || DEFAULT_RADIO_CONFIG.targetId;
   const regulatoryOptions = getRadioRegulatoryOptions(targetId);
   const regulatoryRegion = String(config.regulatoryRegion || "").toLowerCase();
+  const hostBay = getRadioHostBay(
+    config.hostBay || getDefaultHostBay(targetId),
+  ).value;
   return {
     ...DEFAULT_RADIO_CONFIG,
     ...config,
@@ -457,6 +521,7 @@ export function normalizeRadioConfig(config = {}) {
         ? regulatoryRegion
         : "verify"
       : null,
+    hostBay,
     hostTransport: RADIO_HOST_TRANSPORTS.some(
       (transport) => transport.value === config.hostTransport,
     )
@@ -527,6 +592,17 @@ export function buildRadioWarnings(
   if (!target.roles.includes(normalized.role)) {
     warnings.push(
       `${target.name} is a ${target.roles.join("/").toUpperCase()} endpoint profile and cannot represent the selected ${normalized.role.toUpperCase()} role.`,
+    );
+  }
+  if (
+    normalized.hostTransport === "module-bay" &&
+    !isRadioHostBayCompatible(target.id, normalized.hostBay)
+  ) {
+    const supported = (target.supportedHostBays || [])
+      .map((bay) => getRadioHostBay(bay).label)
+      .join(" or ");
+    warnings.push(
+      `${target.name} does not fit the selected ${getRadioHostBay(normalized.hostBay).label}.${supported ? ` Use ${supported}.` : ""}`,
     );
   }
   if (!packetRates.some((rate) => rate.value === normalized.packetRateMode)) {
@@ -713,6 +789,11 @@ export function buildRadioSummary(config, options = {}) {
     target.id,
     normalized.regulatoryRegion,
   );
+  const hostBay = getRadioHostBay(normalized.hostBay);
+  const hostBayCompatible = isRadioHostBayCompatible(
+    target.id,
+    normalized.hostBay,
+  );
   return {
     schema: "rotorbench.radio-plan.v1",
     status: "draft",
@@ -731,6 +812,9 @@ export function buildRadioSummary(config, options = {}) {
     configuration: {
       role: normalized.role,
       hostTransport: normalized.hostTransport,
+      hostBay: normalized.hostBay,
+      hostBayLabel: hostBay.label,
+      hostBayCompatible,
       packetRateMode: normalized.packetRateMode,
       packetRateHz: packetRate?.hz ?? null,
       powerDbm: normalized.powerDbm,

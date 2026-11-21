@@ -71,6 +71,7 @@ test("briefs the selected radio regulatory ceiling", () => {
       targetId: "radiomaster-ranger-nano-elrs-24-tx",
       role: "tx",
       hostTransport: "module-bay",
+      hostBay: "nano-8",
       powerDbm: 20,
       regulatoryRegion: "fcc",
     },
@@ -79,4 +80,5 @@ test("briefs the selected radio regulatory ceiling", () => {
   expect(briefing.text).toContain(
     "- RF region: FCC · 30 dBm / 1000 mW maximum",
   );
+  expect(briefing.text).toContain("- Handset bay: Nano 8-pin bay");
 });

@@ -18,6 +18,7 @@ import {
 import {
   DEFAULT_RADIO_CONFIG,
   RADIO_DYNAMIC_POWER,
+  RADIO_HOST_BAYS,
   RADIO_LINK_MODES,
   RADIO_STORAGE_KEY,
   RADIO_SWITCH_MODES,
@@ -27,11 +28,13 @@ import {
   bindingPhraseByteLength,
   getAvailableSwitchModes,
   getDefaultHostTransport,
+  getDefaultHostBay,
   getDefaultPowerDbm,
   getDefaultRegulatoryRegion,
   getPacketRatesForTarget,
   getRadioChannelRoles,
   getRadioHostTransports,
+  getRadioHostBay,
   getRadioPowerLevels,
   getRadioPowerSpec,
   getRadioRegulatoryLimit,
@@ -43,6 +46,7 @@ import {
   hasStagedBinding,
   isUnboundUid,
   isValidUidFormat,
+  isRadioHostBayCompatible,
   normalizeRadioConfig,
   sanitizeRadioChannelMap,
 } from "../data/radioProfiles";
@@ -89,6 +93,11 @@ export default function RadioLinkSetup({
   const target = getRadioTarget(config.targetId);
   const availableTargets = getRadioTargetsForRole(config.role);
   const availableHostTransports = getRadioHostTransports(target.id);
+  const selectedHostBay = getRadioHostBay(config.hostBay);
+  const hostBayCompatible = isRadioHostBayCompatible(
+    target.id,
+    config.hostBay,
+  );
   const warnings = useMemo(
     () => buildRadioWarnings(config, { channelLimit, controlRoles }),
     [channelLimit, config, controlRoles],
@@ -169,6 +178,7 @@ export default function RadioLinkSetup({
           ...current,
           targetId: value,
           hostTransport: getDefaultHostTransport(value),
+          hostBay: getDefaultHostBay(value),
           regulatoryRegion: getDefaultRegulatoryRegion(value),
           powerDbm: nextPowerLevels
             && !nextPowerLevels.some((level) => level.value === current.powerDbm)
@@ -188,6 +198,19 @@ export default function RadioLinkSetup({
           switchMode: nextSwitchModes.includes(current.switchMode)
             ? current.switchMode
             : nextSwitchModes[0],
+        };
+      }
+      if (key === "hostTransport") {
+        return {
+          ...current,
+          hostTransport: value,
+          hostBay: value === "module-bay"
+            ? isRadioHostBayCompatible(current.targetId, current.hostBay)
+              ? current.hostBay
+              : getDefaultHostBay(current.targetId)
+            : value === "native-usb"
+              ? "native-usb"
+              : current.hostBay,
         };
       }
       if (key === "packetRateMode") {
@@ -232,6 +255,7 @@ export default function RadioLinkSetup({
         role,
         targetId: nextTarget.id,
         hostTransport: getDefaultHostTransport(nextTarget.id),
+        hostBay: getDefaultHostBay(nextTarget.id),
         regulatoryRegion: getDefaultRegulatoryRegion(nextTarget.id),
         powerDbm: getDefaultPowerDbm(nextTarget.id) ?? current.powerDbm,
       };
@@ -406,6 +430,39 @@ export default function RadioLinkSetup({
               </select>
               <small>{endpointPlan.hostTransportNote}</small>
             </label>
+
+            {config.hostTransport === "module-bay" && (
+              <label className="radio-field radio-field-wide">
+                <span>Handset bay</span>
+                <select
+                  aria-label="Handset bay"
+                  aria-invalid={!hostBayCompatible}
+                  aria-describedby="radio-host-bay-help"
+                  value={config.hostBay || "verify"}
+                  onChange={(event) => update("hostBay", event.target.value)}
+                >
+                  {RADIO_HOST_BAYS
+                    .filter((option) => option.value !== "native-usb")
+                    .map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                </select>
+                <small
+                  id="radio-host-bay-help"
+                  className={hostBayCompatible ? "" : "radio-field-error"}
+                >
+                  {hostBayCompatible
+                    ? selectedHostBay.note
+                    : `${target.name} requires ${
+                      (target.supportedHostBays || [])
+                        .map((bay) => getRadioHostBay(bay).label)
+                        .join(" or ")
+                    }.`}
+                </small>
+              </label>
+            )}
 
             <div className="radio-target-summary">
               <span><strong>{target.frequency}</strong> link</span>
@@ -853,6 +910,15 @@ export default function RadioLinkSetup({
                     : " (target-local setting)"}`}
               </dd>
             </div>
+            {config.hostTransport === "module-bay" && (
+              <div>
+                <dt>Handset bay</dt>
+                <dd>
+                  {selectedHostBay.label} ·{" "}
+                  {hostBayCompatible ? "supported" : "mismatch"}
+                </dd>
+              </div>
+            )}
             {powerSpec?.regulatoryMaxima?.length ? (
               <div>
                 <dt>Published max</dt>

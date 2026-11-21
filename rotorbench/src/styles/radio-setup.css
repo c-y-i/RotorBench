@@ -309,7 +309,8 @@
   color: var(--danger);
 }
 
-.radio-field input[aria-invalid="true"] {
+.radio-field input[aria-invalid="true"],
+.radio-field select[aria-invalid="true"] {
   border-color: var(--danger);
 }
 

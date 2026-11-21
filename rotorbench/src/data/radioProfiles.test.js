@@ -6,11 +6,13 @@ import {
   buildRadioSummary,
   buildRadioWarnings,
   getAvailableSwitchModes,
+  getDefaultHostBay,
   getDefaultHostTransport,
   getDefaultPowerDbm,
   getDefaultRegulatoryRegion,
   getPacketRatesForTarget,
   getRadioHostTransports,
+  getRadioHostBay,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioTarget,
@@ -19,6 +21,7 @@ import {
   hasStagedBinding,
   isUnboundUid,
   isValidUidFormat,
+  isRadioHostBayCompatible,
   normalizeRadioConfig,
 } from "./radioProfiles";
 
@@ -87,6 +90,7 @@ test("Ranger Nano keeps its manufacturer-published module-bay and power bounds",
   expect(target.hostLink.moduleBay.pins).toMatch(/CRSF, GND, 5-12 V/i);
   expect(target.serial.txBaud).toBeNull();
   expect(getDefaultHostTransport(target.id)).toBe("module-bay");
+  expect(getDefaultHostBay(target.id)).toBe("nano-8");
   expect(getRadioHostTransports(target.id).map((transport) => transport.value))
     .toEqual(["module-bay", "unspecified"]);
   expect(getDefaultPowerDbm(target.id)).toBe(20);
@@ -149,6 +153,44 @@ test("Ranger Micro and Ranger keep their published module-bay profiles", () => {
   }
   expect(micro.hostLink.moduleBay.pins).toMatch(/JR-style micro 5-pin.*CRSF/i);
   expect(ranger.hostLink.moduleBay.pins).toMatch(/JR 5-pin and Nano 8-pin adapters/i);
+  expect(isRadioHostBayCompatible(micro.id, "nano-8")).toBe(false);
+  expect(isRadioHostBayCompatible(ranger.id, "nano-8")).toBe(true);
+});
+
+test("Ranger module-bay plans reject a physically incompatible handset", () => {
+  const warnings = buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    hostTransport: "module-bay",
+    hostBay: "jr-standard-5",
+    powerDbm: 20,
+  });
+
+  expect(warnings).toEqual(expect.arrayContaining([
+    expect.stringMatching(/does not fit the selected JR standard 5-pin bay.*Nano 8-pin bay/i),
+  ]));
+  const summary = buildRadioSummary({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-elrs-24-tx",
+    hostTransport: "module-bay",
+    hostBay: "nano-8",
+    powerDbm: 20,
+  });
+  expect(summary.configuration).toMatchObject({
+    hostBay: "nano-8",
+    hostBayLabel: getRadioHostBay("nano-8").label,
+    hostBayCompatible: true,
+  });
+  expect(normalizeRadioConfig({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    hostTransport: "module-bay",
+    hostBay: undefined,
+  }).hostBay).toBe("nano-8");
+  expect(normalizeRadioConfig({
+    targetId: "aerialkit-elrs-rev-a3",
+    hostTransport: "native-usb",
+  }).hostBay).toBe("native-usb");
 });
 
 test("Ranger Nano applies the selected regulatory ceiling", () => {

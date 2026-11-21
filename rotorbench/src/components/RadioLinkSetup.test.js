@@ -76,6 +76,7 @@ test("Ranger Nano selects its documented module bay and regional power bounds", 
   });
 
   expect(screen.getByLabelText("Host transport")).toHaveValue("module-bay");
+  expect(screen.getByLabelText("Handset bay")).toHaveValue("nano-8");
   expect(screen.getByLabelText("RF region")).toHaveValue("verify");
   expect(screen.getByRole("spinbutton", { name: /TX power \(dBm\)/i })).toHaveValue(20);
   expect(screen.getByText(/Official default: 20 dBm \/ 100 mW/i)).toBeInTheDocument();
@@ -99,6 +100,13 @@ test("Ranger Nano selects its documented module bay and regional power bounds", 
   });
   expect(screen.getByText(/Selected ceiling: 20 dBm/i)).toBeInTheDocument();
   expect(screen.getByText("CE · 20 dBm")).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Handset bay"), {
+    target: { value: "jr-standard-5" },
+  });
+  expect(screen.getByLabelText("Handset bay")).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getByText(/requires Nano 8-pin bay/i)).toBeInTheDocument();
+  expect(screen.getByText("JR standard 5-pin bay · mismatch")).toBeInTheDocument();
 });
 
 test("Ranger Micro uses its documented JR micro-bay profile", () => {
@@ -108,12 +116,26 @@ test("Ranger Micro uses its documented JR micro-bay profile", () => {
   });
 
   expect(screen.getByLabelText("Host transport")).toHaveValue("module-bay");
+  expect(screen.getByLabelText("Handset bay")).toHaveValue("jr-micro-5");
   expect(screen.getByLabelText("RF region")).toHaveValue("verify");
   expect(screen.getByRole("spinbutton", { name: /TX power \(dBm\)/i })).toHaveValue(20);
   expect(screen.getByText(/JR-style micro module bay/i)).toBeInTheDocument();
   fireEvent.click(screen.getByText("Endpoint checklist"));
   expect(screen.getByText(/JR-style micro 5-pin: NC, NC, 5-12 V, GND, CRSF/i))
     .toBeInTheDocument();
+});
+
+test("full-size Ranger can use either included JR or Nano adapter", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-ranger-elrs-24-tx" },
+  });
+  expect(screen.getByLabelText("Handset bay")).toHaveValue("jr-standard-5");
+  fireEvent.change(screen.getByLabelText("Handset bay"), {
+    target: { value: "nano-8" },
+  });
+  expect(screen.queryByText(/requires .* bay/i)).not.toBeInTheDocument();
+  expect(screen.getByText("Nano 8-pin bay · supported")).toBeInTheDocument();
 });
 
 test("binding material is not written to local storage", () => {
