@@ -13,6 +13,19 @@ import {
   supportsAerialKitLaunch,
   validateFlightControllerConfig,
 } from "./flightControllerProfiles";
+import componentsData from "./components.json";
+
+test("every catalog flight controller resolves to one documented board map", () => {
+  const missing = componentsData.flight_controllers
+    .filter((controller) => !getCatalogBoardProfile(controller))
+    .map((controller) => controller.id);
+  const mappedIds = FC_BOARD_PROFILES
+    .flatMap((profile) => profile.catalogFlightControllerIds || []);
+
+  expect(missing).toEqual([]);
+  expect(componentsData.flight_controllers).toHaveLength(9);
+  expect(new Set(mappedIds).size).toBe(mappedIds.length);
+});
 
 test("Aerial Kit motor layouts preserve the firmware output order", () => {
   const quadx = getAirframeMotorLayout("quadx");
