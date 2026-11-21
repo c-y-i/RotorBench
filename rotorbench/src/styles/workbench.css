@@ -4405,11 +4405,18 @@
   cursor: pointer;
 }
 
+.part-picker-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 14px 18px 10px;
+}
+
 .part-picker-search {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 14px 18px 10px;
+  margin: 0;
   padding: 0 12px;
   min-height: 48px;
   background: #fffdf8;
@@ -4452,6 +4459,54 @@
   background: transparent;
   border: 0;
   cursor: pointer;
+}
+
+.part-picker-source-toggle {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-content: center;
+  align-items: center;
+  gap: 2px 7px;
+  min-width: 102px;
+  min-height: 48px;
+  padding: 0 11px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  cursor: pointer;
+}
+
+.part-picker-source-toggle svg {
+  grid-row: 1 / 3;
+}
+
+.part-picker-source-toggle span {
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.part-picker-source-toggle small {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+
+.part-picker-source-toggle:hover,
+.part-picker-source-toggle.is-active {
+  color: var(--ink);
+  border-color: var(--brand);
+}
+
+.part-picker-source-toggle.is-active {
+  background: var(--brand-soft);
+}
+
+.part-picker-source-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .part-picker-filters {
@@ -4527,6 +4582,123 @@
   padding: 8px 18px 18px;
   overflow-y: auto;
   scrollbar-color: var(--line-strong) transparent;
+}
+
+.part-source-index {
+  min-height: 0;
+  padding: 8px 18px 18px;
+  overflow-y: auto;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.part-source-index > header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 3px 11px;
+  border-bottom: 1px solid var(--line);
+}
+
+.part-source-index > header strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.part-source-index > header span {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-align: end;
+  text-transform: uppercase;
+}
+
+.part-source-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 3px;
+  border-bottom: 1px solid var(--line);
+}
+
+.part-source-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.part-source-copy small {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.part-source-copy strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.part-source-copy em {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.4;
+}
+
+.part-source-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.part-source-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--brand-strong);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.part-source-links a:hover {
+  color: var(--ink);
+  border-color: var(--brand);
+}
+
+.part-source-empty {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 42px 18px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.part-source-empty svg {
+  color: var(--ink-faint);
+}
+
+.part-source-empty strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.part-source-empty span {
+  max-width: 40ch;
+  font-size: 11px;
 }
 
 .part-option {
@@ -4760,8 +4932,8 @@
     font-size: 24px;
   }
 
-  .part-picker-search {
-    margin-inline: 12px;
+  .part-picker-toolbar {
+    padding: 0 12px;
   }
 
   .part-picker-filters {
@@ -4772,6 +4944,23 @@
   .part-picker-results {
     grid-template-columns: 1fr;
     padding: 7px 12px 14px;
+  }
+
+  .part-source-index {
+    padding: 7px 12px 14px;
+  }
+
+  .part-source-index > header {
+    align-items: flex-start;
+  }
+
+  .part-source-row {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .part-source-links {
+    justify-content: flex-start;
   }
 
   .part-option {

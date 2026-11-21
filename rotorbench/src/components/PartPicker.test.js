@@ -217,6 +217,40 @@ test("source-backed filtering excludes legacy catalog entries", () => {
   expect(within(results).queryByText("Frame B")).not.toBeInTheDocument();
 });
 
+test("source review exposes manufacturer links without selecting a part", () => {
+  render(
+    <PartPicker
+      category="frames"
+      parts={parts}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
+      placeholder="Choose a frame"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a frame/i }));
+  fireEvent.click(screen.getByRole("button", {
+    name: "Review catalog sources: 1",
+  }));
+
+  const sources = screen.getByRole("region", { name: "Frame sources" });
+  expect(within(sources).getByText("Frame A")).toBeInTheDocument();
+  expect(within(sources).getByRole("link", {
+    name: "Open product source for Frame A",
+  })).toHaveAttribute("href", "https://example.com/frame-a");
+  expect(screen.queryByRole("listbox", { name: "Frame options" }))
+    .not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Recent" }));
+  expect(within(sources).getByText("No references in this view")).toBeInTheDocument();
+  const showParts = screen.getByRole("button", { name: "Show catalog parts" });
+  expect(showParts).toBeEnabled();
+  fireEvent.click(showParts);
+  expect(screen.getByRole("listbox", { name: "Frame options" }))
+    .toBeInTheDocument();
+});
+
 test("propeller options expose missing thrust data before selection", () => {
   render(
     <PartPicker

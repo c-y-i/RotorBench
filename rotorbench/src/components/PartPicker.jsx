@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Cog,
   Cpu,
+  ExternalLink,
   Fan,
   Info,
   Radio,
@@ -116,6 +117,7 @@ export default function PartPicker({
   const [query, setQuery] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
   const [sortMode, setSortMode] = useState("best");
+  const [showSources, setShowSources] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const recentStorageKey = `rotorbench:part-picker:recent:${category}`;
   const [recentIds, setRecentIds] = useState(() => {
@@ -167,11 +169,15 @@ export default function PartPicker({
         return a.part.name.localeCompare(b.part.name);
       });
   }, [category, compatibility, parts, query, recentIds, resultFilter, sortMode]);
+  const sourceCount = rankedParts.filter(({ part }) => (
+    part.sourceUrl || part.priceSourceUrl || part.connectorSourceUrl
+  )).length;
 
   const openPicker = () => {
     setQuery("");
     setResultFilter("all");
     setSortMode("best");
+    setShowSources(false);
     setActiveIndex(0);
     dialogRef.current?.showModal();
   };
@@ -181,6 +187,7 @@ export default function PartPicker({
   }, [query, resultFilter, sortMode]);
 
   const closePicker = () => {
+    setShowSources(false);
     dialogRef.current?.close();
   };
 
@@ -247,7 +254,10 @@ export default function PartPicker({
         ref={dialogRef}
         className="part-picker-dialog"
         aria-labelledby={`part-picker-title-${category}`}
-        onClose={() => setQuery("")}
+        onClose={() => {
+          setQuery("");
+          setShowSources(false);
+        }}
         onMouseDown={(event) => {
           if (event.target === event.currentTarget) closePicker();
         }}
@@ -263,28 +273,46 @@ export default function PartPicker({
             </button>
           </header>
 
-          <label className="part-picker-search">
-            <Search size={18} aria-hidden="true" />
-            <input
-              type="search"
-              autoFocus
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowDown" && rankedParts.length > 0) {
-                  event.preventDefault();
-                  focusResult(0);
-                }
-              }}
-              placeholder={`Search ${label.toLowerCase()}s by name or spec`}
-              aria-label={`Search ${label.toLowerCase()}s`}
-            />
-            {query && (
-              <button type="button" aria-label="Clear search" onClick={() => setQuery("")}>
-                <X size={16} aria-hidden="true" />
-              </button>
-            )}
-          </label>
+          <div className="part-picker-toolbar">
+            <label className="part-picker-search">
+              <Search size={18} aria-hidden="true" />
+              <input
+                type="search"
+                autoFocus
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowDown" && rankedParts.length > 0) {
+                    event.preventDefault();
+                    focusResult(0);
+                  }
+                }}
+                placeholder={`Search ${label.toLowerCase()}s by name or spec`}
+                aria-label={`Search ${label.toLowerCase()}s`}
+              />
+              {query && (
+                <button type="button" aria-label="Clear search" onClick={() => setQuery("")}>
+                  <X size={16} aria-hidden="true" />
+                </button>
+              )}
+            </label>
+            <button
+              type="button"
+              className={`part-picker-source-toggle ${showSources ? "is-active" : ""}`}
+              aria-pressed={showSources}
+              aria-label={
+                showSources
+                  ? "Show catalog parts"
+                  : `Review catalog sources: ${sourceCount}`
+              }
+              disabled={!showSources && sourceCount === 0}
+              onClick={() => setShowSources((current) => !current)}
+            >
+              <ExternalLink size={15} aria-hidden="true" />
+              <span>{showSources ? "Parts" : "Sources"}</span>
+              <small>{sourceCount}</small>
+            </button>
+          </div>
 
           <div className="part-picker-filters" role="group" aria-label="Filter catalog results">
             {[
@@ -322,79 +350,144 @@ export default function PartPicker({
             <span>{rankedParts.length} options</span>
           </div>
 
-          <div
-            className="part-picker-results"
-            role="listbox"
-            aria-label={`${label} options`}
-            onKeyDown={handleResultsKeyDown}
-          >
-            {rankedParts.length === 0 ? (
-              <div className="part-picker-empty">
-                <Search size={22} aria-hidden="true" />
-                <strong>No matching {label.toLowerCase()}s</strong>
-                <span>Try a manufacturer, size, KV, voltage, or capacity.</span>
-              </div>
-            ) : (
-              rankedParts.map(({ part, ok, reason, verified, recent }, index) => {
-                const isSelected = part.id === value;
-                const estimatedFields = humanizeProvenanceFields(part.estimatedFields);
-                const statusClass = !ok
-                  ? "is-check"
-                  : verified
-                    ? "is-compatible"
-                    : "is-unverified";
-                return (
-                  <button
-                    type="button"
-                    key={part.id}
-                    ref={(node) => { optionRefs.current[index] = node; }}
-                    role="option"
-                    aria-selected={isSelected}
-                    tabIndex={activeIndex === index ? 0 : -1}
-                    className={`part-option ${isSelected ? "is-selected" : ""} ${ok ? "" : "is-warning"}`}
-                    onFocus={() => setActiveIndex(index)}
-                    onClick={() => choose(part.id)}
-                  >
-                    <span className="part-option-icon"><Icon size={18} aria-hidden="true" /></span>
-                    <span className="part-option-copy">
-                      <span className="part-option-name">
-                        <strong>{part.name}</strong>
-                        {isSelected && <Check size={15} aria-label="Selected" />}
-                      </span>
-                      <span className="part-option-meta">{getMeta(category, part).join(" · ")}</span>
-                      <span className={`part-option-status ${statusClass}`}>
-                        {!ok || verified
-                          ? ok
-                            ? <Check size={12} aria-hidden="true" />
-                            : <TriangleAlert size={12} aria-hidden="true" />
-                          : <Info size={12} aria-hidden="true" />}
-                        {!ok
-                          ? reason
-                          : verified
-                            ? "Compatible and physically checked"
-                            : reason || "No known conflict; fit data is incomplete"}
-                      </span>
-                      <span className="part-option-provenance">
-                        {recent ? "Recent · " : ""}
-                        {part.sourceUrl ? "Source-backed" : "Legacy catalog"}
-                      </span>
-                      {estimatedFields.length > 0 && (
-                        <span className="part-option-estimates">
-                          Estimated: {estimatedFields.join(" · ")}
-                        </span>
+          {showSources ? (
+            <div
+              className="part-source-index"
+              id={`part-picker-source-index-${category}`}
+              role="region"
+              aria-label={`${label} sources`}
+            >
+              <header>
+                <strong>Manufacturer and catalog references</strong>
+                <span>{sourceCount} items with references in this filtered view</span>
+              </header>
+              {sourceCount === 0 ? (
+                <div className="part-source-empty">
+                  <ExternalLink size={22} aria-hidden="true" />
+                  <strong>No references in this view</strong>
+                  <span>Change the search or filters, or return to catalog parts.</span>
+                </div>
+              ) : (
+                rankedParts.filter(({ part }) => (
+                  part.sourceUrl || part.priceSourceUrl || part.connectorSourceUrl
+                )).map(({ part }) => (
+                  <article key={part.id} className="part-source-row">
+                    <span className="part-source-copy">
+                      <small>{label}</small>
+                      <strong>{part.name}</strong>
+                      <em>{getMeta(category, part).join(" · ")}</em>
+                    </span>
+                    <span className="part-source-links">
+                      {part.sourceUrl && (
+                        <a
+                          href={part.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open product source for ${part.name}`}
+                        >
+                          Product source <ExternalLink size={12} aria-hidden="true" />
+                        </a>
+                      )}
+                      {part.priceSourceUrl && (
+                        <a
+                          href={part.priceSourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open price source for ${part.name}`}
+                        >
+                          Price source <ExternalLink size={12} aria-hidden="true" />
+                        </a>
+                      )}
+                      {part.connectorSourceUrl && (
+                        <a
+                          href={part.connectorSourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open connector source for ${part.name}`}
+                        >
+                          Connector source <ExternalLink size={12} aria-hidden="true" />
+                        </a>
                       )}
                     </span>
-                    <span className="part-option-price">
-                      <strong>${Number(part.price).toFixed(2)}</strong>
-                      <small>
-                        {hasCatalogModel(part, category) ? "Catalog GLB" : "Geometry fallback"}
-                      </small>
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
+                  </article>
+                ))
+              )}
+            </div>
+          ) : (
+            <div
+              className="part-picker-results"
+              role="listbox"
+              aria-label={`${label} options`}
+              onKeyDown={handleResultsKeyDown}
+            >
+              {rankedParts.length === 0 ? (
+                <div className="part-picker-empty">
+                  <Search size={22} aria-hidden="true" />
+                  <strong>No matching {label.toLowerCase()}s</strong>
+                  <span>Try a manufacturer, size, KV, voltage, or capacity.</span>
+                </div>
+              ) : (
+                rankedParts.map(({ part, ok, reason, verified, recent }, index) => {
+                  const isSelected = part.id === value;
+                  const estimatedFields = humanizeProvenanceFields(part.estimatedFields);
+                  const statusClass = !ok
+                    ? "is-check"
+                    : verified
+                      ? "is-compatible"
+                      : "is-unverified";
+                  return (
+                    <button
+                      type="button"
+                      key={part.id}
+                      ref={(node) => { optionRefs.current[index] = node; }}
+                      role="option"
+                      aria-selected={isSelected}
+                      tabIndex={activeIndex === index ? 0 : -1}
+                      className={`part-option ${isSelected ? "is-selected" : ""} ${ok ? "" : "is-warning"}`}
+                      onFocus={() => setActiveIndex(index)}
+                      onClick={() => choose(part.id)}
+                    >
+                      <span className="part-option-icon"><Icon size={18} aria-hidden="true" /></span>
+                      <span className="part-option-copy">
+                        <span className="part-option-name">
+                          <strong>{part.name}</strong>
+                          {isSelected && <Check size={15} aria-label="Selected" />}
+                        </span>
+                        <span className="part-option-meta">{getMeta(category, part).join(" · ")}</span>
+                        <span className={`part-option-status ${statusClass}`}>
+                          {!ok || verified
+                            ? ok
+                              ? <Check size={12} aria-hidden="true" />
+                              : <TriangleAlert size={12} aria-hidden="true" />
+                            : <Info size={12} aria-hidden="true" />}
+                          {!ok
+                            ? reason
+                            : verified
+                              ? "Compatible and physically checked"
+                              : reason || "No known conflict; fit data is incomplete"}
+                        </span>
+                        <span className="part-option-provenance">
+                          {recent ? "Recent · " : ""}
+                          {part.sourceUrl ? "Source-backed" : "Legacy catalog"}
+                        </span>
+                        {estimatedFields.length > 0 && (
+                          <span className="part-option-estimates">
+                            Estimated: {estimatedFields.join(" · ")}
+                          </span>
+                        )}
+                      </span>
+                      <span className="part-option-price">
+                        <strong>${Number(part.price).toFixed(2)}</strong>
+                        <small>
+                          {hasCatalogModel(part, category) ? "Catalog GLB" : "Geometry fallback"}
+                        </small>
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
 
           <footer className="part-picker-footer">
             {selected && (
