@@ -4,6 +4,9 @@ import FlightControllerSetup from "./FlightControllerSetup";
 test("renders a local flight-controller configuration plan", () => {
   render(<FlightControllerSetup />);
   expect(screen.getByRole("heading", { name: "Flight controller" })).toBeInTheDocument();
+  expect(screen.getByRole("navigation", { name: "Flight controller sections" }))
+    .toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Sensor" })).toBeInTheDocument();
   expect(screen.getByText("Local configuration plan")).toBeInTheDocument();
   expect(screen.getByLabelText("Flight controller plan summary"))
     .toHaveAttribute("tabindex", "0");
@@ -65,6 +68,7 @@ test("does not show Aerial Kit live gates for another firmware family", () => {
   fireEvent.change(screen.getByLabelText("Firmware family"), {
     target: { value: "betaflight" },
   });
+  expect(screen.queryByRole("button", { name: "Sensor" })).not.toBeInTheDocument();
   expect(screen.queryByRole("heading", { name: "Arm-gate preview" })).not.toBeInTheDocument();
   expect(screen.getByText("Motor output map")).toBeInTheDocument();
   expect(screen.getByText("Betaflight Normal · props in QUAD X")).toBeInTheDocument();

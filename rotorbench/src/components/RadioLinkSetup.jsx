@@ -53,6 +53,7 @@ import {
 } from "../data/radioProfiles";
 import { getBindingIdentity } from "../utils/elrsBinding";
 import { buildRadioEndpointPlan } from "../utils/radioEndpointPlan";
+import SetupSectionNav from "./SetupSectionNav";
 import "../styles/radio-setup.css";
 
 function readSavedPlan(storageKey) {
@@ -407,6 +408,16 @@ export default function RadioLinkSetup({
           </p>
         </section>
       )}
+
+      <SetupSectionNav
+        label="Radio transceiver sections"
+        items={[
+          { id: "radio-device-heading", label: "Device" },
+          { id: "radio-link-heading", label: "Link" },
+          { id: "radio-binding-heading", label: "Binding" },
+          { id: "radio-channels-heading", label: "Channels" },
+        ]}
+      />
 
       <div className="radio-layout">
         <div className="radio-main-column">

@@ -40,6 +40,7 @@ import {
 } from "../data/flightControllerProfiles";
 import { buildFlightControllerCommands } from "../utils/flightControllerCommands";
 import { buildReceiverWiringPlan } from "../utils/receiverWiring";
+import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
 const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
@@ -637,6 +638,18 @@ export default function FlightControllerSetup({
 
       <div className="fc-setup-layout">
         <div className="fc-setup-form">
+          <SetupSectionNav
+            label="Flight controller sections"
+            items={[
+              { id: "fc-profile-title", label: "Board" },
+              { id: "fc-receiver-title", label: "Receiver" },
+              ...(config.firmwareFamily === "aerialkit"
+                ? [{ id: "fc-aircraft-integration-title", label: "Sensor" }]
+                : []),
+              { id: "fc-safety-title", label: "Arming" },
+              { id: "fc-channels-title", label: "Channels" },
+            ]}
+          />
           <section className="fc-section" aria-labelledby="fc-profile-title">
             <div className="fc-section-heading">
               <Cpu size={18} aria-hidden="true" />

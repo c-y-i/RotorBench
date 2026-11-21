@@ -212,6 +212,8 @@ test("the selected build receiver is carried into the plan summary", () => {
   expect(screen.getByText("Receiver RF bands")).toBeInTheDocument();
   expect(screen.getByText("2.4 GHz / Sub-G 900 MHz")).toBeInTheDocument();
   expect(screen.getByText("Shared 2.4 GHz")).toBeInTheDocument();
+  expect(screen.getByRole("navigation", { name: "Radio transceiver sections" }))
+    .toBeInTheDocument();
   expect(screen.getByText(/Settings match; RF is still unverified|Profile is not a hardware pass/))
     .toBeInTheDocument();
 });
