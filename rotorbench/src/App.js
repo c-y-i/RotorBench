@@ -39,12 +39,42 @@ function AnalyticsTracker() {
   return null;
 }
 
-function RouteLoading() {
+export function RouteLoading() {
   return (
-    <div className="route-loading" role="status" aria-live="polite">
-      <span aria-hidden="true" />
-      <strong>Loading workspace</strong>
-      <p>Preparing this RotorBench view.</p>
+    <div
+      className="route-loading"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div className="route-loading-status">
+        <span className="route-loading-mark" aria-hidden="true" />
+        <span>
+          <strong>Loading workspace</strong>
+          <small>Preparing the workbench view.</small>
+        </span>
+      </div>
+      <div className="route-loading-skeleton" aria-hidden="true">
+        <div className="route-loading-primary">
+          <span className="route-loading-title-line" />
+          <span className="route-loading-copy-line" />
+          <div className="route-loading-canvas">
+            <span className="route-loading-canvas-toolbar" />
+            <span className="route-loading-canvas-object" />
+          </div>
+          <span className="route-loading-caption-line" />
+        </div>
+        <div className="route-loading-rail">
+          <span className="route-loading-rail-title" />
+          <span />
+          <span />
+          <div className="route-loading-rail-list">
+            <i />
+            <i />
+            <i />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

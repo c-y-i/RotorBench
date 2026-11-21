@@ -97,6 +97,8 @@ The old app shell forced every page into a 420 px phone frame. It now has:
 * accessible focus, disabled, empty, loading, error, and selected states;
 * consistent Lucide icons in place of emoji controls.
 
+Route-level lazy loading now uses a workbench-shaped skeleton instead of a generic loading card. It shows the expected title, preview stage, and side-rail structure with neutral placeholder surfaces, while a single signal-lime mark carries the live loading state. The skeleton is hidden from assistive technology and the surrounding status region announces `Loading workspace` with `aria-busy`. It collapses to one column on phones, adds its own page gutter because the mobile route stage has none, honors reduced-motion, and rendered at 390×844 and 1440×900 with no horizontal overflow or axe WCAG A/AA violations.
+
 Temporary status banners are non-interactive and click-through. Preset confirmations dismiss automatically, and the banner leaves sticky positioning on mobile so it cannot cover controls during work. On Overview at phone width, the New Build and View Analysis actions now sit in the document flow after the summary rather than covering the preview.
 
 The Saved mobile toolbar now restores the search field as a full-width first row and lays the three actions out beneath it without truncation. Profile registration actions now stay in the form flow rather than floating over Preferences; Cancel is a neutral secondary action and Log out has a separate danger treatment.

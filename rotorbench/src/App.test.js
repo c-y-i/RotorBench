@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
-import App from './App';
+import App, { RouteLoading } from './App';
+import { getA11yViolations } from './test/a11y';
 
 jest.mock('./components/HomePage', () => () => <div>Home</div>);
 jest.mock('./components/BuildPage', () => () => <div>Build</div>);
@@ -27,4 +28,13 @@ test('renders the hardware setup destination', async () => {
   render(<App />);
   expect(screen.getAllByRole('link', { name: 'Setup' })).toHaveLength(2);
   await settleLazyRoute();
+});
+
+test('route loading exposes one status and hides decorative placeholders', async () => {
+  const { container } = render(<RouteLoading />);
+
+  expect(screen.getByRole('status')).toHaveTextContent('Loading workspace');
+  expect(container.querySelector('.route-loading-skeleton'))
+    .toHaveAttribute('aria-hidden', 'true');
+  expect(await getA11yViolations(container)).toEqual([]);
 });
