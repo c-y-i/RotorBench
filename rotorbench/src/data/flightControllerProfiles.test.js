@@ -438,6 +438,34 @@ test("Kakute H7 V2 selects its documented Betaflight mapping", () => {
   expect(profile.notes.join(" ")).toMatch(/no internal current sensor/i);
 });
 
+test("SpeedyBee F405 Mini selects its documented Betaflight target", () => {
+  const selected = {
+    id: "fc-speedybee-f405-mini",
+    name: "SpeedyBee F405 Mini",
+    processor: "STM32F405",
+    imu: "ICM42688P",
+    firmware: ["Betaflight"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config).toMatchObject({
+    firmwareFamily: "betaflight",
+    profileId: "speedybee-f405-mini",
+    airframe: "quadx",
+  });
+  expect(profile).toMatchObject({
+    label: "SpeedyBee F405 Mini",
+    board: "SPEEDYBEEF405MINI",
+    receiverUart: "UART2",
+    gpsUart: "UART6",
+    sbusNeedsInverter: true,
+    outputs: { motors: 4, servos: 0 },
+    flightLog: { label: "8 MB onboard blackbox" },
+  });
+  expect(profile.notes.join(" ")).toMatch(/SERIALRX_UART to USART2/i);
+});
+
 test.each(FC_BOARD_PROFILES)(
   "$label serial map includes its documented receiver and GPS routes",
   (profile) => {

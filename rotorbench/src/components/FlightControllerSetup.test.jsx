@@ -247,6 +247,38 @@ test("selecting Kakute H7 V2 exposes its documented Betaflight mapping", () => {
   expect(screen.getByText(/128 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
+test("selecting SpeedyBee F405 Mini exposes its documented BT stack", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-speedybee-f405-mini",
+        name: "SpeedyBee F405 Mini",
+        processor: "STM32F405",
+        imu: "ICM42688P",
+        firmware: ["Betaflight"],
+      }}
+    />,
+  );
+
+  expect(screen.getByLabelText("Firmware family")).toHaveValue("betaflight");
+  expect(screen.getByLabelText("Board profile"))
+    .toHaveValue("speedybee-f405-mini");
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART2");
+  expect(screen.getByLabelText("Receiver UART")).toBeDisabled();
+  expect(screen.getByRole("checkbox", { name: "GPS navigation" }))
+    .toBeChecked();
+  expect(screen.getByText("4 motors / 0 servos")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Serial allocation"));
+  const ports = screen.getByRole("list", {
+    name: "Documented serial port allocation",
+  });
+  expect(within(ports).getByText("ESC telemetry").closest("li"))
+    .toHaveTextContent("PD2 RX / PC12 TX");
+  expect(within(ports).getByText("PC7 RX / PC6 TX").closest("li"))
+    .toHaveTextContent("GPS");
+  expect(screen.getByText(/8 MB onboard blackbox/i)).toBeInTheDocument();
+});
+
 test("selecting Matek F405-WMN exposes its documented INAV wing mapping", () => {
   render(
     <FlightControllerSetup

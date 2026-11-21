@@ -728,9 +728,9 @@ test("hardware setup carries the unsaved draft identity and selected FC/receiver
   });
 
   expect(screen.getByText("Plan not saved")).toBeInTheDocument();
-  expect(screen.getByText(/Betaflight · CRSF \/ ExpressLRS · UART1 \/ 420000 baud/i))
+  expect(screen.getByText(/Betaflight · CRSF \/ ExpressLRS · UART2 \/ 420000 baud/i))
     .toBeInTheDocument();
-  expect(screen.getByText(/Verify pins/i)).toBeInTheDocument();
+  expect(screen.getByText(/Pins documented/i)).toBeInTheDocument();
   expect(screen.getByText(/Native USB CDC · Transport documented/i))
     .toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Open setup" }));
