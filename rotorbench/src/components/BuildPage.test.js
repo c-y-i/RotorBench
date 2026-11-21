@@ -140,6 +140,10 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
     "true",
   );
   expect(viewer).toHaveAttribute("data-exploded", "true");
+  expect(screen.getByText("Exploded inspection")).toBeInTheDocument();
+  expect(screen.getAllByText(/catalog geometry/i).length).toBeGreaterThan(0);
+  expect(screen.getByText(/not a product-exact fit, wiring, or hardware check/i))
+    .toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Assembled" }));
   expect(viewer).toHaveAttribute("data-exploded", "false");
 

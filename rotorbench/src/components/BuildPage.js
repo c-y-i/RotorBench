@@ -1362,6 +1362,37 @@ export default function BuildPage() {
               </div>
             )}
           </div>
+          {explodedAssembly && selectedFrame && (
+            <div
+              className={`viewer-exploded-note ${
+                buildEvidence.geometryFallbackCount ? "has-fallback" : ""
+              }`}
+              role="status"
+            >
+              <Layers size={16} aria-hidden="true" />
+              <span>
+                <strong>Exploded inspection</strong>
+                <small>
+                  {buildEvidence.selectedCount} selected part{buildEvidence.selectedCount === 1 ? "" : "s"} ·{" "}
+                  {Math.max(
+                    0,
+                    buildEvidence.selectedCount - buildEvidence.geometryFallbackCount,
+                  )} catalog geometry ·{" "}
+                  {buildEvidence.geometryFallbackCount} generated fallback
+                  {buildEvidence.geometryFallbackCount === 1 ? "" : "s"}. Separation
+                  clarifies stack and mount relationships; it is not a product-exact
+                  fit, wiring, or hardware check.
+                </small>
+              </span>
+              <em>
+                {buildEvidence.geometryFallbackCount === 0
+                  ? "Catalog geometry"
+                  : buildEvidence.geometryFallbackCount === buildEvidence.selectedCount
+                    ? "Fallback geometry"
+                    : "Mixed geometry"}
+              </em>
+            </div>
+          )}
           {loadingModels && (
             <div className="model-status" role="status">
               <LoaderCircle size={15} className="spin-icon" aria-hidden="true" />

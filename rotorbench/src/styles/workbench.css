@@ -676,6 +676,56 @@
   background: var(--sidebar-muted);
 }
 
+.viewer-exploded-note {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 8px;
+  padding: 10px 11px;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.viewer-exploded-note > svg {
+  color: var(--brand);
+}
+
+.viewer-exploded-note > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.viewer-exploded-note strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.viewer-exploded-note small {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.viewer-exploded-note > em {
+  padding: 4px 6px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.viewer-exploded-note.has-fallback > em {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
 .measured-geometry {
   margin-top: 10px;
   overflow: hidden;
@@ -2810,6 +2860,15 @@
     min-height: 340px;
     height: 44vh;
     max-height: 500px;
+  }
+
+  .viewer-exploded-note {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .viewer-exploded-note > em {
+    grid-column: 2;
+    width: max-content;
   }
 
   .bottom-buttons {
