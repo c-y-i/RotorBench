@@ -145,6 +145,47 @@ test("receiver metadata exposes published dual-band and telemetry details", () =
   )).toBeInTheDocument();
 });
 
+test("flight-controller metadata distinguishes documented and custom mappings", () => {
+  render(
+    <PartPicker
+      category="flight_controllers"
+      parts={[
+        {
+          id: "fc-speedybee-f405-v5",
+          name: "SpeedyBee F405 V5",
+          processor: "STM32F405",
+          imu: "ICM42688P",
+          weight: 8.1,
+          price: 73.99,
+        },
+        {
+          id: "fc-custom",
+          name: "Custom controller",
+          processor: "STM32F405",
+          imu: "Unknown",
+          weight: 9,
+          price: 40,
+        },
+      ]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({
+        ok: true,
+        verified: false,
+        reason: "Board map not checked.",
+      })}
+      placeholder="Choose a flight controller"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", {
+    name: /choose a flight controller/i,
+  }));
+
+  expect(screen.getByText(/Documented setup map/)).toBeInTheDocument();
+  expect(screen.getByText(/Custom mapping required/)).toBeInTheDocument();
+});
+
 test("humanizes estimated field names for catalog review", () => {
   render(
     <PartPicker

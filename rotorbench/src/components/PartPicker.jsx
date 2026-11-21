@@ -18,6 +18,7 @@ import {
 import { readJsonStorage, writeJsonStorage } from "../utils/storage";
 import { hasCatalogModel } from "../utils/modelAssets";
 import { humanizeProvenanceFields } from "../utils/provenanceLabels";
+import { getCatalogBoardProfile } from "../data/flightControllerProfiles";
 
 const categoryDetails = {
   frames: { label: "Frame", Icon: Box },
@@ -75,7 +76,14 @@ function getMeta(category, part) {
               : null,
       ].filter(Boolean);
     case "flight_controllers":
-      return [part.processor, part.imu, `${part.weight} g`];
+      return [
+        part.processor,
+        part.imu,
+        `${part.weight} g`,
+        getCatalogBoardProfile(part)
+          ? "Documented setup map"
+          : "Custom mapping required",
+      ];
     case "receivers":
       return [
         part.protocol,
