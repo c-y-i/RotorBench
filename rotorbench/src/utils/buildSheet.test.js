@@ -157,6 +157,23 @@ test("build sheets include sanitized local hardware-plan context", () => {
     build: {
       geometryOverrides,
     },
+    measuredGeometry: {
+      schema: "rotorbench.measured-geometry-summary.v1",
+      partCount: 1,
+      fieldCount: 1,
+      parts: [{
+        key: "frame",
+        id: frame.id,
+        name: frame.name,
+        fields: [{
+          key: "stackHeight",
+          label: "Stack height",
+          value: 31.2,
+          catalogValue: null,
+          source: "user-measured",
+        }],
+      }],
+    },
     hardwarePlan: {
       status: "review",
       label: "4 checks open",

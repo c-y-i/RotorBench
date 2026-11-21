@@ -198,6 +198,11 @@ Controls use gently squared 7px corners. Cards use 10px and major panels use 14p
 ### Assembly Viewer
 - **Style:** dark instrument stage with controls above or beside the scene and an explicit audit of motor, propeller, stack, and battery placement.
 
+### Measured Geometry
+- **Style:** a collapsed workbench ledger with a pale-teal coverage summary, compact part selector, source label on every field, and IBM Plex Mono values.
+- **Behavior:** one selected part is editable at a time; measurements remain build-local, show catalog provenance, and export as named records rather than silently replacing catalog data.
+- **Controls:** 44px minimum inputs and reset actions, visible focus rings, explicit active-part state, and one-column field layout on narrow screens.
+
 ## Do's and Don'ts
 
 ### Do:

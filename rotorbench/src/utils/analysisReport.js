@@ -1,5 +1,8 @@
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
-import { normalizeGeometryOverrides } from "./buildGeometry";
+import {
+  normalizeGeometryOverrides,
+  summarizeMeasuredGeometry,
+} from "./buildGeometry";
 
 export const ANALYSIS_REPORT_SCHEMA = "rotorbench.analysis-report.v1";
 
@@ -32,7 +35,12 @@ export function createAnalysisReport(
   build,
   analysis,
   generatedAt = new Date().toISOString(),
-  { hardwarePlan = null, importedEvidence = null, viewerPlacement = null } = {},
+  {
+    hardwarePlan = null,
+    importedEvidence = null,
+    viewerPlacement = null,
+    assemblySpec = null,
+  } = {},
 ) {
   if (!build?.id || !build?.componentIds) {
     throw new Error("An identified build with component IDs is required.");
@@ -62,6 +70,10 @@ export function createAnalysisReport(
     },
     hardwarePlan: sanitizeHardwareReadiness(hardwarePlan),
     importedEvidence: sanitizeImportedEvidence(importedEvidence),
+    measuredGeometry: summarizeMeasuredGeometry(
+      assemblySpec || {},
+      build.geometryOverrides,
+    ),
     viewerPlacement: viewerPlacement
       ? {
           scope: "viewer-placement",

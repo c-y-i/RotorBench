@@ -244,18 +244,18 @@ export default function AnalysisPage() {
     readBenchEvidenceAttachment(build?.id),
     readCurrentBenchEvidenceScope(build),
   ), [build]);
+  const assemblySpec = useMemo(() => ({
+    frame: componentRows[0]?.part,
+    motor: componentRows[1]?.part,
+    propeller: componentRows[2]?.part,
+    battery: componentRows[3]?.part,
+    esc: componentRows[4]?.part,
+    flightController: componentRows[5]?.part,
+    receiver: componentRows[6]?.part,
+  }), [componentRows]);
   const viewerPlacement = useMemo(() => {
-    const parts = {
-      frame: componentRows[0]?.part,
-      motor: componentRows[1]?.part,
-      propeller: componentRows[2]?.part,
-      battery: componentRows[3]?.part,
-      esc: componentRows[4]?.part,
-      flightController: componentRows[5]?.part,
-      receiver: componentRows[6]?.part,
-    };
-    return buildViewerPlacementAudit(parts.frame, parts);
-  }, [componentRows]);
+    return buildViewerPlacementAudit(assemblySpec.frame, assemblySpec);
+  }, [assemblySpec]);
 
   const downloadReport = () => {
     const report = createAnalysisReport(
@@ -266,6 +266,7 @@ export default function AnalysisPage() {
         hardwarePlan: hardwareReadiness,
         importedEvidence: benchEvidence,
         viewerPlacement,
+        assemblySpec,
       },
     );
     const blob = new Blob([JSON.stringify(report, null, 2)], {

@@ -8,6 +8,7 @@ import {
   measuredGeometryForPart,
   normalizeGeometryOverrides,
   setMeasuredGeometryValue,
+  summarizeMeasuredGeometry,
 } from "./buildGeometry";
 
 const motor = componentsData.motors.find(
@@ -92,5 +93,38 @@ test("normalizes persisted overrides and builds an effective assembly", () => {
     catalogValue: null,
     effectiveValue: 5,
     source: "user-measured",
+  });
+});
+
+test("summarizes named measured fields with catalog provenance for export", () => {
+  const overrides = setMeasuredGeometryValue(
+    normalizeGeometryOverrides(null),
+    "motors",
+    motor.id,
+    "propShaftMm",
+    5,
+  );
+  const summary = summarizeMeasuredGeometry(
+    { motor, frame: null, propeller: null },
+    overrides,
+  );
+
+  expect(summary).toEqual({
+    schema: "rotorbench.measured-geometry-summary.v1",
+    scope: "build-local measurement; not hardware verification",
+    partCount: 1,
+    fieldCount: 1,
+    parts: [{
+      key: "motor",
+      id: motor.id,
+      name: motor.name,
+      fields: [{
+        key: "propShaftMm",
+        label: "Prop shaft diameter",
+        value: 5,
+        catalogValue: null,
+        source: "user-measured",
+      }],
+    }],
   });
 });

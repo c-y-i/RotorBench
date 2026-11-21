@@ -92,6 +92,12 @@ test("creates a versioned analysis report without mutating the build", () => {
           { id: "motor-roots", label: "Four motor roots", status: "verified", detail: "Aligned." },
         ],
       },
+      assemblySpec: {
+        motor: {
+          id: "motor-tmotor-f1404-3800kv",
+          name: "T-Motor F1404 3800KV",
+        },
+      },
     },
   );
 
@@ -103,6 +109,23 @@ test("creates a versioned analysis report without mutating the build", () => {
       name: "Bench quad",
       componentIds: build.componentIds,
       geometryOverrides: build.geometryOverrides,
+    },
+    measuredGeometry: {
+      schema: "rotorbench.measured-geometry-summary.v1",
+      partCount: 1,
+      fieldCount: 1,
+      parts: [{
+        key: "motor",
+        id: "motor-tmotor-f1404-3800kv",
+        name: "T-Motor F1404 3800KV",
+        fields: [{
+          key: "propShaftMm",
+          label: "Prop shaft diameter",
+          value: 1.5,
+          catalogValue: null,
+          source: "user-measured",
+        }],
+      }],
     },
     verification: {
       analysisIsEstimate: true,

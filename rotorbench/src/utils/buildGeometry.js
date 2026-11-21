@@ -193,3 +193,38 @@ export function geometryProvenance(overrides, category, part) {
           : "catalog",
   }));
 }
+
+export function summarizeMeasuredGeometry(assemblySpec = {}, overrides) {
+  const normalized = normalizeGeometryOverrides(overrides);
+  const parts = Object.entries(ASSEMBLY_CATEGORIES).flatMap(([assemblyKey, category]) => {
+    const part = assemblySpec[assemblyKey];
+    if (!part?.id) return [];
+    const values = normalized.categories[category]?.[part.id] || {};
+    const fields = (GEOMETRY_CATEGORY_FIELDS[category] || [])
+      .filter((field) => values[field.key] != null)
+      .map((field) => ({
+        key: field.key,
+        label: field.label,
+        value: Array.isArray(values[field.key])
+          ? [...values[field.key]]
+          : values[field.key],
+        catalogValue: part[field.key] ?? null,
+        source: "user-measured",
+      }));
+    if (!fields.length) return [];
+    return [{
+      key: assemblyKey,
+      id: part.id,
+      name: part.name || part.id,
+      fields,
+    }];
+  });
+
+  return {
+    schema: "rotorbench.measured-geometry-summary.v1",
+    scope: "build-local measurement; not hardware verification",
+    partCount: parts.length,
+    fieldCount: parts.reduce((total, part) => total + part.fields.length, 0),
+    parts,
+  };
+}

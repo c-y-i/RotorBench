@@ -245,6 +245,9 @@ test("build-local measurements update fit evidence without claiming verification
   });
 
   fireEvent.click(screen.getByText("Measured geometry"));
+  fireEvent.click(screen.getByRole("button", {
+    name: /Motor T-Motor F60 Pro V 2207.5 1750KV/i,
+  }));
   const shaft = screen.getByLabelText(
     "Motor Prop shaft diameter in millimetres",
   );

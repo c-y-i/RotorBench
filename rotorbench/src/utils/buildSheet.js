@@ -8,7 +8,10 @@ import {
   electricalChecksFor,
   summarizeElectricalChecks,
 } from "./electricalCompatibility";
-import { normalizeGeometryOverrides } from "./buildGeometry";
+import {
+  normalizeGeometryOverrides,
+  summarizeMeasuredGeometry,
+} from "./buildGeometry";
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
 
 function selectedPhysicalChecks(assemblySpec) {
@@ -93,6 +96,10 @@ export function createBuildSheet({
           authenticityVerified: false,
         }
       : null,
+    measuredGeometry: summarizeMeasuredGeometry(
+      assemblySpec,
+      build.geometryOverrides,
+    ),
     viewerPlacement: viewerPlacement
       ? {
           scope: "viewer-placement",
