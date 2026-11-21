@@ -94,6 +94,31 @@ test("combined hardware plans carry the documented receiver wiring checklist", (
   ]));
 });
 
+test("combined hardware plans preserve servo output setup", () => {
+  const exported = samplePlan();
+  Object.assign(exported.flightController.config, {
+    airframe: "elevonwing",
+    servo1Reverse: true,
+    servo1TrimUs: 18,
+    servo1TravelUs: 460,
+    servo2Reverse: false,
+    servo2TrimUs: -12,
+    servo2TravelUs: 520,
+  });
+
+  const imported = parseCombinedHardwarePlanJson(JSON.stringify(exported));
+
+  expect(imported.fcPlan).toMatchObject({
+    airframe: "elevonwing",
+    servo1Reverse: true,
+    servo1TrimUs: 18,
+    servo1TravelUs: 460,
+    servo2Reverse: false,
+    servo2TrimUs: -12,
+    servo2TravelUs: 520,
+  });
+});
+
 test("combined hardware plans retain receiver identity and RF-band compatibility", () => {
   const config = createDefaultFlightControllerConfig();
   const receiver = {

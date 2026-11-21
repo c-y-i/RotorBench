@@ -1,4 +1,8 @@
-import { BETAFLIGHT_FAILSAFE_THROTTLE } from "../data/flightControllerProfiles";
+import {
+  AERIALKIT_SERVO_OUTPUTS,
+  AIRFRAMES,
+  BETAFLIGHT_FAILSAFE_THROTTLE,
+} from "../data/flightControllerProfiles";
 
 export const AERIALKIT_AIRFRAME_IDS = {
   quadx: 0,
@@ -84,6 +88,11 @@ export function buildFlightControllerCommands(
   }
 
   const airframe = AERIALKIT_AIRFRAME_IDS[config.airframe];
+  const airframeSpec = AIRFRAMES.find((item) => item.value === config.airframe);
+  const activeServoOutputs = AERIALKIT_SERVO_OUTPUTS.slice(
+    0,
+    airframeSpec?.servos || 0,
+  );
   const protocol = AERIALKIT_RC_PROTOCOL_IDS[config.receiverProtocol];
   const finite = (value) => (
     value !== null &&
@@ -130,7 +139,12 @@ export function buildFlightControllerCommands(
     finite(config.alignPitchDeg) &&
     finite(config.alignYawDeg) &&
     integer(config.gyroRateHz) &&
-    integer(config.pidDenom);
+    integer(config.pidDenom) &&
+    activeServoOutputs.every((servo) => (
+      typeof config[servo.reverseKey] === "boolean" &&
+      finite(config[servo.trimKey]) &&
+      integer(config[servo.travelKey])
+    ));
 
   if (!validPlan) {
     return {
@@ -148,6 +162,13 @@ export function buildFlightControllerCommands(
   ];
   lines.push(`set airframe ${airframe}`);
   lines.push(`set dshot_khz ${Number(config.dshotKhz)}`);
+  activeServoOutputs.forEach((servo) => {
+    lines.push(
+      `set servo${servo.output}_reverse ${config[servo.reverseKey] ? 1 : 0}`,
+      `set servo${servo.output}_trim_us ${Number(config[servo.trimKey])}`,
+      `set servo${servo.output}_travel_us ${Number(config[servo.travelKey])}`,
+    );
+  });
   lines.push(`set rc_protocol ${protocol}`);
   lines.push(`set arm_channel ${Number(config.armChannel)}`);
   lines.push(`set mode_channel ${Number(config.modeChannel)}`);

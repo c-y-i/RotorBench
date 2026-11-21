@@ -1,4 +1,5 @@
 import {
+  AERIALKIT_SERVO_OUTPUTS,
   AIRFRAMES,
   FIRMWARE_FAMILIES,
   MOTOR_DIRECTIONS,
@@ -181,6 +182,19 @@ export function summarizeHardwareReadiness({
   const fcPropellerDirection = getPropellerDirectionForOutputMap(
     motorOutputByCorner,
   );
+  const fcAirframeSpec = AIRFRAMES.find(
+    (airframe) => airframe.value === fcPlan.airframe,
+  );
+  const fcServoOutputs = fcPlan.firmwareFamily === "aerialkit"
+    ? AERIALKIT_SERVO_OUTPUTS
+        .slice(0, fcAirframeSpec?.servos || 0)
+        .map((servo) => ({
+          output: servo.output,
+          reversed: Boolean(fcPlan[servo.reverseKey]),
+          trimUs: fcPlan[servo.trimKey] ?? null,
+          travelUs: fcPlan[servo.travelKey] ?? null,
+        }))
+    : [];
 
   return {
     status,
@@ -221,7 +235,7 @@ export function summarizeHardwareReadiness({
     radioReceiverBands: radioReceiverBands.receiverBandLabels,
     radioSharedBands: radioReceiverBands.sharedBandLabels,
     fcAirframe: fcPlan.airframe,
-    fcAirframeLabel: AIRFRAMES.find((airframe) => airframe.value === fcPlan.airframe)?.label
+    fcAirframeLabel: fcAirframeSpec?.label
       || fcPlan.airframe,
     fcMotorDirection: fcPlan.motorDirection || null,
     fcMotorDirectionLabel: motorDirectionLabel,
@@ -291,6 +305,7 @@ export function summarizeHardwareReadiness({
     fcPidDenom: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.pidDenom
       : null,
+    fcServoOutputs,
     hardwareVerified: false,
   };
 }
@@ -360,6 +375,14 @@ export function sanitizeHardwareReadiness(readiness) {
     fcAlignmentYawDeg: readiness.fcAlignmentYawDeg ?? null,
     fcGyroRateHz: readiness.fcGyroRateHz ?? null,
     fcPidDenom: readiness.fcPidDenom ?? null,
+    fcServoOutputs: Array.isArray(readiness.fcServoOutputs)
+      ? readiness.fcServoOutputs.map((servo) => ({
+          output: Number(servo.output),
+          reversed: Boolean(servo.reversed),
+          trimUs: servo.trimUs ?? null,
+          travelUs: servo.travelUs ?? null,
+        }))
+      : [],
     hardwareVerified: false,
   };
 }

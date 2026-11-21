@@ -1060,6 +1060,104 @@
   line-height: 1.45;
 }
 
+.fc-servo-output-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.fc-servo-output {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.fc-servo-output > legend {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding-inline: 4px;
+}
+
+.fc-servo-output > legend strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.fc-servo-output > legend span {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.fc-servo-reverse {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 7px 9px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.fc-servo-reverse > input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--brand);
+}
+
+.fc-servo-reverse > span {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.fc-servo-reverse strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.fc-servo-reverse small {
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.fc-servo-reverse > em {
+  padding: 3px 5px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.fc-servo-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fc-servo-note {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .fc-feature-list {
   display: flex;
   flex-wrap: wrap;
@@ -1655,6 +1753,11 @@
 
   .fc-field-grid,
   .fc-field-grid-three {
+    grid-template-columns: 1fr;
+  }
+
+  .fc-servo-output-grid,
+  .fc-servo-fields {
     grid-template-columns: 1fr;
   }
 

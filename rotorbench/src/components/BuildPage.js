@@ -1995,6 +1995,16 @@ export default function BuildPage() {
                       {hardwareReadiness.fcMotorOrder}
                     </small>
                   )}
+                  {hardwareReadiness.fcServoOutputs?.length > 0 && (
+                    <small>
+                      Servo outputs: {hardwareReadiness.fcServoOutputs
+                        .map((servo) => (
+                          `${servo.output} ${servo.reversed ? "reversed" : "normal"}`
+                          + ` · trim ${servo.trimUs} µs · travel ${servo.travelUs} µs`
+                        ))
+                        .join(" / ")}
+                    </small>
+                  )}
                   {navigationSafetyLabel && (
                     <small>
                       Navigation safety: {navigationSafetyLabel}

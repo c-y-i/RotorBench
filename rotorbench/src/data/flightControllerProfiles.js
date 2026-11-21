@@ -586,6 +586,29 @@ export const BETAFLIGHT_FAILSAFE_THROTTLE = Object.freeze({
   maxPwm: 2000,
 });
 
+export const AERIALKIT_SERVO_LIMITS = Object.freeze({
+  minTrimUs: -200,
+  maxTrimUs: 200,
+  minTravelUs: 100,
+  maxTravelUs: 900,
+  defaultTravelUs: 500,
+});
+
+export const AERIALKIT_SERVO_OUTPUTS = Object.freeze([
+  Object.freeze({
+    output: 1,
+    reverseKey: "servo1Reverse",
+    trimKey: "servo1TrimUs",
+    travelKey: "servo1TravelUs",
+  }),
+  Object.freeze({
+    output: 2,
+    reverseKey: "servo2Reverse",
+    trimKey: "servo2TrimUs",
+    travelKey: "servo2TravelUs",
+  }),
+]);
+
 export const CHANNEL_PRESETS = [
   {
     id: "aerialkit-firmware",
@@ -759,6 +782,12 @@ export function createDefaultFlightControllerConfig(
     alignYawDeg: 0,
     gyroRateHz: 0,
     pidDenom: 1,
+    servo1Reverse: false,
+    servo1TrimUs: 0,
+    servo1TravelUs: AERIALKIT_SERVO_LIMITS.defaultTravelUs,
+    servo2Reverse: false,
+    servo2TrimUs: 0,
+    servo2TravelUs: AERIALKIT_SERVO_LIMITS.defaultTravelUs,
     dshotKhz: 300,
     failsafeAction: "firmware-derived",
     failsafeThrottle: betaflightLike
@@ -1049,6 +1078,40 @@ export function validateFlightControllerConfig(
         code: "pid-denom-range",
         message: "Control-loop divisor must be a whole number from 1 to 32 gyro samples.",
       });
+    }
+    for (const servo of AERIALKIT_SERVO_OUTPUTS.slice(0, airframe?.servos || 0)) {
+      if (typeof config[servo.reverseKey] !== "boolean") {
+        issues.push({
+          severity: "error",
+          code: "servo-reverse",
+          targetId: `fc-servo${servo.output}-reverse`,
+          message: `Servo ${servo.output} reversal must be explicitly enabled or disabled.`,
+        });
+      }
+      if (
+        !finite(config[servo.trimKey]) ||
+        Number(config[servo.trimKey]) < AERIALKIT_SERVO_LIMITS.minTrimUs ||
+        Number(config[servo.trimKey]) > AERIALKIT_SERVO_LIMITS.maxTrimUs
+      ) {
+        issues.push({
+          severity: "error",
+          code: "servo-trim-range",
+          targetId: `fc-servo${servo.output}-trim`,
+          message: `Servo ${servo.output} centre trim must be between ${AERIALKIT_SERVO_LIMITS.minTrimUs} and ${AERIALKIT_SERVO_LIMITS.maxTrimUs} microseconds.`,
+        });
+      }
+      if (
+        !integer(config[servo.travelKey]) ||
+        Number(config[servo.travelKey]) < AERIALKIT_SERVO_LIMITS.minTravelUs ||
+        Number(config[servo.travelKey]) > AERIALKIT_SERVO_LIMITS.maxTravelUs
+      ) {
+        issues.push({
+          severity: "error",
+          code: "servo-travel-range",
+          targetId: `fc-servo${servo.output}-travel`,
+          message: `Servo ${servo.output} travel must be a whole number from ${AERIALKIT_SERVO_LIMITS.minTravelUs} to ${AERIALKIT_SERVO_LIMITS.maxTravelUs} microseconds.`,
+        });
+      }
     }
   }
 
@@ -1486,6 +1549,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
   const aerialKitSwitches = aerialKitRoles
     .map((role) => `${role.label} ${aerialKitChannelValues[role.key] ?? "off"}`)
     .join(", ");
+  const airframe = AIRFRAMES.find((item) => item.value === config.airframe);
   const motorLayout = getAirframeMotorLayout(
     config.airframe,
     config.firmwareFamily,
@@ -1500,7 +1564,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
     `Board: ${profile.label} (${profile.processor})`,
-    `Airframe: ${AIRFRAMES.find((item) => item.value === config.airframe)?.label || config.airframe}`,
+    `Airframe: ${airframe?.label || config.airframe}`,
     `Receiver: ${protocol?.label || config.receiverProtocol} on ${config.receiverUart} at ${config.receiverBaud} baud`,
     ...(config.firmwareFamily === "aerialkit"
       ? [
@@ -1525,6 +1589,17 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `${motorOrderLabel}: ${motorLayout.motors
             .map((motor) => `${motor.output} ${motor.label} ${motor.spin}`)
             .join(", ")}`,
+        ]
+      : []),
+    ...(config.firmwareFamily === "aerialkit" && airframe?.servos > 0
+      ? [
+          `Servo outputs: ${AERIALKIT_SERVO_OUTPUTS
+            .slice(0, airframe.servos)
+            .map((servo) => (
+              `${servo.output} ${config[servo.reverseKey] ? "reversed" : "normal"}, `
+              + `trim ${config[servo.trimKey]} us, travel ${config[servo.travelKey]} us`
+            ))
+            .join("; ")}`,
         ]
       : []),
     config.firmwareFamily === "aerialkit"

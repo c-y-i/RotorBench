@@ -69,6 +69,57 @@ test("shows the selected Aerial Kit airframe motor output map", () => {
   expect(items[3]).toHaveTextContent("4RLCW");
 });
 
+test("Aerial Kit wings expose source-backed servo output planning", async () => {
+  const onChange = jest.fn();
+  const { container } = render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.queryByRole("heading", { name: "Servo outputs" }))
+    .not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "elevonwing" },
+  });
+
+  expect(screen.getByRole("heading", { name: "Servo outputs" }))
+    .toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Servos" })).toBeInTheDocument();
+  const servo1 = screen.getByRole("group", { name: /Servo 1/i });
+  expect(within(servo1).getByLabelText("Centre trim")).toHaveValue(0);
+  expect(within(servo1).getByLabelText("Travel")).toHaveValue(500);
+  fireEvent.click(within(servo1).getByRole("checkbox", {
+    name: /Reverse linkage/i,
+  }));
+  fireEvent.change(within(servo1).getByLabelText("Centre trim"), {
+    target: { value: "18" },
+  });
+  fireEvent.change(within(servo1).getByLabelText("Travel"), {
+    target: { value: "460" },
+  });
+
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    servo1Reverse: true,
+    servo1TrimUs: 18,
+    servo1TravelUs: 460,
+  }));
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("servo validation reviews focus the affected output", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "elevonwing" },
+  });
+  const servo2 = screen.getByRole("group", { name: /Servo 2/i });
+
+  fireEvent.change(within(servo2).getByLabelText("Travel"), {
+    target: { value: "" },
+  });
+  fireEvent.click(screen.getByRole("button", {
+    name: "Review servo travel",
+  }));
+
+  expect(within(servo2).getByLabelText("Travel")).toHaveFocus();
+});
+
 test("shows the Aerial Kit arm-gate audit without claiming live readiness", () => {
   render(<FlightControllerSetup />);
   expect(screen.getByRole("heading", { name: "Arm-gate preview" })).toBeInTheDocument();

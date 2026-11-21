@@ -21,6 +21,8 @@ import {
   Zap,
 } from "lucide-react";
 import {
+  AERIALKIT_SERVO_LIMITS,
+  AERIALKIT_SERVO_OUTPUTS,
   AIRFRAMES,
   BETAFLIGHT_FAILSAFE_THROTTLE,
   CHANNEL_PRESETS,
@@ -98,6 +100,9 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "align-yaw-range": { id: "fc-align-yaw", label: "board alignment" },
   "gyro-rate-range": { id: "fc-gyro-rate", label: "requested gyro rate" },
   "pid-denom-range": { id: "fc-pid-denom", label: "control-loop divisor" },
+  "servo-reverse": { id: "fc-servo1-reverse", label: "servo reversal" },
+  "servo-trim-range": { id: "fc-servo1-trim", label: "servo centre trim" },
+  "servo-travel-range": { id: "fc-servo1-travel", label: "servo travel" },
   "channel-range": { id: "fc-arm-channel", label: "control channels" },
   "unsupported-control-role": { id: "fc-arm-channel", label: "control channels" },
   "mode-channel-unset": { id: "fc-mode-channel", label: "flight-mode channel" },
@@ -601,8 +606,14 @@ export default function FlightControllerSetup({
   const plannedSerialRouteCount = serialPorts.filter(
     (port) => port.assignments.length > 0,
   ).length;
-  const focusIssueTarget = (issueCode) => {
-    const target = FLIGHT_CONTROLLER_ISSUE_TARGETS[issueCode]
+  const focusIssueTarget = (issueCode, targetId = null) => {
+    const configuredTarget = FLIGHT_CONTROLLER_ISSUE_TARGETS[issueCode];
+    const target = targetId
+      ? {
+          ...(configuredTarget || {}),
+          id: targetId,
+        }
+      : configuredTarget
       || { id: "fc-family", label: "flight-controller setup" };
     const element = document.getElementById(target.id);
     if (!element) return;
@@ -703,7 +714,12 @@ export default function FlightControllerSetup({
               { id: "fc-profile-title", label: "Board" },
               { id: "fc-receiver-title", label: "Receiver" },
               ...(config.firmwareFamily === "aerialkit"
-                ? [{ id: "fc-aircraft-integration-title", label: "Sensor" }]
+                ? [
+                    ...(airframeSpec?.servos > 0
+                      ? [{ id: "fc-servo-title", label: "Servos" }]
+                      : []),
+                    { id: "fc-aircraft-integration-title", label: "Sensor" },
+                  ]
                 : []),
               { id: "fc-safety-title", label: "Arming" },
               { id: "fc-channels-title", label: "Channels" },
@@ -982,6 +998,96 @@ export default function FlightControllerSetup({
               </div>
             )}
           </section>
+
+          {config.firmwareFamily === "aerialkit" && airframeSpec?.servos > 0 && (
+            <section className="fc-section" aria-labelledby="fc-servo-title">
+              <div className="fc-section-heading">
+                <SlidersHorizontal size={18} aria-hidden="true" />
+                <div>
+                  <h3 id="fc-servo-title">Servo outputs</h3>
+                  <p>
+                    Set the firmware's linkage plumbing for the selected
+                    airframe. These are plan values, not a surface-direction or
+                    servo-limit test.
+                  </p>
+                </div>
+              </div>
+
+              <div className="fc-servo-output-grid">
+                {AERIALKIT_SERVO_OUTPUTS
+                  .slice(0, airframeSpec.servos)
+                  .map((servo) => (
+                    <fieldset className="fc-servo-output" key={servo.output}>
+                      <legend>
+                        <strong>Servo {servo.output}</strong>
+                        <span>Firmware output {servo.output}</span>
+                      </legend>
+                      <label className="fc-servo-reverse">
+                        <input
+                          id={`fc-servo${servo.output}-reverse`}
+                          type="checkbox"
+                          checked={Boolean(config[servo.reverseKey])}
+                          onChange={(event) => update(
+                            servo.reverseKey,
+                            event.target.checked,
+                          )}
+                        />
+                        <span>
+                          <strong>Reverse linkage</strong>
+                          <small>Invert the mixer command before pulse output.</small>
+                        </span>
+                        <em>{config[servo.reverseKey] ? "Reversed" : "Normal"}</em>
+                      </label>
+                      <div className="fc-servo-fields">
+                        <Field
+                          label="Centre trim"
+                          htmlFor={`fc-servo${servo.output}-trim`}
+                          hint={`${AERIALKIT_SERVO_LIMITS.minTrimUs} to ${AERIALKIT_SERVO_LIMITS.maxTrimUs} µs from neutral`}
+                        >
+                          <input
+                            id={`fc-servo${servo.output}-trim`}
+                            type="number"
+                            min={AERIALKIT_SERVO_LIMITS.minTrimUs}
+                            max={AERIALKIT_SERVO_LIMITS.maxTrimUs}
+                            step="1"
+                            aria-invalid={numericInvalid(config[servo.trimKey])}
+                            value={numericValue(config[servo.trimKey])}
+                            onChange={(event) => update(
+                              servo.trimKey,
+                              numericInput(event.target.value),
+                            )}
+                          />
+                        </Field>
+                        <Field
+                          label="Travel"
+                          htmlFor={`fc-servo${servo.output}-travel`}
+                          hint={`${AERIALKIT_SERVO_LIMITS.minTravelUs} to ${AERIALKIT_SERVO_LIMITS.maxTravelUs} µs at full stick`}
+                        >
+                          <input
+                            id={`fc-servo${servo.output}-travel`}
+                            type="number"
+                            min={AERIALKIT_SERVO_LIMITS.minTravelUs}
+                            max={AERIALKIT_SERVO_LIMITS.maxTravelUs}
+                            step="1"
+                            aria-invalid={integerInvalid(config[servo.travelKey])}
+                            value={numericValue(config[servo.travelKey])}
+                            onChange={(event) => update(
+                              servo.travelKey,
+                              numericInput(event.target.value),
+                            )}
+                          />
+                        </Field>
+                      </div>
+                    </fieldset>
+                  ))}
+              </div>
+              <p className="fc-servo-note">
+                Verify horn centring, surface direction, mechanical endpoints,
+                and linkage clearance on the disarmed aircraft. RotorBench does
+                not move an output or claim the control surface is calibrated.
+              </p>
+            </section>
+          )}
 
           <section className="fc-section" aria-labelledby="fc-receiver-title">
             <div className="fc-section-heading">
@@ -1866,7 +1972,7 @@ export default function FlightControllerSetup({
                 <span>{issue.message}</span>
                 <button
                   type="button"
-                  onClick={() => focusIssueTarget(issue.code)}
+                  onClick={() => focusIssueTarget(issue.code, issue.targetId)}
                   aria-label={`Review ${
                     FLIGHT_CONTROLLER_ISSUE_TARGETS[issue.code]?.label
                     || "flight-controller setup"

@@ -180,6 +180,55 @@ test("summary keeps the receiver and safety mapping visible", () => {
   );
 });
 
+test("Aerial Kit servo outputs carry firmware trim and travel limits", () => {
+  const defaults = createDefaultFlightControllerConfig();
+  const config = {
+    ...defaults,
+    airframe: "elevonwing",
+    servo1Reverse: true,
+    servo1TrimUs: 18,
+    servo1TravelUs: 460,
+    servo2Reverse: false,
+    servo2TrimUs: -12,
+    servo2TravelUs: 520,
+  };
+  const profile = getBoardProfile(config.profileId);
+
+  expect(buildFlightControllerSummary(config, profile).join("\n"))
+    .toContain(
+      "Servo outputs: 1 reversed, trim 18 us, travel 460 us; 2 normal, trim -12 us, travel 520 us",
+    );
+  expect(validateFlightControllerConfig({
+    ...config,
+    servo1Reverse: null,
+    servo1TrimUs: 201,
+    servo1TravelUs: 901,
+    servo2TrimUs: -201,
+    servo2TravelUs: 99,
+  }, profile)).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "servo-reverse",
+      targetId: "fc-servo1-reverse",
+    }),
+    expect.objectContaining({
+      code: "servo-trim-range",
+      targetId: "fc-servo1-trim",
+    }),
+    expect.objectContaining({
+      code: "servo-travel-range",
+      targetId: "fc-servo1-travel",
+    }),
+    expect.objectContaining({
+      code: "servo-trim-range",
+      targetId: "fc-servo2-trim",
+    }),
+    expect.objectContaining({
+      code: "servo-travel-range",
+      targetId: "fc-servo2-travel",
+    }),
+  ]));
+});
+
 test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
   const defaults = createDefaultFlightControllerConfig();
   const issues = validateFlightControllerConfig({

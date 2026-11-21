@@ -217,6 +217,12 @@ test("mission and launch controls remain available outside Setup", () => {
       launchThrottle: 0.65,
       launchClimbDeg: 20,
       launchTimeoutS: 6,
+      servo1Reverse: true,
+      servo1TrimUs: 18,
+      servo1TravelUs: 460,
+      servo2Reverse: false,
+      servo2TrimUs: -12,
+      servo2TravelUs: 520,
       receiverProtocol: "crsf",
       receiverUart: "UART2",
       receiverBaud: 420000,
@@ -235,6 +241,10 @@ test("mission and launch controls remain available outside Setup", () => {
     fcLaunchThrottle: 0.65,
     fcLaunchClimbDeg: 20,
     fcLaunchTimeoutS: 6,
+    fcServoOutputs: [
+      { output: 1, reversed: true, trimUs: 18, travelUs: 460 },
+      { output: 2, reversed: false, trimUs: -12, travelUs: 520 },
+    ],
   });
   expect(describeMissionControls(readiness)).toBe(
     "Mission CH7 · Launch CH8 · 65% · 20° · 6 s",
@@ -245,6 +255,10 @@ test("mission and launch controls remain available outside Setup", () => {
     fcLaunchThrottle: 0.65,
     fcLaunchClimbDeg: 20,
     fcLaunchTimeoutS: 6,
+    fcServoOutputs: [
+      { output: 1, reversed: true, trimUs: 18, travelUs: 460 },
+      { output: 2, reversed: false, trimUs: -12, travelUs: 520 },
+    ],
   });
 });
 
