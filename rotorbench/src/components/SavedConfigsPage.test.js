@@ -119,6 +119,29 @@ test("a valid build sheet imports as a new offline build", async () => {
   });
 });
 
+test("saved hardware builds expose their documented board target", async () => {
+  const hardwareBuild = {
+    ...offlineBuild,
+    id: "hardware-build",
+    name: "Hardware build",
+    componentIds: {
+      ...offlineBuild.componentIds,
+      flightControllerId: "fc-holybro-kakute-f7",
+      receiverId: "rx-elrs-24g",
+    },
+  };
+  localStorage.setItem("offlineBuilds", JSON.stringify([hardwareBuild]));
+
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText("KAKUTEF7 · documented"))
+    .toBeInTheDocument();
+});
+
 test("malformed offline build storage recovers to an empty state", async () => {
   localStorage.setItem("offlineBuilds", "{");
   render(

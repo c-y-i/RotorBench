@@ -80,6 +80,7 @@ test("marks changed rows and can show only differences", () => {
 
   expect(screen.getByText(/\d+ differences/)).toBeInTheDocument();
   expect(screen.getByRole("rowheader", { name: "Motors Changed" })).toBeInTheDocument();
+  expect(screen.getAllByText("KAKUTEF7 · documented").length).toBeGreaterThan(0);
 
   fireEvent.click(screen.getByRole("button", { name: "Changed only" }));
   expect(screen.getByRole("button", { name: "Show all" })).toHaveAttribute(
@@ -135,6 +136,8 @@ test("saved hardware plans show their local review count", () => {
   );
 
   expect(screen.getAllByText(/\d+ checks? open/i).length).toBeGreaterThan(1);
+  expect(screen.getByText("Kakute F7 AIO · custom mapping")).toBeInTheDocument();
+  expect(screen.getByText("KAKUTEF7 · documented")).toBeInTheDocument();
 });
 
 test("comparison keeps unavailable thrust data visible", () => {

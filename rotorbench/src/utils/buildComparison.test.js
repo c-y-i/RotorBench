@@ -45,6 +45,7 @@ test("comparison rows include all seven component categories", () => {
       "geometry-fallbacks",
       "hardware-plan",
       "receiver-wiring",
+      "board-map",
       "radio-host",
       "navigation-safety",
       "mission-controls",
@@ -128,6 +129,8 @@ test("saved-build summaries apply build-local geometry to their parts", () => {
 test("comparison summaries expose documented versus unverified receiver wiring", () => {
   const left = summarizeBuild(build);
   expect(left).toMatchObject({
+    fcBoardName: "KAKUTEF7",
+    fcBoardDocumented: true,
     receiverPins: expect.any(String),
     receiverWiringStatus: expect.stringMatching(/documented|unverified/),
     radioHostTransport: "native-usb",

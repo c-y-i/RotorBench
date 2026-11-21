@@ -164,6 +164,8 @@ export function summarizeBuild(build) {
     hardwarePlanStatus: readHardwarePlanStatus(build?.id),
     hardwareReadinessStatus: hardwareReadiness.status,
     hardwareReadinessLabel: hardwareReadiness.label,
+    fcBoardName: hardwareReadiness.fcBoardName,
+    fcBoardDocumented: hardwareReadiness.fcBoardDocumented,
     receiverWiringStatus: hardwareReadiness.wiringStatus,
     receiverPins: hardwareReadiness.receiverPins,
     radioHostTransport: hardwareReadiness.radioHostTransport,
@@ -262,6 +264,8 @@ export function createComparisonReport(
       electricalFitStatus: build.electricalFitStatus,
       hardwarePlanStatus: build.hardwarePlanStatus,
       hardwareReadinessStatus: build.hardwareReadinessStatus,
+      fcBoardName: build.fcBoardName,
+      fcBoardDocumented: build.fcBoardDocumented,
       receiverWiringStatus: build.receiverWiringStatus,
       receiverPins: build.receiverPins,
       radioHostTransport: build.radioHostTransport,
@@ -498,6 +502,17 @@ export function comparisonRows(left, right) {
       left: left.receiverWiringStatus,
       right: right.receiverWiringStatus,
       format: (value) => value === "documented" ? "Pins documented" : "Verify pins",
+    },
+    {
+      id: "board-map",
+      label: "Board map",
+      left: left.fcBoardName
+        ? `${left.fcBoardName} · ${left.fcBoardDocumented ? "documented" : "custom mapping"}`
+        : "Not configured",
+      right: right.fcBoardName
+        ? `${right.fcBoardName} · ${right.fcBoardDocumented ? "documented" : "custom mapping"}`
+        : "Not configured",
+      format: (value) => value,
     },
     {
       id: "radio-host",

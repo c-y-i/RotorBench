@@ -613,6 +613,15 @@ export default function SavedConfigsPage() {
                                                         : "Verify pins"}
                                                 </span>
                                             )}
+                                            {buildSummary.hasHardwareParts
+                                                && buildSummary.fcBoardName && (
+                                                <span className={`is-wiring-${buildSummary.fcBoardDocumented ? "documented" : "unverified"}`}>
+                                                    {buildSummary.fcBoardName}
+                                                    {buildSummary.fcBoardDocumented
+                                                        ? " · documented"
+                                                        : " · custom mapping"}
+                                                </span>
+                                            )}
                                             {buildSummary.hasHardwareParts && (
                                                 <span className={`is-host-${buildSummary.radioHostDocumented ? "documented" : "unverified"}`}>
                                                     {buildSummary.radioHostTransportLabel}
