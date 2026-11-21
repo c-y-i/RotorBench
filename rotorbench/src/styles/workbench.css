@@ -4851,12 +4851,12 @@
 }
 
 .part-picker-empty {
-  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 210px;
+  margin: 8px 18px 18px;
   padding: 28px;
   color: var(--ink-soft);
   text-align: center;
@@ -4872,6 +4872,27 @@
 .part-picker-empty span {
   margin-top: 3px;
   font-size: 12px;
+}
+
+.part-picker-empty .part-picker-reset,
+.part-source-empty .part-picker-reset {
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 0 13px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.part-picker-empty .part-picker-reset:hover,
+.part-source-empty .part-picker-reset:hover {
+  border-color: var(--brand);
 }
 
 .part-picker-footer {
@@ -4944,6 +4965,10 @@
   .part-picker-results {
     grid-template-columns: 1fr;
     padding: 7px 12px 14px;
+  }
+
+  .part-picker-empty {
+    margin: 7px 12px 14px;
   }
 
   .part-source-index {

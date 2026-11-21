@@ -152,6 +152,19 @@ export default function PartPicker({
         const comparable = (value) => (
           Number.isFinite(Number(value)) ? Number(value) : Number.POSITIVE_INFINITY
         );
+        if (sortMode === "evidence") {
+          const evidenceRank = (result) => (
+            result.part.sourceUrl ? 0 : 1
+          );
+          const estimatedRank = (result) => (
+            Array.isArray(result.part.estimatedFields)
+              ? result.part.estimatedFields.length
+              : 0
+          );
+          return evidenceRank(a) - evidenceRank(b)
+            || estimatedRank(a) - estimatedRank(b)
+            || a.part.name.localeCompare(b.part.name);
+        }
         if (sortMode === "price") {
           return comparable(a.part.price) - comparable(b.part.price)
             || a.part.name.localeCompare(b.part.name);
@@ -180,6 +193,13 @@ export default function PartPicker({
     setShowSources(false);
     setActiveIndex(0);
     dialogRef.current?.showModal();
+  };
+
+  const resetSearchAndFilters = () => {
+    setQuery("");
+    setResultFilter("all");
+    setSortMode("best");
+    setActiveIndex(0);
   };
 
   useEffect(() => {
@@ -342,6 +362,7 @@ export default function PartPicker({
                 onChange={(event) => setSortMode(event.target.value)}
               >
                 <option value="best">Best fit</option>
+                <option value="evidence">Evidence: strongest</option>
                 <option value="price">Price: low</option>
                 <option value="weight">Weight: low</option>
                 <option value="name">Name</option>
@@ -366,6 +387,13 @@ export default function PartPicker({
                   <ExternalLink size={22} aria-hidden="true" />
                   <strong>No references in this view</strong>
                   <span>Change the search or filters, or return to catalog parts.</span>
+                  <button
+                    type="button"
+                    className="part-picker-reset"
+                    onClick={resetSearchAndFilters}
+                  >
+                    Reset search and filters
+                  </button>
                 </div>
               ) : (
                 rankedParts.filter(({ part }) => (
@@ -413,6 +441,19 @@ export default function PartPicker({
                 ))
               )}
             </div>
+          ) : rankedParts.length === 0 ? (
+            <div className="part-picker-empty" role="status">
+              <Search size={22} aria-hidden="true" />
+              <strong>No matching {label.toLowerCase()}s</strong>
+              <span>Try a manufacturer, size, KV, voltage, or capacity.</span>
+              <button
+                type="button"
+                className="part-picker-reset"
+                onClick={resetSearchAndFilters}
+              >
+                Reset search and filters
+              </button>
+            </div>
           ) : (
             <div
               className="part-picker-results"
@@ -420,14 +461,7 @@ export default function PartPicker({
               aria-label={`${label} options`}
               onKeyDown={handleResultsKeyDown}
             >
-              {rankedParts.length === 0 ? (
-                <div className="part-picker-empty">
-                  <Search size={22} aria-hidden="true" />
-                  <strong>No matching {label.toLowerCase()}s</strong>
-                  <span>Try a manufacturer, size, KV, voltage, or capacity.</span>
-                </div>
-              ) : (
-                rankedParts.map(({ part, ok, reason, verified, recent }, index) => {
+              {rankedParts.map(({ part, ok, reason, verified, recent }, index) => {
                   const isSelected = part.id === value;
                   const estimatedFields = humanizeProvenanceFields(part.estimatedFields);
                   const statusClass = !ok
@@ -484,8 +518,7 @@ export default function PartPicker({
                       </span>
                     </button>
                   );
-                })
-              )}
+                })}
             </div>
           )}
 

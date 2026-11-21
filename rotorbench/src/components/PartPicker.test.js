@@ -244,6 +244,10 @@ test("source review exposes manufacturer links without selecting a part", () => 
 
   fireEvent.click(screen.getByRole("button", { name: "Recent" }));
   expect(within(sources).getByText("No references in this view")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", {
+    name: "Reset search and filters",
+  }));
+  expect(within(sources).getByText("Frame A")).toBeInTheDocument();
   const showParts = screen.getByRole("button", { name: "Show catalog parts" });
   expect(showParts).toBeEnabled();
   fireEvent.click(showParts);
@@ -328,6 +332,83 @@ test("catalog options can be sorted by price without hiding conflicts", () => {
     .getAllByRole("option");
   expect(options[0]).toHaveTextContent("Frame B");
   expect(options[1]).toHaveTextContent("Frame A");
+});
+
+test("evidence sort favors product sources and fewer estimated fields", () => {
+  render(
+    <PartPicker
+      category="frames"
+      parts={[
+        {
+          id: "frame-legacy",
+          name: "Legacy Clean",
+          size: 220,
+          weight: 90,
+          maxPropSize: 5,
+          price: 20,
+        },
+        {
+          id: "frame-source-estimated",
+          name: "Source Estimated",
+          size: 220,
+          weight: 100,
+          maxPropSize: 5,
+          price: 30,
+          sourceUrl: "https://example.com/estimated",
+          estimatedFields: ["dimensionsMm"],
+        },
+        {
+          id: "frame-source-clean",
+          name: "Source Clean",
+          size: 220,
+          weight: 110,
+          maxPropSize: 5,
+          price: 40,
+          sourceUrl: "https://example.com/clean",
+        },
+      ]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
+      placeholder="Choose a frame"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a frame/i }));
+  fireEvent.change(screen.getByLabelText("Sort catalog results"), {
+    target: { value: "evidence" },
+  });
+  const options = within(screen.getByRole("listbox", { name: "Frame options" }))
+    .getAllByRole("option");
+  expect(options.map((option) => option.textContent)).toEqual([
+    expect.stringContaining("Source Clean"),
+    expect.stringContaining("Source Estimated"),
+    expect.stringContaining("Legacy Clean"),
+  ]);
+});
+
+test("empty catalog results can reset the search and filters in one action", () => {
+  render(
+    <PartPicker
+      category="frames"
+      parts={parts}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
+      placeholder="Choose a frame"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a frame/i }));
+  fireEvent.change(screen.getByLabelText("Search frames"), {
+    target: { value: "no-such-frame" },
+  });
+  expect(screen.getByText("No matching frames")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", {
+    name: "Reset search and filters",
+  }));
+  expect(within(screen.getByRole("listbox", { name: "Frame options" }))
+    .getAllByRole("option")).toHaveLength(2);
 });
 
 test("keyboard arrows move through catalog options without tabbing through each one", () => {
