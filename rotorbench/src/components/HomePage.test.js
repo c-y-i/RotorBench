@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import HomePage from "./HomePage";
@@ -46,6 +46,14 @@ test("offers all complete source-backed platforms from an empty overview", async
     .toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Open 2.5-inch AOS Cine25 source build" }))
     .toBeInTheDocument();
+  expect(within(screen.getByRole("button", { name: "Open 3.5-inch source build" }))
+    .getByText("Estimated thrust data")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", {
+    name: "Open 7-inch long-range source build",
+  })).getByText("Thrust data unavailable")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", {
+    name: "Open 2.5-inch AOS Cine25 source build",
+  })).getByText("Thrust data unavailable")).toBeInTheDocument();
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
 });
 

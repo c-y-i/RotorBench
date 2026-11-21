@@ -4510,6 +4510,26 @@
   -webkit-line-clamp: 2;
 }
 
+.starter-platform-evidence {
+  justify-self: start;
+  margin-top: 1px;
+  padding: 2px 5px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.starter-platform-evidence.is-unavailable {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
 .starter-platform-action {
   display: grid;
   justify-items: end;

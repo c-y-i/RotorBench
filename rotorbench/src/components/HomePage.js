@@ -283,6 +283,11 @@ export default function HomePage() {
           <div className="starter-platform-list">
             {PLATFORM_PRESETS.map((preset) => {
               const size = preset.name.match(/^[\d.]+/)?.[0] || "—";
+              const propeller = componentsData.propellers.find(
+                (part) => part.id === preset.componentIds.propellerId,
+              );
+              const hasThrustData = (propeller?.thrustData?.length || 0) > 0;
+              const estimatedThrust = propeller?.estimatedFields?.includes("thrustData");
               return (
                 <button
                   key={preset.id}
@@ -298,6 +303,17 @@ export default function HomePage() {
                   <span className="starter-platform-copy">
                     <strong>{preset.name}</strong>
                     <small>{preset.description}</small>
+                    <span
+                      className={`starter-platform-evidence ${
+                        hasThrustData ? "is-estimated" : "is-unavailable"
+                      }`}
+                    >
+                      {hasThrustData
+                        ? estimatedThrust
+                          ? "Estimated thrust data"
+                          : "Thrust data available"
+                        : "Thrust data unavailable"}
+                    </span>
                   </span>
                   <span className="starter-platform-action" aria-hidden="true">
                     <span>7 parts</span>
