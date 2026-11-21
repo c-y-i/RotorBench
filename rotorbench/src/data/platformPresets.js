@@ -58,6 +58,20 @@ export const PLATFORM_PRESETS = [
     },
   },
   {
+    id: "source-5-aos-f722",
+    name: "5-inch AOS F722 source build",
+    description: "AOS 5 V5, XING2 2207 1855KV, HQProp 5037, SpeedyBee 50A, Kakute F722, RP4TD-M, Tattu V6 6S",
+    componentIds: {
+      frameId: "frame-aos-5-v5",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-holybro-kakute-f722",
+      batteryId: "battery-tattu-rline-v6-6s-1480-160c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  },
+  {
     id: "source-5-aos-supernova",
     name: "5-inch AOS Supernova 6S build",
     description: "AOS 5 V5, AOS Supernova 2207 1980KV, HQProp 5037, Tekko32 65A, Kakute H7 V2, RP4TD-M, Tattu V6 6S",
