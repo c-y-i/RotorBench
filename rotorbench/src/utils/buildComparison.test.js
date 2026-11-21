@@ -134,6 +134,9 @@ test("comparison summaries expose documented versus unverified receiver wiring",
     radioHostBay: "native-usb",
     radioHostBayLabel: "Native USB",
     radioHostBayCompatible: true,
+    fcMotorDirection: "props-in",
+    fcMotorDirectionLabel: "Normal · props in",
+    fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
   });
   const rows = comparisonRows(left, summarizeBuild(build));
   expect(rows.find((row) => row.id === "receiver-wiring")).toMatchObject({
@@ -147,6 +150,10 @@ test("comparison summaries expose documented versus unverified receiver wiring",
   expect(rows.find((row) => row.id === "radio-host-bay")).toMatchObject({
     changed: false,
     left: "Native USB · supported",
+  });
+  expect(rows.find((row) => row.id === "fc-motor-order")).toMatchObject({
+    changed: false,
+    left: "Normal · props in · 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
   });
   expect(rows.find((row) => row.id === "power-path")).toMatchObject({
     changed: false,

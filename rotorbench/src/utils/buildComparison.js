@@ -167,6 +167,9 @@ export function summarizeBuild(build) {
     radioHostBay: hardwareReadiness.radioHostBay,
     radioHostBayLabel: hardwareReadiness.radioHostBayLabel,
     radioHostBayCompatible: hardwareReadiness.radioHostBayCompatible,
+    fcMotorDirection: hardwareReadiness.fcMotorDirection,
+    fcMotorDirectionLabel: hardwareReadiness.fcMotorDirectionLabel,
+    fcMotorOrder: hardwareReadiness.fcMotorOrder,
     hardwareIssueCount: hardwareReadiness.configured
       ? hardwareReadiness.issueCount
       : null,
@@ -252,6 +255,9 @@ export function createComparisonReport(
       radioHostBay: build.radioHostBay,
       radioHostBayLabel: build.radioHostBayLabel,
       radioHostBayCompatible: build.radioHostBayCompatible,
+      fcMotorDirection: build.fcMotorDirection,
+      fcMotorDirectionLabel: build.fcMotorDirectionLabel,
+      fcMotorOrder: build.fcMotorOrder,
       benchEvidenceStatus: build.benchEvidenceStatus,
       thrustDataStatus: build.thrustDataStatus,
       sourceBackedCount: build.sourceBackedCount,
@@ -486,6 +492,17 @@ export function comparisonRows(left, right) {
       right: `${right.radioHostBayLabel || "Verify bay"} · ${
         right.radioHostBayCompatible ? "supported" : "mismatch"
       }`,
+      format: (value) => value,
+    },
+    {
+      id: "fc-motor-order",
+      label: "Motor order",
+      left: left.fcMotorOrder
+        ? `${left.fcMotorDirectionLabel} · ${left.fcMotorOrder}`
+        : left.fcMotorDirectionLabel || "No verified motor map",
+      right: right.fcMotorOrder
+        ? `${right.fcMotorDirectionLabel} · ${right.fcMotorOrder}`
+        : right.fcMotorDirectionLabel || "No verified motor map",
       format: (value) => value,
     },
     {

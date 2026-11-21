@@ -74,11 +74,16 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       radioHostDocumented: true,
       radioHostBayLabel: "Nano 8-pin bay",
       radioHostBayCompatible: false,
+      fcMotorDirectionLabel: "Normal · props in",
+      fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
     },
   });
 
   expect(briefing.text).toContain(
     "Handset bay: Nano 8-pin bay / mismatch",
+  );
+  expect(briefing.text).toContain(
+    "Motor order: Normal · props in / 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
   );
   expect(briefing.text).toContain("readiness are not verified");
 });

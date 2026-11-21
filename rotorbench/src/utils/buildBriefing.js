@@ -73,6 +73,11 @@ export function createBuildBriefing({
             `- Handset bay: ${hardwareReadiness.radioHostBayLabel || "verify bay"} / ${hardwareReadiness.radioHostBayCompatible ? "supported" : "mismatch"}`,
           ]
         : []),
+      ...(hardwareReadiness.fcMotorOrder
+        ? [
+            `- Motor order: ${hardwareReadiness.fcMotorDirectionLabel} / ${hardwareReadiness.fcMotorOrder}`,
+          ]
+        : []),
     );
   }
 

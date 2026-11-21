@@ -624,6 +624,12 @@ export default function SavedConfigsPage() {
                                                     {buildSummary.radioHostBayLabel}
                                                 </span>
                                             )}
+                                            {buildSummary.hasHardwareParts
+                                                && buildSummary.fcMotorOrder && (
+                                                <span>
+                                                    {buildSummary.fcMotorDirectionLabel}
+                                                </span>
+                                            )}
                                             {hasPowerPath && (
                                                 <span className={`is-power-${buildSummary.powerPathStatus}`}>
                                                     {buildSummary.powerPathLabel}

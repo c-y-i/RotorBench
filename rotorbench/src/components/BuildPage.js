@@ -1917,6 +1917,12 @@ export default function BuildPage() {
                         : "mismatch"}
                     </small>
                   )}
+                  {hardwareReadiness.fcMotorOrder && (
+                    <small>
+                      Motor order: {hardwareReadiness.fcMotorDirectionLabel} ·{" "}
+                      {hardwareReadiness.fcMotorOrder}
+                    </small>
+                  )}
                 </>
               )}
             </div>

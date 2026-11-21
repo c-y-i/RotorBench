@@ -44,6 +44,10 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     radioHostBay: "native-usb",
     radioHostBayLabel: "Native USB",
     radioHostBayCompatible: true,
+    fcMotorDirection: "props-in",
+    fcMotorDirectionLabel: "Normal · props in",
+    fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+    fcMotorLayoutSource: "Betaflight",
   });
   expect(readiness.firmwareLabel).toBe("Betaflight");
   expect(readiness.protocolLabel).toBe("CRSF / ExpressLRS");
@@ -194,5 +198,33 @@ test("saved module-bay plans expose physical fit across hardware readiness", () 
     radioHostBay: "jr-standard-5",
     radioHostBayLabel: "JR standard 5-pin bay",
     radioHostBayCompatible: false,
+  });
+});
+
+test("Betaflight plan direction and order propagate through readiness", () => {
+  const base = "rotorbench:hardware-plan:build-props-out";
+  const storage = memoryStorage({
+    [`${base}:fc`]: JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: fc.id,
+      selectedReceiverId: receiver.id,
+      firmwareFamily: "betaflight",
+      profileId: "custom-board",
+      airframe: "quadx",
+      motorDirection: "props-out",
+    }),
+  });
+
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-props-out",
+    flightController: fc,
+    receiver,
+    storage,
+  });
+  expect(readiness).toMatchObject({
+    fcMotorDirection: "props-out",
+    fcMotorDirectionLabel: "Reversed · props out",
+    fcMotorOrder: "1 RR CCW · 2 FR CW · 3 RL CW · 4 FL CCW",
+    fcMotorLayoutSource: "Betaflight",
   });
 });

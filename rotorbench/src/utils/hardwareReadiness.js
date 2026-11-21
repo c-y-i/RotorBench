@@ -1,7 +1,10 @@
 import {
+  AIRFRAMES,
   FIRMWARE_FAMILIES,
+  MOTOR_DIRECTIONS,
   RECEIVER_PROTOCOLS,
   createDefaultFlightControllerConfig,
+  getAirframeMotorLayout,
   getBoardProfile,
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
@@ -123,6 +126,24 @@ export function summarizeHardwareReadiness({
     radioTarget.id,
     radioPlan.hostBay,
   );
+  const motorLayout = getAirframeMotorLayout(
+    fcPlan.airframe,
+    fcPlan.firmwareFamily,
+    fcPlan.motorDirection,
+  );
+  const motorDirection = MOTOR_DIRECTIONS.find(
+    (option) => option.value === fcPlan.motorDirection,
+  ) || MOTOR_DIRECTIONS[0];
+  const motorDirectionLabel = motorLayout
+    ? fcPlan.firmwareFamily === "betaflight"
+      ? motorDirection.label
+      : "Aerial Kit mixer order"
+    : "No verified motor map";
+  const motorOrder = motorLayout
+    ? motorLayout.motors
+      .map((motor) => `${motor.output} ${motor.label} ${motor.spin}`)
+      .join(" · ")
+    : null;
 
   return {
     status,
@@ -152,6 +173,15 @@ export function summarizeHardwareReadiness({
     radioHostBay: radioPlan.hostBay,
     radioHostBayLabel: radioHostBay.label,
     radioHostBayCompatible,
+    fcAirframe: fcPlan.airframe,
+    fcAirframeLabel: AIRFRAMES.find((airframe) => airframe.value === fcPlan.airframe)?.label
+      || fcPlan.airframe,
+    fcMotorDirection: fcPlan.motorDirection || null,
+    fcMotorDirectionLabel: motorDirectionLabel,
+    fcMotorOrder: motorOrder,
+    fcMotorLayoutSource: motorLayout
+      ? fcPlan.firmwareFamily === "betaflight" ? "Betaflight" : "Aerial Kit"
+      : null,
     hardwareVerified: false,
   };
 }
@@ -180,6 +210,12 @@ export function sanitizeHardwareReadiness(readiness) {
     radioHostBay: readiness.radioHostBay || null,
     radioHostBayLabel: readiness.radioHostBayLabel || null,
     radioHostBayCompatible: Boolean(readiness.radioHostBayCompatible),
+    fcAirframe: readiness.fcAirframe || null,
+    fcAirframeLabel: readiness.fcAirframeLabel || null,
+    fcMotorDirection: readiness.fcMotorDirection || null,
+    fcMotorDirectionLabel: readiness.fcMotorDirectionLabel || null,
+    fcMotorOrder: readiness.fcMotorOrder || null,
+    fcMotorLayoutSource: readiness.fcMotorLayoutSource || null,
     hardwareVerified: false,
   };
 }

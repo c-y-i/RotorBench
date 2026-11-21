@@ -507,6 +507,15 @@ export default function AnalysisPage() {
                     </dd>
                   </div>
                 )}
+              {hasHardwareSelection && hardwareReadiness.fcMotorOrder && (
+                <div>
+                  <dt>Motor order</dt>
+                  <dd>
+                    {hardwareReadiness.fcMotorDirectionLabel} ·{" "}
+                    {hardwareReadiness.fcMotorOrder}
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt>Power path</dt>
                 <dd>
