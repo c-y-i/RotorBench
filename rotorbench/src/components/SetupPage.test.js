@@ -276,7 +276,8 @@ test("uses the selected build controller and receiver", () => {
   expect(screen.getByText(/Read-only serial capture: 420000 \/ rx/)).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("tab", { name: "Radio link" }));
-  expect(screen.getByText(/Radio panel: ELRS 2.4G RX \/ roles all/)).toBeInTheDocument();
+  expect(screen.getByText(/Radio panel: JHEMCU EP24S ExpressLRS Receiver \/ roles all/))
+    .toBeInTheDocument();
 });
 
 test("editing the build carries its unsaved draft state back to Build", () => {

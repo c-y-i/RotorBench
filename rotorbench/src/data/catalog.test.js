@@ -316,6 +316,32 @@ test("expanded ESCs and flight controller preserve published limits", () => {
   });
 });
 
+test("receiver catalog provides RF bands, protocol, and source provenance", () => {
+  expect(componentsData.receivers).toHaveLength(10);
+  for (const receiver of componentsData.receivers) {
+    expect(receiver.protocol).toBeTruthy();
+    expect(receiver.frequencyBands?.length).toBeGreaterThan(0);
+    expect(receiver.sourceUrl).toMatch(/^https:\/\//);
+  }
+});
+
+test("legacy receiver asset is identified as the JHEMCU EP24S", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-elrs-24g",
+  );
+
+  expect(receiver).toMatchObject({
+    name: "JHEMCU EP24S ExpressLRS Receiver",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz"],
+    weight: 0.5,
+    dimensionsMm: [11, 3, 11],
+    sourceUrl: expect.stringMatching(/jhemcu-expresslrs/i),
+    dataStatus: "verified_specs_estimated_current",
+    estimatedFields: ["currentDraw", "channels", "mounting_point"],
+  });
+});
+
 test("Kakute F7 AIO reflects the documented processor and IMU set", () => {
   const flightController = componentsData.flight_controllers.find(
     (item) => item.id === "fc-holybro-kakute-f7",

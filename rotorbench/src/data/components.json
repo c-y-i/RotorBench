@@ -1663,14 +1663,19 @@
   "receivers": [
     {
       "id": "rx-elrs-24g",
-      "name": "ELRS 2.4G RX",
+      "name": "JHEMCU EP24S ExpressLRS Receiver",
       "protocol": "CRSF",
       "frequencyBands": ["2.4 GHz"],
-      "weight": 1.2,
+      "weight": 0.5,
       "mounting_point": [0, 0, 0],
       "currentDraw": 45,
       "channels": 8,
-      "price": 15.99
+      "dimensionsMm": [11, 3, 11],
+      "price": 15.99,
+      "sourceUrl": "https://www.getfpv.com/jhemcu-expresslrs-5v-2-4ghz-lr-micro-receiver-ep24s.html",
+      "priceSourceUrl": "https://www.getfpv.com/jhemcu-expresslrs-5v-2-4ghz-lr-micro-receiver-ep24s.html",
+      "dataStatus": "verified_specs_estimated_current",
+      "estimatedFields": ["currentDraw", "channels", "mounting_point"]
     },
     {
       "id": "rx-radiomaster-rp3-h",
