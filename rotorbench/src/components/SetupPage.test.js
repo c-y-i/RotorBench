@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import { DEFAULT_RADIO_CONFIG } from "../data/radioProfiles";
 import SetupPage from "./SetupPage";
+import { getA11yViolations } from "../test/a11y";
 
 jest.mock("./FlightControllerSetup", () => function MockFlightControllerSetup(props = {}) {
   const { selectedFlightController, buildMotorCount, value } = props;
@@ -111,8 +112,8 @@ beforeEach(() => {
   mockCaptureStop.mockReset().mockResolvedValue(true);
 });
 
-test("renders the hardware planning page and switches to radio setup", () => {
-  renderSetup();
+test("renders the hardware planning page and switches to radio setup", async () => {
+  const { container } = renderSetup();
   expect(screen.getByRole("heading", { name: "Hardware setup" })).toBeInTheDocument();
   expect(screen.getByText(/Flight controller panel/)).toBeInTheDocument();
   expect(screen.getByText(/Bench runbook: 4 stages · plan UID: none/)).toBeInTheDocument();
@@ -129,6 +130,7 @@ test("renders the hardware planning page and switches to radio setup", () => {
     "aria-selected",
     "true",
   );
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("copies a sanitized human-readable hardware plan summary", async () => {

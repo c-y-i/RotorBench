@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ComparePage from "./ComparePage";
+import { getA11yViolations } from "../test/a11y";
 
 const build = {
   id: "build-compare",
@@ -20,8 +21,8 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-test("comparison surfaces fit, evidence, and hardware-plan state", () => {
-  render(
+test("comparison surfaces fit, evidence, and hardware-plan state", async () => {
+  const { container } = render(
     <MemoryRouter
       initialEntries={[
         {
@@ -50,6 +51,7 @@ test("comparison surfaces fit, evidence, and hardware-plan state", () => {
   expect(screen.getByText("No catalog differences")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Changed only" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Export comparison" })).toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("marks changed rows and can show only differences", () => {

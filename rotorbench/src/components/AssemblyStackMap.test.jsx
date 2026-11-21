@@ -1,6 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import AssemblyStackMap from "./AssemblyStackMap";
+import { getA11yViolations } from "../test/a11y";
 
 const frame = {
   id: "frame-test",
@@ -48,7 +49,7 @@ const propeller = {
 };
 
 test("renders the full propulsion, electronics, and battery height order", () => {
-  render(
+  const { container } = render(
     <AssemblyStackMap
       frame={frame}
       esc={esc}
@@ -73,6 +74,23 @@ test("renders the full propulsion, electronics, and battery height order", () =>
       expect.stringContaining("Frame"),
     ]));
   expect(screen.getByText(/frame stack height is estimated/i)).toBeInTheDocument();
+});
+
+test("has no structural WCAG A or AA violations", async () => {
+  const { container } = render(
+    <AssemblyStackMap
+      frame={frame}
+      esc={esc}
+      flightController={flightController}
+      receiver={receiver}
+      battery={battery}
+      motor={motor}
+      propeller={propeller}
+      onToggleComponent={jest.fn()}
+    />,
+  );
+
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("marks measured dimensions and does not render without a frame", () => {

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import HomePage from "./HomePage";
+import { getA11yViolations } from "../test/a11y";
 
 jest.mock("./BabylonViewer", () => () => <div data-testid="home-assembly-viewer" />);
 jest.mock("./TwoDViewer", () => () => <div data-testid="home-two-d-viewer" />);
@@ -32,7 +33,7 @@ afterEach(() => {
 });
 
 test("offers all complete source-backed platforms from an empty overview", async () => {
-  renderHome();
+  const { container } = renderHome();
 
   expect(await screen.findByTestId("home-assembly-viewer")).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Start with a complete platform" })).toBeInTheDocument();
@@ -55,6 +56,7 @@ test("offers all complete source-backed platforms from an empty overview", async
     name: "Open 2.5-inch AOS Cine25 source build",
   })).getByText("Thrust data unavailable")).toBeInTheDocument();
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("starter platform actions open a preassembled build draft", async () => {
