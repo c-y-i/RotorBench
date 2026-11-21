@@ -16,6 +16,47 @@
   padding-bottom: 80px; /* Space for bottom buttons */
 }
 
+.analysis-build-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 14px 0;
+  padding: 11px 12px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.analysis-build-note > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--brand);
+}
+
+.analysis-build-note > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.analysis-build-note strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.analysis-build-note p {
+  max-width: 75ch;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Loading */
 .loading-container {
   display: flex;

@@ -25,6 +25,7 @@ jest.mock("recharts", () => {
 const build = {
   id: "analysis-build",
   name: "3.5-inch bench quad",
+  note: "Verify receiver UART direction before the bench run.",
   componentIds: {
     frameId: "frame-aos-35-v51",
     motorId: "motor-tmotor-f1404-3800kv",
@@ -118,6 +119,8 @@ test("renders the completed analysis and opens the browser print dialog", async 
   const printButton = await screen.findByRole("button", { name: /print report/i });
   const anchorClick = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
   expect(screen.getByText(/3.5-inch bench quad/)).toBeInTheDocument();
+  expect(screen.getByRole("note", { name: "Build note" }))
+    .toHaveTextContent("Verify receiver UART direction before the bench run.");
   expect(screen.getByText("1 analysis notice")).toBeInTheDocument();
   expect(screen.getByText("Estimated thrust curve")).toBeInTheDocument();
   const hardwareSection = screen.getByRole("region", {

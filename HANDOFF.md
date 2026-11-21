@@ -34,7 +34,7 @@ Setup’s `Edit build` action carries that same draft object back to Build, pres
 
 Build selections are also written to `rotorbench:build-draft:v1` and recovered after refresh or ordinary navigation, with a visible restoration notice. Route build state and starter-platform deep links remain authoritative. New Build actions use `/build?new=1`, which ignores the stored draft, consumes the query, and starts clean. The reset also works when New Build is clicked while already on the Build route: it creates a fresh identity and clears current selections rather than only changing the URL. Saving a build clears the recovered draft.
 
-Build provenance now includes a 600-character build-local note field. Notes are recovered with drafts, included in save and Analysis handoffs, displayed on Saved cards, and carried in `rotorbench.build-sheet.v1` and `rotorbench.analysis-report.v1` exports. The field is explicitly described as build context, not hardware verification.
+Build provenance now includes a 600-character build-local note field. Notes are recovered with drafts, included in save and Analysis handoffs, displayed on Saved cards, rendered as a note strip on Analysis, and carried in `rotorbench.build-sheet.v1` and `rotorbench.analysis-report.v1` exports. The field is explicitly described as build context, not hardware verification.
 
 The provenance panel can copy a concise `rotorbench.build-briefing.v1` plain-text handoff. It summarizes parts, the build note, placement confidence counts, measured fields, power path, saved hardware-plan status, receiver wiring state, radio host transport, and an explicit planning-only boundary. It does not include binding phrases, direct UIDs, raw evidence, or hardware-readiness claims.
 
@@ -526,6 +526,8 @@ The same saved documented route was rendered on Build as `Pins documented` plus 
 The Build `Fit overlay` was rendered with the complete 3.5-inch source preset. Four propeller sweep envelopes and motor-interface outlines appear in-scene, the legend reports all three interface states, and the 44px toggle remains operable at 390 and 1440 widths. There is no horizontal overflow and axe reports zero WCAG A/AA violations at both sizes.
 
 The Build notes editor was rendered with an 80-character bench note at both widths. The textarea remained 86px high, the character/verification boundary stayed visible, and the widened provenance action row wrapped its caption cleanly below both export buttons. There is no horizontal overflow and axe reports zero WCAG A/AA violations.
+
+The completed Analysis page was rendered with the same note in a labeled `note` region between the report actions and performance summary. The note remains readable at both widths and axe reports zero WCAG A/AA violations.
 
 The three provenance actions (`Copy briefing`, `Export build sheet`, `Export BOM CSV`) were rendered at both widths. Every action remained 44px high, the narrow desktop rail wrapped the third action and verification caption cleanly, and axe reports zero WCAG A/AA violations.
 

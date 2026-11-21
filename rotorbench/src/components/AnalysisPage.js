@@ -41,6 +41,7 @@ import {
   DollarSign,
   Download,
   Fan,
+  FileText,
   Flag,
   Gauge,
   Package,
@@ -335,6 +336,16 @@ export default function AnalysisPage() {
           </div>
         )}
       </div>
+
+      {build.note && (
+        <aside className="analysis-build-note" role="note" aria-label="Build note">
+          <FileText size={17} aria-hidden="true" />
+          <span>
+            <strong>Build note</strong>
+            <p>{build.note}</p>
+          </span>
+        </aside>
+      )}
 
       {/* Loading State */}
       {loading && (
