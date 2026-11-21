@@ -35,6 +35,16 @@ export function createCombinedHardwarePlan({
   controlRoles = null,
   generatedAt = new Date().toISOString(),
 }) {
+  const receiverRecord = receiver
+    ? {
+        id: receiver.id || null,
+        name: receiver.name || null,
+        protocol: receiver.protocol || null,
+        frequencyBands: Array.isArray(receiver.frequencyBands)
+          ? [...receiver.frequencyBands]
+          : [],
+      }
+    : null;
   return {
     schema: "rotorbench.hardware-plan.v1",
     generatedAt,
@@ -47,6 +57,7 @@ export function createCombinedHardwarePlan({
           componentIds: build.componentIds,
         }
       : null,
+    receiver: receiverRecord,
     flightController: {
       config: flightController.config,
       profile: flightController.profile,
@@ -61,7 +72,11 @@ export function createCombinedHardwarePlan({
         flightController.profile,
       ),
     },
-    radio: buildRadioSummary(radio, { channelLimit, controlRoles }),
+    radio: buildRadioSummary(radio, {
+      channelLimit,
+      controlRoles,
+      receiver,
+    }),
   };
 }
 
@@ -82,6 +97,13 @@ export function parseCombinedHardwarePlanJson(text) {
   const radioSection = plan.radio;
   if (!radioSection?.target?.id || !radioSection?.configuration) {
     throw new Error("The radio section is missing target or configuration data.");
+  }
+  if (
+    plan.receiver?.id &&
+    radioSection.configuration.selectedReceiverId &&
+    plan.receiver.id !== radioSection.configuration.selectedReceiverId
+  ) {
+    throw new Error("The hardware plan receiver identity is inconsistent.");
   }
   const target = RADIO_TARGETS.find(
     (candidate) => candidate.id === radioSection.target.id,
@@ -218,6 +240,7 @@ export function parseCombinedHardwarePlanJson(text) {
   });
   return {
     buildId: plan.build?.id || null,
+    receiver: plan.receiver || null,
     fcPlan,
     radioPlan,
   };

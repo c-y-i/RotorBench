@@ -142,6 +142,8 @@ These pages produce a local plan. They do not connect to, flash, calibrate, arm,
 
 Combined FC/radio plans can be exported and imported as `rotorbench.hardware-plan.v1`. Import validates schema, target versions, role, target support, channel-map shape, power, packet rate, telemetry ratio, switch mode, link mode, and dynamic-power enums; merges partial plans over safe defaults; rejects plans for a different selected FC/receiver; restores current build IDs when an older partial plan omitted them; and never imports binding material or hardware state.
 
+Portable hardware plans also include a sanitized selected-receiver record and the receiver-frequency compatibility result in the radio summary. Import rejects a payload whose embedded receiver ID disagrees with the selected radio receiver, so an exported XR4 dual-band plan cannot silently be reassigned to a different receiver identity.
+
 The Setup toolbar can copy a concise `rotorbench.hardware-plan-briefing.v1` text handoff. It summarizes the selected build, FC and receiver, flight-controller settings, radio target and RF plan, mapped channels, and local review items. Binding phrases and direct UIDs are excluded, and the text explicitly states that no connection, write, flash, calibration, arm action, or RF verification occurred.
 
 Standalone FC-plan exports and combined hardware-plan exports include the derived receiver `wiring` checklist with its documented/unverified state, UART, pins, baud, ordered continuity steps, and explicit `wiringVerified: false` boundary. The checklist is regenerated from the imported configuration rather than trusted as hardware evidence.

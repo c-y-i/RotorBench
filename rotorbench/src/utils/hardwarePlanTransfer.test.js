@@ -94,6 +94,48 @@ test("combined hardware plans carry the documented receiver wiring checklist", (
   ]));
 });
 
+test("combined hardware plans retain receiver identity and RF-band compatibility", () => {
+  const config = createDefaultFlightControllerConfig();
+  const receiver = {
+    id: "rx-xr4",
+    name: "RadioMaster XR4 Gemini Xrossband",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+  };
+  const exported = createCombinedHardwarePlan({
+    build: { id: "build-xr4", name: "XR4 build", componentIds: {} },
+    flightController: {
+      config,
+      profile: getBoardProfile(config.profileId),
+      issues: [],
+    },
+    radio: {
+      ...DEFAULT_RADIO_CONFIG,
+      selectedReceiverId: receiver.id,
+    },
+    receiver,
+    generatedAt: "2026-05-01T00:00:00.000Z",
+  });
+
+  expect(exported.receiver).toEqual({
+    id: "rx-xr4",
+    name: "RadioMaster XR4 Gemini Xrossband",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+  });
+  expect(exported.radio.configuration.receiverBandCompatibility).toMatchObject({
+    status: "compatible",
+    sharedBands: ["2.4 ghz"],
+  });
+  const imported = parseCombinedHardwarePlanJson(JSON.stringify(exported));
+  expect(imported.receiver.id).toBe("rx-xr4");
+
+  const inconsistent = JSON.parse(JSON.stringify(exported));
+  inconsistent.radio.configuration.selectedReceiverId = "rx-other";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(inconsistent)))
+    .toThrow(/receiver identity is inconsistent/i);
+});
+
 test("unsupported or incomplete hardware plans fail closed", () => {
   expect(() => parseCombinedHardwarePlanJson("{}")).toThrow(/not a RotorBench/i);
   expect(() => parseCombinedHardwarePlanJson(JSON.stringify({
