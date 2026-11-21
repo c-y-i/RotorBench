@@ -267,7 +267,7 @@ test("the model manifest binds legacy catalog IDs without prefix guessing", () =
   ));
 
   expect(manifest.schema).toBe("rotorbench.model-manifest.v1");
-  expect(bound).toHaveLength(24);
+  expect(bound).toHaveLength(23);
   bound.forEach(([id, entry]) => {
     expect(entry.contractStatus).toBe("legacy-unverified");
     expect(componentsData.motors

@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 
+import trimesh
 from pydantic import ValidationError
 
 from models.components import DroneBuildConfig
@@ -75,7 +76,7 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(manifest["schema"], "rotorbench.model-manifest.v1")
         assets = manifest["assets"]
         bound_count = sum(len(entries) for entries in assets.values())
-        self.assertEqual(bound_count, 24)
+        self.assertEqual(bound_count, 23)
 
         assets_root = Path(__file__).resolve().parents[1] / "assets"
         for category, entries in assets.items():
@@ -92,9 +93,24 @@ class CatalogContractTests(unittest.TestCase):
                     else [entry["glb"]]
                 )
                 for filename in filenames:
+                    path = assets_root / category / filename
                     self.assertTrue(
-                        (assets_root / category / filename).is_file(),
+                        path.is_file(),
                         f"Missing model asset: {category}/{filename}",
+                    )
+                    scene = trimesh.load(path, force="scene")
+                    self.assertTrue(
+                        scene.geometry,
+                        f"Model has no geometry: {category}/{filename}",
+                    )
+                    self.assertIsNotNone(
+                        scene.bounds,
+                        f"Model has no usable bounds: {category}/{filename}",
+                    )
+                    extents = scene.bounds[1] - scene.bounds[0]
+                    self.assertTrue(
+                        all(float(value) > 0 for value in extents),
+                        f"Model has invalid extents: {category}/{filename}",
                     )
 
     def test_rp2_keeps_published_and_estimated_fields_separate(self):

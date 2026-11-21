@@ -21,7 +21,6 @@
       },
       "flight_controllers": {
         "fc-iflight-borg-5s-rx": { "glb": "fc-iflight-borg-5s-rx.glb", "contractStatus": "legacy-unverified" },
-        "fc-speedybee-f405-v3": { "glb": "fc-speedybee-f405-v3.glb", "contractStatus": "legacy-unverified" },
         "fc-holybro-kakute-f7": { "glb": "fc-holybro-kakute-f7.glb", "contractStatus": "legacy-unverified" },
         "fc-mamba-f722": { "glb": "fc-mamba-f722.glb", "contractStatus": "legacy-unverified" }
       },
