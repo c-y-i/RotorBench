@@ -52,6 +52,9 @@ function LocationProbe() {
           location.state?.build?.componentIds?.motorId
         ]?.propShaftMm || ""}
       </output>
+      <output data-testid="location-build-note">
+        {location.state?.build?.note || ""}
+      </output>
     </>
   );
 }
@@ -363,6 +366,51 @@ test("a measured battery deck produces a build-local footprint check", async () 
   )).toBeInTheDocument();
 });
 
+test("build notes persist through the draft and analysis handoff", async () => {
+  const noteBuild = {
+    id: "note-build",
+    name: "Note build",
+    note: "Initial bench note",
+    componentIds: {
+      frameId: "frame-aos-55-v2",
+      motorId: "motor-tmotor-f60-pro-v-1750kv",
+      propellerId: "prop-gemfan-hurricane-51466-v2",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-speedybee-f405-v4",
+      batteryId: "battery-tattu-rline-6s-1300-120c",
+      receiverId: "rx-radiomaster-rp3-h",
+    },
+  };
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build: noteBuild } }]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  fireEvent.click(screen.getByText("Build provenance"));
+  const note = screen.getByLabelText("Build notes");
+  expect(note).toHaveValue("Initial bench note");
+  fireEvent.change(note, {
+    target: { value: "Check prop direction and receiver UART before the bench run." },
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(JSON.parse(localStorage.getItem("rotorbench:build-draft:v1")).note)
+    .toBe("Check prop direction and receiver UART before the bench run.");
+  fireEvent.click(screen.getByRole("button", { name: "Analyze" }));
+  expect(screen.getByTestId("location-build-note")).toHaveTextContent(
+    "Check prop direction and receiver UART before the bench run.",
+  );
+});
+
 test("the power path surfaces source-backed manual termination", async () => {
   const solderBuild = {
     id: "solder-power-build",
@@ -463,6 +511,7 @@ test("restores an automatically saved unsaved build draft", async () => {
     version: 1,
     id: "recovered-draft",
     name: "Recovered draft",
+    note: "Recovered note",
     componentIds: {
       frameId: "frame-aos-35-v51",
       motorId: "motor-tmotor-f1404-3800kv",
@@ -493,6 +542,8 @@ test("restores an automatically saved unsaved build draft", async () => {
   expect(screen.getByRole("button", { name: "Save and go home" })).toBeEnabled();
   expect(screen.getByText("Recovered draft restored from this browser."))
     .toHaveAttribute("role", "status");
+  fireEvent.click(screen.getByText("Build provenance"));
+  expect(screen.getByLabelText("Build notes")).toHaveValue("Recovered note");
 });
 
 test("new build requests ignore and consume an existing draft", async () => {

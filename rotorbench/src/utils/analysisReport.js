@@ -56,6 +56,7 @@ export function createAnalysisReport(
     build: {
       id: build.id,
       name: build.name || "Untitled build",
+      note: String(build.note || "").trim().slice(0, 600),
       description: build.description || "",
       componentIds: { ...build.componentIds },
       geometryOverrides: build.geometryOverrides

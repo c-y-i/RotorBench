@@ -1540,8 +1540,54 @@
   font-size: 11px;
 }
 
+.build-note-field {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+}
+
+.build-note-field > label {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.build-note-field textarea {
+  width: 100%;
+  min-height: 86px;
+  padding: 9px 10px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "Archivo", "Segoe UI", sans-serif;
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.build-note-field textarea:focus-visible {
+  border-color: var(--brand);
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
+.build-note-field textarea::placeholder {
+  color: var(--ink-soft);
+}
+
+.build-note-field > small {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
 .build-evidence-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -1574,6 +1620,7 @@
 }
 
 .build-evidence-actions span {
+  flex: 1 0 100%;
   color: var(--ink-faint);
   font-size: 9px;
   line-height: 1.4;

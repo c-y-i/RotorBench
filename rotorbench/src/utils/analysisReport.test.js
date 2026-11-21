@@ -7,6 +7,7 @@ import {
 const build = {
   id: "build-analysis-export",
   name: "Bench quad",
+  note: "Review receiver wiring before power.",
   description: "Export test",
   componentIds: {
     frameId: "frame-aos-35-v51",
@@ -107,6 +108,7 @@ test("creates a versioned analysis report without mutating the build", () => {
     build: {
       id: "build-analysis-export",
       name: "Bench quad",
+      note: "Review receiver wiring before power.",
       componentIds: build.componentIds,
       geometryOverrides: build.geometryOverrides,
     },

@@ -37,6 +37,7 @@ test("build sheets include source, estimate, fallback, and fit state", () => {
     build: {
       id: "build-a",
       name: "AOS test build",
+      note: "Inspect the battery lead before power.",
       componentIds: { frameId: frame.id, escId: esc.id, batteryId: battery.id },
     },
     assemblySpec: { frame, esc, battery },
@@ -49,6 +50,9 @@ test("build sheets include source, estimate, fallback, and fit state", () => {
     status: "draft",
     analysisIncluded: false,
     hardwareVerified: false,
+    build: {
+      note: "Inspect the battery lead before power.",
+    },
     physicalFit: {
       status: "verified",
       checks: expect.arrayContaining([
@@ -232,6 +236,7 @@ test("imported build sheets validate schema and catalog IDs", () => {
     build: {
       id: "old-id",
       name: "Imported AOS",
+      note: "Imported bench note",
       componentIds: {
         frameId: "frame-aos-55-v2",
         motorId: "motor-emax-eco-ii-2207-1900kv",
@@ -250,6 +255,7 @@ test("imported build sheets validate schema and catalog IDs", () => {
   });
   expect(imported).toMatchObject({
     name: "Imported AOS",
+    note: "Imported bench note",
     componentIds: {
       frameId: "frame-aos-55-v2",
       motorId: "motor-emax-eco-ii-2207-1900kv",

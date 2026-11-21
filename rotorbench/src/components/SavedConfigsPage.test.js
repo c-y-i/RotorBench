@@ -6,6 +6,7 @@ import { createBenchEvidenceScope } from "../utils/benchEvidenceAttachment";
 const offlineBuild = {
   id: "offline-build",
   name: "Offline build",
+  note: "Inspect the motor direction map before assembly.",
   componentIds: {
     frameId: "frame-5inch-220mm",
     motorId: "motor-2207-1750kv",
@@ -38,6 +39,8 @@ test("offline builds can be renamed and duplicated with their saved plan and evi
   await screen.findByRole("heading", { name: "Offline build" });
   expect(screen.getByText("Hardware partial")).toBeInTheDocument();
   expect(screen.getByText("Fit review")).toBeInTheDocument();
+  expect(screen.getByText("Inspect the motor direction map before assembly."))
+    .toBeInTheDocument();
   expect(screen.getByText("0/4 sourced")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Rename" }));

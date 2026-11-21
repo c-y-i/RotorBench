@@ -156,6 +156,10 @@ export default function BuildPage() {
     () => initialBuild?.name || requestedPreset?.name || currentBuild?.name
       || storedDraft?.name || "Custom Build",
   );
+  const [buildNote, setBuildNote] = useState(() => (
+    initialBuild?.note
+    ?? (requestedPreset ? "" : currentBuild?.note ?? storedDraft?.note ?? "")
+  ));
   const [geometryOverrides, setGeometryOverrides] = useState(() => (
     normalizeGeometryOverrides(
       initialBuild?.geometryOverrides
@@ -195,6 +199,7 @@ export default function BuildPage() {
       setSelectedFC(sourceBuild.componentIds.flightControllerId || "");
       setSelectedBattery(sourceBuild.componentIds.batteryId || "");
       setSelectedReceiver(sourceBuild.componentIds.receiverId || "");
+      setBuildNote(sourceBuild.note || "");
       setGeometryOverrides(normalizeGeometryOverrides(sourceBuild.geometryOverrides));
     }
     if (requestedPreset) {
@@ -220,6 +225,7 @@ export default function BuildPage() {
     updateBuild(null);
     setWorkingBuildId(createWorkingBuildId());
     setWorkingBuildName("Custom Build");
+    setBuildNote("");
     setSelectedFrame("");
     setSelectedMotor("");
     setSelectedPropeller("");
@@ -246,7 +252,7 @@ export default function BuildPage() {
       id: currentBuild?.id || workingBuildId,
       userId,
       name: workingBuildName,
-      note: currentBuild?.note || "",
+      note: buildNote,
       componentIds: {
         frameId: selectedFrame,
         motorId: selectedMotor,
@@ -295,6 +301,7 @@ export default function BuildPage() {
     const build = {
       id: currentBuild?.id || workingBuildId,
       name: workingBuildName,
+      note: buildNote,
       description: currentBuild?.description || "User created build",
       componentIds: {
         frameId: selectedFrame || null,
@@ -415,6 +422,7 @@ export default function BuildPage() {
       version: 1,
       id: workingBuildId,
       name: workingBuildName,
+      note: buildNote,
       componentIds: {
         frameId: selectedFrame || null,
         motorId: selectedMotor || null,
@@ -437,6 +445,7 @@ export default function BuildPage() {
     selectedReceiver,
     workingBuildId,
     workingBuildName,
+    buildNote,
     geometryOverrides,
   ]);
 
@@ -883,6 +892,7 @@ export default function BuildPage() {
     const exportedBuild = {
       id: workingBuildId,
       name: workingBuildName,
+      note: buildNote,
       componentIds: {
         frameId: selectedFrame || null,
         motorId: selectedMotor || null,
@@ -960,6 +970,7 @@ export default function BuildPage() {
     setSelectedReceiver(preset.componentIds.receiverId);
     setClearedComponents([]);
     setCameraView("orbit");
+    setBuildNote("");
     setGeometryOverrides(normalizeGeometryOverrides(null));
     setMessage({ type: "info", text: `${preset.name} loaded. Review before analysis.` });
     setTimeout(() => setMessage({ type: "", text: "" }), 3000);
@@ -971,6 +982,7 @@ export default function BuildPage() {
         build: {
           id: workingBuildId,
           name: workingBuildName,
+          note: buildNote,
           componentIds: {
             frameId: selectedFrame || null,
             motorId: selectedMotor || null,
@@ -1683,6 +1695,21 @@ export default function BuildPage() {
               </small>
             </span>
           </summary>
+          <div className="build-note-field">
+            <label htmlFor="build-notes">Build notes</label>
+            <textarea
+              id="build-notes"
+              aria-describedby="build-notes-help"
+              rows="3"
+              maxLength="600"
+              value={buildNote}
+              placeholder="Record substitutions, inspection steps, or questions for this build."
+              onChange={(event) => setBuildNote(event.target.value)}
+            />
+            <small id="build-notes-help">
+              {buildNote.length}/600 · Build-local context; included in saves and exports, not hardware verification.
+            </small>
+          </div>
           <div className="build-evidence-actions">
             <button type="button" onClick={exportBuildSheet}>
               <Download size={15} aria-hidden="true" />
@@ -1807,6 +1834,7 @@ export default function BuildPage() {
             setCameraView("orbit");
             setExplodedAssembly(false);
             setShowFitOverlay(false);
+            setBuildNote("");
             setGeometryOverrides(normalizeGeometryOverrides(null));
             setSelectedPresetId("");
             // Clear all model URL states immediately so viewer sees empty set

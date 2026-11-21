@@ -129,6 +129,7 @@ export function createBuildSheet({
     build: {
       id: build.id || null,
       name: build.name || "Untitled build",
+      note: String(build.note || "").trim().slice(0, 600),
       componentIds: build.componentIds || {},
       geometryOverrides: build.geometryOverrides
         ? normalizeGeometryOverrides(build.geometryOverrides)
@@ -216,6 +217,7 @@ export function parseBuildSheetJson(text, {
 
   return {
     name: String(sheet.build.name || "Imported build").trim() || "Imported build",
+    note: String(sheet.build.note || "").trim().slice(0, 600),
     componentIds,
     geometryOverrides: normalizeGeometryOverrides(sheet.build.geometryOverrides),
     createdAt: now,
