@@ -37,6 +37,7 @@ import {
   getRadioHostBay,
   getRadioPowerLevels,
   getRadioPowerSpec,
+  getRadioReceiverBandCompatibility,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioTarget,
@@ -138,6 +139,10 @@ export default function RadioLinkSetup({
   const powerLevels = getRadioPowerLevels(target.id);
   const powerSpec = getRadioPowerSpec(target.id);
   const regulatoryOptions = getRadioRegulatoryOptions(target.id);
+  const receiverBandCompatibility = getRadioReceiverBandCompatibility(
+    target.id,
+    selectedReceiver,
+  );
   const selectedRegulatoryLimit = getRadioRegulatoryLimit(
     target.id,
     config.regulatoryRegion,
@@ -480,6 +485,25 @@ export default function RadioLinkSetup({
               <span><Cable size={14} aria-hidden="true" />{target.serial.frame}</span>
               <span><Usb size={14} aria-hidden="true" />{serialBaud ? `${serialBaud} baud logical` : "Serial rate not established"}</span>
             </div>
+            {selectedReceiver?.id && (
+              <div className={`radio-receiver-band is-${receiverBandCompatibility.status}`}>
+                <Radio size={15} aria-hidden="true" />
+                <span>
+                  <small>Receiver RF bands</small>
+                  <strong>
+                    {receiverBandCompatibility.receiverBandLabels.join(" / ")
+                      || "Not catalogued"}
+                  </strong>
+                </span>
+                <em>
+                  {receiverBandCompatibility.status === "compatible"
+                    ? `Shared ${receiverBandCompatibility.sharedBandLabels.join(" / ")}`
+                    : receiverBandCompatibility.status === "conflict"
+                      ? "No shared band"
+                      : "Verify bands"}
+                </em>
+              </div>
+            )}
             <p className="radio-endpoint-note">
               {config.role === "tx"
                 ? "Transmitter endpoint: host-side USB traffic is not proof that the aircraft received it."

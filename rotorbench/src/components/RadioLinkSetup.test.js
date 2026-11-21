@@ -199,11 +199,36 @@ test("an overlong binding phrase is blocked before local storage", () => {
 test("the selected build receiver is carried into the plan summary", () => {
   render(
     <RadioLinkSetup
-      selectedReceiver={{ id: "rx-elrs", name: "ELRS 2.4G RX", protocol: "CRSF" }}
+      selectedReceiver={{
+        id: "rx-xr4",
+        name: "RadioMaster XR4 Gemini Xrossband",
+        protocol: "CRSF",
+        frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+      }}
     />,
   );
-  expect(screen.getAllByText("ELRS 2.4G RX").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("RadioMaster XR4 Gemini Xrossband").length)
+    .toBeGreaterThan(0);
+  expect(screen.getByText("Receiver RF bands")).toBeInTheDocument();
+  expect(screen.getByText("2.4 GHz / Sub-G 900 MHz")).toBeInTheDocument();
+  expect(screen.getByText("Shared 2.4 GHz")).toBeInTheDocument();
   expect(screen.getByText(/Settings match; RF is still unverified|Profile is not a hardware pass/))
+    .toBeInTheDocument();
+});
+
+test("a receiver with no shared transmitter band is called out in Setup", () => {
+  render(
+    <RadioLinkSetup
+      selectedReceiver={{
+        id: "rx-900",
+        name: "900 MHz receiver",
+        protocol: "CRSF",
+        frequencyBands: ["Sub-G 900 MHz"],
+      }}
+    />,
+  );
+  expect(screen.getByText("No shared band")).toBeInTheDocument();
+  expect(screen.getByText(/does not share a documented RF band/i))
     .toBeInTheDocument();
 });
 

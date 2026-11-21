@@ -391,6 +391,80 @@
   color: var(--ink);
 }
 
+.radio-receiver-band {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 9px 10px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.radio-receiver-band > svg {
+  color: var(--brand);
+}
+
+.radio-receiver-band > span {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.radio-receiver-band small {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.radio-receiver-band strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.radio-receiver-band em {
+  padding: 3px 6px;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.radio-receiver-band.is-compatible {
+  background: var(--brand-soft);
+  border-color: #b7d8d0;
+}
+
+.radio-receiver-band.is-compatible em {
+  color: var(--brand-strong);
+  background: #eef8f5;
+}
+
+.radio-receiver-band.is-conflict {
+  color: #6e3708;
+  background: var(--accent-soft);
+  border-color: #e9c9ac;
+}
+
+.radio-receiver-band.is-conflict em {
+  color: var(--warn);
+  background: #fff8ed;
+}
+
+.radio-receiver-band.is-unverified em {
+  color: var(--warn);
+}
+
 .radio-source-note {
   margin: 12px 0 0;
   color: var(--ink-faint);
@@ -941,6 +1015,15 @@
 
   .radio-role-switch {
     width: 100%;
+  }
+
+  .radio-receiver-band {
+    grid-template-columns: 16px minmax(0, 1fr);
+  }
+
+  .radio-receiver-band em {
+    grid-column: 2;
+    width: max-content;
   }
 
   .radio-role-legend,
