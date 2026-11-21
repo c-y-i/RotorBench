@@ -140,12 +140,19 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
     "true",
   );
   expect(viewer).toHaveAttribute("data-exploded", "true");
+  expect(screen.getByTestId("location-search")).toHaveTextContent("?exploded=1");
   expect(screen.getByText("Exploded inspection")).toBeInTheDocument();
+  expect(screen.getByText("Source-backed assembly notes")).toBeInTheDocument();
+  expect(screen.getByText("1 catalog GLB")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Source-backed assembly notes"));
+  expect(screen.getByRole("listitem", { name: "Frame assembly note" }))
+    .toHaveTextContent("4 motor mounts");
   expect(screen.getAllByText(/catalog geometry/i).length).toBeGreaterThan(0);
   expect(screen.getByText(/not a product-exact fit, wiring, or hardware check/i))
     .toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Assembled" }));
   expect(viewer).toHaveAttribute("data-exploded", "false");
+  expect(screen.getByTestId("location-search")).toBeEmptyDOMElement();
 
   fireEvent.change(screen.getByLabelText("Starter platform"), {
     target: { value: "source-35" },

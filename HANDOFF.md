@@ -441,7 +441,9 @@ The camera rotates around the whole assembly. It must not rotate individual comp
 
 The Build page exposes Orbit, 3/4, Top, Side, and Front inspection views. Fixed views stop automatic rotation, and Orbit resumes it. Auto-rotation is read through a ref so changing modes does not rebuild the Babylon scene or reload models.
 
-An `Exploded` inspection toggle separates propellers, ESC, FC, receiver, and battery upward along the shared Y axis while leaving frame and motor mount coordinates fixed. Toggling it off restores the exact assembled pose. The camera refits for the expanded bounds, and resetting the build returns the viewer to assembled mode.
+An `Exploded` inspection toggle separates propellers, ESC, FC, receiver, and battery upward along the shared Y axis while leaving frame and motor mount coordinates fixed. The state is reflected as `?exploded=1`, so a reviewer can reopen the same inspection view directly. Toggling it off restores the exact assembled pose. The camera refits for the expanded bounds, and resetting the build returns the viewer to assembled mode.
+
+Exploded inspection also exposes collapsible source-backed assembly notes for every selected part. Each note names the viewer anchor used by that component, shows only catalogued interface and geometry facts, distinguishes local measurements, source-plus-estimate data, source specifications, and catalog-only entries, labels catalog GLBs versus generated fallbacks, and links to the product source when one exists. The panel explicitly stops short of claiming wiring, physical-fit, or hardware verification.
 
 Both the 3D and orthographic/2D viewers check for a usable WebGL context before constructing Babylon. Browsers with WebGL disabled or unavailable receive an explicit preview-unavailable message instead of an uncaught runtime error.
 

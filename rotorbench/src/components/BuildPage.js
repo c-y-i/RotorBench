@@ -4,6 +4,7 @@ import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
 import componentsData from "../data/components.json";
 import PartPicker from "./PartPicker";
+import AssemblyNotes from "./AssemblyNotes";
 import AssemblyStackMap from "./AssemblyStackMap";
 import AssemblyInterfaceMap from "./AssemblyInterfaceMap";
 import MeasuredGeometryPanel from "./MeasuredGeometryPanel";
@@ -270,7 +271,11 @@ export default function BuildPage() {
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     }
     if (requestedPresetId || requestedShareToken || startNewDraft) {
-      setSearchParams({}, { replace: true });
+      const nextSearchParams = new URLSearchParams();
+      if (searchParams.get("exploded") === "1") {
+        nextSearchParams.set("exploded", "1");
+      }
+      setSearchParams(nextSearchParams, { replace: true });
     }
     // Mount-only initialization restores the active persisted build once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -404,10 +409,27 @@ export default function BuildPage() {
   const [showDebugStatus, setShowDebugStatus] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
   const [cameraView, setCameraView] = useState("orbit");
-  const [explodedAssembly, setExplodedAssembly] = useState(false);
+  const [explodedAssembly, setExplodedAssembly] = useState(
+    () => searchParams.get("exploded") === "1",
+  );
   const [showFitOverlay, setShowFitOverlay] = useState(false);
   const [measurementTarget, setMeasurementTarget] = useState(null);
   const [selectedPresetId, setSelectedPresetId] = useState(requestedPreset?.id || "");
+
+  const setExplodedInspection = (enabled) => {
+    setExplodedAssembly(enabled);
+    const nextSearchParams = new URLSearchParams(searchParams);
+    if (enabled) {
+      nextSearchParams.set("exploded", "1");
+    } else {
+      nextSearchParams.delete("exploded");
+    }
+    setSearchParams(nextSearchParams, { replace: true });
+  };
+
+  useEffect(() => {
+    setExplodedAssembly(searchParams.get("exploded") === "1");
+  }, [searchParams]);
 
   // Ensure the viewer starts clean (no fallback sample) every time BuildPage mounts
   useEffect(() => {
@@ -1250,7 +1272,7 @@ export default function BuildPage() {
                   type="button"
                   className={`camera-preset-button ${explodedAssembly ? "is-active" : ""}`}
                   aria-pressed={explodedAssembly}
-                  onClick={() => setExplodedAssembly((current) => !current)}
+                  onClick={() => setExplodedInspection(!explodedAssembly)}
                 >
                   <Layers size={13} aria-hidden="true" />
                   {explodedAssembly ? "Assembled" : "Exploded"}
@@ -1363,35 +1385,46 @@ export default function BuildPage() {
             )}
           </div>
           {explodedAssembly && selectedFrame && (
-            <div
-              className={`viewer-exploded-note ${
-                buildEvidence.geometryFallbackCount ? "has-fallback" : ""
-              }`}
-              role="status"
-            >
-              <Layers size={16} aria-hidden="true" />
-              <span>
-                <strong>Exploded inspection</strong>
-                <small>
-                  {buildEvidence.selectedCount} selected part{buildEvidence.selectedCount === 1 ? "" : "s"} ·{" "}
-                  {Math.max(
-                    0,
-                    buildEvidence.selectedCount - buildEvidence.geometryFallbackCount,
-                  )} catalog geometry ·{" "}
-                  {buildEvidence.geometryFallbackCount} generated fallback
-                  {buildEvidence.geometryFallbackCount === 1 ? "" : "s"}. Separation
-                  clarifies stack and mount relationships; it is not a product-exact
-                  fit, wiring, or hardware check.
-                </small>
-              </span>
-              <em>
-                {buildEvidence.geometryFallbackCount === 0
-                  ? "Catalog geometry"
-                  : buildEvidence.geometryFallbackCount === buildEvidence.selectedCount
-                    ? "Fallback geometry"
-                    : "Mixed geometry"}
-              </em>
-            </div>
+            <>
+              <div
+                className={`viewer-exploded-note ${
+                  buildEvidence.geometryFallbackCount ? "has-fallback" : ""
+                }`}
+                role="status"
+              >
+                <Layers size={16} aria-hidden="true" />
+                <span>
+                  <strong>Exploded inspection</strong>
+                  <small>
+                    {buildEvidence.selectedCount} selected part{buildEvidence.selectedCount === 1 ? "" : "s"} ·{" "}
+                    {Math.max(
+                      0,
+                      buildEvidence.selectedCount - buildEvidence.geometryFallbackCount,
+                    )} catalog geometry ·{" "}
+                    {buildEvidence.geometryFallbackCount} generated fallback
+                    {buildEvidence.geometryFallbackCount === 1 ? "" : "s"}. Separation
+                    clarifies stack and mount relationships; it is not a product-exact
+                    fit, wiring, or hardware check.
+                  </small>
+                </span>
+                <em>
+                  {buildEvidence.geometryFallbackCount === 0
+                    ? "Catalog geometry"
+                    : buildEvidence.geometryFallbackCount === buildEvidence.selectedCount
+                      ? "Fallback geometry"
+                      : "Mixed geometry"}
+                </em>
+              </div>
+              <AssemblyNotes
+                frame={assemblySpec.frame}
+                motor={assemblySpec.motor}
+                propeller={assemblySpec.propeller}
+                esc={assemblySpec.esc}
+                flightController={assemblySpec.flightController}
+                receiver={assemblySpec.receiver}
+                battery={assemblySpec.battery}
+              />
+            </>
           )}
           {loadingModels && (
             <div className="model-status" role="status">
@@ -2098,7 +2131,7 @@ export default function BuildPage() {
             setSelectedBattery("");
             setSelectedReceiver("");
             setCameraView("orbit");
-            setExplodedAssembly(false);
+            setExplodedInspection(false);
             setShowFitOverlay(false);
             setBuildNote("");
             setGeometryOverrides(normalizeGeometryOverrides(null));
