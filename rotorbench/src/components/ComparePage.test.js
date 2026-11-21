@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ComparePage from "./ComparePage";
 import { getA11yViolations } from "../test/a11y";
+import { createBuildShareToken } from "../utils/buildLink";
 
 const build = {
   id: "build-compare",
@@ -175,4 +176,73 @@ test("comparison keeps unavailable thrust data visible", () => {
   expect(screen.getByRole("rowheader", {
     name: "Propeller thrust data Changed",
   })).toBeInTheDocument();
+});
+
+test("loads a two-build comparison from portable tokens", () => {
+  const changed = {
+    ...build,
+    componentIds: {
+      ...build.componentIds,
+      motorId: "motor-1804-2800kv",
+    },
+  };
+  const left = createBuildShareToken(build);
+  const right = createBuildShareToken(changed);
+  render(
+    <MemoryRouter
+      initialEntries={[{
+        pathname: "/compare",
+        search: `?left=${left}&right=${right}`,
+      }]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByRole("heading", { name: "Shared build A" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Shared build B" })).toBeInTheDocument();
+  expect(screen.getByRole("rowheader", { name: "Motors Changed" })).toBeInTheDocument();
+});
+
+test("copies a comparison link and reports malformed shared links", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  const { unmount } = render(
+    <MemoryRouter
+      initialEntries={[{
+        pathname: "/compare",
+        state: {
+          builds: [
+            { ...build, id: "left-share", name: "Left share" },
+            { ...build, id: "right-share", name: "Right share" },
+          ],
+        },
+      }]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Share comparison" }));
+  await screen.findByText(/Comparison link copied/i);
+  const url = new URL(writeText.mock.calls[0][0]);
+  expect(url.pathname).toBe("/compare");
+  expect(url.searchParams.get("left")).toBeTruthy();
+  expect(url.searchParams.get("right")).toBeTruthy();
+
+  unmount();
+  render(
+    <MemoryRouter
+      initialEntries={[{
+        pathname: "/compare",
+        search: "?left=not*valid&right=not*valid",
+      }]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText(/Could not load shared comparison/i)).toBeInTheDocument();
 });

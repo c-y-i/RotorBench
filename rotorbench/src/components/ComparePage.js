@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ChartNoAxesCombined,
@@ -7,6 +7,7 @@ import {
   CircleAlert,
   Download,
   FileCheck2,
+  Link2,
   ListFilter,
   Printer,
   Settings2,
@@ -17,6 +18,10 @@ import {
   createComparisonReport,
   summarizeBuild,
 } from "../utils/buildComparison";
+import {
+  createBuildShareToken,
+  parseBuildShareToken,
+} from "../utils/buildLink";
 import "../styles/compare.css";
 
 const physicalFitLabels = {
@@ -44,8 +49,38 @@ const thrustDataLabels = {
 export default function ComparePage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [changesOnly, setChangesOnly] = useState(false);
-  const builds = location.state?.builds || [];
+  const [shareMessage, setShareMessage] = useState("");
+  const leftToken = searchParams.get("left") || "";
+  const rightToken = searchParams.get("right") || "";
+  const sharedComparison = useMemo(() => {
+    if (!leftToken || !rightToken) return { builds: [], error: "" };
+    try {
+      const decode = (token, index) => {
+        const parsed = parseBuildShareToken(token);
+        return {
+          id: `shared-build-${index + 1}`,
+          name: `Shared build ${index === 0 ? "A" : "B"}`,
+          componentIds: parsed.componentIds,
+          geometryOverrides: parsed.geometryOverrides,
+        };
+      };
+      return {
+        builds: [
+          decode(leftToken, 0),
+          decode(rightToken, 1),
+        ],
+        error: "",
+      };
+    } catch (error) {
+      return {
+        builds: [],
+        error: `Could not load shared comparison: ${error.message}`,
+      };
+    }
+  }, [leftToken, rightToken]);
+  const builds = location.state?.builds || sharedComparison.builds;
 
   if (builds.length < 2) {
     return (
@@ -57,7 +92,10 @@ export default function ComparePage() {
           </div>
         </header>
         <div className="compare-empty">
-          <p>Two build configurations are required for this view.</p>
+          <p>
+            {sharedComparison.error
+              || "Two build configurations are required for this view."}
+          </p>
           <button type="button" className="action-btn save" onClick={() => navigate("/saved")}>
             <ArrowLeft size={17} aria-hidden="true" />
             Back to saved builds
@@ -84,6 +122,28 @@ export default function ComparePage() {
     link.download = comparisonReportFilename(left, right);
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const shareComparison = async () => {
+    try {
+      const url = new URL("/compare", window.location.origin);
+      url.searchParams.set("left", createBuildShareToken({
+        componentIds: builds[0].componentIds,
+        geometryOverrides: builds[0].geometryOverrides,
+      }));
+      url.searchParams.set("right", createBuildShareToken({
+        componentIds: builds[1].componentIds,
+        geometryOverrides: builds[1].geometryOverrides,
+      }));
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("clipboard access is unavailable");
+      }
+      await navigator.clipboard.writeText(url.toString());
+      setShareMessage("Comparison link copied · catalog configurations only");
+      setTimeout(() => setShareMessage(""), 4000);
+    } catch (error) {
+      setShareMessage(`Could not copy comparison link: ${error.message}`);
+    }
   };
 
   const valueFor = (row, side) => {
@@ -131,10 +191,19 @@ export default function ComparePage() {
             <Download size={17} aria-hidden="true" />
             Export comparison
           </button>
+          <button type="button" className="compare-export" onClick={shareComparison}>
+            <Link2 size={17} aria-hidden="true" />
+            Share comparison
+          </button>
           <button type="button" className="compare-print" onClick={() => window.print()}>
             <Printer size={17} aria-hidden="true" />
             Print
           </button>
+          {shareMessage && (
+            <span className="compare-change-summary" role="status">
+              {shareMessage}
+            </span>
+          )}
         </div>
       </header>
 

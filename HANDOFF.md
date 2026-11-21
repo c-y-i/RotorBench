@@ -302,6 +302,8 @@ Build can also copy a versioned `/build?share=...` link containing only validate
 
 Completed Analysis reports also expose `Share build link`. It copies only the underlying component and measurement configuration and labels the result `analysis excluded`; analysis results and hardware evidence are not embedded.
 
+Compare exposes `Share comparison` and can reopen `/compare?left=...&right=...` from two validated build-link tokens. Shared comparisons relabel the sides as `Shared build A/B`, reject malformed or stale catalog references explicitly, and still exclude notes, hardware plans, binding material, and evidence.
+
 Build sheets also include the sanitized attached-evidence summary when present: status label, attachment time, scope/identity state, pass/fail/open counts, and explicit `hardwareVerified: false` plus `authenticityVerified: false`. Raw evidence files and full checks are excluded.
 
 Exported build sheets now also preserve the eight-check Viewer placement audit: frame mounts, four motor roots, propeller-to-shaft alignment, electronics stack order, battery-above-electronics clearance, motor mount-pattern interface, propeller hub/shaft interface, and propeller sweep separation. Each check carries verified/estimated/fallback/conflict/awaiting detail plus verified, estimated, fallback, assembled, conflict, and awaiting counts under `viewer-placement` scope. This is geometry and catalogued-interface auditing, not complete physical fit or flight readiness.
@@ -452,7 +454,7 @@ cd ../backend
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The latest catalog, BOM, model-manifest, comparison, interactive assembly-profile, hardware-briefing, portable-build-link, and automated accessibility rerun passed 401 frontend tests across 56 suites, the production build, full ESLint, fourteen backend tests, and the Impeccable detector. The long audit inventory below records the preceding 339-test pass; its feature coverage remains valid and the newer focused tests are additive.
+The latest catalog, BOM, model-manifest, comparison, interactive assembly-profile, hardware-briefing, portable-build-link, and automated accessibility rerun passed 403 frontend tests across 56 suites, the production build, full ESLint, fourteen backend tests, and the Impeccable detector. The long audit inventory below records the preceding 339-test pass; its feature coverage remains valid and the newer focused tests are additive.
 
 `axe-core` is now an explicit development dependency. Reusable jsdom structural checks run against the interactive assembly profile and populated comparison with WCAG 2 A/AA tags; colour contrast remains covered by the rendered-browser checks because jsdom has no layout engine.
 
