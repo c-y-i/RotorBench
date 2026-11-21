@@ -53,6 +53,7 @@ export function summarizeHardwareReadiness({
   buildId,
   flightController = null,
   receiver = null,
+  buildMotorCount = null,
   storage = typeof window !== "undefined" ? window.localStorage : null,
 }) {
   const fallbackFc = createDefaultFlightControllerConfig(flightController, receiver);
@@ -94,7 +95,9 @@ export function summarizeHardwareReadiness({
   });
   const profile = getBoardProfile(fcPlan.profileId, flightController);
   const wiring = buildReceiverWiringPlan(fcPlan, profile, receiver);
-  const fcIssues = validateFlightControllerConfig(fcPlan, profile);
+  const fcIssues = validateFlightControllerConfig(fcPlan, profile, {
+    buildMotorCount,
+  });
   const radioWarnings = buildRadioWarnings(radioPlan, {
     channelLimit: fcPlan.firmwareFamily === "aerialkit" ? 8 : 16,
     receiver,
@@ -186,6 +189,7 @@ export function summarizeHardwareReadiness({
     complete,
     issueCount,
     blockerCount,
+    buildMotorCount,
     fcPlan,
     radioPlan,
     profile,

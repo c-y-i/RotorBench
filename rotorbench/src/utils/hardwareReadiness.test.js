@@ -248,6 +248,44 @@ test("mission and launch controls remain available outside Setup", () => {
   });
 });
 
+test("saved airframe choices are checked against the selected frame motor count", () => {
+  const buildId = "airframe-mismatch-build";
+  const aerialKitFc = {
+    ...fc,
+    firmware: ["Aerial Kit"],
+  };
+  const storage = memoryStorage({
+    [`rotorbench:hardware-plan:${buildId}:fc`]: JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: aerialKitFc.id,
+      selectedReceiverId: receiver.id,
+      firmwareFamily: "aerialkit",
+      profileId: "esp32dev",
+      airframe: "elevonwing",
+      armChannel: 6,
+      modeChannel: 5,
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+    }),
+  });
+  const readiness = summarizeHardwareReadiness({
+    buildId,
+    flightController: aerialKitFc,
+    receiver,
+    buildMotorCount: 4,
+    storage,
+  });
+
+  expect(readiness.blockerCount).toBeGreaterThan(0);
+  expect(readiness.fcIssues).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "build-airframe-mismatch",
+      severity: "error",
+    }),
+  ]));
+});
+
 test("plans for another FC or receiver are ignored", () => {
   const base = "rotorbench:hardware-plan:build-test";
   const storage = memoryStorage({

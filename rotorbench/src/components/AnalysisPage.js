@@ -246,6 +246,9 @@ export default function AnalysisPage() {
   const selectedReceiverPart = componentRows.find(
     (row) => row.label === "Receiver",
   )?.part;
+  const selectedFramePart = componentRows.find(
+    (row) => row.label === "Frame",
+  )?.part;
   const hasHardwareSelection = Boolean(
     selectedFlightControllerPart || selectedReceiverPart,
   );
@@ -253,7 +256,13 @@ export default function AnalysisPage() {
     buildId: build?.id,
     flightController: selectedFlightControllerPart,
     receiver: selectedReceiverPart,
-  }), [build?.id, selectedFlightControllerPart, selectedReceiverPart]);
+    buildMotorCount: selectedFramePart?.motorCount ?? null,
+  }), [
+    build?.id,
+    selectedFlightControllerPart,
+    selectedFramePart?.motorCount,
+    selectedReceiverPart,
+  ]);
   const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
   const missionControlsLabel = describeMissionControls(hardwareReadiness);
   const benchEvidence = useMemo(() => summarizeBenchEvidenceAttachment(

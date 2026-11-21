@@ -125,6 +125,7 @@ export function summarizeBuild(build) {
     buildId: build?.id,
     flightController: byCategory.flight_controllers,
     receiver: byCategory.receivers,
+    buildMotorCount: byCategory.frames?.motorCount ?? null,
   });
   const benchEvidence = summarizeBenchEvidenceAttachment(
     readBenchEvidenceAttachment(build?.id),

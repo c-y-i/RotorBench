@@ -265,8 +265,9 @@ export default function HomePage() {
       buildId: currentBuild?.id,
       flightController: fc,
       receiver,
+      buildMotorCount: frame?.motorCount ?? null,
     }),
-    [currentBuild?.id, fc, receiver],
+    [currentBuild?.id, fc, frame?.motorCount, receiver],
   );
 
   return (

@@ -287,6 +287,8 @@ test("saved build summaries and comparisons retain mission and launch controls",
   expect(left.missionControlsLabel).toBe(
     "Mission CH7 · Launch CH8 · 65% · 20° · 6 s",
   );
+  expect(left.hardwareReadinessStatus).toBe("blocked");
+  expect(left.hardwareReadinessLabel).toMatch(/blocker/i);
   expect(comparisonRows(left, right).find(
     (row) => row.id === "mission-controls",
   )).toMatchObject({

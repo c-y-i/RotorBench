@@ -728,8 +728,14 @@ export default function BuildPage() {
       buildId: workingBuildId,
       flightController: selectedFlightControllerPart,
       receiver: selectedReceiverPart,
+      buildMotorCount: selectedFramePart?.motorCount ?? null,
     }),
-    [selectedFlightControllerPart, selectedReceiverPart, workingBuildId],
+    [
+      selectedFlightControllerPart,
+      selectedFramePart?.motorCount,
+      selectedReceiverPart,
+      workingBuildId,
+    ],
   );
   const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
   const missionControlsLabel = describeMissionControls(hardwareReadiness);
