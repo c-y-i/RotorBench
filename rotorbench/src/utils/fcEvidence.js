@@ -528,6 +528,12 @@ export function fcEvidenceChecks(status, preflight, {
 const PARAMETER_PLAN_KEYS = {
   airframe: "airframe",
   dshot_khz: "dshotKhz",
+  servo1_reverse: "servo1Reverse",
+  servo1_trim_us: "servo1TrimUs",
+  servo1_travel_us: "servo1TravelUs",
+  servo2_reverse: "servo2Reverse",
+  servo2_trim_us: "servo2TrimUs",
+  servo2_travel_us: "servo2TravelUs",
   rc_protocol: "receiverProtocol",
   arm_channel: "armChannel",
   mode_channel: "modeChannel",

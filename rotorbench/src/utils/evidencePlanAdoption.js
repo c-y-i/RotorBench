@@ -134,6 +134,66 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => `${value} kHz`,
     },
     {
+      key: "servo1Reverse",
+      source: "servo1_reverse",
+      snapshotKey: "servo1_reverse",
+      label: "Servo 1 reverse",
+      parse: (raw) => {
+        const number = integer(raw);
+        return number === 0 ? false : number === 1 ? true : null;
+      },
+      display: (value) => value ? "Reversed" : "Normal",
+    },
+    {
+      key: "servo1TrimUs",
+      source: "servo1_trim_us",
+      snapshotKey: "servo1_trim_us",
+      label: "Servo 1 centre trim",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= -200 && number <= 200 ? number : null;
+      },
+      display: (value) => `${value} µs`,
+    },
+    {
+      key: "servo1TravelUs",
+      source: "servo1_travel_us",
+      snapshotKey: "servo1_travel_us",
+      label: "Servo 1 travel",
+      parse: (raw) => boundedInteger(raw, 100, 900),
+      display: (value) => `${value} µs`,
+    },
+    {
+      key: "servo2Reverse",
+      source: "servo2_reverse",
+      snapshotKey: "servo2_reverse",
+      label: "Servo 2 reverse",
+      parse: (raw) => {
+        const number = integer(raw);
+        return number === 0 ? false : number === 1 ? true : null;
+      },
+      display: (value) => value ? "Reversed" : "Normal",
+    },
+    {
+      key: "servo2TrimUs",
+      source: "servo2_trim_us",
+      snapshotKey: "servo2_trim_us",
+      label: "Servo 2 centre trim",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= -200 && number <= 200 ? number : null;
+      },
+      display: (value) => `${value} µs`,
+    },
+    {
+      key: "servo2TravelUs",
+      source: "servo2_travel_us",
+      snapshotKey: "servo2_travel_us",
+      label: "Servo 2 travel",
+      parse: (raw) => boundedInteger(raw, 100, 900),
+      display: (value) => `${value} µs`,
+    },
+    {
       key: "receiverProtocol",
       source: "rc_protocol",
       snapshotKey: "rc_protocol",

@@ -243,6 +243,12 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
   const snapshot = parseFcParameterSnapshotText([
     "arm_channel=5 status=0",
     "mode_channel=6 status=0",
+    "servo1_reverse=1 status=0",
+    "servo1_trim_us=18 status=0",
+    "servo1_travel_us=460 status=0",
+    "servo2_reverse=0 status=0",
+    "servo2_trim_us=-12 status=0",
+    "servo2_travel_us=520 status=0",
     "mission_channel=7 status=0",
     "launch_channel=8 status=0",
     "launch_throttle=0.65 status=0",
@@ -270,6 +276,12 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
   const checks = fcParameterChecks(snapshot, {
     armChannel: 5,
     modeChannel: 7,
+    servo1Reverse: true,
+    servo1TrimUs: 18,
+    servo1TravelUs: 460,
+    servo2Reverse: false,
+    servo2TrimUs: -12,
+    servo2TravelUs: 520,
     missionChannel: 8,
     launchChannel: 9,
     launchThrottle: 0.7,
@@ -299,6 +311,12 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     .toBe("pass");
   expect(checks.find((check) => check.id === "fc-param-mode-channel").status)
     .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-servo1-reverse").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-servo1-trim-us").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-servo2-travel-us").status)
+    .toBe("pass");
   expect(checks.find((check) => check.id === "fc-param-mission-channel").status)
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-launch-channel").status)

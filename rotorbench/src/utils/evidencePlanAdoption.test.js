@@ -10,6 +10,12 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
       values: {
         airframe: "0",
         dshot_khz: "600",
+        servo1_reverse: "1",
+        servo1_trim_us: "18",
+        servo1_travel_us: "460",
+        servo2_reverse: "0",
+        servo2_trim_us: "-12",
+        servo2_travel_us: "520",
         rc_protocol: "1",
         arm_channel: "5",
         mode_channel: "6",
@@ -48,6 +54,12 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
     {
       airframe: "quadx",
       dshotKhz: 300,
+      servo1Reverse: false,
+      servo1TrimUs: 0,
+      servo1TravelUs: 500,
+      servo2Reverse: false,
+      servo2TrimUs: 0,
+      servo2TravelUs: 500,
       receiverProtocol: "crsf",
       armChannel: 5,
       modeChannel: 6,
@@ -85,7 +97,7 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
   );
 
   expect(patch.supported).toBe(true);
-  expect(patch.matchedCount).toBe(8);
+  expect(patch.matchedCount).toBe(9);
   expect(patch.fields).toEqual(expect.arrayContaining([
     expect.objectContaining({ key: "missionChannel", observedValue: 7 }),
     expect.objectContaining({ key: "launchChannel", observedValue: 8 }),
@@ -93,6 +105,11 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
     expect.objectContaining({ key: "launchClimbDeg", observedValue: 20 }),
     expect.objectContaining({ key: "launchTimeoutS", observedValue: 6 }),
     expect.objectContaining({ key: "dshotKhz", observedValue: 600 }),
+    expect.objectContaining({ key: "servo1Reverse", observedValue: true }),
+    expect.objectContaining({ key: "servo1TrimUs", observedValue: 18 }),
+    expect.objectContaining({ key: "servo1TravelUs", observedValue: 460 }),
+    expect.objectContaining({ key: "servo2TrimUs", observedValue: -12 }),
+    expect.objectContaining({ key: "servo2TravelUs", observedValue: 520 }),
     expect.objectContaining({ key: "receiverProtocol", observedValue: "sbus" }),
     expect.objectContaining({ key: "vbatRatio", observedValue: 10.8 }),
     expect.objectContaining({ key: "vbatWarnCell", observedValue: 3.4 }),
