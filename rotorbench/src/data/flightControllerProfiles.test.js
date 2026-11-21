@@ -166,6 +166,7 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain(
     "Geofence: disabled; radius 0 m, ceiling none",
   );
+  expect(summary).toContain("Return floor: none");
   expect(summary).toContain(
     "Board alignment: roll 0°, pitch 0°, yaw 0° (applied roll, then pitch, then yaw; verify sensor signs)",
   );
@@ -186,6 +187,7 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     fenceEnabled: true,
     fenceRadiusM: 0,
     fenceCeilingM: 5001,
+    rthMinAltM: 501,
     features: { ...defaults.features, gps: false },
     alignRollDeg: -181,
     alignPitchDeg: 181,
@@ -207,6 +209,7 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     "fence-without-gps",
     "fence-radius-required",
     "fence-ceiling-range",
+    "rth-min-alt-range",
   ]));
 });
 

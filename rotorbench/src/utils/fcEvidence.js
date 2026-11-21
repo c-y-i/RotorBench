@@ -551,6 +551,7 @@ const PARAMETER_PLAN_KEYS = {
   fence_enable: "fenceEnabled",
   fence_radius_m: "fenceRadiusM",
   fence_ceiling_m: "fenceCeilingM",
+  rth_min_alt_m: "rthMinAltM",
   align_roll_deg: "alignRollDeg",
   align_pitch_deg: "alignPitchDeg",
   align_yaw_deg: "alignYawDeg",

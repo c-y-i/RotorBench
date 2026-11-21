@@ -76,6 +76,7 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "fence-radius-range": { id: "fc-fence-radius", label: "geofence radius" },
   "fence-radius-required": { id: "fc-fence-radius", label: "geofence radius" },
   "fence-ceiling-range": { id: "fc-fence-ceiling", label: "geofence ceiling" },
+  "rth-min-alt-range": { id: "fc-rth-min-alt", label: "return floor" },
   "align-roll-range": { id: "fc-align-roll", label: "board alignment" },
   "align-pitch-range": { id: "fc-align-pitch", label: "board alignment" },
   "align-yaw-range": { id: "fc-align-yaw", label: "board alignment" },
@@ -1431,7 +1432,7 @@ export default function FlightControllerSetup({
             {config.firmwareFamily === "aerialkit" && (
               <div className="fc-calibration fc-fence-plan">
                 <div className="fc-calibration-heading">
-                  <strong>Geofence return plan</strong>
+                  <strong>Navigation safety plan</strong>
                   <span>
                     Leaving the radius or climbing above the ceiling hands control
                     to the return; control comes back once the aircraft is inside.
@@ -1453,7 +1454,7 @@ export default function FlightControllerSetup({
                   </span>
                   <em>{config.fenceEnabled ? "Enabled" : "Off"}</em>
                 </label>
-                <div className="fc-field-grid">
+                <div className="fc-field-grid fc-field-grid-three">
                   <Field
                     label="Fence radius"
                     htmlFor="fc-fence-radius"
@@ -1486,10 +1487,27 @@ export default function FlightControllerSetup({
                       onChange={(event) => update("fenceCeilingM", numericInput(event.target.value))}
                     />
                   </Field>
+                  <Field
+                    label="Return floor"
+                    htmlFor="fc-rth-min-alt"
+                    hint="Metres above home, 0 to 500; 0 means no floor"
+                  >
+                    <input
+                      id="fc-rth-min-alt"
+                      type="number"
+                      min="0"
+                      max="500"
+                      step="1"
+                      aria-invalid={numericInvalid(config.rthMinAltM)}
+                      value={numericValue(config.rthMinAltM)}
+                      onChange={(event) => update("rthMinAltM", numericInput(event.target.value))}
+                    />
+                  </Field>
                 </div>
                 <p className="fc-alignment-note">
                   Set the radius wider than the aircraft's turn circle. At a
                   configured ceiling, the navigator holds 10 m below the lid.
+                  The return floor uses the fused altitude estimate, not GPS alone.
                 </p>
               </div>
             )}

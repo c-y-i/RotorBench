@@ -591,6 +591,7 @@ export function createDefaultFlightControllerConfig(
     fenceEnabled: false,
     fenceRadiusM: 0,
     fenceCeilingM: 0,
+    rthMinAltM: 0,
     alignRollDeg: 0,
     alignPitchDeg: 0,
     alignYawDeg: 0,
@@ -836,6 +837,13 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "fence-ceiling-range",
         message: "Geofence ceiling must be between 0 and 5000 metres; 0 disables the ceiling.",
+      });
+    }
+    if (!finite(config.rthMinAltM) || Number(config.rthMinAltM) < 0 || Number(config.rthMinAltM) > 500) {
+      issues.push({
+        severity: "error",
+        code: "rth-min-alt-range",
+        message: "Return floor must be between 0 and 500 metres; 0 disables the floor.",
       });
     }
     for (const [key, code, label] of [
@@ -1215,6 +1223,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell, critical-pack return ${config.batteryRthEnabled ? "enabled" : "disabled"}`,
           `Geofence: ${config.fenceEnabled ? "enabled" : "disabled"}; radius ${config.fenceRadiusM} m, ceiling ${Number(config.fenceCeilingM) === 0 ? "none" : `${config.fenceCeilingM} m`}`,
+          `Return floor: ${Number(config.rthMinAltM) === 0 ? "none" : `${config.rthMinAltM} m`}`,
         ]
       : []),
     `Outputs: DShot ${config.dshotKhz} kHz`,

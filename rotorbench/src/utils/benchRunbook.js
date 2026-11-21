@@ -72,7 +72,7 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
     if (fcPlan?.firmwareFamily === "aerialkit") {
       fcCommands.push("ak fc logs --port /dev/ttyACM0");
       fcCommands.push(
-        "for name in airframe dshot_khz gyro_rate_hz pid_denom rc_protocol arm_channel mode_channel velocity_channel manual_channel ctrl_channel sysid_channel arm_hold_ms arm_max_tilt_deg throttle_low rc_timeout_ms rc_min rc_mid rc_max rc_deadband align_roll_deg align_pitch_deg align_yaw_deg vbat_ratio vbat_cells vbat_warn_cell vbat_min_cell battery_rth fence_enable fence_radius_m fence_ceiling_m rth_enable; do ak fc get \"$name\" --port /dev/ttyACM0; done > fc-params.txt",
+        "for name in airframe dshot_khz gyro_rate_hz pid_denom rc_protocol arm_channel mode_channel velocity_channel manual_channel ctrl_channel sysid_channel arm_hold_ms arm_max_tilt_deg throttle_low rc_timeout_ms rc_min rc_mid rc_max rc_deadband align_roll_deg align_pitch_deg align_yaw_deg vbat_ratio vbat_cells vbat_warn_cell vbat_min_cell battery_rth fence_enable fence_radius_m fence_ceiling_m rth_min_alt_m rth_enable; do ak fc get \"$name\" --port /dev/ttyACM0; done > fc-params.txt",
       );
     }
   } else {

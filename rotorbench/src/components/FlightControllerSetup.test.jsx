@@ -29,6 +29,7 @@ test("renders a local flight-controller configuration plan", () => {
   })).not.toBeChecked();
   expect(screen.getByLabelText("Fence radius")).toHaveValue(0);
   expect(screen.getByLabelText("Fence ceiling")).toHaveValue(0);
+  expect(screen.getByLabelText("Return floor")).toHaveValue(0);
   expect(screen.getByRole("heading", { name: "Sensor and power" })).toBeInTheDocument();
   expect(screen.getByLabelText("Alignment roll")).toHaveValue(0);
   expect(screen.getByLabelText("Alignment pitch")).toHaveValue(0);
@@ -423,12 +424,17 @@ test("geofence settings reach the parent plan with trigger semantics", () => {
   fireEvent.change(screen.getByLabelText("Fence ceiling"), {
     target: { value: "120" },
   });
+  fireEvent.change(screen.getByLabelText("Return floor"), {
+    target: { value: "30" },
+  });
 
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fenceEnabled: true }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fenceRadiusM: 250 }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fenceCeilingM: 120 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ rthMinAltM: 30 }));
   expect(screen.getByText(/not a stick clamp/i)).toBeInTheDocument();
   expect(screen.getByText(/holds 10 m below the lid/i)).toBeInTheDocument();
+  expect(screen.getByText(/fused altitude estimate, not GPS alone/i)).toBeInTheDocument();
 });
 
 test("board alignment order and angles reach the parent plan", () => {

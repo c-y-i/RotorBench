@@ -345,6 +345,17 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => value === 0 ? "No ceiling" : `${value} m`,
     },
     {
+      key: "rthMinAltM",
+      source: "rth_min_alt_m",
+      snapshotKey: "rth_min_alt_m",
+      label: "Return floor",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 500 ? number : null;
+      },
+      display: (value) => value === 0 ? "No floor" : `${value} m`,
+    },
+    {
       key: "alignRollDeg",
       source: "align_roll_deg",
       snapshotKey: "align_roll_deg",

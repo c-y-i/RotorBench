@@ -248,6 +248,9 @@ export function summarizeHardwareReadiness({
     fcFenceCeilingM: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.fenceCeilingM
       : null,
+    fcRthMinAltM: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.rthMinAltM
+      : null,
     fcAlignmentRollDeg: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.alignRollDeg
       : null,
@@ -320,6 +323,7 @@ export function sanitizeHardwareReadiness(readiness) {
     fcFenceEnabled: readiness.fcFenceEnabled ?? null,
     fcFenceRadiusM: readiness.fcFenceRadiusM ?? null,
     fcFenceCeilingM: readiness.fcFenceCeilingM ?? null,
+    fcRthMinAltM: readiness.fcRthMinAltM ?? null,
     fcAlignmentRollDeg: readiness.fcAlignmentRollDeg ?? null,
     fcAlignmentPitchDeg: readiness.fcAlignmentPitchDeg ?? null,
     fcAlignmentYawDeg: readiness.fcAlignmentYawDeg ?? null,
