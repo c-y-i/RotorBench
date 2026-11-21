@@ -61,6 +61,7 @@ export default function HomePage() {
   const [clearedComponents, setClearedComponents] = useState([]);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
   const [platformSize, setPlatformSize] = useState("all");
+  const [verifiedPlatformsOnly, setVerifiedPlatformsOnly] = useState(false);
   // Get component details from current build
   const getComponent = (type, id) => {
     if (!id) return null;
@@ -94,12 +95,30 @@ export default function HomePage() {
     ))
   ), []);
   const visiblePlatforms = useMemo(() => (
-    platformSize === "all"
-      ? PLATFORM_PRESETS
-      : PLATFORM_PRESETS.filter(
-        (preset) => preset.name.match(/^[\d.]+/)?.[0] === platformSize,
+    PLATFORM_PRESETS
+      .filter((preset) => (
+        platformSize === "all"
+        || preset.name.match(/^[\d.]+/)?.[0] === platformSize
+      ))
+      .filter((preset) => (
+        !verifiedPlatformsOnly
+        || ["verified", "measured"].includes(
+          platformSummaries[preset.id]?.physicalFitStatus,
+        )
+      ))
+      .sort((left, right) => (
+        (Number.parseFloat(left.name.match(/^[\d.]+/)?.[0]) || 0)
+        - (Number.parseFloat(right.name.match(/^[\d.]+/)?.[0]) || 0)
+        || left.name.localeCompare(right.name)
+      ))
+  ), [platformSize, platformSummaries, verifiedPlatformsOnly]);
+  const verifiedPlatformCount = useMemo(() => (
+    PLATFORM_PRESETS.filter((preset) => (
+      ["verified", "measured"].includes(
+        platformSummaries[preset.id]?.physicalFitStatus,
       )
-  ), [platformSize]);
+    )).length
+  ), [platformSummaries]);
   const hasAnySelection = Boolean(
     currentBuild &&
     currentBuild.componentIds &&
@@ -273,7 +292,9 @@ export default function HomePage() {
             </div>
             <span>
               {platformSize === "all"
-                ? `${PLATFORM_PRESETS.length} source builds`
+                ? verifiedPlatformsOnly
+                  ? `${visiblePlatforms.length} fit-verified source builds`
+                  : `${PLATFORM_PRESETS.length} source builds`
                 : `${visiblePlatforms.length} of ${PLATFORM_PRESETS.length} source builds`}
             </span>
           </div>
@@ -304,6 +325,24 @@ export default function HomePage() {
                 </button>
               );
             })}
+          </div>
+          <div
+            className="starter-platform-filters starter-platform-evidence-filter"
+            role="group"
+            aria-label="Filter starter platforms by fit evidence"
+          >
+            <span className="starter-platform-filter-label">Evidence</span>
+            <button
+              type="button"
+              className={`starter-platform-filter ${
+                verifiedPlatformsOnly ? "is-active" : ""
+              }`}
+              aria-pressed={verifiedPlatformsOnly}
+              onClick={() => setVerifiedPlatformsOnly((current) => !current)}
+            >
+              Verified only
+              <small>{verifiedPlatformCount}</small>
+            </button>
           </div>
           <div className="starter-platform-list">
             {visiblePlatforms.map((preset) => {

@@ -115,6 +115,27 @@ test("starter platforms filter by frame size while preserving direct launch acti
     name: /^All builds\s*13$/,
   }));
   expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(13);
+
+  const evidenceFilters = screen.getByRole("group", {
+    name: "Filter starter platforms by fit evidence",
+  });
+  const verifiedOnly = within(evidenceFilters).getByRole("button", {
+    name: /^Verified only\s*9$/,
+  });
+  fireEvent.click(verifiedOnly);
+  expect(verifiedOnly).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(9);
+
+  fireEvent.click(within(filters).getByRole("button", {
+    name: /^5-inch builds\s*5$/,
+  }));
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(1);
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch AOS 5 V5 source build",
+  })).toBeInTheDocument();
+  expect(screen.queryByRole("button", {
+    name: "Open 5-inch Volador II VX5 51499 build",
+  })).not.toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
 });
 
