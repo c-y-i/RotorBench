@@ -4715,9 +4715,16 @@
   -webkit-line-clamp: 2;
 }
 
-.starter-platform-evidence {
-  justify-self: start;
+.starter-platform-health {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin-top: 1px;
+}
+
+.starter-platform-evidence,
+.starter-platform-fit {
+  justify-self: start;
   padding: 2px 5px;
   color: var(--brand-strong);
   background: var(--brand-soft);
@@ -4730,9 +4737,17 @@
   text-transform: uppercase;
 }
 
-.starter-platform-evidence.is-unavailable {
+.starter-platform-evidence.is-unavailable,
+.starter-platform-fit.is-unverified,
+.starter-platform-fit.is-conflict {
   color: var(--warn);
   background: var(--accent-soft);
+}
+
+.starter-platform-fit.is-verified,
+.starter-platform-fit.is-measured {
+  color: var(--ok);
+  background: #e8f5ee;
 }
 
 .starter-platform-action {

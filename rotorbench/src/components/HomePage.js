@@ -5,6 +5,7 @@ import "../styles/home.css";
 import componentsData from "../data/components.json";
 import TwoDViewer from "./TwoDViewer";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
+import { summarizeBuild } from "../utils/buildComparison";
 import {
   resolveModelForComponent,
   resolvePropellerModelPair,
@@ -28,6 +29,13 @@ import {
 import { PLATFORM_PRESETS } from "../data/platformPresets";
 const sampleAssembly = process.env.PUBLIC_URL + "/assets/sample_assembly.glb";
 const BabylonViewer = lazy(() => import("./BabylonViewer"));
+const PLATFORM_FIT_LABELS = {
+  verified: "Fit verified",
+  measured: "Fit measured",
+  unverified: "Fit review",
+  conflict: "Fit conflict",
+  pending: "Fit unchecked",
+};
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -69,6 +77,13 @@ export default function HomePage() {
   const hasBuild = currentBuild && motor && propeller && battery;
   const hasAnalysis = analysisResults && hasBuild;
   const [activeView, setActiveView] = useState("3D");
+  const platformSummaries = useMemo(
+    () => Object.fromEntries(PLATFORM_PRESETS.map((preset) => [
+      preset.id,
+      summarizeBuild({ componentIds: preset.componentIds }),
+    ])),
+    [],
+  );
   const hasAnySelection = Boolean(
     currentBuild &&
     currentBuild.componentIds &&
@@ -250,6 +265,7 @@ export default function HomePage() {
               );
               const hasThrustData = (propeller?.thrustData?.length || 0) > 0;
               const estimatedThrust = propeller?.estimatedFields?.includes("thrustData");
+              const fitStatus = platformSummaries[preset.id]?.physicalFitStatus || "pending";
               return (
                 <button
                   key={preset.id}
@@ -265,16 +281,21 @@ export default function HomePage() {
                   <span className="starter-platform-copy">
                     <strong>{preset.name}</strong>
                     <small>{preset.description}</small>
-                    <span
-                      className={`starter-platform-evidence ${
-                        hasThrustData ? "is-estimated" : "is-unavailable"
-                      }`}
-                    >
-                      {hasThrustData
-                        ? estimatedThrust
-                          ? "Estimated thrust data"
-                          : "Thrust data available"
-                        : "Thrust data unavailable"}
+                    <span className="starter-platform-health">
+                      <span
+                        className={`starter-platform-evidence ${
+                          hasThrustData ? "is-estimated" : "is-unavailable"
+                        }`}
+                      >
+                        {hasThrustData
+                          ? estimatedThrust
+                            ? "Estimated thrust data"
+                            : "Thrust data available"
+                          : "Thrust data unavailable"}
+                      </span>
+                      <span className={`starter-platform-fit is-${fitStatus}`}>
+                        {PLATFORM_FIT_LABELS[fitStatus]}
+                      </span>
                     </span>
                   </span>
                   <span className="starter-platform-action" aria-hidden="true">

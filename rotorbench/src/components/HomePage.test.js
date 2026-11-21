@@ -51,6 +51,8 @@ test("offers all complete source-backed platforms from an empty overview", async
     .toBeInTheDocument();
   expect(within(screen.getByRole("button", { name: "Open 3.5-inch source build" }))
     .getByText("Estimated thrust data")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", { name: "Open 3.5-inch source build" }))
+    .getByText("Fit verified")).toBeInTheDocument();
   expect(within(screen.getByRole("button", {
     name: "Open 7-inch long-range source build",
   })).getByText("Thrust data unavailable")).toBeInTheDocument();
@@ -60,6 +62,9 @@ test("offers all complete source-backed platforms from an empty overview", async
   expect(within(screen.getByRole("button", {
     name: "Open 5-inch Source One V5 source build",
   })).getByText("Thrust data unavailable")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", {
+    name: "Open 5-inch Source One V5 source build",
+  })).getByText("Fit review")).toBeInTheDocument();
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
 });
