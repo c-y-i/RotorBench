@@ -467,6 +467,34 @@ test("SpeedyBee F405 Mini selects its documented Betaflight target", () => {
   expect(profile.notes.join(" ")).toMatch(/SERIALRX_UART to USART2/i);
 });
 
+test("SpeedyBee F405 V3 selects its documented Betaflight target", () => {
+  const selected = {
+    id: "fc-speedybee-f405-v3",
+    name: "SpeedyBee F405 V3",
+    processor: "STM32F405",
+    imu: "BMI270",
+    firmware: ["Betaflight", "INAV"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config).toMatchObject({
+    firmwareFamily: "betaflight",
+    profileId: "speedybee-f405-v3",
+    airframe: "quadx",
+  });
+  expect(profile).toMatchObject({
+    label: "SpeedyBee F405 V3",
+    board: "SPEEDYBEEF405V3",
+    receiverUart: "UART2",
+    gpsUart: "UART6",
+    sbusNeedsInverter: true,
+    outputs: { motors: 8, servos: 1 },
+    flightLog: { label: "MicroSD blackbox · 4 GB recognized" },
+  });
+  expect(profile.notes.join(" ")).toMatch(/4 GB on this board/i);
+});
+
 test("SpeedyBee F405 V4 selects its documented Betaflight target", () => {
   const selected = {
     id: "fc-speedybee-f405-v4",

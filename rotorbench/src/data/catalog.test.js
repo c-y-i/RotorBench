@@ -342,6 +342,23 @@ test("SpeedyBee F405 V5 preserves current controller specifications", () => {
   ]));
 });
 
+test("SpeedyBee F405 V3 reflects the manufacturer sensor and size data", () => {
+  const flightController = componentsData.flight_controllers.find(
+    (item) => item.id === "fc-speedybee-f405-v3",
+  );
+
+  expect(flightController).toMatchObject({
+    processor: "STM32F405",
+    imu: "BMI270",
+    weight: 9.6,
+    mountingPatternMm: [30.5, 30.5],
+    dimensionsMm: [41.6, 7.8, 39.4],
+    sourceUrl: expect.stringContaining("speedybee.com"),
+    modelStatus: "not_available",
+    estimatedFields: ["mounting_point"],
+  });
+});
+
 test("SpeedyBee OX32 ESC preserves published electrical and physical limits", () => {
   const esc = componentsData.escs.find(
     (item) => item.id === "esc-speedybee-ox32-55a",

@@ -872,13 +872,20 @@
       "name": "SpeedyBee F405 V3",
       "manufacturer": "SpeedyBee",
       "processor": "STM32F405",
-      "weight": 6.2,
+      "weight": 9.6,
       "mounting_point": [0, 0, 0],
+      "mountingPatternMm": [30.5, 30.5],
+      "dimensionsMm": [41.6, 7.8, 39.4],
       "firmware": ["Betaflight", "INAV"],
-      "imu": "ICM42688P",
+      "imu": "BMI270",
       "maxVoltage": 25.2,
       "features": ["OSD", "Blackbox", "Barometer", "Bluetooth"],
-      "price": 39.99
+      "price": 39.99,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://www.speedybee.com/speedybee-f405-v3-30x30-flight-controller/",
+      "dataStatus": "verified_specs_estimated_mounting",
+      "estimatedFields": ["mounting_point"]
     },
     {
       "id": "fc-holybro-kakute-f7",
