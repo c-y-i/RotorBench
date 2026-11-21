@@ -590,6 +590,8 @@ export function createDefaultFlightControllerConfig(
     alignRollDeg: 0,
     alignPitchDeg: 0,
     alignYawDeg: 0,
+    gyroRateHz: 0,
+    pidDenom: 1,
     dshotKhz: 300,
     failsafeAction: "firmware-derived",
     armChannel: channelPreset?.armChannel ?? null,
@@ -804,6 +806,20 @@ export function validateFlightControllerConfig(
           message: `Board alignment ${label} must be between -180 and 180 degrees.`,
         });
       }
+    }
+    if (!integer(config.gyroRateHz) || Number(config.gyroRateHz) < 0 || Number(config.gyroRateHz) > 8000) {
+      issues.push({
+        severity: "error",
+        code: "gyro-rate-range",
+        message: "Requested gyro rate must be a whole number from 0 to 8000 Hz; 0 keeps the board driver default.",
+      });
+    }
+    if (!integer(config.pidDenom) || Number(config.pidDenom) < 1 || Number(config.pidDenom) > 32) {
+      issues.push({
+        severity: "error",
+        code: "pid-denom-range",
+        message: "Control-loop divisor must be a whole number from 1 to 32 gyro samples.",
+      });
     }
   }
 
@@ -1152,6 +1168,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
       ? [
           `Receiver calibration: min ${config.rcMin}, mid ${config.rcMid}, max ${config.rcMax}, deadband ${config.rcDeadband}`,
           `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
+          `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell`,
         ]
       : []),

@@ -245,6 +245,12 @@ export function summarizeHardwareReadiness({
     fcAlignmentYawDeg: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.alignYawDeg
       : null,
+    fcGyroRateHz: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.gyroRateHz
+      : null,
+    fcPidDenom: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.pidDenom
+      : null,
     hardwareVerified: false,
   };
 }
@@ -301,6 +307,8 @@ export function sanitizeHardwareReadiness(readiness) {
     fcAlignmentRollDeg: readiness.fcAlignmentRollDeg ?? null,
     fcAlignmentPitchDeg: readiness.fcAlignmentPitchDeg ?? null,
     fcAlignmentYawDeg: readiness.fcAlignmentYawDeg ?? null,
+    fcGyroRateHz: readiness.fcGyroRateHz ?? null,
+    fcPidDenom: readiness.fcPidDenom ?? null,
     hardwareVerified: false,
   };
 }

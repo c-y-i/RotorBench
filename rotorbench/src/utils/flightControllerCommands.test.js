@@ -25,6 +25,8 @@ const config = {
   alignRollDeg: 0,
   alignPitchDeg: -1.5,
   alignYawDeg: 90,
+  gyroRateHz: 3200,
+  pidDenom: 2,
   rthEnabled: false,
 };
 
@@ -52,6 +54,8 @@ test("Aerial Kit preview uses current runtime parameter names and omits save", (
     "set align_roll_deg 0",
     "set align_pitch_deg -1.5",
     "set align_yaw_deg 90",
+    "set gyro_rate_hz 3200",
+    "set pid_denom 2",
     "set rth_enable 0",
     "set velocity_channel 0",
   ]));

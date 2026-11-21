@@ -336,6 +336,22 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => `${value}°`,
     },
     {
+      key: "gyroRateHz",
+      source: "gyro_rate_hz",
+      snapshotKey: "gyro_rate_hz",
+      label: "Requested gyro rate",
+      parse: (raw) => boundedInteger(raw, 0, 8000),
+      display: (value) => value === 0 ? "Driver default" : `${value} Hz`,
+    },
+    {
+      key: "pidDenom",
+      source: "pid_denom",
+      snapshotKey: "pid_denom",
+      label: "Control-loop divisor",
+      parse: (raw) => boundedInteger(raw, 1, 32),
+      display: (value) => `1 / ${value}`,
+    },
+    {
       key: "rthEnabled",
       source: "rth_enable",
       snapshotKey: "rth_enable",

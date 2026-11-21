@@ -166,6 +166,9 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain(
     "Board alignment: roll 0°, pitch 0°, yaw 0° (applied roll, then pitch, then yaw; verify sensor signs)",
   );
+  expect(summary).toContain(
+    "Control loop request: gyro driver default, one pass every 1 gyro sample",
+  );
 });
 
 test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
@@ -179,6 +182,8 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     alignRollDeg: -181,
     alignPitchDeg: 181,
     alignYawDeg: null,
+    gyroRateHz: 8001,
+    pidDenom: 33,
   });
 
   expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
@@ -188,6 +193,8 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     "align-roll-range",
     "align-pitch-range",
     "align-yaw-range",
+    "gyro-rate-range",
+    "pid-denom-range",
   ]));
 });
 

@@ -526,6 +526,66 @@
   line-height: 1.45;
 }
 
+.fc-loop-plan {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.fc-loop-plan > svg {
+  color: var(--brand);
+}
+
+.fc-loop-plan > span {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.fc-loop-plan small {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fc-loop-plan strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.fc-loop-plan b {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.fc-loop-plan em {
+  padding: 3px 6px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.fc-loop-note {
+  margin: 7px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .fc-board-facts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1417,6 +1477,15 @@
 
   .fc-alignment-order > svg {
     transform: rotate(90deg);
+  }
+
+  .fc-loop-plan {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .fc-loop-plan em {
+    grid-column: 2;
+    justify-self: start;
   }
 
   .fc-board-facts {

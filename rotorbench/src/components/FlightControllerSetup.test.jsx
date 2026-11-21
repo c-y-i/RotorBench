@@ -22,6 +22,9 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Alignment roll")).toHaveValue(0);
   expect(screen.getByLabelText("Alignment pitch")).toHaveValue(0);
   expect(screen.getByLabelText("Alignment yaw")).toHaveValue(0);
+  expect(screen.getByLabelText("Requested gyro rate")).toHaveValue(0);
+  expect(screen.getByLabelText("Loop divisor")).toHaveValue(1);
+  expect(screen.getByRole("status")).toHaveTextContent("Driver default");
 });
 
 test("shows the selected Aerial Kit airframe motor output map", () => {
@@ -400,6 +403,27 @@ test("board alignment order and angles reach the parent plan", () => {
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ alignRollDeg: 0.5 }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ alignPitchDeg: -1.5 }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ alignYawDeg: 90 }));
+});
+
+test("control-loop request derives its loop timing without claiming the observed rate", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+
+  fireEvent.change(screen.getByLabelText("Requested gyro rate"), {
+    target: { value: "3200" },
+  });
+  fireEvent.change(screen.getByLabelText("Loop divisor"), {
+    target: { value: "2" },
+  });
+
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ gyroRateHz: 3200 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ pidDenom: 2 }));
+  const readout = screen.getByRole("status");
+  expect(readout).toHaveTextContent("1600 Hz");
+  expect(readout).toHaveTextContent("625 µs period");
+  expect(readout).toHaveTextContent("Request only");
+  expect(screen.getByText(/actual loop timing.*live flight-controller evidence/i))
+    .toBeInTheDocument();
 });
 
 test("workspace Aerial Kit boards expose workspace switches instead of velocity", () => {

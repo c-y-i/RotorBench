@@ -550,6 +550,8 @@ const PARAMETER_PLAN_KEYS = {
   align_roll_deg: "alignRollDeg",
   align_pitch_deg: "alignPitchDeg",
   align_yaw_deg: "alignYawDeg",
+  gyro_rate_hz: "gyroRateHz",
+  pid_denom: "pidDenom",
   rth_enable: "rthEnabled",
 };
 

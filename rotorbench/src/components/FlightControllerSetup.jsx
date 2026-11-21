@@ -73,6 +73,8 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "align-roll-range": { id: "fc-align-roll", label: "board alignment" },
   "align-pitch-range": { id: "fc-align-pitch", label: "board alignment" },
   "align-yaw-range": { id: "fc-align-yaw", label: "board alignment" },
+  "gyro-rate-range": { id: "fc-gyro-rate", label: "requested gyro rate" },
+  "pid-denom-range": { id: "fc-pid-denom", label: "control-loop divisor" },
   "channel-range": { id: "fc-arm-channel", label: "control channels" },
   "unsupported-control-role": { id: "fc-arm-channel", label: "control channels" },
   "mode-channel-unset": { id: "fc-mode-channel", label: "flight-mode channel" },
@@ -259,6 +261,17 @@ export default function FlightControllerSetup({
     config.firmwareFamily,
     config.motorDirection,
   );
+  const requestedGyroRateHz = Number(config.gyroRateHz);
+  const loopDivisor = Number(config.pidDenom);
+  const requestedLoopHz = requestedGyroRateHz > 0 && loopDivisor > 0
+    ? requestedGyroRateHz / loopDivisor
+    : null;
+  const requestedLoopPeriodUs = requestedLoopHz
+    ? Math.round(1000000 / requestedLoopHz)
+    : null;
+  const requestedLoopFrequencyLabel = requestedLoopHz
+    ? `${Math.round(requestedLoopHz * 10) / 10} Hz`
+    : "Driver default";
   const motorDirection = MOTOR_DIRECTIONS.find(
     (option) => option.value === config.motorDirection,
   ) || MOTOR_DIRECTIONS[0];
@@ -684,6 +697,43 @@ export default function FlightControllerSetup({
                 </select>
               </Field>
 
+              {config.firmwareFamily === "aerialkit" && (
+                <>
+                  <Field
+                    label="Requested gyro rate"
+                    htmlFor="fc-gyro-rate"
+                    hint="0 = board driver default; otherwise 0 to 8000 Hz"
+                  >
+                    <input
+                      id="fc-gyro-rate"
+                      type="number"
+                      min="0"
+                      max="8000"
+                      step="1"
+                      aria-invalid={integerInvalid(config.gyroRateHz)}
+                      value={numericValue(config.gyroRateHz)}
+                      onChange={(event) => update("gyroRateHz", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field
+                    label="Loop divisor"
+                    htmlFor="fc-pid-denom"
+                    hint="One control pass every N gyro samples, 1 to 32"
+                  >
+                    <input
+                      id="fc-pid-denom"
+                      type="number"
+                      min="1"
+                      max="32"
+                      step="1"
+                      aria-invalid={integerInvalid(config.pidDenom)}
+                      value={numericValue(config.pidDenom)}
+                      onChange={(event) => update("pidDenom", numericInput(event.target.value))}
+                    />
+                  </Field>
+                </>
+              )}
+
               {config.firmwareFamily === "betaflight" && (
                 <Field
                   label="Motor direction"
@@ -707,6 +757,28 @@ export default function FlightControllerSetup({
                 </Field>
               )}
             </div>
+
+            {config.firmwareFamily === "aerialkit" && (
+              <div className="fc-loop-plan" role="status">
+                <Gauge size={16} aria-hidden="true" />
+                <span>
+                  <small>Requested control loop</small>
+                  <strong>{requestedLoopFrequencyLabel}</strong>
+                  <b>
+                    {requestedLoopPeriodUs
+                      ? `${requestedLoopPeriodUs} µs period · gyro request ÷ ${loopDivisor}`
+                      : `Gyro rate follows the board driver · divisor ${loopDivisor}`}
+                  </b>
+                </span>
+                <em>Request only</em>
+              </div>
+            )}
+            {config.firmwareFamily === "aerialkit" && (
+              <p className="fc-loop-note">
+                The IMU may choose a lower supported sample rate. Actual loop
+                timing and scheduler drops require live flight-controller evidence.
+              </p>
+            )}
 
             <div className="fc-board-facts">
               <div><span>Processor</span><strong>{profile.processor}</strong></div>

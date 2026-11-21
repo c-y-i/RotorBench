@@ -102,7 +102,9 @@ export function buildFlightControllerCommands(
     finite(config.vbatMinCell) &&
     finite(config.alignRollDeg) &&
     finite(config.alignPitchDeg) &&
-    finite(config.alignYawDeg);
+    finite(config.alignYawDeg) &&
+    integer(config.gyroRateHz) &&
+    integer(config.pidDenom);
 
   if (!validPlan) {
     return {
@@ -148,6 +150,8 @@ export function buildFlightControllerCommands(
     `set align_roll_deg ${Number(config.alignRollDeg)}`,
     `set align_pitch_deg ${Number(config.alignPitchDeg)}`,
     `set align_yaw_deg ${Number(config.alignYawDeg)}`,
+    `set gyro_rate_hz ${Number(config.gyroRateHz)}`,
+    `set pid_denom ${Number(config.pidDenom)}`,
     `set rth_enable ${config.rthEnabled ? 1 : 0}`,
   );
 

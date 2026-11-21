@@ -29,6 +29,8 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
         align_roll_deg: "0",
         align_pitch_deg: "0",
         align_yaw_deg: "90",
+        gyro_rate_hz: "1600",
+        pid_denom: "2",
         rth_enable: "1",
       },
     },
@@ -54,6 +56,8 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
       alignRollDeg: 0,
       alignPitchDeg: 0,
       alignYawDeg: 0,
+      gyroRateHz: 3200,
+      pidDenom: 1,
       rthEnabled: false,
     },
   );
@@ -66,6 +70,8 @@ test("builds typed FC plan differences from an Aerial Kit parameter snapshot", (
     expect.objectContaining({ key: "vbatRatio", observedValue: 10.8 }),
     expect.objectContaining({ key: "vbatWarnCell", observedValue: 3.4 }),
     expect.objectContaining({ key: "alignYawDeg", observedValue: 90 }),
+    expect.objectContaining({ key: "gyroRateHz", observedValue: 1600 }),
+    expect.objectContaining({ key: "pidDenom", observedValue: 2 }),
     expect.objectContaining({ key: "rthEnabled", observedValue: true }),
   ]));
   expect(patch.fields.find((field) => field.key === "airframe")).toBeUndefined();

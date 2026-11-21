@@ -252,6 +252,8 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "align_roll_deg=0 status=0",
     "align_pitch_deg=0 status=0",
     "align_yaw_deg=90 status=0",
+    "gyro_rate_hz=3200 status=0",
+    "pid_denom=2 status=0",
     "rth_enable=0 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
@@ -266,6 +268,8 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     alignRollDeg: 0,
     alignPitchDeg: 0,
     alignYawDeg: 0,
+    gyroRateHz: 3200,
+    pidDenom: 2,
     rthEnabled: false,
   });
 
@@ -281,6 +285,8 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     .toBe("pass");
   expect(checks.find((check) => check.id === "fc-param-align-yaw-deg").status)
     .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-gyro-rate-hz").status)
+    .toBe("pass");
 });
 
 test("marks planned parameters missing from a partial snapshot as unverified", () => {
