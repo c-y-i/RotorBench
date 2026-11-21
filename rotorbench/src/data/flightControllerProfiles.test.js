@@ -2,6 +2,7 @@ import {
   buildArmingGatePreview,
   buildFlightControllerSummary,
   createDefaultFlightControllerConfig,
+  FC_BOARD_PROFILES,
   getAirframeMotorLayout,
   getBoardProfile,
   getCatalogBoardProfile,
@@ -304,6 +305,18 @@ test("SpeedyBee F405 V5 selects its documented Betaflight board profile", () => 
     flightLog: { label: "16 MB onboard blackbox" },
   });
 });
+
+test.each(FC_BOARD_PROFILES)(
+  "$label serial map includes its documented receiver and GPS routes",
+  (profile) => {
+    const mappedPorts = profile.serialPorts.map((port) => port.id);
+
+    expect(mappedPorts).toContain(profile.receiverUart);
+    if (profile.gpsUart) {
+      expect(mappedPorts).toContain(profile.gpsUart);
+    }
+  },
+);
 
 test("Betaflight Stage 2 landing throttle is validated and summarized honestly", () => {
   const config = {

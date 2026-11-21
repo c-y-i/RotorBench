@@ -12,6 +12,7 @@ import {
   Database,
   Download,
   Gauge,
+  Network,
   RadioTower,
   RotateCcw,
   Save,
@@ -99,6 +100,12 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "arm-channel-unset": { id: "fc-arm-channel", label: "arm channel" },
   "channel-conflict": { id: "fc-arm-channel", label: "control channels" },
 });
+
+const normalizeSerialPort = (value) => (
+  typeof value === "string"
+    ? value.toUpperCase().replace(/[\s_-]/g, "")
+    : ""
+);
 
 function useFlightControllerConfig(
   value,
@@ -575,6 +582,25 @@ export default function FlightControllerSetup({
     () => buildReceiverWiringPlan(config, profile, selectedReceiver),
     [config, profile, selectedReceiver],
   );
+  const serialPorts = useMemo(
+    () => (profile.serialPorts || []).map((port) => {
+      const assignments = [];
+      if (normalizeSerialPort(config.receiverUart) === normalizeSerialPort(port.id)) {
+        assignments.push("Receiver");
+      }
+      if (
+        config.features?.gps &&
+        normalizeSerialPort(profile.gpsUart) === normalizeSerialPort(port.id)
+      ) {
+        assignments.push("GPS");
+      }
+      return { ...port, assignments };
+    }),
+    [config.features?.gps, config.receiverUart, profile],
+  );
+  const plannedSerialRouteCount = serialPorts.filter(
+    (port) => port.assignments.length > 0,
+  ).length;
   const focusIssueTarget = (issueCode) => {
     const target = FLIGHT_CONTROLLER_ISSUE_TARGETS[issueCode]
       || { id: "fc-family", label: "flight-controller setup" };
@@ -846,6 +872,43 @@ export default function FlightControllerSetup({
               <div><span>IMU bus</span><strong>{profile.imuBus}</strong></div>
               <div><span>Outputs</span><strong>{profile.outputs.motors} motors / {profile.outputs.servos} servos</strong></div>
             </div>
+
+            {serialPorts.length > 0 && (
+              <details className="fc-port-map">
+                <summary>
+                  <Network size={15} aria-hidden="true" />
+                  <span>
+                    <strong>Serial allocation</strong>
+                    <small>
+                      {serialPorts.length} documented ports · {plannedSerialRouteCount} planned route{plannedSerialRouteCount === 1 ? "" : "s"}
+                    </small>
+                  </span>
+                  <em>{plannedSerialRouteCount > 0 ? "Routes marked" : "Board map"}</em>
+                </summary>
+                <div>
+                  <p>
+                    Board documentation assigns the serial ports below. Marked
+                    routes reflect this local plan; no UART, peripheral, or
+                    continuity path has been tested.
+                  </p>
+                  <ol aria-label="Documented serial port allocation">
+                    {serialPorts.map((port) => (
+                      <li
+                        key={port.id}
+                        className={port.assignments.length ? "is-planned" : ""}
+                      >
+                        <strong>{port.id}</strong>
+                        <span>
+                          <b>{port.role}</b>
+                          <small>{port.detail}</small>
+                        </span>
+                        <em>{port.assignments.join(" + ") || "Documented"}</em>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </details>
+            )}
 
             {profile.flightLog?.available && (
               <div

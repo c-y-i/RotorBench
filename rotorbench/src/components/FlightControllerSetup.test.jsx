@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import FlightControllerSetup from "./FlightControllerSetup";
+import { getA11yViolations } from "../test/a11y";
 
 test("renders a local flight-controller configuration plan", () => {
   render(<FlightControllerSetup />);
@@ -161,6 +162,39 @@ test("selecting the SpeedyBee F405 V5 uses its documented board mapping", () => 
     .toBeChecked();
   expect(screen.getByText(/UART4 GPS/i)).toBeInTheDocument();
   expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
+});
+
+test("shows the documented serial map and marks active plan routes", async () => {
+  const { container } = render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-speedybee-f405-v5",
+        name: "SpeedyBee F405 V5",
+        processor: "STM32F405",
+        imu: "ICM42688P",
+        firmware: ["Betaflight"],
+      }}
+    />,
+  );
+
+  fireEvent.click(screen.getByText("Serial allocation"));
+
+  const portList = screen.getByRole("list", {
+    name: "Documented serial port allocation",
+  });
+  const getPort = (port) => within(portList).getByText(port).closest("li");
+  expect(getPort("UART3")).toHaveTextContent("DJI VTX");
+  expect(getPort("UART4").querySelector("em")).toHaveTextContent("GPS");
+  expect(getPort("UART5")).toHaveTextContent("ESC telemetry");
+  expect(getPort("UART2").querySelector("em")).toHaveTextContent("Receiver");
+
+  fireEvent.change(screen.getByLabelText("Receiver UART"), {
+    target: { value: "UART6" },
+  });
+
+  expect(getPort("UART2").querySelector("em")).toHaveTextContent("Documented");
+  expect(getPort("UART6").querySelector("em")).toHaveTextContent("Receiver");
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("receiver wiring expands into a documented continuity checklist", () => {

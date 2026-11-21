@@ -51,6 +51,13 @@ export const FC_BOARD_PROFILES = [
     outputs: { motors: 2, servos: 2 },
     defaultAirframe: "elevonwingsingle",
     receiverUartLocked: true,
+    serialPorts: [
+      {
+        id: "USART3",
+        role: "Receiver",
+        detail: "PB10 / PB11",
+      },
+    ],
     flightLog: {
       available: true,
       label: "Internal flash log + retained RAM",
@@ -96,6 +103,18 @@ export const FC_BOARD_PROFILES = [
     outputs: { motors: 4, servos: 2 },
     defaultAirframe: "quadx",
     receiverUartLocked: true,
+    serialPorts: [
+      {
+        id: "UART1",
+        role: "GPS",
+        detail: "GPIO13 TX / GPIO4 RX",
+      },
+      {
+        id: "UART2",
+        role: "Receiver",
+        detail: "GPIO17 TX / GPIO16 RX",
+      },
+    ],
     flightLog: {
       available: true,
       label: "ESP32 aerialkit partition + retained RAM",
@@ -140,6 +159,23 @@ export const FC_BOARD_PROFILES = [
     outputs: { motors: 4, servos: 2 },
     defaultAirframe: "quadx",
     receiverUartLocked: true,
+    serialPorts: [
+      {
+        id: "USART1",
+        role: "Receiver",
+        detail: "PA9 TX / PA10 RX",
+      },
+      {
+        id: "USART2",
+        role: "Console",
+        detail: "Reserved by the documented board build",
+      },
+      {
+        id: "USART3",
+        role: "GPS",
+        detail: "PB10 TX / PB11 RX",
+      },
+    ],
     flightLog: {
       available: true,
       label: "Internal flash log + retained RAM",
@@ -180,6 +216,18 @@ export const FC_BOARD_PROFILES = [
     outputs: { motors: 2, servos: 2 },
     defaultAirframe: "elevonwing",
     receiverUartLocked: true,
+    serialPorts: [
+      {
+        id: "USART2",
+        role: "Receiver",
+        detail: "PA8 TX / PB0 RX, onboard ELRS",
+      },
+      {
+        id: "USART3",
+        role: "GPS",
+        detail: "PB11 TX / PB10 RX with peripheral swap",
+      },
+    ],
     flightLog: {
       available: true,
       label: "Internal flash log + retained RAM",
@@ -223,6 +271,38 @@ export const FC_BOARD_PROFILES = [
     outputs: { motors: 4, servos: 2 },
     defaultAirframe: "quadx",
     receiverUartLocked: false,
+    serialPorts: [
+      {
+        id: "UART1",
+        role: "Bluetooth tuning",
+        detail: "Shared with the onboard tuning chip",
+      },
+      {
+        id: "UART2",
+        role: "Receiver",
+        detail: "Front receiver pads",
+      },
+      {
+        id: "UART3",
+        role: "DJI VTX",
+        detail: "Documented video-link port",
+      },
+      {
+        id: "UART4",
+        role: "GPS",
+        detail: "GPS pads / front SH1.0-6-pin",
+      },
+      {
+        id: "UART5",
+        role: "ESC telemetry",
+        detail: "Documented one-wire telemetry port",
+      },
+      {
+        id: "UART6",
+        role: "Receiver",
+        detail: "Alternate receiver port",
+      },
+    ],
     flightLog: {
       available: true,
       label: "16 MB onboard blackbox",
