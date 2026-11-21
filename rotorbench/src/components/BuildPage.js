@@ -1371,6 +1371,8 @@ export default function BuildPage() {
             flightController={assemblySpec.flightController}
             receiver={assemblySpec.receiver}
             battery={assemblySpec.battery}
+            motor={assemblySpec.motor}
+            propeller={assemblySpec.propeller}
           />
           <MeasuredGeometryPanel
             parts={measuredGeometryParts}

@@ -34,8 +34,20 @@ const battery = {
   dimensionsMm: [70, 30, 35],
   sourceUrl: "https://example.com/battery",
 };
+const motor = {
+  id: "motor-test",
+  name: "Test motor",
+  dimensionsMm: [20, 20, 20],
+  sourceUrl: "https://example.com/motor",
+};
+const propeller = {
+  id: "propeller-test",
+  name: "Test propeller",
+  dimensionsMm: [64, 5, 64],
+  sourceUrl: "https://example.com/propeller",
+};
 
-test("renders the same vertical order used by the 3D assembly", () => {
+test("renders the full propulsion, electronics, and battery height order", () => {
   render(
     <AssemblyStackMap
       frame={frame}
@@ -43,13 +55,17 @@ test("renders the same vertical order used by the 3D assembly", () => {
       flightController={flightController}
       receiver={receiver}
       battery={battery}
+      motor={motor}
+      propeller={propeller}
     />,
   );
 
-  expect(screen.getByText("Stack profile")).toBeInTheDocument();
-  expect(screen.getByText("3 stack layers · battery above")).toBeInTheDocument();
+  expect(screen.getByText("Assembly profile")).toBeInTheDocument();
+  expect(screen.getByText("7 component levels")).toBeInTheDocument();
   expect(screen.getAllByRole("listitem").map((item) => item.textContent))
     .toEqual(expect.arrayContaining([
+      expect.stringContaining("Propellers ×4"),
+      expect.stringContaining("Motors ×4"),
       expect.stringContaining("Battery"),
       expect.stringContaining("Receiver"),
       expect.stringContaining("Flight controller"),
