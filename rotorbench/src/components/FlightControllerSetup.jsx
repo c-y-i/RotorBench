@@ -35,6 +35,7 @@ import {
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
 import { buildFlightControllerCommands } from "../utils/flightControllerCommands";
+import { buildReceiverWiringPlan } from "../utils/receiverWiring";
 import "../styles/fc-setup.css";
 
 const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
@@ -441,6 +442,19 @@ export default function FlightControllerSetup({
     }
   };
 
+  const copyWiring = async () => {
+    if (!navigator.clipboard?.writeText) {
+      setSaveState("Clipboard access is unavailable in this browser.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(wiringPlan.copyText);
+      setSaveState("Wiring checklist copied. No continuity or hardware state was verified.");
+    } catch {
+      setSaveState("The browser refused clipboard access.");
+    }
+  };
+
   const errorCount = issues.filter((issue) => issue.severity === "error").length;
   const warningCount = issues.length - errorCount;
   const readinessClass = errorCount
@@ -464,6 +478,10 @@ export default function FlightControllerSetup({
     selectedReceiver?.id &&
     profile.receiverPins &&
     !/not mapped/i.test(profile.receiverPins),
+  );
+  const wiringPlan = useMemo(
+    () => buildReceiverWiringPlan(config, profile, selectedReceiver),
+    [config, profile, selectedReceiver],
   );
   const focusIssueTarget = (issueCode) => {
     const target = FLIGHT_CONTROLLER_ISSUE_TARGETS[issueCode]
@@ -694,6 +712,39 @@ export default function FlightControllerSetup({
                 />
               </Field>
             </div>
+
+            <details className="fc-wiring-plan">
+              <summary>
+                <Cable size={15} aria-hidden="true" />
+                <span>
+                  <strong>Receiver wiring</strong>
+                  <small>
+                    {wiringPlan.uart} · {wiringPlan.pins} · {wiringPlan.baud || "rate not set"} baud
+                  </small>
+                </span>
+                <em className={wiringPlan.documented ? "is-documented" : "is-unverified"}>
+                  {wiringPlan.documented ? "Pins documented" : "Verify pins"}
+                </em>
+              </summary>
+              <div>
+                <p>
+                  Planning checklist for {wiringPlan.receiverName}. No continuity,
+                  polarity, receiver supply, or hardware state has been verified.
+                </p>
+                <ol aria-label="Receiver wiring checklist">
+                  {wiringPlan.steps.map((step) => (
+                    <li key={step.id}>
+                      <strong>{step.label}</strong>
+                      <span>{step.detail}</span>
+                    </li>
+                  ))}
+                </ol>
+                <button type="button" onClick={copyWiring}>
+                  <Clipboard size={14} aria-hidden="true" />
+                  Copy wiring checklist
+                </button>
+              </div>
+            </details>
 
             {config.firmwareFamily === "aerialkit" && (
               <div className="fc-calibration">

@@ -312,6 +312,140 @@
   line-height: 1.35;
 }
 
+.fc-wiring-plan {
+  margin-top: 14px;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.fc-wiring-plan > summary {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 9px 11px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.fc-wiring-plan > summary::-webkit-details-marker {
+  display: none;
+}
+
+.fc-wiring-plan > summary:hover {
+  background: var(--surface-soft);
+}
+
+.fc-wiring-plan > summary > svg {
+  color: var(--brand);
+}
+
+.fc-wiring-plan > summary > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.fc-wiring-plan > summary strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.fc-wiring-plan > summary small {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-wiring-plan > summary > em {
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.fc-wiring-plan > summary > em.is-documented {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.fc-wiring-plan > summary > em.is-unverified {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.fc-wiring-plan > div {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.fc-wiring-plan > div > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.fc-wiring-plan ol {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-inline-start: 20px;
+}
+
+.fc-wiring-plan li {
+  padding-inline-start: 3px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.fc-wiring-plan li strong {
+  display: block;
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.fc-wiring-plan li span {
+  display: block;
+  margin-top: 1px;
+}
+
+.fc-wiring-plan > div > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.fc-wiring-plan > div > button:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
 .fc-calibration {
   display: grid;
   gap: 11px;
@@ -1019,6 +1153,15 @@
   .fc-field-grid,
   .fc-field-grid-three {
     grid-template-columns: 1fr;
+  }
+
+  .fc-wiring-plan > summary {
+    grid-template-columns: 16px minmax(0, 1fr);
+  }
+
+  .fc-wiring-plan > summary > em {
+    grid-column: 2;
+    width: max-content;
   }
 
   .fc-calibration-heading {

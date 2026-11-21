@@ -70,6 +70,8 @@ The form starts from the flight controller and receiver selected in the active R
 
 The FC planner now also shows a source-backed `Control path` strip: selected radio endpoint → receiver UART/pins/baud → planned airframe motor/servo count → DShot output rate. It reports `Pins documented` only when both a build receiver and a non-placeholder board pin mapping exist; otherwise it remains `Mapping incomplete`.
 
+The receiver section now expands into a board-specific `Receiver wiring` checklist. Documented profiles name the UART, pins, protocol, and baud; custom or placeholder mappings stay `Verify pins`. CRSF adds the telemetry return path, SBUS adds input-only and external-inverter steps when documented, and every plan includes common-ground, receiver-supply, and pre-power continuity checks. The checklist is copy-only and explicitly records that RotorBench has not tested continuity, polarity, receiver supply, or hardware readiness.
+
 Documented board profiles lock their compiled receiver UART and baud. Custom boards leave those fields editable. The preferred Aerial Kit with ExpressLRS preset uses arm channel 5 and flight-mode channel 6; a separate legacy preset preserves the firmware's arm 6 / mode 5 defaults.
 
 Stored plans use schema version 3 so older inferred channel maps are discarded instead of being silently mixed with current defaults. The combined Setup page owns the radio plan; changing tabs no longer lets standalone radio storage override the parent's build-aware state. Cross-plan warnings can copy either the FC or radio channel map explicitly.
@@ -338,7 +340,7 @@ A test build using the expanded catalog completed successfully and rendered a re
 | `rotorbench/src/components/AppNav.js` | Desktop sidebar and mobile navigation |
 | `rotorbench/src/components/RouteErrorBoundary.js` | Lazy route/rendering failure recovery |
 | `rotorbench/src/components/HomePage.js` | Build overview, 3D preview, telemetry |
-| `rotorbench/src/components/BuildPage.js` | Part selection, model URL resolution, assembly specification |
+| `rotorbench/src/components/BuildPage.js` | Part selection, model URLs, measured geometry, placement audit, power path, and assembly specification |
 | `rotorbench/src/components/PartPicker.jsx` | Searchable part catalog and compatibility display |
 | `rotorbench/src/components/SetupPage.js` | Unified flight-controller and radio plan workflow |
 | `rotorbench/src/components/FlightControllerSetup.jsx` | Flight-controller configuration planner |
@@ -350,7 +352,7 @@ A test build using the expanded catalog completed successfully and rendered a re
 | `rotorbench/src/data/flightControllerProfiles.js` | Board, firmware, channel, and validation profiles |
 | `rotorbench/src/data/radioProfiles.js` | Radio target, link, binding, and channel profiles |
 | `rotorbench/src/utils/elrsBinding.js` | Source-compatible phrase byte length and first-six-MD5-byte UID preview |
-| `rotorbench/src/data/platformPresets.js` | Validated two 3.5-inch and two 5.5-inch starter builds |
+| `rotorbench/src/data/platformPresets.js` | Six validated 3.5-inch and 5.5-inch starter builds |
 | `rotorbench/src/utils/buildComparison.js` | Catalog totals, fit state, evidence, and hardware-plan comparison |
 | `rotorbench/src/utils/buildEvidence.js` | Selected-part source, estimate, and fallback summary |
 | `rotorbench/src/utils/buildSheet.js` | Portable draft build-sheet generation and validated import |
@@ -359,6 +361,7 @@ A test build using the expanded catalog completed successfully and rendered a re
 | `rotorbench/src/utils/storage.js` | Safe local JSON reads/writes with malformed-state recovery |
 | `rotorbench/src/utils/savedBuilds.js` | Build clone, rename, and local hardware-plan copy helpers |
 | `rotorbench/src/utils/flightControllerCommands.js` | Aerial Kit console command preview |
+| `rotorbench/src/utils/receiverWiring.js` | Board-bounded receiver continuity, telemetry, inverter, supply, and polarity checklist |
 | `rotorbench/src/utils/benchRunbook.js` | Source-backed `ak fc` / `ak radio` runbook generation |
 | `rotorbench/src/utils/benchEvidence.js` | Validated pair/bench/capture evidence normalization and gate review |
 | `rotorbench/src/utils/fcEvidence.js` | Read-only `ak fc status --json` and `ak fc preflight` normalization and correlation |
@@ -368,7 +371,7 @@ A test build using the expanded catalog completed successfully and rendered a re
 | `rotorbench/src/utils/crsfCapture.js` | Incremental CRSF framing, CRC, RC channels, and link statistics decoding |
 | `rotorbench/src/utils/hardwarePlanTransfer.js` | Validated combined FC/radio plan export/import |
 | `rotorbench/src/utils/hardwareReadiness.js` | Build-to-Setup hardware-plan restoration and readiness summary |
-| `rotorbench/src/utils/physicalCompatibility.js` | Stack, motor-mount, prop-shaft, and hub fit checks |
+| `rotorbench/src/utils/physicalCompatibility.js` | Stack, mount, shaft, power-path, battery deck, and summary fit checks |
 | `rotorbench/src/utils/electricalCompatibility.js` | Prop clearance, voltage, current, and FC input checks |
 | `rotorbench/src/components/BabylonViewer.jsx` | Babylon scene, model loading, normalized placement, fallbacks |
 | `rotorbench/src/assembly/assemblyTransforms.js` | Millimetre-to-scene transforms and assembly math |
@@ -410,7 +413,7 @@ cd ../backend
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The latest power-path rerun passed 350 frontend tests across 48 suites, the production build, full ESLint, nine backend tests, and the Impeccable detector. The long audit inventory below records the preceding 339-test pass; its feature coverage remains valid and the focused measurement tests are additive.
+The latest receiver-wiring rerun passed 355 frontend tests across 49 suites, the production build, full ESLint, nine backend tests, and the Impeccable detector. The long audit inventory below records the preceding 339-test pass; its feature coverage remains valid and the newer focused tests are additive.
 
 The production build compiled successfully. Three hundred thirty-nine frontend tests passed across forty-eight suites covering routing failure recovery, persistent-state recovery, automatic unsaved-build recovery, explicit clean new-build starts including same-route resets, stale draft ID rejection, 60-product catalog integrity, starter-platform state integrity and deep links, assembly transforms, source-aware eight-check viewer placement and interface audit, build-local measured-geometry validation/persistence/export/analysis propagation, estimated/fallback/measured confidence propagation, interactive sweep/mount fit overlay, motor-pattern/hub/sweep conflicts, exploded inspection, prop-hub fallback, 3D/2D WebGL fallback, inspection views, actual Aerial Kit arm gates, receiver calibration planning, captured channel extrema and planned-calibration comparison, multiple RC frames per serial read, documented sensor-fit and internal-flight-log defaults, read-only Aerial Kit log discovery, control-path mapping, issue-to-field review navigation, unsupported control-role and integer-limit validation, workspace/public control-role separation, build-frame motor-count matching, target-specific radio power and fail-closed enum validation, MAVLink full-resolution switching and reported link-mode correlation, hidden-role sanitation, firmware-switch role cleanup, Build-to-Setup and Setup-to-Build draft preservation, hardware readiness across Build, Saved, Compare, and Analysis, direct Analysis refresh recovery, partial-build hardware-state accuracy, conservative battery-envelope failures, plan-aware bench-runbook generation and write-gated copying, Aerial Kit pair/bench/capture import, native CRSF-observation import, FC RC JSON freshness/plausibility parsing, FC preflight JSON parsing, TX and RX native observation correlation, synchronized TX/RX descriptor open and stop, failed-open rollback, double-click command latching, shared capture-session correlation, target-change session reset, current-target, direction-specific baud and capture-window checks, duplicate endpoint rejection, imported FC status and preflight protocol/state/line correlation, Betaflight preflight parsing, Betaflight failsafe bit decoding, protocol-aware receiver-link handling, parameter coverage and partial-snapshot refusal, review-item filtering, explicit FC/radio observed-value adoption, domain-specific adoption scope guards, radio target-status gating, sanitized bounded evidence history and compatible-run comparison, legacy raw-UID migration, redacted review export, sanitized radio status role/baud/firmware/product correlation and mismatch messaging, report-plus-TX/RX-boot bundle correlation, TX parameter-snapshot correlation, FHSS seed/channel correlation, direction-aware endpoint evidence, strict UID validation, parser/cadence/freshness/link-quality checks, quality failures overriding a file-reported RF pass, sanitized build-level evidence attachment, revision and plan scope matching, staged-identity fingerprint matching, stale-evidence downgrade, removal and duplicate propagation, legacy unscoped-evidence labeling, shared Aerial Kit CRSF protocol vectors, sanitized review export, read-only Web Serial lifecycle, CRSF framing/link/telemetry decoding, failed-capture evidence export, Betaflight-only command previews, contextual radio planning and channel overview, phrase-derived UID vectors, binding-phrase byte limits, hardened hardware-plan and radio-enum import validation, verified/conflict/source-backed picker filters, keyboard result navigation, price sorting, recent parts, physical and electrical compatibility, build provenance, portable BOM CSV export with explicit missing selections, sanitized hardware context in build sheets and analysis reports, comparable build diffs and portable comparison export, saved-build upsert, profile action state, and lifecycle actions. Full ESLint passes. The Impeccable source detector reports no findings on the changed UI.
 
@@ -489,6 +492,8 @@ Frames expose a `Usable battery deck` measurement with an explicit instruction t
 An optional `Fit overlay` renders those catalogued interfaces directly in the Babylon scene: propeller sweep rings and translucent discs follow each propeller root, while motor mounting-pattern outlines follow each motor root. Lime marks a verified interface, teal marks build-local measurement, orange marks a conflict, and muted grey marks incomplete metadata. The overlay stays attached through exploded inspection and is presented with a compact legend; it remains geometry visualization, not a physical-fit or flight-readiness claim.
 
 The rendered Impeccable check reports zero findings for Build with the source-aware eight-check placement audit open at 390×844 and 1440×900, with no horizontal overflow. The expanded Setup Bench tools, runbook, and live-capture disclosures pass axe-core WCAG A/AA with zero violations and no horizontal overflow. Analysis, Saved, and Profile report zero rendered detector findings and zero axe violations at both widths after the shared title, action, contrast, and touch-target pass.
+
+The ESP32 documented receiver-wiring state was rendered with a `UART2 / GPIO17 TX / GPIO16 RX / 420000 baud` route. The expanded checklist exposed all five signal, telemetry, ground, supply, and continuity steps plus the copy action. It has no horizontal overflow, all controls remain at least 44px high, and axe reports zero WCAG A/AA violations at 390×844 and 1440×900.
 
 The Build `Fit overlay` was rendered with the complete 3.5-inch source preset. Four propeller sweep envelopes and motor-interface outlines appear in-scene, the legend reports all three interface states, and the 44px toggle remains operable at 390 and 1440 widths. There is no horizontal overflow and axe reports zero WCAG A/AA violations at both sizes.
 

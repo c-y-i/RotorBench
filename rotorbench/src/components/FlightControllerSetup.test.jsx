@@ -49,6 +49,52 @@ test("changing to an ESP32 profile exposes its documented UART", () => {
   );
 });
 
+test("receiver wiring expands into a documented continuity checklist", () => {
+  render(
+    <FlightControllerSetup
+      selectedReceiver={{
+        id: "rx-test",
+        name: "RadioMaster RP3-H ExpressLRS",
+        protocol: "CRSF",
+      }}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "esp32dev" },
+  });
+  fireEvent.click(screen.getByText("Receiver wiring"));
+
+  const checklist = screen.getByRole("list", {
+    name: "Receiver wiring checklist",
+  });
+  expect(within(checklist).getByText("Receiver CRSF TX to FC RX"))
+    .toBeInTheDocument();
+  expect(within(checklist).getByText(/GPIO17 TX \/ GPIO16 RX/))
+    .toBeInTheDocument();
+  expect(within(checklist).getByText("Connect signal ground")).toBeInTheDocument();
+  expect(screen.getAllByText("Pins documented")).toHaveLength(2);
+  expect(screen.getByRole("button", { name: "Copy wiring checklist" }))
+    .toBeInTheDocument();
+});
+
+test("SBUS wiring adds the documented inverter step", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "feather-f405" },
+  });
+  fireEvent.change(screen.getByLabelText("Protocol"), {
+    target: { value: "sbus" },
+  });
+  fireEvent.click(screen.getByText("Receiver wiring"));
+
+  const checklist = screen.getByRole("list", {
+    name: "Receiver wiring checklist",
+  });
+  expect(within(checklist).getByText("SBUS is input-only")).toBeInTheDocument();
+  expect(within(checklist).getByText("Fit the required SBUS inverter"))
+    .toBeInTheDocument();
+});
+
 test("configuration changes reach the parent callback", () => {
   const onChange = jest.fn();
   render(<FlightControllerSetup onChange={onChange} />);
