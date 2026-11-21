@@ -1,12 +1,15 @@
-import { RECEIVER_PROTOCOLS } from "../data/flightControllerProfiles";
+import {
+  RECEIVER_PROTOCOLS,
+  normalizeSerialPortName,
+} from "../data/flightControllerProfiles";
 
 const UNMAPPED_PIN_PATTERN = /not mapped|unknown|not assigned/i;
 
-function hasDocumentedPins(profile) {
+function hasDocumentedPins(pins) {
   return Boolean(
-    profile?.receiverUart
-    && profile?.receiverPins
-    && !UNMAPPED_PIN_PATTERN.test(profile.receiverPins),
+    pins
+    && !UNMAPPED_PIN_PATTERN.test(pins)
+    && !/not bundled/i.test(pins),
   );
 }
 
@@ -14,9 +17,14 @@ export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = nu
   const protocol = RECEIVER_PROTOCOLS.find(
     (item) => item.value === config.receiverProtocol,
   ) || RECEIVER_PROTOCOLS[0];
-  const documented = hasDocumentedPins(profile);
   const uart = config.receiverUart || profile.receiverUart || "UART not assigned";
-  const pins = profile.receiverPins || "Pins not mapped";
+  const selectedPort = (profile.serialPorts || []).find(
+    (port) => normalizeSerialPortName(port.id) === normalizeSerialPortName(uart),
+  );
+  const pins = profile.serialPorts?.length
+    ? selectedPort?.pins || `Pins not mapped for ${uart}`
+    : profile.receiverPins || "Pins not mapped";
+  const documented = hasDocumentedPins(pins);
   const baud = config.receiverBaud || protocol.baud || null;
   const steps = [
     {
@@ -24,7 +32,9 @@ export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = nu
       label: protocol.value === "sbus"
         ? "Receiver SBUS signal to FC RX"
         : "Receiver CRSF TX to FC RX",
-      detail: `Route the receiver output to the documented ${uart} pads: ${pins}. Confirm TX/RX direction against the board map before soldering.`,
+      detail: documented
+        ? `Route the receiver output to the documented ${uart} pads: ${pins}. Confirm TX/RX direction against the board map before soldering.`
+        : `Assign the receiver to ${uart}, then verify the pad mapping before soldering. ${selectedPort?.detail || pins}.`,
     },
   ];
 
@@ -87,6 +97,7 @@ export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = nu
     documented,
     uart,
     pins,
+    portDetail: selectedPort?.detail || null,
     baud,
     receiverName: receiver?.name || "Receiver not selected",
     steps,

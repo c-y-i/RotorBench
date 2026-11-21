@@ -3,6 +3,9 @@ import { buildReceiverWiringPlan } from "./receiverWiring";
 
 const esp32 = FC_BOARD_PROFILES.find((profile) => profile.id === "esp32dev");
 const feather = FC_BOARD_PROFILES.find((profile) => profile.id === "feather-f405");
+const speedybee = FC_BOARD_PROFILES.find(
+  (profile) => profile.id === "speedybee-f405-v5",
+);
 
 test("builds a documented CRSF wiring checklist without claiming continuity", () => {
   const plan = buildReceiverWiringPlan(
@@ -64,5 +67,35 @@ test("keeps custom-board pin assignments explicitly unverified", () => {
     pins: "Not mapped",
     wiringVerified: false,
   });
-  expect(plan.steps[0].detail).toMatch(/confirm TX\/RX direction/i);
+  expect(plan.steps[0].detail).toMatch(/verify the pad mapping/i);
+});
+
+test("does not inherit the primary receiver pads on an alternate UART", () => {
+  const alternate = buildReceiverWiringPlan(
+    {
+      receiverProtocol: "crsf",
+      receiverUart: "UART6",
+      receiverBaud: 420000,
+    },
+    speedybee,
+  );
+  const unmapped = buildReceiverWiringPlan(
+    {
+      receiverProtocol: "crsf",
+      receiverUart: "UART7",
+      receiverBaud: 420000,
+    },
+    speedybee,
+  );
+
+  expect(alternate).toMatchObject({
+    documented: false,
+    pins: "Pins not mapped for UART6",
+    portDetail: "Alternate receiver port",
+  });
+  expect(alternate.steps[0].detail).toMatch(/verify the pad mapping/i);
+  expect(unmapped).toMatchObject({
+    documented: false,
+    pins: "Pins not mapped for UART7",
+  });
 });

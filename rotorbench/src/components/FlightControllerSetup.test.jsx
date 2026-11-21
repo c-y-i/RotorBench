@@ -194,6 +194,11 @@ test("shows the documented serial map and marks active plan routes", async () =>
 
   expect(getPort("UART2").querySelector("em")).toHaveTextContent("Documented");
   expect(getPort("UART6").querySelector("em")).toHaveTextContent("Receiver");
+  expect(screen.getAllByText(/Pins not mapped for UART6/).length)
+    .toBeGreaterThan(0);
+  expect(screen.getByText("Mapping incomplete")).toBeInTheDocument();
+  expect(screen.getByText(/UART6.*pad mapping is not bundled/i))
+    .toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
 });
 

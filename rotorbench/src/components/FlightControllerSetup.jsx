@@ -70,6 +70,7 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "uart-conflict": { id: "fc-uart", label: "receiver UART" },
   "receiver-uart-unmapped": { id: "fc-uart", label: "receiver UART" },
   "receiver-uart-role": { id: "fc-uart", label: "receiver UART" },
+  "receiver-uart-pins-unmapped": { id: "fc-uart", label: "receiver UART" },
   "no-gps-uart": { id: "fc-feature-gps", label: "GPS feature" },
   "throttle-low-range": { id: "fc-throttle-low", label: "low-throttle gate" },
   "rc-timeout-range": { id: "fc-rc-timeout", label: "receiver timeout" },
@@ -570,14 +571,12 @@ export default function FlightControllerSetup({
       channel > channelMaximum
     );
   const airframeSpec = AIRFRAMES.find((item) => item.value === config.airframe);
-  const receiverPathResolved = Boolean(
-    selectedReceiver?.id &&
-    profile.receiverPins &&
-    !/not mapped/i.test(profile.receiverPins),
-  );
   const wiringPlan = useMemo(
     () => buildReceiverWiringPlan(config, profile, selectedReceiver),
     [config, profile, selectedReceiver],
+  );
+  const receiverPathResolved = Boolean(
+    selectedReceiver?.id && wiringPlan.documented,
   );
   const serialPorts = useMemo(
     () => (profile.serialPorts || []).map((port) => {
@@ -672,7 +671,7 @@ export default function FlightControllerSetup({
             <span>
               <small>Serial route</small>
               <strong>{config.receiverUart || "UART not assigned"}</strong>
-              <b>{profile.receiverPins || "Pins not mapped"} · {config.receiverBaud || "rate not set"} baud</b>
+              <b>{wiringPlan.pins} · {config.receiverBaud || "rate not set"} baud</b>
             </span>
             <ArrowRight size={14} aria-hidden="true" />
           </li>
@@ -1006,9 +1005,11 @@ export default function FlightControllerSetup({
                 label="Receiver UART"
                 htmlFor="fc-uart"
                 hint={profile.receiverUartLocked
-                  ? `Compiled board mapping${profile.receiverPins ? `: ${profile.receiverPins}` : ""}.`
-                  : profile.receiverPins
-                    ? `Documented pins: ${profile.receiverPins}`
+                  ? `Compiled board mapping: ${wiringPlan.pins}.`
+                  : wiringPlan.documented
+                    ? `Documented pins: ${wiringPlan.pins}`
+                    : wiringPlan.portDetail
+                      ? `${wiringPlan.uart}: ${wiringPlan.portDetail}. Pad mapping must be verified.`
                     : "Verify the selected board before wiring."}
               >
                 <input

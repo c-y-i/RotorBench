@@ -56,6 +56,7 @@ export const FC_BOARD_PROFILES = [
         id: "USART3",
         role: "Receiver",
         detail: "PB10 / PB11",
+        pins: "PB10 / PB11",
       },
     ],
     flightLog: {
@@ -113,6 +114,7 @@ export const FC_BOARD_PROFILES = [
         id: "UART2",
         role: "Receiver",
         detail: "GPIO17 TX / GPIO16 RX",
+        pins: "GPIO17 TX / GPIO16 RX",
       },
     ],
     flightLog: {
@@ -164,6 +166,7 @@ export const FC_BOARD_PROFILES = [
         id: "USART1",
         role: "Receiver",
         detail: "PA9 TX / PA10 RX",
+        pins: "PA9 TX / PA10 RX",
       },
       {
         id: "USART2",
@@ -221,6 +224,7 @@ export const FC_BOARD_PROFILES = [
         id: "USART2",
         role: "Receiver",
         detail: "PA8 TX / PB0 RX, onboard ELRS",
+        pins: "PA8 TX / PB0 RX, onboard ELRS",
       },
       {
         id: "USART3",
@@ -281,6 +285,7 @@ export const FC_BOARD_PROFILES = [
         id: "UART2",
         role: "Receiver",
         detail: "Front receiver pads",
+        pins: "Front receiver pads",
       },
       {
         id: "UART3",
@@ -1184,6 +1189,12 @@ export function validateFlightControllerConfig(
         severity: "warning",
         code: "receiver-uart-role",
         message: `${receiverPort.id} is documented for ${receiverPort.role} on ${profile.label}. Reassigning it to the receiver requires a deliberate port remap.`,
+      });
+    } else if (!receiverPort.pins) {
+      issues.push({
+        severity: "warning",
+        code: "receiver-uart-pins-unmapped",
+        message: `${receiverPort.id} is an alternate receiver port on ${profile.label}, but its pad mapping is not bundled. Verify the Betaflight resource and solder pads before wiring.`,
       });
     }
   }

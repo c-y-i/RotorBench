@@ -349,6 +349,17 @@ test("warns before a receiver reassigns a documented peripheral UART", () => {
       severity: "warning",
     }),
   ]));
+
+  expect(validateFlightControllerConfig({
+    ...config,
+    receiverUart: "UART6",
+  }, profile)).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "receiver-uart-pins-unmapped",
+      severity: "warning",
+      message: expect.stringMatching(/UART6.*pad mapping is not bundled/i),
+    }),
+  ]));
 });
 
 test("Betaflight Stage 2 landing throttle is validated and summarized honestly", () => {
