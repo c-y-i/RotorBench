@@ -235,7 +235,7 @@ The physical compatibility layer in `rotorbench/src/utils/physicalCompatibility.
 * propeller bore against the motor prop shaft;
 * propeller hub diameter against motor bell diameter;
 * battery discharge connector against the power lead supplied with the ESC.
-* a necessary battery-envelope bound: a battery whose two smallest dimensions exceed the frame’s complete bounding footprint is flagged as impossible in every orientation. Batteries inside that broad bound remain unverified because usable deck area is not catalogued.
+* a necessary battery-envelope bound: a battery whose two smallest dimensions exceed the frame’s complete bounding footprint is flagged as impossible in every orientation. A build-local measured `batteryDeckDimensionsMm` footprint replaces that conservative overall-frame bound and produces a measured result without claiming the deck dimensions came from the manufacturer.
 
 The Parts Manifest shows whether physical fit is verified, conflicting, or still awaiting data. A picker must not call an unchecked combination “compatible.”
 
@@ -255,7 +255,7 @@ The electronics category now includes Holybro Tekko32 F4 Metal 65A and iFlight B
 
 The mobile picker sheet now declares five grid rows for its five children (header, search, filters, results, footer). Previously the filter row collapsed behind the results because the grid declared only four rows.
 
-The checks remain non-blocking and only run when both products carry usable data. Connector evidence currently covers source-backed battery plugs, four ESCs with included XT30/XT60 leads, one ESC with bare solder pads, and one ESC with an unspecified supplied cable. A conservative battery-envelope conflict is available from overall frame/battery dimensions; usable deck area, wire routing, and board clearance still need catalog data before they can be verified.
+The checks remain non-blocking and only run when both products carry usable data. Connector evidence currently covers source-backed battery plugs, four ESCs with included XT30/XT60 leads, one ESC with bare solder pads, and one ESC with an unspecified supplied cable. A conservative battery-envelope conflict is available from overall frame/battery dimensions; users can replace it with a measured usable deck footprint. Wire routing and board clearance still need catalog or build-local evidence before they can be verified.
 
 The build also exposes a collapsible provenance panel. For every selected part it shows whether the catalog is source-backed or legacy, which fields are estimated, whether geometry is a fallback, and separate product, price, and connector source links.
 
@@ -408,7 +408,7 @@ cd ../backend
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The latest power-connection rerun passed 345 frontend tests across 48 suites, the production build, full ESLint, nine backend tests, and the Impeccable detector. The long audit inventory below records the preceding 339-test pass; its feature coverage remains valid and the focused measurement tests are additive.
+The latest measured-deck rerun passed 348 frontend tests across 48 suites, the production build, full ESLint, nine backend tests, and the Impeccable detector. The long audit inventory below records the preceding 339-test pass; its feature coverage remains valid and the focused measurement tests are additive.
 
 The production build compiled successfully. Three hundred thirty-nine frontend tests passed across forty-eight suites covering routing failure recovery, persistent-state recovery, automatic unsaved-build recovery, explicit clean new-build starts including same-route resets, stale draft ID rejection, 60-product catalog integrity, starter-platform state integrity and deep links, assembly transforms, source-aware eight-check viewer placement and interface audit, build-local measured-geometry validation/persistence/export/analysis propagation, estimated/fallback/measured confidence propagation, interactive sweep/mount fit overlay, motor-pattern/hub/sweep conflicts, exploded inspection, prop-hub fallback, 3D/2D WebGL fallback, inspection views, actual Aerial Kit arm gates, receiver calibration planning, captured channel extrema and planned-calibration comparison, multiple RC frames per serial read, documented sensor-fit and internal-flight-log defaults, read-only Aerial Kit log discovery, control-path mapping, issue-to-field review navigation, unsupported control-role and integer-limit validation, workspace/public control-role separation, build-frame motor-count matching, target-specific radio power and fail-closed enum validation, MAVLink full-resolution switching and reported link-mode correlation, hidden-role sanitation, firmware-switch role cleanup, Build-to-Setup and Setup-to-Build draft preservation, hardware readiness across Build, Saved, Compare, and Analysis, direct Analysis refresh recovery, partial-build hardware-state accuracy, conservative battery-envelope failures, plan-aware bench-runbook generation and write-gated copying, Aerial Kit pair/bench/capture import, native CRSF-observation import, FC RC JSON freshness/plausibility parsing, FC preflight JSON parsing, TX and RX native observation correlation, synchronized TX/RX descriptor open and stop, failed-open rollback, double-click command latching, shared capture-session correlation, target-change session reset, current-target, direction-specific baud and capture-window checks, duplicate endpoint rejection, imported FC status and preflight protocol/state/line correlation, Betaflight preflight parsing, Betaflight failsafe bit decoding, protocol-aware receiver-link handling, parameter coverage and partial-snapshot refusal, review-item filtering, explicit FC/radio observed-value adoption, domain-specific adoption scope guards, radio target-status gating, sanitized bounded evidence history and compatible-run comparison, legacy raw-UID migration, redacted review export, sanitized radio status role/baud/firmware/product correlation and mismatch messaging, report-plus-TX/RX-boot bundle correlation, TX parameter-snapshot correlation, FHSS seed/channel correlation, direction-aware endpoint evidence, strict UID validation, parser/cadence/freshness/link-quality checks, quality failures overriding a file-reported RF pass, sanitized build-level evidence attachment, revision and plan scope matching, staged-identity fingerprint matching, stale-evidence downgrade, removal and duplicate propagation, legacy unscoped-evidence labeling, shared Aerial Kit CRSF protocol vectors, sanitized review export, read-only Web Serial lifecycle, CRSF framing/link/telemetry decoding, failed-capture evidence export, Betaflight-only command previews, contextual radio planning and channel overview, phrase-derived UID vectors, binding-phrase byte limits, hardened hardware-plan and radio-enum import validation, verified/conflict/source-backed picker filters, keyboard result navigation, price sorting, recent parts, physical and electrical compatibility, build provenance, portable BOM CSV export with explicit missing selections, sanitized hardware context in build sheets and analysis reports, comparable build diffs and portable comparison export, saved-build upsert, profile action state, and lifecycle actions. Full ESLint passes. The Impeccable source detector reports no findings on the changed UI.
 
@@ -482,6 +482,8 @@ Build also exposes a collapsed `Measured geometry` panel for frame, motor, prope
 
 Unresolved Viewer placement checks now offer contextual `Measure` actions only when a panel field can actually address the condition. For example, `Propeller hub interface` opens the motor tab and focuses `Prop shaft diameter`; motor-pattern, propeller-sweep, battery-clearance, and missing electronics-dimension gaps map to their corresponding part and field. The action does not offer a misleading target when the blocker is an absent component or unavailable frame mount coordinates.
 
+Frames expose a `Usable battery deck` measurement with an explicit instruction to measure clear flat area excluding arms and standoffs. When supplied, `Battery deck footprint` compares the battery in its best-case orientation against that measured footprint. A fitting battery is reported as `Measured`; an oversized battery is a measured conflict. Without this value, RotorBench falls back to the conservative overall-frame bounding footprint and leaves that broader check unverified.
+
 An optional `Fit overlay` renders those catalogued interfaces directly in the Babylon scene: propeller sweep rings and translucent discs follow each propeller root, while motor mounting-pattern outlines follow each motor root. Lime marks a verified interface, teal marks build-local measurement, orange marks a conflict, and muted grey marks incomplete metadata. The overlay stays attached through exploded inspection and is presented with a compact legend; it remains geometry visualization, not a physical-fit or flight-readiness claim.
 
 The rendered Impeccable check reports zero findings for Build with the source-aware eight-check placement audit open at 390×844 and 1440×900, with no horizontal overflow. The expanded Setup Bench tools, runbook, and live-capture disclosures pass axe-core WCAG A/AA with zero violations and no horizontal overflow. Analysis, Saved, and Profile report zero rendered detector findings and zero axe violations at both widths after the shared title, action, contrast, and touch-target pass.
@@ -493,6 +495,8 @@ The focused F60 measurement workflow was rendered from a complete saved build at
 The contextual repair path was rendered from the F60 build: the `Propeller hub interface` row exposes a 44px `Measure` control, selecting it opens the measurement panel, activates `Motor`, focuses `Prop shaft diameter`, and visually marks the targeted field. The resulting panel and audit remain free of horizontal overflow, and axe reports zero WCAG A/AA violations at 390×844 and 1440×900.
 
 The source-backed solder-pad power path was rendered with a Tattu XT60 pack and the Holybro Tekko32 F4 65A ESC. The physical checks report `Awaiting data` with the explicit instruction to solder the lead and verify polarity and wire gauge; they do not claim a connector mismatch or verified harness. The rendered row remains readable without horizontal overflow, and axe reports zero WCAG A/AA violations at both widths.
+
+The measured battery deck was rendered with a `70 × 80 mm` local frame measurement. The panel reported `1/15 fields measured`, and `Battery deck footprint` reported `Measured` for the Tattu 6S pack instead of inheriting overall-frame verification. The help copy, measurement controls, and result remain free of horizontal overflow, stay at least 44px high, and pass axe WCAG A/AA at 390×844 and 1440×900.
 
 Graphify generated a local code graph under `graphify-out/`. That directory is deliberately ignored in `.gitignore`.
 
@@ -512,7 +516,7 @@ The fallbacks communicate proportion and placement, not exact product appearance
 
 Stack, motor, prop-shaft, and prop-hub checks are implemented. The picker still cannot reliably compare:
 
-* usable battery deck area and routed-clearance volume after arms, standoffs, and electronics are accounted for;
+* routed-clearance volume after arms, standoffs, and electronics are accounted for, plus source-backed usable deck dimensions when users have not measured the airframe;
 * connector type for remaining legacy products and the exact delivered termination of iFlight's supplied cable.
 
 Add source-backed connector and frame-envelope metadata before enabling those checks. Keep unverified combinations visibly unverified rather than treating missing data as compatibility.
@@ -551,7 +555,7 @@ Do not reuse a mesh from a different product just to remove a fallback.
 
 ### Priority 2: Remaining physical compatibility
 
-Stack, motor-mount, prop-shaft, prop-hub, XT30/XT60 connector checks, and conservative battery-bounding-footprint conflicts are implemented. Extend the same helper with source-backed usable deck dimensions and connector metadata for the remaining products.
+Stack, motor-mount, prop-shaft, prop-hub, power-termination, measured battery-deck, and conservative overall-frame footprint checks are implemented. Extend the same helper with routed-clearance geometry and source-backed connector metadata for the remaining products.
 
 Add tests for:
 

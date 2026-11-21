@@ -954,6 +954,16 @@
   font-weight: 500;
 }
 
+.measured-geometry-field > label .measured-geometry-help {
+  max-width: 42ch;
+  color: var(--ink-soft);
+  font-family: "Archivo", "Segoe UI", sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
 .measured-geometry-field > div {
   display: flex;
   flex-wrap: wrap;

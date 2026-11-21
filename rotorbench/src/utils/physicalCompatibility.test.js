@@ -113,12 +113,48 @@ test("battery envelopes only flag dimensions that exceed the complete frame foot
     smallFrame,
   )).toMatchObject({
     status: "conflict",
-    label: "Oversized envelope",
+    label: "Battery deck footprint",
   });
   expect(checkBatteryEnvelope(
     { name: "Unknown", dimensionsMm: null },
     smallFrame,
   )).toBeNull();
+});
+
+test("measured usable battery decks produce measured footprint checks", () => {
+  const frameWithDeck = {
+    name: "Measured deck frame",
+    dimensionsMm: [220, 30, 190],
+    batteryDeckDimensionsMm: [70, 80],
+    measuredFields: ["batteryDeckDimensionsMm"],
+  };
+  expect(checkBatteryEnvelope(
+    { name: "Fits", dimensionsMm: [75, 35, 65] },
+    frameWithDeck,
+  )).toMatchObject({
+    status: "measured",
+    label: "Battery deck footprint",
+    message: expect.stringMatching(/measured usable battery deck of 70 × 80 mm/i),
+  });
+  expect(checkBatteryEnvelope(
+    { name: "Oversized", dimensionsMm: [90, 45, 85] },
+    frameWithDeck,
+  )).toMatchObject({
+    status: "conflict",
+    label: "Battery deck footprint",
+    message: expect.stringMatching(/measured usable battery deck of 70 × 80 mm/i),
+  });
+  expect(checkBatteryEnvelope(
+    { name: "Fits legacy frame", dimensionsMm: [75, 35, 65] },
+    {
+      name: "Deck-only frame",
+      batteryDeckDimensionsMm: [70, 80],
+      measuredFields: ["batteryDeckDimensionsMm"],
+    },
+  )).toMatchObject({
+    status: "measured",
+    label: "Battery deck footprint",
+  });
 });
 
 test("shared compatibility checks are summarized once", () => {

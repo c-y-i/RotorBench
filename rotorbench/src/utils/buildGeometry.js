@@ -4,6 +4,12 @@ export const GEOMETRY_CATEGORY_FIELDS = Object.freeze({
   frames: [
     { key: "dimensionsMm", label: "Frame dimensions", kind: "vector3" },
     { key: "stackHeight", label: "Stack height", kind: "number" },
+    {
+      key: "batteryDeckDimensionsMm",
+      label: "Usable battery deck",
+      kind: "vector2",
+      help: "Measure the clear flat area available, excluding arms and standoffs.",
+    },
   ],
   motors: [
     { key: "dimensionsMm", label: "Motor dimensions", kind: "vector3" },

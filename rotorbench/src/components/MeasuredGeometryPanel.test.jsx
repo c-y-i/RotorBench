@@ -88,7 +88,7 @@ test("shows one focused part at a time and exposes measurement coverage", () => 
   );
 
   fireEvent.click(screen.getByText("Measured geometry"));
-  expect(screen.getByText("1/6 fields measured")).toBeInTheDocument();
+  expect(screen.getByText("1/7 fields measured")).toBeInTheDocument();
   expect(screen.getByLabelText(
     "Frame Frame dimensions axis 1 in millimetres",
   )).toBeInTheDocument();

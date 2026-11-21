@@ -315,6 +315,11 @@ export default function MeasuredGeometryPanel({
                   <label>
                     <span>{field.label}</span>
                     <small>{sourceLabels[field.source]}</small>
+                    {definition.help && (
+                      <small className="measured-geometry-help">
+                        {definition.help}
+                      </small>
+                    )}
                   </label>
                   <div>
                     {definition.kind === "number" ? (

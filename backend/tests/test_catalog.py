@@ -124,6 +124,11 @@ class CatalogContractTests(unittest.TestCase):
             geometryOverrides={
                 "schema": "rotorbench.measured-geometry.v1",
                 "categories": {
+                    "frames": {
+                        "frame-aos-55-v2": {
+                            "batteryDeckDimensionsMm": [70, 80],
+                        }
+                    },
                     "motors": {
                         "motor-tmotor-f60-pro-v-1750kv": {
                             "propShaftMm": 5,
@@ -140,6 +145,10 @@ class CatalogContractTests(unittest.TestCase):
             "rotorbench.measured-geometry.v1",
         )
         hydrated = hydrate_build(config)
+        self.assertEqual(
+            hydrated.components.frame.battery_deck_dimensions_mm,
+            [70, 80],
+        )
         self.assertEqual(hydrated.components.motors.prop_shaft_mm, 5)
         self.assertEqual(
             hydrated.components.motors.dimensions_mm,

@@ -215,31 +215,52 @@ export function checkPowerConnector(battery, esc) {
 export function checkBatteryEnvelope(battery, frame) {
   const frameDimensions = frame?.dimensionsMm;
   const batteryDimensions = battery?.dimensionsMm;
-  if (
-    !Array.isArray(frameDimensions) ||
-    frameDimensions.length !== 3 ||
-    !Array.isArray(batteryDimensions) ||
-    batteryDimensions.length !== 3 ||
-    ![...frameDimensions, ...batteryDimensions].every((value) => Number(value) > 0)
-  ) {
+  const measuredDeck = Array.isArray(frame?.batteryDeckDimensionsMm)
+    && frame.batteryDeckDimensionsMm.length === 2
+    && frame.batteryDeckDimensionsMm.every((value) => Number(value) > 0)
+    ? frame.batteryDeckDimensionsMm.map(Number).sort((a, b) => a - b)
+    : null;
+  const hasFrameDimensions = Array.isArray(frameDimensions)
+    && frameDimensions.length === 3
+    && frameDimensions.every((value) => Number(value) > 0);
+  const hasBatteryDimensions = Array.isArray(batteryDimensions)
+    && batteryDimensions.length === 3
+    && batteryDimensions.every((value) => Number(value) > 0);
+  if (!hasBatteryDimensions || (!measuredDeck && !hasFrameDimensions)) {
     return null;
   }
 
-  const frameFootprint = [Number(frameDimensions[0]), Number(frameDimensions[2])]
-    .sort((a, b) => a - b);
+  const frameFootprint = hasFrameDimensions
+    ? [Number(frameDimensions[0]), Number(frameDimensions[2])]
+      .sort((a, b) => a - b)
+    : null;
+  const availableFootprint = measuredDeck || frameFootprint;
   const bestBatteryFootprint = batteryDimensions
     .map(Number)
     .sort((a, b) => a - b)
     .slice(0, 2);
   const impossible =
-    bestBatteryFootprint[0] > frameFootprint[0]
-    || bestBatteryFootprint[1] > frameFootprint[1];
-  if (!impossible) return null;
+    bestBatteryFootprint[0] > availableFootprint[0]
+    || bestBatteryFootprint[1] > availableFootprint[1];
+  const measured = (Boolean(measuredDeck)
+    && usesMeasuredField(frame, ["batteryDeckDimensionsMm"]))
+    || usesMeasuredField(battery, ["dimensionsMm"])
+    || usesMeasuredField(frame, ["dimensionsMm"]);
+  if (!impossible && !measuredDeck) return null;
+  if (!impossible) {
+    return check(
+      measured ? "measured" : "compatible",
+      `${battery.name} fits the ${measured ? "measured " : ""}usable battery deck of ${availableFootprint[0]} × ${availableFootprint[1]} mm in at least one orientation.`,
+      "Battery deck footprint",
+    );
+  }
 
   return check(
     "conflict",
-    `${battery.name} cannot fit within the ${frame.name}'s overall ${frameFootprint[0]} × ${frameFootprint[1]} mm frame footprint, even in its best-case orientation.`,
-    `${battery.name} envelope`,
+    measuredDeck
+      ? `${battery.name} cannot fit the measured usable battery deck of ${availableFootprint[0]} × ${availableFootprint[1]} mm, even in its best-case orientation.`
+      : `${battery.name} cannot fit within the ${frame.name}'s overall ${availableFootprint[0]} × ${availableFootprint[1]} mm frame footprint, even in its best-case orientation.`,
+    "Battery deck footprint",
   );
 }
 

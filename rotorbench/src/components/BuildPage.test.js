@@ -299,6 +299,52 @@ test("build-local measurements update fit evidence without claiming verification
   expect(screen.getByTestId("location-motor-shaft")).toHaveTextContent("5");
 });
 
+test("a measured battery deck produces a build-local footprint check", async () => {
+  const deckBuild = {
+    id: "deck-build",
+    name: "Deck measurement build",
+    componentIds: {
+      frameId: "frame-aos-55-v2",
+      motorId: "motor-tmotor-f60-pro-v-1750kv",
+      propellerId: "prop-gemfan-hurricane-51466-v2",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-speedybee-f405-v4",
+      batteryId: "battery-tattu-rline-6s-1300-120c",
+      receiverId: "rx-radiomaster-rp3-h",
+    },
+  };
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build: deckBuild } }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  fireEvent.click(screen.getByText("Measured geometry"));
+  fireEvent.change(screen.getByLabelText(
+    "Frame Usable battery deck axis 1 in millimetres",
+  ), { target: { value: "70" } });
+  fireEvent.change(screen.getByLabelText(
+    "Frame Usable battery deck axis 2 in millimetres",
+  ), { target: { value: "80" } });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  fireEvent.click(screen.getByText("Physical fit checks"));
+  const deckCheck = screen.getByRole("listitem", {
+    name: "Battery deck footprint",
+  });
+  expect(within(deckCheck).getByText("Measured")).toBeInTheDocument();
+  expect(within(deckCheck).getByText(
+    /measured usable battery deck of 70 × 80 mm/i,
+  )).toBeInTheDocument();
+});
+
 test("an invalid starter-platform deep link leaves the required build gates intact", async () => {
   render(
     <MemoryRouter initialEntries={["/build?preset=not-a-platform"]}>

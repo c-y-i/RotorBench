@@ -135,9 +135,17 @@ class Frame(ComponentCatalogMetadata):
     upper_right_motor_position: Optional[List[float]] = None
     lower_right_motor_position: Optional[List[float]] = None
     lower_left_motor_position: Optional[List[float]] = None
+    battery_deck_dimensions_mm: Optional[List[float]] = Field(
+        None, alias="batteryDeckDimensionsMm"
+    )
 
     class Config:
         populate_by_name = True
+
+    @field_validator("battery_deck_dimensions_mm")
+    @classmethod
+    def validate_battery_deck_dimensions(cls, value):
+        return _positive_vector(value, 2)
 
 
 class DischargePoint(BaseModel):
@@ -222,6 +230,14 @@ class GeometryValuesBase(BaseModel):
 
 class FrameGeometryValues(GeometryValuesBase):
     stack_height: Optional[float] = Field(None, alias="stackHeight", gt=0)
+    battery_deck_dimensions_mm: Optional[List[float]] = Field(
+        None, alias="batteryDeckDimensionsMm"
+    )
+
+    @field_validator("battery_deck_dimensions_mm")
+    @classmethod
+    def validate_battery_deck_dimensions(cls, value):
+        return _positive_vector(value, 2)
 
 
 class MotorGeometryValues(GeometryValuesBase):

@@ -15,6 +15,9 @@ import {
 const motor = componentsData.motors.find(
   (part) => part.id === "motor-tmotor-f60-pro-v-1750kv",
 );
+const frame = componentsData.frames.find(
+  (part) => part.id === "frame-aos-55-v2",
+);
 
 test("adds validated measured geometry without mutating the catalog", () => {
   let overrides = normalizeGeometryOverrides(null);
@@ -127,6 +130,30 @@ test("summarizes named measured fields with catalog provenance for export", () =
         source: "user-measured",
       }],
     }],
+  });
+});
+
+test("supports a measured usable battery deck footprint", () => {
+  const overrides = setMeasuredGeometryValue(
+    normalizeGeometryOverrides(null),
+    "frames",
+    frame.id,
+    "batteryDeckDimensionsMm",
+    [70, 80],
+  );
+  const effective = applyMeasuredGeometry("frames", frame, overrides);
+
+  expect(effective).toMatchObject({
+    batteryDeckDimensionsMm: [70, 80],
+    measuredFields: ["batteryDeckDimensionsMm"],
+    geometrySource: "user-measured",
+  });
+  expect(geometryProvenance(overrides, "frames", frame).find(
+    (field) => field.key === "batteryDeckDimensionsMm",
+  )).toMatchObject({
+    label: "Usable battery deck",
+    effectiveValue: [70, 80],
+    source: "user-measured",
   });
 });
 

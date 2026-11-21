@@ -103,6 +103,7 @@ export interface Frame extends ComponentCatalogMetadata {
   stackMountPatternMm?: [number, number];
   stackMountPatternsMm?: [number, number][];
   motorMountPatternsMm?: [number, number][];
+  batteryDeckDimensionsMm?: [number, number];
 }
 
 export interface Battery extends ComponentCatalogMetadata {
