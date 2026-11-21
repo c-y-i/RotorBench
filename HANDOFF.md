@@ -94,6 +94,8 @@ The radio planner now separates host transport from the RF path. A `Host transpo
 
 Shared hardware readiness now also carries the selected radio host transport, its display label, and whether that transport is documented. Build shows the host path beneath the receiver route; Analysis includes a Radio host fact; Saved includes the host chip; Compare adds a radio-host row; sanitized hardware plans retain the same fields. None of these fields imply USB, UART, or RF verification.
 
+Hardware readiness also carries the selected handset bay, its label, and target compatibility. Build, Analysis, Saved, Compare, build briefings, build sheets, and analysis reports retain that state, so a module-bay mismatch remains visible outside Setup. Compatible labels still mean physical fit only; they do not verify the handset pinout, CRSF path, or RF link.
+
 The shared hardware-readiness model now carries `receiverPins`, `wiringStatus`, and the planning-only `wiringScope`. Build’s hardware card shows `Pins documented` or `Verify pins`; Analysis adds a wiring fact; Saved adds a wiring chip; Compare adds a wiring row; build sheets and analysis reports retain the sanitized fields. A documented pin route therefore remains visible across routes without becoming an electrical verification claim.
 
 Documented board profiles lock their compiled receiver UART and baud. Custom boards leave those fields editable. The preferred Aerial Kit with ExpressLRS preset uses arm channel 5 and flight-mode channel 6; a separate legacy preset preserves the firmware's arm 6 / mode 5 defaults.

@@ -495,6 +495,18 @@ export default function AnalysisPage() {
                     : "Not selected"}
                 </dd>
               </div>
+              {hasHardwareSelection
+                && hardwareReadiness.radioHostTransport === "module-bay" && (
+                  <div>
+                    <dt>Handset bay</dt>
+                    <dd>
+                      {hardwareReadiness.radioHostBayLabel} ·{" "}
+                      {hardwareReadiness.radioHostBayCompatible
+                        ? "supported"
+                        : "mismatch"}
+                    </dd>
+                  </div>
+                )}
               <div>
                 <dt>Power path</dt>
                 <dd>

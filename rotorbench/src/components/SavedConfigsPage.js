@@ -618,6 +618,12 @@ export default function SavedConfigsPage() {
                                                     {buildSummary.radioHostTransportLabel}
                                                 </span>
                                             )}
+                                            {buildSummary.hasHardwareParts
+                                                && buildSummary.radioHostTransport === "module-bay" && (
+                                                <span className={`is-host-${buildSummary.radioHostBayCompatible ? "documented" : "unverified"}`}>
+                                                    {buildSummary.radioHostBayLabel}
+                                                </span>
+                                            )}
                                             {hasPowerPath && (
                                                 <span className={`is-power-${buildSummary.powerPathStatus}`}>
                                                     {buildSummary.powerPathLabel}

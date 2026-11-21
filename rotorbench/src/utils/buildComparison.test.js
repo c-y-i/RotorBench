@@ -131,6 +131,9 @@ test("comparison summaries expose documented versus unverified receiver wiring",
     radioHostTransport: "native-usb",
     radioHostTransportLabel: "Native USB CDC",
     radioHostDocumented: true,
+    radioHostBay: "native-usb",
+    radioHostBayLabel: "Native USB",
+    radioHostBayCompatible: true,
   });
   const rows = comparisonRows(left, summarizeBuild(build));
   expect(rows.find((row) => row.id === "receiver-wiring")).toMatchObject({
@@ -140,6 +143,10 @@ test("comparison summaries expose documented versus unverified receiver wiring",
   expect(rows.find((row) => row.id === "radio-host")).toMatchObject({
     changed: false,
     left: "Native USB CDC · documented",
+  });
+  expect(rows.find((row) => row.id === "radio-host-bay")).toMatchObject({
+    changed: false,
+    left: "Native USB · supported",
   });
   expect(rows.find((row) => row.id === "power-path")).toMatchObject({
     changed: false,

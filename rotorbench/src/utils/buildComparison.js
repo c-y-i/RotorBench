@@ -164,6 +164,9 @@ export function summarizeBuild(build) {
     radioHostTransport: hardwareReadiness.radioHostTransport,
     radioHostTransportLabel: hardwareReadiness.radioHostTransportLabel,
     radioHostDocumented: hardwareReadiness.radioHostDocumented,
+    radioHostBay: hardwareReadiness.radioHostBay,
+    radioHostBayLabel: hardwareReadiness.radioHostBayLabel,
+    radioHostBayCompatible: hardwareReadiness.radioHostBayCompatible,
     hardwareIssueCount: hardwareReadiness.configured
       ? hardwareReadiness.issueCount
       : null,
@@ -246,6 +249,9 @@ export function createComparisonReport(
       radioHostTransport: build.radioHostTransport,
       radioHostTransportLabel: build.radioHostTransportLabel,
       radioHostDocumented: build.radioHostDocumented,
+      radioHostBay: build.radioHostBay,
+      radioHostBayLabel: build.radioHostBayLabel,
+      radioHostBayCompatible: build.radioHostBayCompatible,
       benchEvidenceStatus: build.benchEvidenceStatus,
       thrustDataStatus: build.thrustDataStatus,
       sourceBackedCount: build.sourceBackedCount,
@@ -469,6 +475,17 @@ export function comparisonRows(left, right) {
       label: "Radio host transport",
       left: `${left.radioHostTransportLabel} · ${left.radioHostDocumented ? "documented" : "verify"}`,
       right: `${right.radioHostTransportLabel} · ${right.radioHostDocumented ? "documented" : "verify"}`,
+      format: (value) => value,
+    },
+    {
+      id: "radio-host-bay",
+      label: "Radio handset bay",
+      left: `${left.radioHostBayLabel || "Verify bay"} · ${
+        left.radioHostBayCompatible ? "supported" : "mismatch"
+      }`,
+      right: `${right.radioHostBayLabel || "Verify bay"} · ${
+        right.radioHostBayCompatible ? "supported" : "mismatch"
+      }`,
       format: (value) => value,
     },
     {

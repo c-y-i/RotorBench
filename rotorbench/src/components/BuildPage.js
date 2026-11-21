@@ -1909,6 +1909,14 @@ export default function BuildPage() {
                       ? "Transport documented"
                       : "Verify transport"}
                   </small>
+                  {hardwareReadiness.radioHostTransport === "module-bay" && (
+                    <small>
+                      Handset bay: {hardwareReadiness.radioHostBayLabel} ·{" "}
+                      {hardwareReadiness.radioHostBayCompatible
+                        ? "supported"
+                        : "mismatch"}
+                    </small>
+                  )}
                 </>
               )}
             </div>

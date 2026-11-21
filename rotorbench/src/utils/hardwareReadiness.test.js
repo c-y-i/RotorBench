@@ -41,6 +41,9 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     radioHostTransport: "native-usb",
     radioHostTransportLabel: "Native USB CDC",
     radioHostDocumented: true,
+    radioHostBay: "native-usb",
+    radioHostBayLabel: "Native USB",
+    radioHostBayCompatible: true,
   });
   expect(readiness.firmwareLabel).toBe("Betaflight");
   expect(readiness.protocolLabel).toBe("CRSF / ExpressLRS");
@@ -162,4 +165,34 @@ test("a standalone radio plan is recognized as a partial hardware draft", () => 
   expect(readiness.configured).toBe(true);
   expect(readiness.complete).toBe(false);
   expect(["partial", "review", "blocked"]).toContain(readiness.status);
+});
+
+test("saved module-bay plans expose physical fit across hardware readiness", () => {
+  const base = "rotorbench:hardware-plan:build-ranger";
+  const storage = memoryStorage({
+    [`${base}:radio`]: JSON.stringify({
+      planVersion: 3,
+      selectedReceiverId: receiver.id,
+      targetId: "radiomaster-ranger-nano-elrs-24-tx",
+      role: "tx",
+      hostTransport: "module-bay",
+      hostBay: "jr-standard-5",
+      powerDbm: 20,
+    }),
+  });
+
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-ranger",
+    flightController: fc,
+    receiver,
+    storage,
+  });
+
+  expect(readiness).toMatchObject({
+    radioTargetName: "RadioMaster Ranger Nano 2.4 GHz ELRS",
+    radioHostTransport: "module-bay",
+    radioHostBay: "jr-standard-5",
+    radioHostBayLabel: "JR standard 5-pin bay",
+    radioHostBayCompatible: false,
+  });
 });

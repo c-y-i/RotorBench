@@ -68,6 +68,11 @@ export function createBuildBriefing({
       `- Receiver route: ${hardwareReadiness.receiverUart || "unassigned"} / ${hardwareReadiness.receiverBaud || "rate not set"} baud`,
       `- Receiver wiring: ${hardwareReadiness.wiringStatus === "documented" ? "pins documented" : "verify pins"}`,
       `- Radio host: ${hardwareReadiness.radioHostTransportLabel || "verify target"} / ${hardwareReadiness.radioHostDocumented ? "documented" : "verify target"}`,
+      ...(hardwareReadiness.radioHostTransport === "module-bay"
+        ? [
+            `- Handset bay: ${hardwareReadiness.radioHostBayLabel || "verify bay"} / ${hardwareReadiness.radioHostBayCompatible ? "supported" : "mismatch"}`,
+          ]
+        : []),
     );
   }
 

@@ -58,3 +58,27 @@ test("creates a concise human-readable briefing without binding material", () =>
   expect(briefing.text).not.toContain("must-not-export");
   expect(briefing.text).not.toContain("10:73:a1:1f:a8:0f");
 });
+
+test("briefs a module-bay handset fit without claiming hardware verification", () => {
+  const briefing = createBuildBriefing({
+    build: { name: "Ranger bench" },
+    assemblySpec: {},
+    hardwareReadiness: {
+      configured: true,
+      label: "1 check open",
+      receiverUart: "UART1",
+      receiverBaud: 420000,
+      wiringStatus: "unverified",
+      radioHostTransport: "module-bay",
+      radioHostTransportLabel: "Handset module bay",
+      radioHostDocumented: true,
+      radioHostBayLabel: "Nano 8-pin bay",
+      radioHostBayCompatible: false,
+    },
+  });
+
+  expect(briefing.text).toContain(
+    "Handset bay: Nano 8-pin bay / mismatch",
+  );
+  expect(briefing.text).toContain("readiness are not verified");
+});

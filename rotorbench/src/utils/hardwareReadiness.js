@@ -9,7 +9,10 @@ import {
   DEFAULT_RADIO_CONFIG,
   buildChannelMappingWarnings,
   buildRadioWarnings,
+  getRadioHostBay,
   getRadioTarget,
+  isRadioHostBayCompatible,
+  normalizeRadioConfig,
 } from "../data/radioProfiles";
 import { buildReceiverWiringPlan } from "./receiverWiring";
 import { buildRadioEndpointPlan } from "./radioEndpointPlan";
@@ -70,14 +73,14 @@ export function summarizeHardwareReadiness({
       beeper: fcPlan.beeperChannel ?? null,
     },
   };
-  const radioPlan = {
+  const radioPlan = normalizeRadioConfig({
     ...fallbackRadio,
     ...(storedRadio || {}),
     channelMap: {
       ...fallbackRadio.channelMap,
       ...(storedRadio?.channelMap || {}),
     },
-  };
+  });
   const profile = getBoardProfile(fcPlan.profileId, flightController);
   const wiring = buildReceiverWiringPlan(fcPlan, profile, receiver);
   const fcIssues = validateFlightControllerConfig(fcPlan, profile);
@@ -115,6 +118,11 @@ export function summarizeHardwareReadiness({
   );
   const radioTarget = getRadioTarget(radioPlan.targetId);
   const radioEndpoint = buildRadioEndpointPlan(radioPlan, radioTarget);
+  const radioHostBay = getRadioHostBay(radioPlan.hostBay);
+  const radioHostBayCompatible = isRadioHostBayCompatible(
+    radioTarget.id,
+    radioPlan.hostBay,
+  );
 
   return {
     status,
@@ -141,6 +149,9 @@ export function summarizeHardwareReadiness({
     radioHostTransportLabel: radioEndpoint.hostTransportLabel,
     radioHostDocumented: radioEndpoint.documented,
     radioHostScope: radioEndpoint.scope,
+    radioHostBay: radioPlan.hostBay,
+    radioHostBayLabel: radioHostBay.label,
+    radioHostBayCompatible,
     hardwareVerified: false,
   };
 }
@@ -166,6 +177,9 @@ export function sanitizeHardwareReadiness(readiness) {
     radioHostTransportLabel: readiness.radioHostTransportLabel || null,
     radioHostDocumented: Boolean(readiness.radioHostDocumented),
     radioHostScope: readiness.radioHostScope || "planning endpoint checklist; RF and hardware not tested",
+    radioHostBay: readiness.radioHostBay || null,
+    radioHostBayLabel: readiness.radioHostBayLabel || null,
+    radioHostBayCompatible: Boolean(readiness.radioHostBayCompatible),
     hardwareVerified: false,
   };
 }
