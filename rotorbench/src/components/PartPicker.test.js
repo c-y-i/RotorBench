@@ -113,6 +113,31 @@ test("ESC metadata exposes a published planform without implying thickness", () 
   expect(screen.queryByText(/mm thick/i)).not.toBeInTheDocument();
 });
 
+test("ESC metadata derives a footprint from a complete catalog envelope", () => {
+  render(
+    <PartPicker
+      category="escs"
+      parts={[{
+        id: "esc-envelope",
+        name: "Tekko32 F4 4-in-1 50A",
+        currentRating: 50,
+        burstCurrent: 60,
+        weight: 13.8,
+        dimensionsMm: [48, 6, 37],
+        price: 62.99,
+        sourceUrl: "https://example.com/tekko32-50a",
+      }]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
+      placeholder="Choose an ESC"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose an esc/i }));
+  expect(screen.getByText(/48 × 37 mm footprint/)).toBeInTheDocument();
+});
+
 test("recently selected parts are available through an explicit filter", () => {
   render(
     <PartPicker

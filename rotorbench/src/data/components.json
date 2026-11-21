@@ -686,18 +686,27 @@
     },
     {
       "id": "esc-holybro-tekko32-50a",
-      "name": "Tekko32 F4 50A 4in1",
+      "name": "Holybro Tekko32 F4 4-in-1 50A",
       "manufacturer": "Holybro",
       "currentRating": 50,
       "burstCurrent": 60,
-      "weight": 8.0,
-      "mounting_point": [0, -10, 0],
+      "weight": 13.8,
+      "mounting_point": [0, 0, 0],
+      "mountingPatternMm": [30.5, 30.5],
+      "dimensionsMm": [48, 6, 37],
       "voltage": {
-        "min": 11.1,
+        "min": 14.8,
         "max": 25.2
       },
-      "protocol": ["DShot600", "DShot300", "Oneshot125"],
-      "price": 44.99
+      "protocol": ["DShot150", "DShot300", "DShot600", "DShot1200", "MultiShot", "OneShot", "ProShot", "PWM"],
+      "features": ["Current sensor", "ESC telemetry", "AM32"],
+      "price": 62.99,
+      "model": "esc-holybro-tekko32-50a.glb",
+      "modelStatus": "available",
+      "sourceUrl": "https://holybro.com/products/tekko32-f4-4in1-50a-esc",
+      "priceSourceUrl": "https://holybro.com/products/tekko32-f4-4in1-50a-esc",
+      "dataStatus": "verified_specs_estimated_mounting",
+      "estimatedFields": ["mounting_point"]
     },
     {
       "id": "esc-speedybee-bl32-50a",

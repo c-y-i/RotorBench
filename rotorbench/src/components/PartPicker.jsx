@@ -38,6 +38,17 @@ function footprintLabel(part) {
   ) {
     return `${part.planformMm.map(Number).join(" × ")} mm footprint`;
   }
+  if (
+    Array.isArray(part.dimensionsMm)
+    && part.dimensionsMm.length === 3
+    && [part.dimensionsMm[0], part.dimensionsMm[2]].every(
+      (value) => Number.isFinite(Number(value)),
+    )
+  ) {
+    return `${Number(part.dimensionsMm[0])} × ${
+      Number(part.dimensionsMm[2])
+    } mm footprint`;
+  }
   return null;
 }
 

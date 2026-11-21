@@ -275,6 +275,9 @@ test("XR4 keeps dual-band RF specifications separate from estimated fields", () 
 });
 
 test("expanded ESCs and flight controller preserve published limits", () => {
+  const tekko50 = componentsData.escs.find(
+    (item) => item.id === "esc-holybro-tekko32-50a",
+  );
   const tekko = componentsData.escs.find(
     (item) => item.id === "esc-holybro-tekko32-f4-65a",
   );
@@ -284,6 +287,26 @@ test("expanded ESCs and flight controller preserve published limits", () => {
   const kakute = componentsData.flight_controllers.find(
     (item) => item.id === "fc-holybro-kakute-h7-v2",
   );
+
+  expect(tekko50).toMatchObject({
+    name: "Holybro Tekko32 F4 4-in-1 50A",
+    currentRating: 50,
+    burstCurrent: 60,
+    weight: 13.8,
+    mountingPatternMm: [30.5, 30.5],
+    dimensionsMm: [48, 6, 37],
+    voltage: { min: 14.8, max: 25.2 },
+    price: 62.99,
+    model: "esc-holybro-tekko32-50a.glb",
+    modelStatus: "available",
+    sourceUrl: "https://holybro.com/products/tekko32-f4-4in1-50a-esc",
+    priceSourceUrl: "https://holybro.com/products/tekko32-f4-4in1-50a-esc",
+  });
+  expect(tekko50.estimatedFields).toEqual(["mounting_point"]);
+  expect(tekko50.protocol).toEqual(expect.arrayContaining([
+    "DShot1200",
+    "ProShot",
+  ]));
 
   expect(tekko).toMatchObject({
     currentRating: 65,
