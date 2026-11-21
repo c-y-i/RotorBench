@@ -151,6 +151,7 @@ test("Ranger Nano imports only its module-bay transport and published power ceil
   exported.radio.configuration.role = "tx";
   exported.radio.configuration.hostTransport = "module-bay";
   exported.radio.configuration.powerDbm = 20;
+  exported.radio.configuration.regulatoryRegion = "fcc";
 
   const imported = parseCombinedHardwarePlanJson(JSON.stringify(exported));
   expect(imported.radioPlan).toMatchObject({
@@ -158,7 +159,13 @@ test("Ranger Nano imports only its module-bay transport and published power ceil
     role: "tx",
     hostTransport: "module-bay",
     powerDbm: 20,
+    regulatoryRegion: "fcc",
   });
+
+  const missingRegion = JSON.parse(JSON.stringify(exported));
+  delete missingRegion.radio.configuration.regulatoryRegion;
+  expect(parseCombinedHardwarePlanJson(JSON.stringify(missingRegion)).radioPlan)
+    .toMatchObject({ regulatoryRegion: "verify" });
 
   const wrongTransport = JSON.parse(JSON.stringify(exported));
   wrongTransport.radio.configuration.hostTransport = "native-usb";
@@ -169,4 +176,15 @@ test("Ranger Nano imports only its module-bay transport and published power ceil
   overLimit.radio.configuration.powerDbm = 31;
   expect(() => parseCombinedHardwarePlanJson(JSON.stringify(overLimit)))
     .toThrow(/published maximum/i);
+
+  const unsupportedRegion = JSON.parse(JSON.stringify(exported));
+  unsupportedRegion.radio.configuration.regulatoryRegion = "world";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(unsupportedRegion)))
+    .toThrow(/RF region is unsupported/i);
+
+  const ceOverLimit = JSON.parse(JSON.stringify(exported));
+  ceOverLimit.radio.configuration.regulatoryRegion = "ce";
+  ceOverLimit.radio.configuration.powerDbm = 25;
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(ceOverLimit)))
+    .toThrow(/selected CE maximum/i);
 });

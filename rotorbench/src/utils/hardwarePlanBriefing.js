@@ -8,6 +8,8 @@ import {
   RADIO_SWITCH_MODES,
   RADIO_TELEMETRY_RATIOS,
   getRadioChannelRoles,
+  getRadioRegulatoryLimit,
+  getRadioRegulatoryOptions,
   getRadioTarget,
 } from "../data/radioProfiles";
 
@@ -40,6 +42,11 @@ export function createHardwarePlanBriefing({
   const targetPower = getRadioTarget(radioPlan?.targetId)?.id === "aerialkit-elrs-rev-a3"
     ? RADIO_POWER_LEVELS.find((level) => level.value === radioPlan?.powerDbm)
     : null;
+  const regulatoryOptions = getRadioRegulatoryOptions(radioTarget.id);
+  const regulatoryLimit = getRadioRegulatoryLimit(
+    radioTarget.id,
+    radioPlan?.regulatoryRegion,
+  );
   const reviewItems = [
     ...fcIssues.map((issue) => `- FC ${issue.severity || "review"}: ${issue.message}`),
     ...radioWarnings.map((warning) => `- Radio: ${warning}`),
@@ -63,6 +70,13 @@ export function createHardwarePlanBriefing({
     `- Frequency/firmware: ${radioTarget.frequency || "Not catalogued"} · ${
       radioTarget.firmwareVersion || "Target-local"
     }`,
+    ...(regulatoryOptions.length
+      ? [
+          `- RF region: ${regulatoryLimit
+            ? `${regulatoryLimit.label} · ${regulatoryLimit.dbm} dBm / ${regulatoryLimit.mw} mW maximum`
+            : "Verify FCC or CE module variant"}`,
+        ]
+      : []),
     `- Host transport: ${
       selectedLabel(RADIO_HOST_TRANSPORTS, radioPlan?.hostTransport)
     }`,

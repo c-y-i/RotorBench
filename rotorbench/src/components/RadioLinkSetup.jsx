@@ -28,11 +28,14 @@ import {
   getAvailableSwitchModes,
   getDefaultHostTransport,
   getDefaultPowerDbm,
+  getDefaultRegulatoryRegion,
   getPacketRatesForTarget,
   getRadioChannelRoles,
   getRadioHostTransports,
   getRadioPowerLevels,
   getRadioPowerSpec,
+  getRadioRegulatoryLimit,
+  getRadioRegulatoryOptions,
   getRadioTarget,
   getRadioTargetForRole,
   getRadioTargetsForRole,
@@ -117,6 +120,11 @@ export default function RadioLinkSetup({
   const visibleChannelRoles = getRadioChannelRoles(channelLimit, controlRoles);
   const powerLevels = getRadioPowerLevels(target.id);
   const powerSpec = getRadioPowerSpec(target.id);
+  const regulatoryOptions = getRadioRegulatoryOptions(target.id);
+  const selectedRegulatoryLimit = getRadioRegulatoryLimit(
+    target.id,
+    config.regulatoryRegion,
+  );
   const channelAssignments = Array.from(
     { length: channelLimit },
     (_, index) => {
@@ -161,6 +169,7 @@ export default function RadioLinkSetup({
           ...current,
           targetId: value,
           hostTransport: getDefaultHostTransport(value),
+          regulatoryRegion: getDefaultRegulatoryRegion(value),
           powerDbm: nextPowerLevels
             && !nextPowerLevels.some((level) => level.value === current.powerDbm)
             ? nextPowerLevels[0].value
@@ -223,6 +232,7 @@ export default function RadioLinkSetup({
         role,
         targetId: nextTarget.id,
         hostTransport: getDefaultHostTransport(nextTarget.id),
+        regulatoryRegion: getDefaultRegulatoryRegion(nextTarget.id),
         powerDbm: getDefaultPowerDbm(nextTarget.id) ?? current.powerDbm,
       };
     });
@@ -481,6 +491,34 @@ export default function RadioLinkSetup({
                 </select>
               </label>
 
+              {regulatoryOptions.length > 0 && (
+                <label className="radio-field">
+                  <span>RF region</span>
+                  <select
+                    value={config.regulatoryRegion || "verify"}
+                    aria-label="RF region"
+                    aria-describedby="radio-region-help"
+                    onChange={(event) => update(
+                      "regulatoryRegion",
+                      event.target.value,
+                    )}
+                  >
+                    <option value="verify">Verify fitted module</option>
+                    {regulatoryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} · {option.dbm} dBm / {option.mw} mW max
+                      </option>
+                    ))}
+                  </select>
+                  <small id="radio-region-help">
+                    Match the printed module variant and local rules.
+                    {selectedRegulatoryLimit
+                      ? ` Selected ceiling: ${selectedRegulatoryLimit.dbm} dBm.`
+                      : " RotorBench does not infer this from locale."}
+                  </small>
+                </label>
+              )}
+
               {powerLevels ? (
                 <label className="radio-field">
                   <span>TX power</span>
@@ -517,7 +555,11 @@ export default function RadioLinkSetup({
                     {powerSpec?.regulatoryMaxima?.length
                       ? `Official default: ${powerSpec.defaultDbm} dBm / ${powerSpec.defaultMw} mW. Published maxima: ${powerSpec.regulatoryMaxima
                         .map((limit) => `${limit.region} ${limit.dbm} dBm`)
-                        .join(", ")}. Confirm the fitted RF-region variant and firmware menu.`
+                        .join(", ")}.${
+                        selectedRegulatoryLimit
+                          ? ` The selected ${selectedRegulatoryLimit.label} ceiling is ${selectedRegulatoryLimit.dbm} dBm / ${selectedRegulatoryLimit.mw} mW.`
+                          : " Confirm the fitted RF-region variant and firmware menu."
+                      }`
                       : "No verified power menu is bundled for this target. Enter the value required by its own firmware documentation."}
                   </small>
                 </label>
@@ -821,6 +863,16 @@ export default function RadioLinkSetup({
                 </dd>
               </div>
             ) : null}
+            {regulatoryOptions.length > 0 && (
+              <div>
+                <dt>RF region</dt>
+                <dd>
+                  {selectedRegulatoryLimit
+                    ? `${selectedRegulatoryLimit.label} · ${selectedRegulatoryLimit.dbm} dBm`
+                    : "Verify fitted module"}
+                </dd>
+              </div>
+            )}
             <div>
               <dt>Telemetry</dt>
               <dd>

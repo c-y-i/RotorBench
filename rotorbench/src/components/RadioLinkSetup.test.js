@@ -76,6 +76,7 @@ test("Ranger Nano selects its documented module bay and regional power bounds", 
   });
 
   expect(screen.getByLabelText("Host transport")).toHaveValue("module-bay");
+  expect(screen.getByLabelText("RF region")).toHaveValue("verify");
   expect(screen.getByRole("spinbutton", { name: /TX power \(dBm\)/i })).toHaveValue(20);
   expect(screen.getByText(/Official default: 20 dBm \/ 100 mW/i)).toBeInTheDocument();
   expect(screen.getByText(/FCC 30 dBm, CE 20 dBm/i)).toBeInTheDocument();
@@ -92,6 +93,12 @@ test("Ranger Nano selects its documented module bay and regional power bounds", 
   expect(within(checklist).getByText(/Nano 8-pin: CRSF, GND, 5-12 V/i))
     .toBeInTheDocument();
   expect(within(checklist).queryByText(/baud/i)).not.toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("RF region"), {
+    target: { value: "ce" },
+  });
+  expect(screen.getByText(/Selected ceiling: 20 dBm/i)).toBeInTheDocument();
+  expect(screen.getByText("CE · 20 dBm")).toBeInTheDocument();
 });
 
 test("binding material is not written to local storage", () => {

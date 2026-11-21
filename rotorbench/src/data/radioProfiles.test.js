@@ -8,8 +8,11 @@ import {
   getAvailableSwitchModes,
   getDefaultHostTransport,
   getDefaultPowerDbm,
+  getDefaultRegulatoryRegion,
   getPacketRatesForTarget,
   getRadioHostTransports,
+  getRadioRegulatoryLimit,
+  getRadioRegulatoryOptions,
   getRadioTarget,
   getRadioTargetForRole,
   getSuggestedTelemetryRatio,
@@ -87,6 +90,15 @@ test("Ranger Nano keeps its manufacturer-published module-bay and power bounds",
   expect(getRadioHostTransports(target.id).map((transport) => transport.value))
     .toEqual(["module-bay", "unspecified"]);
   expect(getDefaultPowerDbm(target.id)).toBe(20);
+  expect(getDefaultRegulatoryRegion(target.id)).toBe("verify");
+  expect(getRadioRegulatoryOptions(target.id)).toEqual([
+    { value: "fcc", label: "FCC", dbm: 30, mw: 1000 },
+    { value: "ce", label: "CE", dbm: 20, mw: 100 },
+  ]);
+  expect(getRadioRegulatoryLimit(target.id, "ce")).toMatchObject({
+    label: "CE",
+    dbm: 20,
+  });
   expect(getRadioHostTransports("generic-elrs-24-tx").map((transport) => transport.value))
     .toEqual(["native-usb", "uart", "module-bay", "unspecified"]);
 });
@@ -100,6 +112,7 @@ test("Ranger Nano warns on regional power bounds without inventing a menu", () =
   });
 
   expect(warnings).toEqual(expect.arrayContaining([
+    expect.stringMatching(/Verify whether the fitted module is FCC or CE/i),
     expect.stringMatching(/FCC 30 dBm \/ 1000 mW.*CE 20 dBm \/ 100 mW/i),
     expect.stringMatching(/exceeds every published maximum of 30 dBm/i),
   ]));
@@ -116,6 +129,47 @@ test("Ranger Nano warns on regional power bounds without inventing a menu", () =
   });
   expect(summary.configuration.powerMenuMw).toBeNull();
   expect(summary.target.sourceUrl).toContain("radiomasterrc.com");
+});
+
+test("Ranger Nano applies the selected regulatory ceiling", () => {
+  const fccWarnings = buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    hostTransport: "module-bay",
+    powerDbm: 25,
+    regulatoryRegion: "fcc",
+  });
+  expect(fccWarnings.join(" ")).not.toMatch(/RF region|published maximum|selected .* maximum/i);
+
+  const ceWarnings = buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    hostTransport: "module-bay",
+    powerDbm: 25,
+    regulatoryRegion: "ce",
+  });
+  expect(ceWarnings).toEqual(expect.arrayContaining([
+    expect.stringMatching(/exceeds the selected CE maximum of 20 dBm \/ 100 mW/i),
+  ]));
+
+  const summary = buildRadioSummary({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    hostTransport: "module-bay",
+    powerDbm: 25,
+    regulatoryRegion: "fcc",
+  });
+  expect(summary.configuration).toMatchObject({
+    regulatoryRegion: "fcc",
+    regulatoryMaxDbm: 30,
+    regulatoryMaxMw: 1000,
+  });
+
+  expect(normalizeRadioConfig({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: "radiomaster-ranger-nano-elrs-24-tx",
+    regulatoryRegion: "world",
+  }).regulatoryRegion).toBe("verify");
 });
 
 test("default radio plan has deployment warnings and is not hardware verified", () => {

@@ -10,6 +10,8 @@ import {
   getRadioHostTransports,
   getRadioPowerLevels,
   getRadioPowerSpec,
+  getRadioRegulatoryLimit,
+  getRadioRegulatoryOptions,
   normalizeRadioConfig,
 } from "../data/radioProfiles";
 import {
@@ -109,6 +111,25 @@ export function parseCombinedHardwarePlanJson(text) {
       throw new Error("The radio power setting exceeds the target's published maximum.");
     }
   }
+  const regulatoryOptions = getRadioRegulatoryOptions(target.id);
+  const regulatoryRegion = regulatoryOptions.length
+    ? String(configuration.regulatoryRegion || "verify").toLowerCase()
+    : null;
+  if (
+    regulatoryOptions.length > 0 &&
+    regulatoryRegion !== "verify" &&
+    !regulatoryOptions.some((option) => option.value === regulatoryRegion)
+  ) {
+    throw new Error("The radio RF region is unsupported for this target.");
+  }
+  const regulatoryLimit = regulatoryRegion === "verify"
+    ? null
+    : getRadioRegulatoryLimit(target.id, regulatoryRegion);
+  if (regulatoryLimit && configuration.powerDbm > regulatoryLimit.dbm) {
+    throw new Error(
+      `The radio power setting exceeds the selected ${regulatoryLimit.label} maximum.`,
+    );
+  }
   const packetRate = configuration.packetRateMode || DEFAULT_RADIO_CONFIG.packetRateMode;
   if (!getPacketRatesForTarget(target.id).some((rate) => rate.value === packetRate)) {
     throw new Error("The radio packet rate is not valid for this target.");
@@ -159,6 +180,7 @@ export function parseCombinedHardwarePlanJson(text) {
     hostTransport,
     packetRateMode: packetRate,
     powerDbm: Number(configuration.powerDbm),
+    regulatoryRegion,
     telemetryRatio,
     switchMode,
     linkMode,

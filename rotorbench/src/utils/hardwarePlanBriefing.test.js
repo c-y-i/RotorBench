@@ -59,3 +59,24 @@ test("keeps generic target power target-local", () => {
   expect(briefing.text).toContain("13 dBm (target-local)");
   expect(briefing.text).toContain("No local plan warnings");
 });
+
+test("briefs the selected radio regulatory ceiling", () => {
+  const fcPlan = createDefaultFlightControllerConfig();
+  const fcProfile = getBoardProfile(fcPlan.profileId);
+  const briefing = createHardwarePlanBriefing({
+    fcPlan,
+    fcProfile,
+    radioPlan: {
+      ...DEFAULT_RADIO_CONFIG,
+      targetId: "radiomaster-ranger-nano-elrs-24-tx",
+      role: "tx",
+      hostTransport: "module-bay",
+      powerDbm: 20,
+      regulatoryRegion: "fcc",
+    },
+  });
+
+  expect(briefing.text).toContain(
+    "- RF region: FCC · 30 dBm / 1000 mW maximum",
+  );
+});

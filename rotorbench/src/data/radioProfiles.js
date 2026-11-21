@@ -230,6 +230,7 @@ export const DEFAULT_RADIO_CONFIG = {
   hostTransport: "native-usb",
   packetRateMode: "250",
   powerDbm: -18,
+  regulatoryRegion: null,
   telemetryRatio: "std",
   switchMode: "wide",
   linkMode: "normal",
@@ -311,6 +312,26 @@ export function getDefaultPowerDbm(targetId) {
   return getRadioPowerLevels(targetId)?.[0]?.value ?? null;
 }
 
+export function getRadioRegulatoryOptions(targetId) {
+  return (getRadioPowerSpec(targetId)?.regulatoryMaxima || []).map((limit) => ({
+    value: String(limit.region).toLowerCase(),
+    label: limit.region,
+    dbm: Number(limit.dbm),
+    mw: Number(limit.mw),
+  }));
+}
+
+export function getRadioRegulatoryLimit(targetId, regulatoryRegion) {
+  const region = String(regulatoryRegion || "").toLowerCase();
+  if (!region || region === "verify") return null;
+  return getRadioRegulatoryOptions(targetId)
+    .find((option) => option.value === region) || null;
+}
+
+export function getDefaultRegulatoryRegion(targetId) {
+  return getRadioRegulatoryOptions(targetId).length ? "verify" : null;
+}
+
 export function getRadioChannelRoles(channelLimit = 16, controlRoles = null) {
   const allowedFcRoles = Array.isArray(controlRoles) ? new Set(controlRoles) : null;
   return RADIO_CHANNEL_ROLES.filter((role) => {
@@ -353,9 +374,19 @@ export function normalizeRadioConfig(config = {}) {
     ...DEFAULT_RADIO_CONFIG.channelMap,
     ...(config.channelMap || {}),
   };
+  const targetId = config.targetId || DEFAULT_RADIO_CONFIG.targetId;
+  const regulatoryOptions = getRadioRegulatoryOptions(targetId);
+  const regulatoryRegion = String(config.regulatoryRegion || "").toLowerCase();
   return {
     ...DEFAULT_RADIO_CONFIG,
     ...config,
+    regulatoryRegion: regulatoryOptions.length > 0
+      ? regulatoryRegion === "verify" || regulatoryOptions.some(
+        (option) => option.value === regulatoryRegion,
+      )
+        ? regulatoryRegion
+        : "verify"
+      : null,
     hostTransport: RADIO_HOST_TRANSPORTS.some(
       (transport) => transport.value === config.hostTransport,
     )
@@ -420,6 +451,7 @@ export function buildRadioWarnings(
   const visibleChannelRoles = getRadioChannelRoles(channelLimit, controlRoles);
   const packetRates = getPacketRatesForTarget(target.id);
   const powerLevels = getRadioPowerLevels(target.id);
+  const regulatoryOptions = getRadioRegulatoryOptions(target.id);
   const warnings = [];
 
   if (!target.roles.includes(normalized.role)) {
@@ -516,9 +548,28 @@ export function buildRadioWarnings(
       const absoluteMax = Math.max(
         ...powerSpec.regulatoryMaxima.map((limit) => Number(limit.dbm)),
       );
-      warnings.push(
-        `Confirm the module's RF-region variant and local limit. Published maxima: ${maxima}.`,
+      const regulatoryLimit = getRadioRegulatoryLimit(
+        target.id,
+        normalized.regulatoryRegion,
       );
+      if (!normalized.regulatoryRegion || normalized.regulatoryRegion === "verify") {
+        warnings.push(
+          `Verify whether the fitted module is FCC or CE, and its local limit. Published maxima: ${maxima}.`,
+        );
+      } else if (!regulatoryOptions.some(
+        (option) => option.value === String(normalized.regulatoryRegion).toLowerCase(),
+      )) {
+        warnings.push(
+          `The selected RF region is not documented for ${target.name}.`,
+        );
+      } else if (
+        Number.isFinite(Number(normalized.powerDbm)) &&
+        Number(normalized.powerDbm) > regulatoryLimit.dbm
+      ) {
+        warnings.push(
+          `${target.name} power exceeds the selected ${regulatoryLimit.label} maximum of ${regulatoryLimit.dbm} dBm / ${regulatoryLimit.mw} mW.`,
+        );
+      }
       if (
         Number.isFinite(Number(normalized.powerDbm)) &&
         Number(normalized.powerDbm) > absoluteMax
@@ -588,6 +639,10 @@ export function buildRadioSummary(config, options = {}) {
   const packetRate = packetRates.find(
     (rate) => rate.value === normalized.packetRateMode,
   ) || null;
+  const regulatoryLimit = getRadioRegulatoryLimit(
+    target.id,
+    normalized.regulatoryRegion,
+  );
   return {
     schema: "rotorbench.radio-plan.v1",
     status: "draft",
@@ -610,6 +665,9 @@ export function buildRadioSummary(config, options = {}) {
       packetRateHz: packetRate?.hz ?? null,
       powerDbm: normalized.powerDbm,
       powerMenuMw: power?.menuMw ?? null,
+      regulatoryRegion: normalized.regulatoryRegion || null,
+      regulatoryMaxDbm: regulatoryLimit?.dbm ?? null,
+      regulatoryMaxMw: regulatoryLimit?.mw ?? null,
       telemetryRatio: normalized.telemetryRatio,
       switchMode: normalized.switchMode,
       linkMode: normalized.linkMode,
