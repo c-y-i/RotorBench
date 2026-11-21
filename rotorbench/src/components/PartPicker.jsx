@@ -27,6 +27,27 @@ const categoryDetails = {
   receivers: { label: "Receiver", Icon: Radio },
 };
 
+const estimatedFieldLabels = {
+  currentDraw: "current draw",
+  dimensionsMm: "dimensions",
+  dischargeProfile: "discharge curve",
+  mountingPoint: "mounting offset",
+  mounting_point: "mounting offset",
+  stackHeight: "stack height",
+  stackMountPatternsMm: "stack mount pattern",
+};
+
+function humanizeEstimatedField(field) {
+  const value = String(field).trim();
+  if (!value) return "";
+  if (estimatedFieldLabels[value]) return estimatedFieldLabels[value];
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
 function getMeta(category, part) {
   switch (category) {
     case "frames":
@@ -336,6 +357,9 @@ export default function PartPicker({
             ) : (
               rankedParts.map(({ part, ok, reason, verified, recent }, index) => {
                 const isSelected = part.id === value;
+                const estimatedFields = (part.estimatedFields || [])
+                  .map(humanizeEstimatedField)
+                  .filter(Boolean);
                 const statusClass = !ok
                   ? "is-check"
                   : verified
@@ -375,10 +399,12 @@ export default function PartPicker({
                       <span className="part-option-provenance">
                         {recent ? "Recent · " : ""}
                         {part.sourceUrl ? "Source-backed" : "Legacy catalog"}
-                        {part.estimatedFields?.length
-                          ? ` · ${part.estimatedFields.length} estimated field${part.estimatedFields.length === 1 ? "" : "s"}`
-                          : ""}
                       </span>
+                      {estimatedFields.length > 0 && (
+                        <span className="part-option-estimates">
+                          Estimated: {estimatedFields.join(" · ")}
+                        </span>
+                      )}
                     </span>
                     <span className="part-option-price">
                       <strong>${Number(part.price).toFixed(2)}</strong>

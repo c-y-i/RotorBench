@@ -233,7 +233,8 @@ test("keeps missing thrust and flight data visibly unavailable", async () => {
   expect(screen.getByText("Discharge curve unavailable")).toBeInTheDocument();
   expect(screen.getAllByText(unavailableNote)).toHaveLength(3);
   expect(screen.getAllByRole("status")).toHaveLength(2);
-  expect(screen.getByText("Build verdict").parentElement).toHaveTextContent("Unavailable");
+  expect(within(screen.getByRole("region", { name: "Analysis summary" }))
+    .getByText("Unavailable")).toBeInTheDocument();
 });
 
 test("shows saved hardware-plan review state in the analysis report", async () => {

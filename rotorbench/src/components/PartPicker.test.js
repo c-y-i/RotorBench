@@ -140,6 +140,36 @@ test("receiver metadata exposes published dual-band and telemetry details", () =
   expect(screen.getByText(
     "CRSF · 2.4 GHz / Sub-G 900 MHz · 100 mW telemetry · 16 channels · 1.7 g",
   )).toBeInTheDocument();
+  expect(screen.getByText(
+    "Estimated: current draw · channels · mounting offset",
+  )).toBeInTheDocument();
+});
+
+test("humanizes estimated field names for catalog review", () => {
+  render(
+    <PartPicker
+      category="receivers"
+      parts={[{
+        id: "rx-fields",
+        name: "Field disclosure receiver",
+        protocol: "CRSF",
+        frequencyBands: ["2.4 GHz"],
+        channels: 16,
+        weight: 2,
+        price: 24.99,
+        sourceUrl: "https://example.com/rx-fields",
+        estimatedFields: ["dimensionsMm", "currentDraw", "mounting_point"],
+      }]}
+      value=""
+      onChange={jest.fn()}
+      placeholder="Choose a receiver"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a receiver/i }));
+  expect(screen.getByText(
+    "Estimated: dimensions · current draw · mounting offset",
+  )).toBeInTheDocument();
 });
 
 test("verified-fit and conflict filters keep evidence states separate", () => {

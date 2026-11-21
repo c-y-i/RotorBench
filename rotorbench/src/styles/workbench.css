@@ -4396,8 +4396,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--line);
@@ -4425,6 +4425,7 @@
 .part-picker-search input {
   flex: 1;
   min-width: 0;
+  min-height: 44px;
   color: var(--ink);
   background: transparent;
   border: 0;
@@ -4444,8 +4445,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   color: var(--ink-soft);
   background: transparent;
@@ -4461,7 +4462,7 @@
 }
 
 .part-picker-filters button {
-  min-height: 32px;
+  min-height: 44px;
   padding: 0 10px;
   color: var(--ink-soft);
   background: transparent;
@@ -4489,7 +4490,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 32px;
+  min-height: 44px;
   padding-left: 8px;
   color: var(--ink-soft);
   background: var(--surface);
@@ -4502,7 +4503,7 @@
 }
 
 .part-picker-sort select {
-  min-height: 34px;
+  min-height: 44px;
   padding: 0 24px 0 6px;
   color: var(--ink);
   background: transparent;
@@ -4647,6 +4648,16 @@
   text-transform: uppercase;
 }
 
+.part-option-estimates {
+  min-width: 0;
+  margin-top: 2px;
+  color: var(--warn);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
 .part-option-price {
   display: grid;
   justify-items: end;
@@ -4703,7 +4714,7 @@
 
 .part-picker-clear,
 .part-picker-cancel {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 13px;
   border-radius: 5px;
   font-family: "IBM Plex Mono", monospace;

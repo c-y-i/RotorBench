@@ -49,7 +49,7 @@ const propeller = {
 };
 
 test("renders the full propulsion, electronics, and battery height order", () => {
-  const { container } = render(
+  render(
     <AssemblyStackMap
       frame={frame}
       esc={esc}
