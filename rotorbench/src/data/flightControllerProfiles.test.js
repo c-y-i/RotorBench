@@ -1,6 +1,7 @@
 import {
   buildArmingGatePreview,
   buildFlightControllerSummary,
+  buildSerialAllocationSummary,
   createDefaultFlightControllerConfig,
   FC_BOARD_PROFILES,
   getAirframeMotorLayout,
@@ -492,6 +493,26 @@ test("SpeedyBee F405 V4 selects its documented Betaflight target", () => {
     flightLog: { label: "MicroSD blackbox · card required" },
   });
   expect(profile.notes.join(" ")).toMatch(/SDXC is not supported/i);
+});
+
+test("serial allocation summaries mark receiver and GPS routes", () => {
+  const selected = {
+    id: "fc-speedybee-f405-v4",
+    name: "SpeedyBee F405 V4",
+    processor: "STM32F405",
+    imu: "ICM42688P",
+    firmware: ["Betaflight"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+  const summary = buildSerialAllocationSummary(config, profile);
+
+  expect(summary).toContain("UART4 Bluetooth tuning");
+  expect(summary).toContain("UART2 Receiver (Receiver)");
+  expect(summary).toContain("UART5 ESC telemetry");
+  expect(summary).toContain("UART6 GPS (GPS)");
+  expect(buildFlightControllerSummary(config, profile).join("\n"))
+    .toContain(summary);
 });
 
 test.each(FC_BOARD_PROFILES)(

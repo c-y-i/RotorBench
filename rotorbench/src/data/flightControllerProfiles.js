@@ -764,6 +764,38 @@ export function normalizeSerialPortName(value) {
     : "";
 }
 
+export function getSerialPortAssignments(config = {}, profile = {}) {
+  return (profile.serialPorts || []).map((port) => {
+    const assignments = [];
+    if (
+      normalizeSerialPortName(config.receiverUart)
+        === normalizeSerialPortName(port.id)
+    ) {
+      assignments.push("Receiver");
+    }
+    if (
+      config.features?.gps &&
+      normalizeSerialPortName(profile.gpsUart)
+        === normalizeSerialPortName(port.id)
+    ) {
+      assignments.push("GPS");
+    }
+    return { ...port, assignments };
+  });
+}
+
+export function buildSerialAllocationSummary(config = {}, profile = {}) {
+  const ports = getSerialPortAssignments(config, profile);
+  if (ports.length === 0) return null;
+  return `Serial allocation: ${ports
+    .map((port) => (
+      `${port.id} ${port.role}${port.assignments.length
+        ? ` (${port.assignments.join(" + ")})`
+        : ""}`
+    ))
+    .join("; ")}`;
+}
+
 export const AIRFRAMES = [
   { value: "quadx", label: "Quad X", motors: 4, servos: 0 },
   { value: "quadx1234", label: "Quad X, motors 1-4 front-left first", motors: 4, servos: 0 },
@@ -1965,6 +1997,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     .map((role) => `${role.label} ${aerialKitChannelValues[role.key] ?? "off"}`)
     .join(", ");
   const airframe = AIRFRAMES.find((item) => item.value === config.airframe);
+  const serialAllocation = buildSerialAllocationSummary(config, profile);
   const motorLayout = getAirframeMotorLayout(
     config.airframe,
     config.firmwareFamily,
@@ -1981,6 +2014,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     `Board: ${profile.label} (${profile.processor})`,
     `Airframe: ${airframe?.label || config.airframe}`,
     `Receiver: ${protocol?.label || config.receiverProtocol} on ${config.receiverUart} at ${config.receiverBaud} baud`,
+    ...(serialAllocation ? [serialAllocation] : []),
     ...(config.firmwareFamily === "aerialkit"
       ? [
           `Receiver calibration: min ${config.rcMin}, mid ${config.rcMid}, max ${config.rcMax}, deadband ${config.rcDeadband}`,

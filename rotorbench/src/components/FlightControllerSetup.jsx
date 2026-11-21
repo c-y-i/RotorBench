@@ -40,7 +40,7 @@ import {
   getAirframeMotorLayout,
   getBoardProfile,
   getChannelPreset,
-  normalizeSerialPortName,
+  getSerialPortAssignments,
   supportsAerialKitLaunch,
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
@@ -585,24 +585,8 @@ export default function FlightControllerSetup({
     selectedReceiver?.id && wiringPlan.documented,
   );
   const serialPorts = useMemo(
-    () => (profile.serialPorts || []).map((port) => {
-      const assignments = [];
-      if (
-        normalizeSerialPortName(config.receiverUart)
-          === normalizeSerialPortName(port.id)
-      ) {
-        assignments.push("Receiver");
-      }
-      if (
-        config.features?.gps &&
-        normalizeSerialPortName(profile.gpsUart)
-          === normalizeSerialPortName(port.id)
-      ) {
-        assignments.push("GPS");
-      }
-      return { ...port, assignments };
-    }),
-    [config.features?.gps, config.receiverUart, profile],
+    () => getSerialPortAssignments(config, profile),
+    [config, profile],
   );
   const plannedSerialRouteCount = serialPorts.filter(
     (port) => port.assignments.length > 0,

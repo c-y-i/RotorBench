@@ -212,7 +212,7 @@ test("selecting the SpeedyBee F405 V5 uses its documented board mapping", () => 
   expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART2");
   expect(screen.getByRole("checkbox", { name: "GPS navigation" }))
     .toBeChecked();
-  expect(screen.getByText(/UART4 GPS/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/UART4 GPS/i).length).toBeGreaterThan(0);
   expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
 });
 

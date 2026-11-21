@@ -93,3 +93,23 @@ test("briefs the selected radio regulatory ceiling", () => {
     "- Receiver RF bands: 2.4 GHz / Sub-G 900 MHz · compatible · shared with TX: 2.4 GHz",
   );
 });
+
+test("carries the documented serial allocation into the briefing", () => {
+  const fcPlan = createDefaultFlightControllerConfig({
+    id: "fc-speedybee-f405-v4",
+    name: "SpeedyBee F405 V4",
+    processor: "STM32F405",
+    imu: "ICM42688P",
+    firmware: ["Betaflight"],
+  });
+  const fcProfile = getBoardProfile(fcPlan.profileId);
+  const briefing = createHardwarePlanBriefing({
+    fcPlan,
+    fcProfile,
+    radioPlan: DEFAULT_RADIO_CONFIG,
+  });
+
+  expect(briefing.text).toContain(
+    "- Serial allocation: UART1 DJI / VTX; UART2 Receiver (Receiver); UART3 User serial; UART4 Bluetooth tuning; UART5 ESC telemetry; UART6 GPS (GPS)",
+  );
+});
