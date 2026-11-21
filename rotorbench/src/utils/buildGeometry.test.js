@@ -7,6 +7,7 @@ import {
   geometryProvenance,
   measuredGeometryForPart,
   normalizeGeometryOverrides,
+  placementCheckMeasurementTarget,
   setMeasuredGeometryValue,
   summarizeMeasuredGeometry,
 } from "./buildGeometry";
@@ -127,4 +128,47 @@ test("summarizes named measured fields with catalog provenance for export", () =
       }],
     }],
   });
+});
+
+test("maps unresolved placement checks to the field that can resolve them", () => {
+  expect(placementCheckMeasurementTarget(
+    { id: "propeller-hub", status: "awaiting" },
+    {
+      motor,
+      propeller: {
+        id: "prop-test",
+        name: "Test prop",
+        shaftMm: 5,
+      },
+    },
+  )).toMatchObject({
+    category: "motors",
+    partId: motor.id,
+    partName: motor.name,
+    fieldKey: "propShaftMm",
+    fieldLabel: "prop shaft diameter",
+  });
+
+  expect(placementCheckMeasurementTarget(
+    { id: "motor-interface", status: "conflict" },
+    { motor },
+  )).toMatchObject({
+    category: "motors",
+    partId: motor.id,
+    fieldKey: "mountingPatternMm",
+  });
+  expect(placementCheckMeasurementTarget(
+    { id: "propeller-hub", status: "verified" },
+    { motor },
+  )).toBeNull();
+  expect(placementCheckMeasurementTarget(
+    { id: "battery-clearance", status: "awaiting" },
+    {
+      battery: {
+        id: "battery-test",
+        name: "Known battery",
+        dimensionsMm: [80, 35, 40],
+      },
+    },
+  )).toBeNull();
 });

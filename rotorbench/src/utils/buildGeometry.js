@@ -228,3 +228,130 @@ export function summarizeMeasuredGeometry(assemblySpec = {}, overrides) {
     parts,
   };
 }
+
+const PLACEMENT_MEASUREMENT_TARGETS = Object.freeze({
+  "motor-interface": {
+    partKey: "motor",
+    category: "motors",
+    partLabel: "Motor",
+    fieldKey: "mountingPatternMm",
+    fieldLabel: "mounting pattern",
+    vectorLength: 2,
+  },
+  "propeller-hub": {
+    partKey: "motor",
+    category: "motors",
+    partLabel: "Motor",
+    fieldKey: "propShaftMm",
+    fieldLabel: "prop shaft diameter",
+    vectorLength: null,
+  },
+  "propeller-sweep": {
+    partKey: "propeller",
+    category: "propellers",
+    partLabel: "Propeller",
+    fieldKey: "dimensionsMm",
+    fieldLabel: "propeller dimensions",
+    vectorLength: 3,
+  },
+  "battery-clearance": {
+    partKey: "battery",
+    category: "batteries",
+    partLabel: "Battery",
+    fieldKey: "dimensionsMm",
+    fieldLabel: "battery dimensions",
+    vectorLength: 3,
+  },
+});
+
+function measurementTargetForPart(target, assemblySpec) {
+  const part = assemblySpec[target.partKey];
+  if (!part?.id) return null;
+  return {
+    ...target,
+    partId: part.id,
+    partName: part.name || part.id,
+  };
+}
+
+function missingPositiveValue(value, length = null) {
+  if (length == null) return !(Number(value) > 0);
+  return !Array.isArray(value)
+    || value.length !== length
+    || !value.every((entry) => Number(entry) > 0);
+}
+
+function fieldNeedsMeasurement(part, fieldKey, length) {
+  return missingPositiveValue(part?.[fieldKey], length)
+    || Boolean(part?.estimatedFields?.includes(fieldKey));
+}
+
+export function placementCheckMeasurementTarget(check, assemblySpec = {}) {
+  if (!check || check.status === "verified") return null;
+  if (check.id === "electronics-stack") {
+    const candidates = [
+      {
+        partKey: "esc",
+        category: "escs",
+        partLabel: "ESC",
+        fieldKey: "dimensionsMm",
+        fieldLabel: "ESC dimensions",
+        length: 3,
+      },
+      {
+        partKey: "flightController",
+        category: "flight_controllers",
+        partLabel: "Flight controller",
+        fieldKey: "dimensionsMm",
+        fieldLabel: "flight controller dimensions",
+        length: 3,
+      },
+      {
+        partKey: "receiver",
+        category: "receivers",
+        partLabel: "Receiver",
+        fieldKey: "dimensionsMm",
+        fieldLabel: "receiver dimensions",
+        length: 3,
+      },
+    ];
+    const candidate = candidates.find(({ partKey, fieldKey, length }) => (
+      missingPositiveValue(assemblySpec[partKey]?.[fieldKey], length)
+      || assemblySpec[partKey]?.estimatedFields?.includes(fieldKey)
+    ));
+    return candidate ? measurementTargetForPart(candidate, assemblySpec) : null;
+  }
+
+  if (check.id === "propeller-hub") {
+    const motor = assemblySpec.motor;
+    const propeller = assemblySpec.propeller;
+    if (check.status === "conflict" && motor?.id) {
+      return measurementTargetForPart(
+        PLACEMENT_MEASUREMENT_TARGETS["propeller-hub"],
+        assemblySpec,
+      );
+    }
+    if (motor?.id && missingPositiveValue(motor.propShaftMm)) {
+      return measurementTargetForPart(
+        PLACEMENT_MEASUREMENT_TARGETS["propeller-hub"],
+        assemblySpec,
+      );
+    }
+    if (propeller?.id && missingPositiveValue(propeller.shaftMm)) {
+      return measurementTargetForPart({
+        partKey: "propeller",
+        category: "propellers",
+        partLabel: "Propeller",
+        fieldKey: "shaftMm",
+        fieldLabel: "propeller bore",
+      }, assemblySpec);
+    }
+  }
+
+  const target = PLACEMENT_MEASUREMENT_TARGETS[check.id];
+  if (!target) return null;
+  const part = assemblySpec[target.partKey];
+  const needsMeasurement = check.status === "conflict"
+    || fieldNeedsMeasurement(part, target.fieldKey, target.vectorLength);
+  return needsMeasurement ? measurementTargetForPart(target, assemblySpec) : null;
+}

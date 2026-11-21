@@ -934,6 +934,11 @@
   border-radius: 4px;
 }
 
+.measured-geometry-field.is-targeted {
+  background: #edf8f4;
+  border-color: var(--brand);
+}
+
 .measured-geometry-field > label {
   display: grid;
   gap: 2px;
@@ -1233,6 +1238,41 @@
   text-transform: uppercase;
 }
 
+.viewer-check-actions {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.viewer-check-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 0 9px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.viewer-check-actions button:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
+.viewer-check-actions button:focus-visible {
+  border-color: var(--brand);
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
 .viewer-placement-audit-body li.is-verified em {
   color: var(--ok);
 }
@@ -1248,6 +1288,10 @@
 .viewer-placement-audit-body li.is-estimated em,
 .viewer-placement-audit-body li.is-fallback em {
   color: var(--warn);
+}
+
+.viewer-placement-audit-body li.is-awaiting em {
+  color: var(--ink-soft);
 }
 
 .spin-icon {
@@ -4072,6 +4116,18 @@
 }
 
 @media (max-width: 640px) {
+  .viewer-placement-audit-body li {
+    grid-template-columns: 15px minmax(0, 1fr);
+  }
+
+  .viewer-check-actions {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
   .measured-geometry-field {
     grid-template-columns: 1fr;
     align-items: stretch;

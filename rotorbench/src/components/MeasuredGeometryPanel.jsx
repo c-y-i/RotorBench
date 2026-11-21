@@ -131,11 +131,12 @@ export default function MeasuredGeometryPanel({
   overrides,
   onChange,
   onReset,
+  focusTarget = null,
 }) {
   const idBase = useId().replace(/:/g, "");
   const [activePartKey, setActivePartKey] = useState("");
+  const detailsRef = useRef(null);
   const availableParts = parts.filter(({ part }) => part?.id);
-  if (!availableParts.length) return null;
   const partSummaries = availableParts.map(({ category, label, part }) => {
     const fields = geometryProvenance(overrides, category, part);
     const measuredCount = fields.filter(
@@ -162,10 +163,59 @@ export default function MeasuredGeometryPanel({
       (field) => field.source === "catalog-estimated",
     ).length,
   }), { total: 0, measured: 0, missing: 0, estimated: 0 });
-  const activeId = `${idBase}-${activePart.key.replace(/[^a-z0-9]+/gi, "-")}`;
+  const activeId = activePart
+    ? `${idBase}-${activePart.key.replace(/[^a-z0-9]+/gi, "-")}`
+    : idBase;
+  const availablePartKeys = partSummaries.map(({ key }) => key).join("|");
+
+  useEffect(() => {
+    if (!focusTarget?.category || !focusTarget?.partId) return;
+    const requestedKey = `${focusTarget.category}:${focusTarget.partId}`;
+    if (!availablePartKeys.split("|").includes(requestedKey)) return;
+    if (detailsRef.current) detailsRef.current.open = true;
+    if (activePart?.key !== requestedKey) setActivePartKey(requestedKey);
+  }, [
+    focusTarget?.requestId,
+    focusTarget?.category,
+    focusTarget?.partId,
+    activePart?.key,
+    availablePartKeys,
+  ]);
+
+  useEffect(() => {
+    if (
+      !focusTarget?.fieldKey
+      || activePart?.category !== focusTarget.category
+      || activePart?.part.id !== focusTarget.partId
+    ) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const field = document.getElementById(
+        `${activeId}-field-${focusTarget.fieldKey}`,
+      );
+      if (!field) return;
+      field.scrollIntoView?.({
+        block: "center",
+        behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+          ? "auto"
+          : "smooth",
+      });
+      field.querySelector("input")?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    focusTarget?.requestId,
+    focusTarget?.fieldKey,
+    focusTarget?.category,
+    focusTarget?.partId,
+    activePart?.category,
+    activePart?.part.id,
+    activeId,
+  ]);
+
+  if (!availableParts.length || !activePart) return null;
 
   return (
-    <details className="measured-geometry">
+    <details className="measured-geometry" ref={detailsRef}>
       <summary>
         <Settings2 size={16} aria-hidden="true" />
         <span>
@@ -251,7 +301,17 @@ export default function MeasuredGeometryPanel({
               );
               const effective = field.effectiveValue;
               return (
-                <div key={field.key} className="measured-geometry-field">
+                <div
+                  key={field.key}
+                  id={`${activeId}-field-${field.key}`}
+                  className={`measured-geometry-field ${
+                    focusTarget?.category === activePart.category
+                    && focusTarget?.partId === activePart.part.id
+                    && focusTarget?.fieldKey === field.key
+                      ? "is-targeted"
+                      : ""
+                  }`}
+                >
                   <label>
                     <span>{field.label}</span>
                     <small>{sourceLabels[field.source]}</small>

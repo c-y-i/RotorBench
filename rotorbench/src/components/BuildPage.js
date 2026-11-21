@@ -31,6 +31,7 @@ import {
   applyMeasuredGeometryToAssemblySpec,
   clearMeasuredGeometry,
   normalizeGeometryOverrides,
+  placementCheckMeasurementTarget,
   setMeasuredGeometryValue,
 } from "../utils/buildGeometry";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
@@ -340,12 +341,25 @@ export default function BuildPage() {
   const [cameraView, setCameraView] = useState("orbit");
   const [explodedAssembly, setExplodedAssembly] = useState(false);
   const [showFitOverlay, setShowFitOverlay] = useState(false);
+  const [measurementTarget, setMeasurementTarget] = useState(null);
   const [selectedPresetId, setSelectedPresetId] = useState(requestedPreset?.id || "");
 
   // Ensure the viewer starts clean (no fallback sample) every time BuildPage mounts
   useEffect(() => {
     setResetKey(k => k + 1);
   }, []);
+
+  useEffect(() => {
+    setMeasurementTarget(null);
+  }, [
+    selectedBattery,
+    selectedESC,
+    selectedFC,
+    selectedFrame,
+    selectedMotor,
+    selectedPropeller,
+    selectedReceiver,
+  ]);
 
   useEffect(() => {
     const preset = getPlatformPreset(selectedPresetId);
@@ -704,6 +718,14 @@ export default function BuildPage() {
         || propSweepStatus === "measured",
     };
   }, [viewerPlacementAudit]);
+  const requestMeasurement = (check) => {
+    const target = placementCheckMeasurementTarget(check, assemblySpec);
+    if (!target) return;
+    setMeasurementTarget((current) => ({
+      ...target,
+      requestId: (current?.requestId || 0) + 1,
+    }));
+  };
 
   const summarizeCandidate = (physicalChecks = [], electricalChecks = []) => {
     const physical = summarizePhysicalChecks(physicalChecks);
@@ -1233,38 +1255,56 @@ export default function BuildPage() {
                   electrical compatibility, or a live aircraft check.
                 </p>
                 <ul aria-label="Viewer placement checks">
-                  {viewerPlacementAudit.checks.map((check) => (
-                    <li
-                      key={check.id}
-                      className={`is-${check.status}`}
-                      aria-label={check.label}
-                    >
-                      {check.status === "verified"
-                        ? <Check size={14} aria-hidden="true" />
-                        : check.status === "measured"
-                          ? <Ruler size={14} aria-hidden="true" />
-                        : check.status === "conflict"
-                          ? <CircleAlert size={14} aria-hidden="true" />
-                          : <Box size={14} aria-hidden="true" />}
-                      <span>
-                        <strong>{check.label}</strong>
-                        <small>{check.detail}</small>
-                      </span>
-                      <em>{
-                        check.status === "verified"
-                          ? "Verified"
+                  {viewerPlacementAudit.checks.map((check) => {
+                    const measurementTarget = placementCheckMeasurementTarget(
+                      check,
+                      assemblySpec,
+                    );
+                    return (
+                      <li
+                        key={check.id}
+                        className={`is-${check.status}`}
+                        aria-label={check.label}
+                      >
+                        {check.status === "verified"
+                          ? <Check size={14} aria-hidden="true" />
                           : check.status === "measured"
-                            ? "Measured"
+                            ? <Ruler size={14} aria-hidden="true" />
                           : check.status === "conflict"
-                            ? "Conflict"
-                            : check.status === "estimated"
-                              ? "Estimated"
-                              : check.status === "fallback"
-                                ? "Fallback"
-                                : "Awaiting"
-                      }</em>
-                    </li>
-                  ))}
+                            ? <CircleAlert size={14} aria-hidden="true" />
+                            : <Box size={14} aria-hidden="true" />}
+                        <span>
+                          <strong>{check.label}</strong>
+                          <small>{check.detail}</small>
+                        </span>
+                        <span className="viewer-check-actions">
+                          <em>{
+                            check.status === "verified"
+                              ? "Verified"
+                              : check.status === "measured"
+                                ? "Measured"
+                              : check.status === "conflict"
+                                ? "Conflict"
+                                : check.status === "estimated"
+                                  ? "Estimated"
+                                  : check.status === "fallback"
+                                    ? "Fallback"
+                                    : "Awaiting"
+                          }</em>
+                          {measurementTarget && (
+                            <button
+                              type="button"
+                              aria-label={`Measure ${measurementTarget.fieldLabel} for ${check.label}`}
+                              onClick={() => requestMeasurement(check)}
+                            >
+                              <Ruler size={13} aria-hidden="true" />
+                              Measure
+                            </button>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </details>
@@ -1272,6 +1312,7 @@ export default function BuildPage() {
           <MeasuredGeometryPanel
             parts={measuredGeometryParts}
             overrides={geometryOverrides}
+            focusTarget={measurementTarget}
             onChange={(category, partId, field, value) => {
               setGeometryOverrides((current) => setMeasuredGeometryValue(
                 current,

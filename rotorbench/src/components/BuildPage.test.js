@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { Link, MemoryRouter, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import BuildPage from "./BuildPage";
@@ -244,14 +251,23 @@ test("build-local measurements update fit evidence without claiming verification
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
 
-  fireEvent.click(screen.getByText("Measured geometry"));
+  fireEvent.click(screen.getByText("Viewer placement"));
   fireEvent.click(screen.getByRole("button", {
-    name: /Motor T-Motor F60 Pro V 2207.5 1750KV/i,
+    name: "Measure prop shaft diameter for Propeller hub interface",
   }));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(screen.getByRole("group", { name: "Choose a part to measure" }))
+    .toBeVisible();
+  expect(screen.getByRole("button", {
+    name: /Motor T-Motor F60 Pro V 2207.5 1750KV/i,
+  })).toHaveAttribute("aria-pressed", "true");
   const shaft = screen.getByLabelText(
     "Motor Prop shaft diameter in millimetres",
   );
   expect(shaft).toHaveValue(null);
+  await waitFor(() => expect(shaft).toHaveFocus());
   fireEvent.change(shaft, { target: { value: "5" } });
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -261,7 +277,6 @@ test("build-local measurements update fit evidence without claiming verification
     "propShaftMm",
   );
 
-  fireEvent.click(screen.getByText("Viewer placement"));
   const hubCheck = screen.getByRole("listitem", {
     name: "Propeller hub interface",
   });
