@@ -344,6 +344,8 @@ The build also exposes a collapsible provenance panel. For every selected part i
 
 The provenance panel can export a portable `rotorbench.build-sheet.v1` JSON draft. It includes selected IDs, physical-fit state, electrical-limit state, both sets of individual check rows, provenance counts and parts, and explicitly records that analysis and hardware verification are not included.
 
+The expanded Build provenance rows use the same readable field labels as the part picker. Catalog keys such as `dimensionsMm`, `currentDraw`, `mounting_point`, and `dischargeProfile` render as `dimensions`, `current draw`, `mounting offset`, and `discharge curve`; locally measured geometry uses the same treatment. The raw catalog keys remain unchanged in persisted data and exports.
+
 Build can also copy a versioned `/build?share=...` link containing only validated catalog component IDs and selected-part measurement overrides. Saved cards expose the same action. The decoder validates the schema, catalog IDs, token length, and measured values before applying anything. It excludes build notes, hardware plans, binding phrases, UIDs, evidence, serial paths, and local identifiers. Shared links take precedence over stored drafts, are consumed into a normal working build, and retain the usual compatibility and analysis gates.
 
 Completed Analysis reports also expose `Share build link`. It copies only the underlying component and measurement configuration and labels the result `analysis excluded`; analysis results and hardware evidence are not embedded.
@@ -502,7 +504,7 @@ cd ../backend
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-The latest catalog, BOM, model-manifest, comparison, interactive assembly-profile, mounting-interface, Setup section navigation, board-alignment, control-loop, battery telemetry, critical-pack return, navigation safety with GPS gate and cross-route portability, RP4TD-M receiver, AOS 5 V5 frame, Tattu V6 battery, AOS Supernova motor catalog depth, motor performance-data disclosure, picker estimate-name disclosure, 44 px picker controls, hardware-briefing, portable-build-link, and automated accessibility rerun passed 459 frontend tests across 58 suites, the production build, full ESLint, nineteen backend tests, and the Impeccable detector. The long audit inventory below records an earlier 339-test pass; its feature coverage remains valid and the newer focused tests are additive.
+The latest catalog, BOM, model-manifest, comparison, interactive assembly-profile, mounting-interface, Setup section navigation, board-alignment, control-loop, battery telemetry, critical-pack return, navigation safety with GPS gate and cross-route portability, RP4TD-M receiver, AOS 5 V5 frame, Tattu V6 battery, AOS Supernova motor catalog depth, motor performance-data disclosure, picker and Build provenance estimate-name disclosure, 44 px picker controls, hardware-briefing, portable-build-link, and automated accessibility rerun passed 462 frontend tests across 59 suites, the production build, full ESLint, nineteen backend tests, and the Impeccable detector. The long audit inventory below records an earlier 339-test pass; its feature coverage remains valid and the newer focused tests are additive.
 
 `axe-core` is now an explicit development dependency. Reusable jsdom structural checks run against the interactive assembly profile and populated comparison with WCAG 2 A/AA tags; colour contrast remains covered by the rendered-browser checks because jsdom has no layout engine.
 

@@ -167,6 +167,41 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
   expect(screen.getByText("Ready")).toBeInTheDocument();
 });
 
+test("build provenance names estimated fields in readable language", async () => {
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: "/build",
+      state: {
+        build: {
+          id: "estimated-provenance-build",
+          name: "Estimated provenance",
+          componentIds: {
+            frameId: "frame-aos-5-v5",
+            motorId: null,
+            propellerId: null,
+            escId: null,
+            flightControllerId: null,
+            batteryId: null,
+            receiverId: null,
+          },
+        },
+      },
+    }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  fireEvent.click(screen.getByText("Build provenance"));
+  expect(screen.getByText(
+    "Estimated: motor positions, stack height",
+  )).toBeInTheDocument();
+});
+
 test("loads a portable shared build above stored draft state", async () => {
   const token = createBuildShareToken({
     componentIds: {

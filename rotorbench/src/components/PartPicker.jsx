@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { readJsonStorage, writeJsonStorage } from "../utils/storage";
 import { hasCatalogModel } from "../utils/modelAssets";
+import { humanizeProvenanceFields } from "../utils/provenanceLabels";
 
 const categoryDetails = {
   frames: { label: "Frame", Icon: Box },
@@ -26,27 +27,6 @@ const categoryDetails = {
   flight_controllers: { label: "Flight controller", Icon: Cpu },
   receivers: { label: "Receiver", Icon: Radio },
 };
-
-const estimatedFieldLabels = {
-  currentDraw: "current draw",
-  dimensionsMm: "dimensions",
-  dischargeProfile: "discharge curve",
-  mountingPoint: "mounting offset",
-  mounting_point: "mounting offset",
-  stackHeight: "stack height",
-  stackMountPatternsMm: "stack mount pattern",
-};
-
-function humanizeEstimatedField(field) {
-  const value = String(field).trim();
-  if (!value) return "";
-  if (estimatedFieldLabels[value]) return estimatedFieldLabels[value];
-  return value
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
 
 function getMeta(category, part) {
   switch (category) {
@@ -357,9 +337,7 @@ export default function PartPicker({
             ) : (
               rankedParts.map(({ part, ok, reason, verified, recent }, index) => {
                 const isSelected = part.id === value;
-                const estimatedFields = (part.estimatedFields || [])
-                  .map(humanizeEstimatedField)
-                  .filter(Boolean);
+                const estimatedFields = humanizeProvenanceFields(part.estimatedFields);
                 const statusClass = !ok
                   ? "is-check"
                   : verified

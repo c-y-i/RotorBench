@@ -67,6 +67,7 @@ import {
 } from "../utils/buildLink";
 import { readJsonStorage, writeJsonStorage } from "../utils/storage";
 import { upsertBuild } from "../utils/savedBuilds";
+import { humanizeProvenanceFields } from "../utils/provenanceLabels";
 import {
   BatteryCharging,
   Box,
@@ -1922,10 +1923,14 @@ export default function BuildPage() {
                   )}
                 </div>
                 {part.estimatedFields.length > 0 && (
-                  <p>Estimated: {part.estimatedFields.join(", ")}</p>
+                  <p>
+                    Estimated: {humanizeProvenanceFields(part.estimatedFields).join(", ")}
+                  </p>
                 )}
                 {part.measuredFields.length > 0 && (
-                  <p>Measured locally: {part.measuredFields.join(", ")}</p>
+                  <p>
+                    Measured locally: {humanizeProvenanceFields(part.measuredFields).join(", ")}
+                  </p>
                 )}
               </div>
             ))}
