@@ -363,6 +363,12 @@ export const CUSTOM_BOARD_PROFILE = {
   ],
 };
 
+export function normalizeSerialPortName(value) {
+  return typeof value === "string"
+    ? value.toUpperCase().replace(/[\s_-]/g, "")
+    : "";
+}
+
 export const AIRFRAMES = [
   { value: "quadx", label: "Quad X", motors: 4, servos: 0 },
   { value: "quadx1234", label: "Quad X, motors 1-4 front-left first", motors: 4, servos: 0 },
@@ -1137,7 +1143,8 @@ export function validateFlightControllerConfig(
   if (
     config.features?.gps &&
     profile.gpsUart &&
-    config.receiverUart === profile.gpsUart
+    normalizeSerialPortName(config.receiverUart)
+      === normalizeSerialPortName(profile.gpsUart)
   ) {
     issues.push({
       severity: "error",
@@ -1152,6 +1159,33 @@ export function validateFlightControllerConfig(
       code: "no-gps-uart",
       message: "This documented board profile has no spare GPS UART.",
     });
+  }
+
+  if (profile.serialPorts?.length && config.receiverUart) {
+    const receiverPort = profile.serialPorts.find(
+      (port) => normalizeSerialPortName(port.id)
+        === normalizeSerialPortName(config.receiverUart),
+    );
+    const sharesEnabledGpsRoute = Boolean(
+      config.features?.gps &&
+      profile.gpsUart &&
+      normalizeSerialPortName(config.receiverUart)
+        === normalizeSerialPortName(profile.gpsUart),
+    );
+
+    if (!receiverPort) {
+      issues.push({
+        severity: "warning",
+        code: "receiver-uart-unmapped",
+        message: `${config.receiverUart} is not in this board's documented serial map. Verify the Betaflight resource and port mapping before wiring.`,
+      });
+    } else if (receiverPort.role !== "Receiver" && !sharesEnabledGpsRoute) {
+      issues.push({
+        severity: "warning",
+        code: "receiver-uart-role",
+        message: `${receiverPort.id} is documented for ${receiverPort.role} on ${profile.label}. Reassigning it to the receiver requires a deliberate port remap.`,
+      });
+    }
   }
 
   if (!finite(config.throttleLow) || Number(config.throttleLow) < 0 || Number(config.throttleLow) > 0.5) {

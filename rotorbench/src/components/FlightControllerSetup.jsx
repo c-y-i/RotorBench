@@ -38,6 +38,7 @@ import {
   getAirframeMotorLayout,
   getBoardProfile,
   getChannelPreset,
+  normalizeSerialPortName,
   supportsAerialKitLaunch,
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
@@ -67,6 +68,8 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "launch-timeout-range": { id: "fc-launch-timeout", label: "launch timeout" },
   "launch-airframe-mismatch": { id: "fc-airframe", label: "airframe" },
   "uart-conflict": { id: "fc-uart", label: "receiver UART" },
+  "receiver-uart-unmapped": { id: "fc-uart", label: "receiver UART" },
+  "receiver-uart-role": { id: "fc-uart", label: "receiver UART" },
   "no-gps-uart": { id: "fc-feature-gps", label: "GPS feature" },
   "throttle-low-range": { id: "fc-throttle-low", label: "low-throttle gate" },
   "rc-timeout-range": { id: "fc-rc-timeout", label: "receiver timeout" },
@@ -100,12 +103,6 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "arm-channel-unset": { id: "fc-arm-channel", label: "arm channel" },
   "channel-conflict": { id: "fc-arm-channel", label: "control channels" },
 });
-
-const normalizeSerialPort = (value) => (
-  typeof value === "string"
-    ? value.toUpperCase().replace(/[\s_-]/g, "")
-    : ""
-);
 
 function useFlightControllerConfig(
   value,
@@ -585,12 +582,16 @@ export default function FlightControllerSetup({
   const serialPorts = useMemo(
     () => (profile.serialPorts || []).map((port) => {
       const assignments = [];
-      if (normalizeSerialPort(config.receiverUart) === normalizeSerialPort(port.id)) {
+      if (
+        normalizeSerialPortName(config.receiverUart)
+          === normalizeSerialPortName(port.id)
+      ) {
         assignments.push("Receiver");
       }
       if (
         config.features?.gps &&
-        normalizeSerialPort(profile.gpsUart) === normalizeSerialPort(port.id)
+        normalizeSerialPortName(profile.gpsUart)
+          === normalizeSerialPortName(port.id)
       ) {
         assignments.push("GPS");
       }

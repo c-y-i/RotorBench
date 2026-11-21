@@ -318,6 +318,39 @@ test.each(FC_BOARD_PROFILES)(
   },
 );
 
+test("warns before a receiver reassigns a documented peripheral UART", () => {
+  const selected = {
+    id: "fc-speedybee-f405-v5",
+    name: "SpeedyBee F405 V5",
+    processor: "STM32F405",
+    imu: "ICM42688P",
+    firmware: ["Betaflight"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(validateFlightControllerConfig({
+    ...config,
+    receiverUart: "UART3",
+  }, profile)).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "receiver-uart-role",
+      severity: "warning",
+      message: expect.stringMatching(/UART3.*DJI VTX/i),
+    }),
+  ]));
+
+  expect(validateFlightControllerConfig({
+    ...config,
+    receiverUart: "UART7",
+  }, profile)).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "receiver-uart-unmapped",
+      severity: "warning",
+    }),
+  ]));
+});
+
 test("Betaflight Stage 2 landing throttle is validated and summarized honestly", () => {
   const config = {
     ...createDefaultFlightControllerConfig(),

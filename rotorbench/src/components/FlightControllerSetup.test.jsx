@@ -197,6 +197,30 @@ test("shows the documented serial map and marks active plan routes", async () =>
   expect(await getA11yViolations(container)).toEqual([]);
 });
 
+test("flags a receiver that takes over a documented peripheral UART", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-speedybee-f405-v5",
+        name: "SpeedyBee F405 V5",
+        processor: "STM32F405",
+        imu: "ICM42688P",
+        firmware: ["Betaflight"],
+      }}
+    />,
+  );
+
+  fireEvent.change(screen.getByLabelText("Receiver UART"), {
+    target: { value: "UART3" },
+  });
+
+  expect(screen.getByText(/UART3 is documented for DJI VTX/i))
+    .toBeInTheDocument();
+  expect(screen.getByRole("button", {
+    name: "Review receiver UART",
+  })).toBeInTheDocument();
+});
+
 test("receiver wiring expands into a documented continuity checklist", () => {
   render(
     <FlightControllerSetup
