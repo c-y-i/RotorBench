@@ -9,6 +9,7 @@ import {
 import { Link, MemoryRouter, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import BuildPage from "./BuildPage";
+import { createBuildShareToken } from "../utils/buildLink";
 
 jest.mock("./BabylonViewer.jsx", () => ({
   cameraView,
@@ -100,6 +101,7 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
     <MemoryRouter initialEntries={[{ pathname: "/build", state: { build } }]}>
       <BuildProvider>
         <BuildPage />
+        <LocationProbe />
       </BuildProvider>
     </MemoryRouter>,
   );
@@ -159,6 +161,111 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
   expect(screen.getByText("SpeedyBee BLS 35A Mini V2 current")).toBeInTheDocument();
   expect(screen.getByText("SpeedyBee F405 Mini input voltage")).toBeInTheDocument();
   expect(screen.getByText("Ready")).toBeInTheDocument();
+});
+
+test("loads a portable shared build above stored draft state", async () => {
+  const token = createBuildShareToken({
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-tmotor-f1404-3800kv",
+      propellerId: "prop-gemfan-hurricane-3520-3",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+    geometryOverrides: {
+      schema: "rotorbench.measured-geometry.v1",
+      categories: {
+        motors: {
+          "motor-tmotor-f1404-3800kv": {
+            propShaftMm: 1.5,
+          },
+        },
+      },
+    },
+  });
+  localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
+    version: 1,
+    id: "stale-draft",
+    name: "Stale draft",
+    componentIds: build.componentIds,
+  }));
+
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", search: `?share=${token}` }]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-frame", "frame-aos-35-v51");
+  expect(viewer).toHaveAttribute("data-motor-measured", "propShaftMm");
+  expect(screen.getByText(/Shared build loaded/i)).toBeInTheDocument();
+  expect(screen.getByTestId("location-search")).toHaveTextContent("");
+  expect(screen.getByTestId("location-build-note")).toHaveTextContent("");
+});
+
+test("copies a portable share link without build notes or hardware state", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: {
+      build: {
+        ...build,
+        componentIds: {
+          ...build.componentIds,
+          motorId: "motor-tmotor-f1404-3800kv",
+          propellerId: "prop-gemfan-hurricane-3520-3",
+          batteryId: "battery-tattu-rline-4s-850-95c",
+          escId: "esc-speedybee-bls-35a-mini-v2",
+          flightControllerId: "fc-speedybee-f405-mini",
+          receiverId: "rx-radiomaster-rp4td",
+        },
+        note: "Do not share this note",
+      },
+    } }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Copy share link" }));
+  await waitFor(() => expect(writeText).toHaveBeenCalled());
+  const link = writeText.mock.calls[0][0];
+  expect(link).toContain("/build?share=");
+  expect(decodeURIComponent(link)).not.toContain("Do not share this note");
+  expect(await screen.findByText(/Share link copied/i)).toBeInTheDocument();
+});
+
+test("recovers from a malformed shared build link", async () => {
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", search: "?share=not*valid" }]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(screen.getByText(/Could not load shared build/i)).toBeInTheDocument();
+  expect(screen.getByTestId("location-search")).toHaveTextContent("");
 });
 
 test("a starter-platform deep link selects all seven components and consumes the query", async () => {

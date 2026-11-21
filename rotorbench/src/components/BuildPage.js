@@ -56,6 +56,10 @@ import {
   buildBomFilename,
   createBuildBomCsv,
 } from "../utils/buildBom";
+import {
+  buildShareUrl,
+  parseBuildShareToken,
+} from "../utils/buildLink";
 import { readJsonStorage, writeJsonStorage } from "../utils/storage";
 import { upsertBuild } from "../utils/savedBuilds";
 import {
@@ -139,9 +143,28 @@ export default function BuildPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedPresetId = searchParams.get("preset") || "";
   const requestedPreset = getPlatformPreset(requestedPresetId);
+  const requestedShareToken = searchParams.get("share") || "";
+  const sharedBuildResult = useMemo(() => {
+    if (!requestedShareToken) return { build: null, error: "" };
+    try {
+      return {
+        build: parseBuildShareToken(requestedShareToken),
+        error: "",
+      };
+    } catch (error) {
+      return {
+        build: null,
+        error: `Could not load shared build: ${error.message}`,
+      };
+    }
+  }, [requestedShareToken]);
+  const sharedBuild = sharedBuildResult.build;
   const startNewDraft = searchParams.get("new") === "1";
   const initialBuild = location.state?.build;
-  const storedDraftValue = !initialBuild && !requestedPreset && !startNewDraft
+  const storedDraftValue = !initialBuild
+    && !requestedPreset
+    && !requestedShareToken
+    && !startNewDraft
     ? readJsonStorage(BUILD_DRAFT_KEY, null)
     : null;
   const sanitizedDraftIds = storedDraftValue?.version === 1
@@ -153,23 +176,28 @@ export default function BuildPage() {
     : null;
   const initialComponentIds =
     initialBuild?.componentIds ||
+    sharedBuild?.componentIds ||
     requestedPreset?.componentIds ||
     (!startNewDraft ? currentBuild?.componentIds || storedDraft?.componentIds : null) ||
     {};
   const [workingBuildId, setWorkingBuildId] = useState(
-    () => initialBuild?.id || currentBuild?.id || storedDraft?.id || createWorkingBuildId(),
+    () => initialBuild?.id || currentBuild?.id || storedDraft?.id
+      || createWorkingBuildId(),
   );
   const [workingBuildName, setWorkingBuildName] = useState(
-    () => initialBuild?.name || requestedPreset?.name || currentBuild?.name
+    () => initialBuild?.name || (sharedBuild ? "Shared build" : null)
+      || requestedPreset?.name || currentBuild?.name
       || storedDraft?.name || "Custom Build",
   );
   const [buildNote, setBuildNote] = useState(() => (
     initialBuild?.note
+    ?? (sharedBuild ? "" : null)
     ?? (requestedPreset ? "" : currentBuild?.note ?? storedDraft?.note ?? "")
   ));
   const [geometryOverrides, setGeometryOverrides] = useState(() => (
     normalizeGeometryOverrides(
       initialBuild?.geometryOverrides
+      || sharedBuild?.geometryOverrides
       || currentBuild?.geometryOverrides
       || storedDraft?.geometryOverrides,
     )
@@ -191,7 +219,11 @@ export default function BuildPage() {
   // Load from context on mount
   useEffect(() => {
     const requestedBuild = location.state?.build;
-    const sourceBuild = requestedBuild || (requestedPreset || startNewDraft ? null : currentBuild);
+    const sourceBuild = requestedBuild || sharedBuild || (
+      requestedPreset || requestedShareToken || startNewDraft
+        ? null
+        : currentBuild
+    );
     // If a new build page is created, clear the old currentBuild.
     if (requestedBuild) {
       updateBuild(requestedBuild);
@@ -209,7 +241,15 @@ export default function BuildPage() {
       setBuildNote(sourceBuild.note || "");
       setGeometryOverrides(normalizeGeometryOverrides(sourceBuild.geometryOverrides));
     }
-    if (requestedPreset) {
+    if (sharedBuildResult.error) {
+      setMessage({ type: "error", text: sharedBuildResult.error });
+    } else if (sharedBuild) {
+      setMessage({
+        type: "info",
+        text: "Shared build loaded. The link contains catalog IDs and validated measurements only.",
+      });
+      setTimeout(() => setMessage({ type: "", text: "" }), 4000);
+    } else if (requestedPreset) {
       setMessage({
         type: "info",
         text: `${requestedPreset.name} loaded. Review before analysis.`,
@@ -222,7 +262,9 @@ export default function BuildPage() {
       });
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     }
-    if (requestedPresetId || startNewDraft) setSearchParams({}, { replace: true });
+    if (requestedPresetId || requestedShareToken || startNewDraft) {
+      setSearchParams({}, { replace: true });
+    }
     // Mount-only initialization restores the active persisted build once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -956,6 +998,36 @@ export default function BuildPage() {
       text: "BOM CSV exported with catalog quantities and prices.",
     });
     setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+  };
+
+  const copyBuildShareLink = async () => {
+    try {
+      const link = buildShareUrl({
+        componentIds: {
+          frameId: selectedFrame || null,
+          motorId: selectedMotor || null,
+          propellerId: selectedPropeller || null,
+          escId: selectedESC || null,
+          flightControllerId: selectedFC || null,
+          batteryId: selectedBattery || null,
+          receiverId: selectedReceiver || null,
+        },
+        geometryOverrides,
+      });
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable in this browser.");
+      }
+      await navigator.clipboard.writeText(link);
+      setMessage({
+        type: "success",
+        text: "Share link copied. It contains catalog IDs and validated measurements only.",
+      });
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: `Could not create share link: ${error.message}`,
+      });
+    }
   };
 
   const applyPlatformPreset = (presetId) => {
@@ -1730,6 +1802,10 @@ export default function BuildPage() {
             <button type="button" onClick={copyBuildBriefing}>
               <Clipboard size={15} aria-hidden="true" />
               Copy briefing
+            </button>
+            <button type="button" onClick={copyBuildShareLink}>
+              <Clipboard size={15} aria-hidden="true" />
+              Copy share link
             </button>
             <button type="button" onClick={exportBuildSheet}>
               <Download size={15} aria-hidden="true" />
