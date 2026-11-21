@@ -38,7 +38,7 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(
             counts,
             {
-                "frames": 9,
+                "frames": 10,
                 "motors": 15,
                 "propellers": 10,
                 "batteries": 9,
@@ -47,7 +47,7 @@ class CatalogContractTests(unittest.TestCase):
                 "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 68)
+        self.assertEqual(sum(counts.values()), 69)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 68)
+        self.assertEqual(len(records), 69)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -363,6 +363,29 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(propeller.dimensions_mm, [64, 5.5, 64])
         self.assertEqual(propeller.performance_data_status, "not_published")
         self.assertEqual(propeller.thrust_data, [])
+
+    def test_aos_5_v5_keeps_published_interfaces_and_estimated_placement_separate(self):
+        frame = next(
+            item for item in self.database.frames
+            if item.id == "frame-aos-5-v5"
+        )
+        self.assertEqual(frame.size, 228)
+        self.assertEqual(frame.weight, 129)
+        self.assertEqual(frame.max_prop_size, 5.3)
+        self.assertEqual(frame.dimensions_mm, [180, 34, 140])
+        self.assertEqual(frame.price, 79)
+        self.assertEqual(
+            frame.stack_mount_patterns_mm,
+            [[30.5, 30.5], [25.5, 25.5], [20.0, 20.0]],
+        )
+        self.assertEqual(
+            frame.motor_mount_patterns_mm,
+            [[16.0, 16.0], [19.0, 19.0]],
+        )
+        self.assertIn("motor positions", frame.estimated_fields)
+        self.assertIn("stackHeight", frame.estimated_fields)
+        self.assertNotIn("dimensionsMm", frame.estimated_fields)
+        self.assertNotIn("weight", frame.estimated_fields)
 
     def test_pizzacutters_5037_use_published_mechanics(self):
         propeller = next(

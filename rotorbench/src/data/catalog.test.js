@@ -319,6 +319,33 @@ test("AOS Cine25 and Gemfan 2520 add a source-backed compact platform", () => {
   });
 });
 
+test("AOS 5 V5 adds a current 5-inch frame with published interfaces", () => {
+  const frame = componentsData.frames.find(
+    (item) => item.id === "frame-aos-5-v5",
+  );
+
+  expect(frame).toMatchObject({
+    name: "AOS 5 V5",
+    size: 228,
+    weight: 129,
+    motorCount: 4,
+    maxPropSize: 5.3,
+    dimensionsMm: [180, 34, 140],
+    stackMountPatternsMm: [[30.5, 30.5], [25.5, 25.5], [20, 20]],
+    motorMountPatternsMm: [[16, 16], [19, 19]],
+    price: 79,
+    modelStatus: "not_available",
+    sourceUrl: "https://www.aos-rc.com/designs/aos-5-v5",
+    priceSourceUrl: "https://shop.iflight.com/AOS5-V5-Frame-Kit-Pro2127",
+  });
+  expect(frame.estimatedFields).toEqual([
+    "motor positions",
+    "stackHeight",
+  ]);
+  expect(frame.estimatedFields).not.toContain("dimensionsMm");
+  expect(frame.estimatedFields).not.toContain("weight");
+});
+
 test("HQProp PizzaCutters 5037 adds a source-backed five-inch propeller", () => {
   const propeller = componentsData.propellers.find(
     (item) => item.id === "prop-hqprop-pizzacutters-5037-3",
