@@ -401,6 +401,43 @@ test("Matek F405-WMN selects its documented INAV wing profile", () => {
   expect(arduPilotProfile.notes.join(" ")).toMatch(/SERIAL3\/UART5 GPS1/i);
 });
 
+test("Kakute H7 V2 selects its documented Betaflight mapping", () => {
+  const selected = {
+    id: "fc-holybro-kakute-h7-v2",
+    name: "Holybro Kakute H7 V2",
+    processor: "STM32H743",
+    imu: "BMI270",
+    firmware: ["Betaflight", "INAV"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config).toMatchObject({
+    firmwareFamily: "betaflight",
+    profileId: "kakute-h7-v2",
+    airframe: "quadx",
+  });
+  expect(profile).toMatchObject({
+    label: "Holybro Kakute H7 V2",
+    board: "KAKUTEH7V2",
+    receiverUart: "UART6",
+    receiverBaud: 420000,
+    sbusNeedsInverter: false,
+    gpsUart: "UART4",
+    outputs: { motors: 8, servos: 0 },
+    flightLog: { label: "128 MB onboard blackbox" },
+  });
+  expect(profile.serialPorts.map((port) => port.id)).toEqual([
+    "UART1",
+    "UART2",
+    "UART3",
+    "UART4",
+    "UART6",
+    "UART7",
+  ]);
+  expect(profile.notes.join(" ")).toMatch(/no internal current sensor/i);
+});
+
 test.each(FC_BOARD_PROFILES)(
   "$label serial map includes its documented receiver and GPS routes",
   (profile) => {
