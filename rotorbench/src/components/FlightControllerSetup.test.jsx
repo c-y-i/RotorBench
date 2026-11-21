@@ -311,3 +311,61 @@ test("build motor count mismatch appears before command copying", () => {
   expect(screen.getAllByText(/frame has 4 motor mounts.*uses 1/i)).toHaveLength(2);
   expect(screen.getByText(/Resolve \d+ plan blocker.*Aerial Kit preview/i)).toBeInTheDocument();
 });
+
+test("standalone FC plan export carries the board-specific wiring checklist", () => {
+  const originalBlob = global.Blob;
+  const originalCreateObjectUrl = URL.createObjectURL;
+  const originalRevokeObjectUrl = URL.revokeObjectURL;
+  const blobMock = jest.fn(function MockBlob(parts) {
+    this.parts = parts;
+  });
+  const clickMock = jest.spyOn(HTMLAnchorElement.prototype, "click")
+    .mockImplementation(() => {});
+  global.Blob = blobMock;
+  Object.defineProperty(URL, "createObjectURL", {
+    configurable: true,
+    value: jest.fn(() => "blob:fc-plan"),
+  });
+  Object.defineProperty(URL, "revokeObjectURL", {
+    configurable: true,
+    value: jest.fn(),
+  });
+
+  try {
+    render(
+      <FlightControllerSetup
+        selectedReceiver={{
+          id: "rx-test",
+          name: "RadioMaster RP3-H ExpressLRS",
+          protocol: "CRSF",
+        }}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Board profile"), {
+      target: { value: "esp32dev" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Export plan" }));
+
+    const payload = JSON.parse(blobMock.mock.calls[0][0][0]);
+    expect(payload.wiring).toMatchObject({
+      documented: true,
+      uart: "UART2",
+      pins: "GPIO17 TX / GPIO16 RX",
+      wiringVerified: false,
+    });
+    expect(clickMock).toHaveBeenCalledTimes(1);
+  } finally {
+    clickMock.mockRestore();
+    global.Blob = originalBlob;
+    if (originalCreateObjectUrl) {
+      URL.createObjectURL = originalCreateObjectUrl;
+    } else {
+      delete URL.createObjectURL;
+    }
+    if (originalRevokeObjectUrl) {
+      URL.revokeObjectURL = originalRevokeObjectUrl;
+    } else {
+      delete URL.revokeObjectURL;
+    }
+  }
+});

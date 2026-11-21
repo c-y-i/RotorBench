@@ -50,6 +50,47 @@ test("combined hardware plans round-trip without binding secrets", () => {
     },
   });
   expect(imported.fcPlan.planVersion).toBe(3);
+  expect(exported.flightController.wiring).toMatchObject({
+    documented: false,
+    wiringVerified: false,
+    scope: "planning continuity checklist; hardware not tested",
+  });
+});
+
+test("combined hardware plans carry the documented receiver wiring checklist", () => {
+  const profile = getBoardProfile("esp32dev");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: "esp32dev",
+    receiverProtocol: "crsf",
+    receiverUart: profile.receiverUart,
+    receiverBaud: profile.receiverBaud,
+  };
+  const exported = createCombinedHardwarePlan({
+    build: { id: "build-wiring", name: "Wiring build", componentIds: {} },
+    flightController: {
+      config,
+      profile,
+      issues: validateFlightControllerConfig(config, profile),
+    },
+    radio: DEFAULT_RADIO_CONFIG,
+    receiver: { name: "RadioMaster RP3-H ExpressLRS", protocol: "CRSF" },
+    generatedAt: "2026-05-01T00:00:00.000Z",
+  });
+
+  expect(exported.flightController.wiring).toMatchObject({
+    documented: true,
+    uart: "UART2",
+    pins: "GPIO17 TX / GPIO16 RX",
+    baud: 420000,
+    receiverName: "RadioMaster RP3-H ExpressLRS",
+    wiringVerified: false,
+  });
+  expect(exported.flightController.wiring.steps).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: "signal" }),
+    expect.objectContaining({ id: "telemetry" }),
+    expect.objectContaining({ id: "ground" }),
+  ]));
 });
 
 test("unsupported or incomplete hardware plans fail closed", () => {

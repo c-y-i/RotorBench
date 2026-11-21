@@ -15,11 +15,13 @@ import {
   createDefaultFlightControllerConfig,
   getBoardProfile,
 } from "../data/flightControllerProfiles";
+import { buildReceiverWiringPlan } from "./receiverWiring";
 
 export function createCombinedHardwarePlan({
   build,
   flightController,
   radio,
+  receiver = null,
   channelLimit = 16,
   controlRoles = null,
   generatedAt = new Date().toISOString(),
@@ -40,6 +42,11 @@ export function createCombinedHardwarePlan({
       config: flightController.config,
       profile: flightController.profile,
       issues: flightController.issues,
+      wiring: buildReceiverWiringPlan(
+        flightController.config,
+        flightController.profile,
+        receiver,
+      ),
       summary: buildFlightControllerSummary(
         flightController.config,
         flightController.profile,

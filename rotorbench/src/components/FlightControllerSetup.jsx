@@ -414,6 +414,7 @@ export default function FlightControllerSetup({
       config,
       profile,
       issues,
+      wiring: wiringPlan,
       summary,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });

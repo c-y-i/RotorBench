@@ -403,6 +403,7 @@ export default function SetupPage() {
         issues: fcIssues,
       },
       radio: radioPlan,
+      receiver: selectedReceiver,
       channelLimit: radioChannelLimit,
       controlRoles: radioControlRoles,
     });
