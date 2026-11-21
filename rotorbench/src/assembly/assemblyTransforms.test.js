@@ -2,6 +2,7 @@ import {
   buildViewerPlacementAudit,
   getBatteryPlacementMm,
   getExplodedOffsetMm,
+  getFallbackDimensionsMm,
   getFrameMountPointsMm,
   getMotorMountOutlineMm,
   getMotorOriginsMm,
@@ -53,6 +54,16 @@ const propeller = {
 
 test("motor roots use the frame mount centers after model normalization", () => {
   expect(getMotorOriginsMm(frame, motor)).toEqual(getFrameMountPointsMm(frame));
+});
+
+test("published planforms drive fallback footprints without inventing thickness", () => {
+  expect(getFallbackDimensionsMm("flight_controller", {
+    planformMm: [34, 27],
+  })).toEqual([34, 8, 27]);
+  expect(getFallbackDimensionsMm("flight_controller", {
+    planformMm: [34, 27],
+    dimensionsMm: [35, 8, 35],
+  })).toEqual([35, 8, 35]);
 });
 
 test("propellers sit above each motor shaft with alternating handedness", () => {

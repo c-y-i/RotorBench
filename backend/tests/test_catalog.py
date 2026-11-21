@@ -71,6 +71,19 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(len(records), 76)
         self.assertTrue(all(record.id for record in records))
 
+    def test_published_board_planforms_survive_catalog_hydration(self):
+        expected = {
+            ("escs", "esc-holybro-tekko32-f4-65a"): [43, 44],
+            ("flight_controllers", "fc-iflight-borg-5s-rx"): [34, 27],
+            ("flight_controllers", "fc-holybro-kakute-h7-v2"): [35, 35],
+        }
+        for (category, component_id), planform in expected.items():
+            records = getattr(self.database, category)
+            record = next(item for item in records if item.id == component_id)
+            self.assertEqual(record.planform_mm, planform)
+            self.assertNotIn("planformMm", record.estimated_fields)
+            self.assertIn("https://", record.source_url)
+
     def test_model_manifest_binds_existing_glb_assets(self):
         manifest = self.catalog["modelManifest"]
         self.assertEqual(manifest["schema"], "rotorbench.model-manifest.v1")

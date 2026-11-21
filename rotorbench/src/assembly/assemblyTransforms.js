@@ -118,6 +118,12 @@ export function getFallbackDimensionsMm(type, part = {}) {
   const explicit = numericVector(part.dimensionsMm);
   if (explicit) return explicit;
 
+  const planform = numericPattern(part.planformMm);
+  if (planform) {
+    const fallback = COMPONENT_FALLBACK_DIMENSIONS_MM[type] || [36, 6, 36];
+    return [planform[0], fallback[1], planform[1]];
+  }
+
   if (type === "frame") {
     const wheelbase = Number(part.size);
     if (Number.isFinite(wheelbase) && wheelbase > 0) {

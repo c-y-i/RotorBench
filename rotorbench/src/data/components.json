@@ -786,6 +786,7 @@
       "weight": 15.8,
       "mounting_point": [0, 0, 0],
       "mountingPatternMm": [30.5, 30.5],
+      "planformMm": [43, 44],
       "voltage": {
         "min": 14.8,
         "max": 25.2
@@ -798,7 +799,7 @@
       "modelStatus": "not_available",
       "sourceUrl": "https://holybro.com/products/tekko32-f4-metal-4in1-65a-esc-65a",
       "priceSourceUrl": "https://holybro.com/products/tekko32-f4-metal-4in1-65a-esc-65a",
-      "dataStatus": "verified_specs_estimated_mounting",
+      "dataStatus": "verified_planform_and_specs_estimated_mounting",
       "estimatedFields": ["mounting_point"]
     },
     {
@@ -861,6 +862,7 @@
       "processor": "AT32F435RGT7",
       "weight": 6.8,
       "mounting_point": [0, -13, 10],
+      "planformMm": [34, 27],
       "firmware": ["Betaflight"],
       "imu": "ICM42688",
       "maxVoltage": 33.6,
@@ -868,7 +870,7 @@
       "price": 39.99,
       "sourceUrl": "https://shop.iflight.com/drone-frame-cat346/quad-parts-cat20/cinewhoop-cat370/electronics-cat27/Borg-5S-RX-Flight-Controller-Pro2267",
       "priceSourceUrl": "https://shop.iflight.com/drone-frame-cat346/quad-parts-cat20/cinewhoop-cat370/electronics-cat27/Borg-5S-RX-Flight-Controller-Pro2267",
-      "dataStatus": "verified_specs_estimated_mounting",
+      "dataStatus": "verified_planform_and_specs_estimated_mounting",
       "estimatedFields": ["mounting_point"]
     },
     {
@@ -1014,6 +1016,7 @@
       "weight": 8,
       "mounting_point": [0, 0, 0],
       "mountingPatternMm": [30.5, 30.5],
+      "planformMm": [35, 35],
       "firmware": ["Betaflight", "INAV"],
       "imu": "BMI270",
       "maxVoltage": 33.6,
@@ -1023,7 +1026,7 @@
       "modelStatus": "not_available",
       "sourceUrl": "https://holybro.com/products/kakute-h7-v2",
       "priceSourceUrl": "https://holybro.com/products/kakute-h7-v2",
-      "dataStatus": "verified_specs_estimated_mounting",
+      "dataStatus": "verified_planform_and_specs_estimated_mounting",
       "estimatedFields": ["mounting_point"]
     }
   ],

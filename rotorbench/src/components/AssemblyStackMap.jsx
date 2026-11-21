@@ -27,6 +27,13 @@ const STACK_PARTS = [
 function confidenceLabel(part) {
   if (part.measuredFields?.includes("dimensionsMm")) return "Measured";
   if (
+    !part.dimensionsMm
+    && Array.isArray(part.planformMm)
+    && part.planformMm.length === 2
+  ) {
+    return "Footprint only";
+  }
+  if (
     part.estimatedFields?.includes("dimensionsMm")
     || (!part.sourceUrl && !part.dataStatus)
   ) {

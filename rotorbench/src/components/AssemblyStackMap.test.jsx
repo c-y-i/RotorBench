@@ -107,6 +107,23 @@ test("marks measured dimensions and does not render without a frame", () => {
   expect(container).toBeEmptyDOMElement();
 });
 
+test("labels a published footprint when only the board planform is known", () => {
+  render(
+    <AssemblyStackMap
+      frame={frame}
+      flightController={{
+        id: "fc-footprint",
+        name: "Footprint FC",
+        planformMm: [34, 27],
+        sourceUrl: "https://example.com/footprint-fc",
+      }}
+    />,
+  );
+
+  expect(screen.getByText("Footprint only")).toBeInTheDocument();
+  expect(screen.getByText("23.0–31.0 mm")).toBeInTheDocument();
+});
+
 test("toggles component visibility through the 3D layer controls", () => {
   const onToggleComponent = jest.fn();
   render(

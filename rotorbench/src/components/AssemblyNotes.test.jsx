@@ -93,6 +93,15 @@ test("keeps local measurements and catalog-only rows distinct", () => {
   });
 });
 
+test("shows a published board footprint when full thickness is not catalogued", () => {
+  const notes = getAssemblyNotes({
+    esc: getPart("escs", "esc-holybro-tekko32-f4-65a"),
+  });
+
+  expect(notes[0].facts).toContain("43 × 44 mm footprint");
+  expect(notes[0].sourceState.label).toBe("Footprint + estimate");
+});
+
 test("has no structural WCAG A or AA violations", async () => {
   const { container } = render(<AssemblyNotes {...sourceParts} />);
 

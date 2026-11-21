@@ -290,6 +290,7 @@ test("expanded ESCs and flight controller preserve published limits", () => {
     burstCurrent: 75,
     weight: 15.8,
     mountingPatternMm: [30.5, 30.5],
+    planformMm: [43, 44],
     voltage: { min: 14.8, max: 25.2 },
     powerConnection: "solder-pads",
     sourceUrl: expect.stringContaining("holybro.com"),
@@ -311,9 +312,26 @@ test("expanded ESCs and flight controller preserve published limits", () => {
     weight: 8,
     maxVoltage: 33.6,
     mountingPatternMm: [30.5, 30.5],
+    planformMm: [35, 35],
     sourceUrl: expect.stringContaining("holybro.com"),
     estimatedFields: ["mounting_point"],
   });
+});
+
+test("source-backed board planforms improve fallback assembly alignment", () => {
+  const expected = [
+    ["escs", "esc-holybro-tekko32-f4-65a", [43, 44]],
+    ["flight_controllers", "fc-iflight-borg-5s-rx", [34, 27]],
+    ["flight_controllers", "fc-holybro-kakute-h7-v2", [35, 35]],
+  ];
+
+  for (const [category, id, planformMm] of expected) {
+    const part = componentsData[category].find((item) => item.id === id);
+    expect(part.planformMm).toEqual(planformMm);
+    expect(part.dimensionsMm).toBeUndefined();
+    expect(part.estimatedFields).not.toContain("planformMm");
+    expect(part.sourceUrl).toMatch(/^https:\/\//);
+  }
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
@@ -388,7 +406,7 @@ test("Borg 5S RX reflects the official controller package", () => {
     price: 39.99,
     sourceUrl: expect.stringContaining("Borg-5S-RX"),
     priceSourceUrl: expect.stringContaining("Borg-5S-RX"),
-    dataStatus: "verified_specs_estimated_mounting",
+    dataStatus: "verified_planform_and_specs_estimated_mounting",
     estimatedFields: ["mounting_point"],
   });
 });

@@ -30,6 +30,17 @@ const categoryDetails = {
   receivers: { label: "Receiver", Icon: Radio },
 };
 
+function footprintLabel(part) {
+  if (
+    Array.isArray(part.planformMm)
+    && part.planformMm.length === 2
+    && part.planformMm.every((value) => Number.isFinite(Number(value)))
+  ) {
+    return `${part.planformMm.map(Number).join(" × ")} mm footprint`;
+  }
+  return null;
+}
+
 function getMeta(category, part) {
   switch (category) {
     case "frames":
@@ -66,6 +77,7 @@ function getMeta(category, part) {
       return [
         `${part.currentRating}A continuous`,
         `${part.burstCurrent}A burst`,
+        footprintLabel(part),
         `${part.weight} g`,
         part.includedPowerConnector
           ? `${part.includedPowerConnector} power lead`
@@ -79,6 +91,7 @@ function getMeta(category, part) {
       return [
         part.processor,
         part.imu,
+        footprintLabel(part),
         `${part.weight} g`,
         getCatalogBoardProfile(part)
           ? "Documented setup map"
@@ -88,6 +101,7 @@ function getMeta(category, part) {
       return [
         part.protocol,
         part.frequencyBands?.join(" / "),
+        footprintLabel(part),
         part.telemetryPowerMw
           ? `${part.telemetryPowerMw} mW telemetry`
           : null,

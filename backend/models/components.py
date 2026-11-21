@@ -32,6 +32,11 @@ class ComponentCatalogMetadata(BaseModel):
     dimensions_mm: Optional[List[float]] = Field(
         None, alias="dimensionsMm", description="Physical dimensions in millimeters"
     )
+    planform_mm: Optional[List[float]] = Field(
+        None,
+        alias="planformMm",
+        description="Published board or case footprint in millimeters",
+    )
     prop_shaft_mm: Optional[float] = Field(None, alias="propShaftMm")
     bell_diameter_mm: Optional[float] = Field(None, alias="bellDiameterMm")
     hub_diameter_mm: Optional[float] = Field(None, alias="hubDiameterMm")
@@ -52,6 +57,11 @@ class ComponentCatalogMetadata(BaseModel):
     data_status: Optional[str] = Field(None, alias="dataStatus")
     performance_data_status: Optional[str] = Field(None, alias="performanceDataStatus")
     estimated_fields: Optional[List[str]] = Field(None, alias="estimatedFields")
+
+    @field_validator("planform_mm")
+    @classmethod
+    def validate_planform(cls, value):
+        return _positive_vector(value, 2)
 
     class Config:
         populate_by_name = True

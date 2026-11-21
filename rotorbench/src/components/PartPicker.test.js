@@ -86,6 +86,33 @@ test("verified physical checks are distinct from missing fit data", () => {
   expect(screen.getByText("Stack pattern is not catalogued.")).toBeInTheDocument();
 });
 
+test("ESC metadata exposes a published planform without implying thickness", () => {
+  render(
+    <PartPicker
+      category="escs"
+      parts={[{
+        id: "esc-planform",
+        name: "Tekko32 F4 Metal 65A",
+        currentRating: 65,
+        burstCurrent: 75,
+        weight: 15.8,
+        planformMm: [43, 44],
+        powerConnection: "solder-pads",
+        price: 94.99,
+        sourceUrl: "https://example.com/tekko",
+      }]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
+      placeholder="Choose an ESC"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose an esc/i }));
+  expect(screen.getByText(/43 × 44 mm footprint/)).toBeInTheDocument();
+  expect(screen.queryByText(/mm thick/i)).not.toBeInTheDocument();
+});
+
 test("recently selected parts are available through an explicit filter", () => {
   render(
     <PartPicker

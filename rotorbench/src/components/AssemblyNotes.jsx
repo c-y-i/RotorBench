@@ -76,7 +76,11 @@ function formatDimensions(part) {
     dimensions.length !== 3
     || !dimensions.every((value) => Number.isFinite(Number(value)))
   ) {
-    return "";
+    const planform = Array.isArray(part?.planformMm) ? part.planformMm : [];
+    return planform.length === 2
+      && planform.every((value) => Number.isFinite(Number(value)))
+      ? `${planform.map(Number).join(" × ")} mm footprint`
+      : "";
   }
   return `${dimensions.map(Number).join(" × ")} mm`;
 }
@@ -128,25 +132,28 @@ function factsFor(part, key) {
       formatPatterns(part.mountingPatternMm && [part.mountingPatternMm])
         ? `Mount ${formatPatterns([part.mountingPatternMm])}`
         : dimensions,
+      dimensions,
       Number(part.currentRating) ? `${Number(part.currentRating)} A continuous` : "",
       part.includedPowerConnector ? `Power ${part.includedPowerConnector}` : "",
-    ].filter(Boolean).slice(0, 3);
+    ].filter(Boolean).slice(0, 4);
   }
   if (key === "flightController") {
     return [
       formatPatterns(part.mountingPatternMm && [part.mountingPatternMm])
         ? `Mount ${formatPatterns([part.mountingPatternMm])}`
         : dimensions,
+      dimensions,
       part.processor || "",
       formatList(part.firmware),
-    ].filter(Boolean).slice(0, 3);
+    ].filter(Boolean).slice(0, 4);
   }
   if (key === "receiver") {
     return [
       part.protocol || "",
       formatList(part.frequencyBands),
+      dimensions,
       Number(part.channels) ? `${Number(part.channels)} channels` : dimensions,
-    ].filter(Boolean).slice(0, 3);
+    ].filter(Boolean).slice(0, 4);
   }
   if (key === "battery") {
     return [
@@ -165,6 +172,9 @@ function sourceStateFor(part, fields) {
   const measured = (part?.measuredFields || [])
     .map(normalizeField)
     .some((field) => relevantFields.has(field));
+  if (!measured && part?.planformMm && !part?.dimensionsMm) {
+    return { label: "Footprint + estimate", tone: "estimated" };
+  }
   const estimated = (part?.estimatedFields || [])
     .map(normalizeField)
     .some((field) => relevantFields.has(field));
