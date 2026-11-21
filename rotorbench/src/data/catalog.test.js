@@ -127,6 +127,32 @@ test("Tattu R-Line 6S pack keeps pack dimensions and estimated curves explicit",
   expect(battery.estimatedFields).not.toContain("weight");
 });
 
+test("Tattu R-Line V6 keeps published pack specs and estimates only the model curve", () => {
+  const battery = componentsData.batteries.find(
+    (item) => item.id === "battery-tattu-rline-v6-6s-1480-160c",
+  );
+
+  expect(battery).toMatchObject({
+    name: "Tattu R-Line V6 6S 1480mAh 160C",
+    capacity: 1480,
+    voltage: 22.2,
+    cells: 6,
+    cRating: 160,
+    weight: 220,
+    dimensionsMm: [69.5, 36.5, 42],
+    dischargeConnector: "XT60",
+    price: 39.99,
+    modelStatus: "not_available",
+    sourceUrl: expect.stringContaining("genstattu.com"),
+  });
+  expect(battery.estimatedFields).toEqual([
+    "mounting_point",
+    "dischargeProfile",
+  ]);
+  expect(battery.estimatedFields).not.toContain("dimensionsMm");
+  expect(battery.estimatedFields).not.toContain("weight");
+});
+
 test("RP2 V2 keeps the manufacturer's physical dimensions distinct from estimates", () => {
   const receiver = componentsData.receivers.find(
     (item) => item.id === "rx-radiomaster-rp2-v2",

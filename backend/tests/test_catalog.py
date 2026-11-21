@@ -41,13 +41,13 @@ class CatalogContractTests(unittest.TestCase):
                 "frames": 10,
                 "motors": 15,
                 "propellers": 10,
-                "batteries": 9,
+                "batteries": 10,
                 "escs": 7,
                 "flight_controllers": 8,
                 "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 69)
+        self.assertEqual(sum(counts.values()), 70)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 69)
+        self.assertEqual(len(records), 70)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -279,6 +279,24 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(supplied_cable.power_connection, "supplied-cable")
         self.assertIsNone(supplied_cable.included_power_connector)
         self.assertIn("shop.iflight.com", supplied_cable.connector_source_url)
+
+    def test_tattu_rline_v6_keeps_specs_and_estimated_curve_separate(self):
+        battery = next(
+            item for item in self.database.batteries
+            if item.id == "battery-tattu-rline-v6-6s-1480-160c"
+        )
+        self.assertEqual(battery.capacity, 1480)
+        self.assertEqual(battery.voltage, 22.2)
+        self.assertEqual(battery.cells, 6)
+        self.assertEqual(battery.c_rating, 160)
+        self.assertEqual(battery.weight, 220)
+        self.assertEqual(battery.dimensions_mm, [69.5, 36.5, 42])
+        self.assertEqual(battery.discharge_connector, "XT60")
+        self.assertEqual(battery.price, 39.99)
+        self.assertIn("mounting_point", battery.estimated_fields)
+        self.assertIn("dischargeProfile", battery.estimated_fields)
+        self.assertNotIn("dimensionsMm", battery.estimated_fields)
+        self.assertNotIn("weight", battery.estimated_fields)
 
     def test_seven_inch_platform_components_keep_supported_and_estimated_fields_separate(self):
         frame = next(

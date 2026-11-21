@@ -1446,6 +1446,39 @@
         { "percentage": 0, "voltage": 19.2 }
       ],
       "price": 32.99
+    },
+    {
+      "id": "battery-tattu-rline-v6-6s-1480-160c",
+      "name": "Tattu R-Line V6 6S 1480mAh 160C",
+      "capacity": 1480,
+      "voltage": 22.2,
+      "cells": 6,
+      "cRating": 160,
+      "weight": 220,
+      "mounting_point": [0, 0, 0],
+      "dimensionsMm": [69.5, 36.5, 42],
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://genstattu.com/tattu-r-line-version-6-0-1480mah-160c-6s-22-2v-sq-lipo-battery-pack-with-xt60-plug/",
+      "priceSourceUrl": "https://genstattu.com/tattu-r-line-version-6-0-1480mah-160c-6s-22-2v-sq-lipo-battery-pack-with-xt60-plug/",
+      "dischargeConnector": "XT60",
+      "connectorSourceUrl": "https://genstattu.com/tattu-r-line-version-6-0-1480mah-160c-6s-22-2v-sq-lipo-battery-pack-with-xt60-plug/",
+      "dataStatus": "verified_specs_estimated_mounting_and_discharge_curve",
+      "estimatedFields": ["mounting_point", "dischargeProfile"],
+      "dischargeProfile": [
+        { "percentage": 100, "voltage": 25.2 },
+        { "percentage": 90, "voltage": 24.6 },
+        { "percentage": 80, "voltage": 24.0 },
+        { "percentage": 70, "voltage": 23.4 },
+        { "percentage": 60, "voltage": 22.8 },
+        { "percentage": 50, "voltage": 22.2 },
+        { "percentage": 40, "voltage": 21.8 },
+        { "percentage": 30, "voltage": 21.2 },
+        { "percentage": 20, "voltage": 20.6 },
+        { "percentage": 10, "voltage": 20.0 },
+        { "percentage": 0, "voltage": 19.2 }
+      ],
+      "price": 39.99
     }
   ],
   "receivers": [
