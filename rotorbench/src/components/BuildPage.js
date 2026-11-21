@@ -1451,7 +1451,19 @@ export default function BuildPage() {
                       {powerPath.batteryName}
                     </strong>
                   </span>
-                  <em>{powerPath.batteryConnector || "Connector missing"}</em>
+                  {powerPath.batteryConnectorSourceUrl ? (
+                    <a
+                      href={powerPath.batteryConnectorSourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open battery connector source for ${powerPath.batteryName}`}
+                    >
+                      {powerPath.batteryConnector || "Connector source"}
+                      <ExternalLink size={11} aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <em>{powerPath.batteryConnector || "Connector missing"}</em>
+                  )}
                 </div>
                 <ChevronRight size={16} aria-hidden="true" />
                 <div>
@@ -1462,14 +1474,31 @@ export default function BuildPage() {
                       {powerPath.escName}
                     </strong>
                   </span>
-                  <em>
-                    {powerPath.escConnector
-                      || (powerPath.escTermination === "solder-pads"
-                        ? "Solder pads"
-                        : powerPath.escTermination === "supplied-cable"
-                          ? "Termination unspecified"
-                          : "Connector missing")}
-                  </em>
+                  {powerPath.escConnectorSourceUrl ? (
+                    <a
+                      href={powerPath.escConnectorSourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ESC power termination source for ${powerPath.escName}`}
+                    >
+                      {powerPath.escConnector
+                        || (powerPath.escTermination === "solder-pads"
+                          ? "Solder pads"
+                          : powerPath.escTermination === "supplied-cable"
+                            ? "Termination unspecified"
+                            : "Connector source")}
+                      <ExternalLink size={11} aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <em>
+                      {powerPath.escConnector
+                        || (powerPath.escTermination === "solder-pads"
+                          ? "Solder pads"
+                          : powerPath.escTermination === "supplied-cable"
+                            ? "Termination unspecified"
+                            : "Connector missing")}
+                    </em>
+                  )}
                 </div>
               </div>
               <p>{powerPath.message}</p>

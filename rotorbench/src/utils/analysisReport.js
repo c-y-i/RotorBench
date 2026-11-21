@@ -3,6 +3,7 @@ import {
   normalizeGeometryOverrides,
   summarizeMeasuredGeometry,
 } from "./buildGeometry";
+import { summarizePowerPath } from "./physicalCompatibility";
 
 export const ANALYSIS_REPORT_SCHEMA = "rotorbench.analysis-report.v1";
 
@@ -73,6 +74,10 @@ export function createAnalysisReport(
     measuredGeometry: summarizeMeasuredGeometry(
       assemblySpec || {},
       build.geometryOverrides,
+    ),
+    powerPath: summarizePowerPath(
+      assemblySpec?.battery,
+      assemblySpec?.esc,
     ),
     viewerPlacement: viewerPlacement
       ? {

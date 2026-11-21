@@ -2,6 +2,7 @@ import { summarizeBuildEvidence } from "./buildEvidence";
 import componentsData from "../data/components.json";
 import {
   physicalChecksFor,
+  summarizePowerPath,
   summarizePhysicalChecks,
 } from "./physicalCompatibility";
 import {
@@ -99,6 +100,10 @@ export function createBuildSheet({
     measuredGeometry: summarizeMeasuredGeometry(
       assemblySpec,
       build.geometryOverrides,
+    ),
+    powerPath: summarizePowerPath(
+      assemblySpec.battery,
+      assemblySpec.esc,
     ),
     viewerPlacement: viewerPlacement
       ? {

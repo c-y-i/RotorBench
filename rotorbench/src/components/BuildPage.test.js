@@ -190,6 +190,12 @@ test("a starter-platform deep link selects all seven components and consumes the
   expect(within(powerPath).getByText("XT30 match")).toBeInTheDocument();
   expect(within(powerPath).getByText("Tattu R-Line 4S 850mAh 95C"))
     .toBeInTheDocument();
+  expect(within(powerPath).getByRole("link", {
+    name: /battery connector source/i,
+  })).toHaveAttribute("href", expect.stringContaining("genstattu.com"));
+  expect(within(powerPath).getByRole("link", {
+    name: /ESC power termination source/i,
+  })).toHaveAttribute("href", expect.stringContaining("rotorama.com"));
   fireEvent.click(screen.getByText("Prop rotation map"));
   expect(screen.getByRole("img", {
     name: "Propeller rotation by frame corner",

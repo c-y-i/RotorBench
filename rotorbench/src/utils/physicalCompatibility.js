@@ -249,6 +249,8 @@ export function summarizePowerPath(battery, esc) {
     batteryConnector: batteryConnector || null,
     escConnector: escConnector || null,
     escTermination: esc?.powerConnection || null,
+    batteryConnectorSourceUrl: battery?.connectorSourceUrl || battery?.sourceUrl || null,
+    escConnectorSourceUrl: esc?.connectorSourceUrl || esc?.sourceUrl || null,
   };
 }
 

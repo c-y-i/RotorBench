@@ -102,15 +102,22 @@ test("source-backed power termination remains manual when no connector is suppli
 
 test("power path summaries name matches, adapters, solder pads, and unpublished cables", () => {
   expect(summarizePowerPath(
-    { name: "XT60 pack", dischargeConnector: "XT60" },
+    {
+      name: "XT60 pack",
+      dischargeConnector: "XT60",
+      connectorSourceUrl: "https://example.com/battery",
+    },
     {
       name: "XT60 ESC",
       includedPowerConnector: "XT60",
       powerConnection: "connector",
+      connectorSourceUrl: "https://example.com/esc",
     },
   )).toMatchObject({
     displayState: "verified",
     label: "XT60 match",
+    batteryConnectorSourceUrl: "https://example.com/battery",
+    escConnectorSourceUrl: "https://example.com/esc",
   });
   expect(summarizePowerPath(
     { name: "XT30 pack", dischargeConnector: "XT30" },

@@ -127,6 +127,10 @@ test("creates a versioned analysis report without mutating the build", () => {
         }],
       }],
     },
+    powerPath: {
+      displayState: "pending",
+      label: "Select battery",
+    },
     verification: {
       analysisIsEstimate: true,
       hardwareVerified: false,

@@ -2,6 +2,7 @@ import componentsData from "../data/components.json";
 import { summarizeBuildEvidence } from "./buildEvidence";
 import {
   physicalChecksFor,
+  summarizePowerPath,
   summarizePhysicalChecks,
 } from "./physicalCompatibility";
 import {
@@ -93,6 +94,10 @@ export function summarizeBuild(build) {
       : []),
   ];
   const physicalFit = summarizePhysicalChecks(physicalChecks);
+  const powerPath = summarizePowerPath(
+    assemblySpec.battery,
+    assemblySpec.esc,
+  );
   const electricalChecks = electricalChecksFor(assemblySpec);
   const electricalFit = summarizeElectricalChecks(electricalChecks);
   const physicalFitStatus = physicalChecks.length === 0
@@ -134,6 +139,9 @@ export function summarizeBuild(build) {
     totalPrice,
     physicalFitStatus,
     physicalFitSummary: physicalFit.reason,
+    powerPathStatus: powerPath.displayState,
+    powerPathLabel: powerPath.label,
+    powerPathSummary: powerPath.message,
     electricalFitStatus,
     electricalFitSummary: electricalFit.reason,
     sourceBackedCount: evidence.sourceBackedCount,
@@ -219,6 +227,8 @@ export function createComparisonReport(
       selectedCount: build.selectedCount,
       motorCount: build.motorCount,
       physicalFitStatus: build.physicalFitStatus,
+      powerPathStatus: build.powerPathStatus,
+      powerPathLabel: build.powerPathLabel,
       electricalFitStatus: build.electricalFitStatus,
       hardwarePlanStatus: build.hardwarePlanStatus,
       hardwareReadinessStatus: build.hardwareReadinessStatus,
@@ -372,6 +382,13 @@ export function comparisonRows(left, right) {
       left: left.physicalFitStatus,
       right: right.physicalFitStatus,
       format: (value) => physicalFitLabels[value] || value,
+    },
+    {
+      id: "power-path",
+      label: "Battery power path",
+      left: left.powerPathLabel,
+      right: right.powerPathLabel,
+      format: (value) => value,
     },
     {
       id: "electrical-limits",

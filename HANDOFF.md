@@ -267,7 +267,9 @@ The mobile picker sheet now declares five grid rows for its five children (heade
 
 The checks remain non-blocking and only run when both products carry usable data. Connector evidence currently covers source-backed battery plugs, four ESCs with included XT30/XT60 leads, one ESC with bare solder pads, and one ESC with an unspecified supplied cable. A conservative battery-envelope conflict is available from overall frame/battery dimensions; users can replace it with a measured usable deck footprint. Wire routing and board clearance still need catalog or build-local evidence before they can be verified.
 
-The Parts Manifest also promotes that relationship into a compact `Power path` block as soon as a battery or ESC is selected. It names the battery, ESC, and known connector/termination on both ends, then uses a source-aware state: `XT30/XT60 match`, `Adapter required`, `Solder lead`, `Verify termination`, or `Awaiting connector data`. The route is horizontal on desktop and vertical on mobile; it is a planning relationship, not a wiring or polarity verification claim.
+The Parts Manifest also promotes that relationship into a compact `Power path` block as soon as a battery or ESC is selected. It names the battery, ESC, and known connector/termination on both ends, then uses a source-aware state: `XT30/XT60 match`, `Adapter required`, `Solder lead`, `Verify termination`, or `Awaiting connector data`. Known battery and ESC connector evidence links directly to its catalogued source. The route is horizontal on desktop and vertical on mobile; it is a planning relationship, not a wiring or polarity verification claim.
+
+Power-path state now propagates into Saved as a state chip, Compare as a battery-power-path row, Analysis as a hardware fact, and both build sheets and analysis reports as a named summary. These surfaces retain the same label, battery/ESC names, connector fields, message, and explicit verification boundary.
 
 The build also exposes a collapsible provenance panel. For every selected part it shows whether the catalog is source-backed or legacy, which fields are estimated, whether geometry is a fallback, and separate product, price, and connector source links.
 
@@ -520,6 +522,8 @@ The focused F60 measurement workflow was rendered from a complete saved build at
 The contextual repair path was rendered from the F60 build: the `Propeller hub interface` row exposes a 44px `Measure` control, selecting it opens the measurement panel, activates `Motor`, focuses `Prop shaft diameter`, and visually marks the targeted field. The resulting panel and audit remain free of horizontal overflow, and axe reports zero WCAG A/AA violations at 390×844 and 1440×900.
 
 The source-backed solder-pad power path was rendered with a Tattu XT60 pack and the Holybro Tekko32 F4 65A ESC. The physical checks report `Awaiting data` with the explicit instruction to solder the lead and verify polarity and wire gauge; they do not claim a connector mismatch or verified harness. The rendered row remains readable without horizontal overflow, and axe reports zero WCAG A/AA violations at both widths.
+
+The XT60 match state was rendered with 44px battery and ESC source links. Both connector chips retained their source URLs, the power-path summary stayed inside the manifest, Saved showed the same `XT60 match` chip, and axe reports zero WCAG A/AA violations at both widths.
 
 The same build renders the compact manifest `Power path` with a `Solder lead` state, XT60 battery chip, bare-pad ESC chip, and the full polarity/wire-gauge instruction. The route collapses from a horizontal desktop flow to a vertical mobile flow, all copy stays within the panel, and axe reports zero WCAG A/AA violations at 390×844 and 1440×900.
 

@@ -37,6 +37,7 @@ test("comparison rows include all seven component categories", () => {
     expect.arrayContaining([
       "selected-count",
       "physical-fit",
+      "power-path",
       "electrical-limits",
       "source-backed",
       "estimated-fields",
@@ -85,6 +86,10 @@ test("saved-build summaries apply build-local geometry to their parts", () => {
       measuredFields: ["dimensionsMm"],
       geometrySource: "user-measured",
     });
+  expect(measured).toMatchObject({
+    powerPathStatus: expect.any(String),
+    powerPathLabel: expect.any(String),
+  });
 });
 
 test("comparison summaries expose documented versus unverified receiver wiring", () => {
@@ -104,6 +109,10 @@ test("comparison summaries expose documented versus unverified receiver wiring",
   expect(rows.find((row) => row.id === "radio-host")).toMatchObject({
     changed: false,
     left: "Native USB CDC · documented",
+  });
+  expect(rows.find((row) => row.id === "power-path")).toMatchObject({
+    changed: false,
+    left: expect.any(String),
   });
 });
 

@@ -3161,6 +3161,31 @@
   white-space: nowrap;
 }
 
+.power-path-route > div > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 6px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border: 1px solid #acd5cd;
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.power-path-route > div > a:hover {
+  border-color: var(--brand);
+}
+
+.power-path-route > div > a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
 .power-path-route > svg {
   color: var(--brand);
 }

@@ -174,6 +174,14 @@ test("build sheets include sanitized local hardware-plan context", () => {
         }],
       }],
     },
+    powerPath: {
+      displayState: "verified",
+      label: "XT60 match",
+      batteryName: "Tattu",
+      escName: "SpeedyBee BL32",
+      batteryConnector: "XT60",
+      escConnector: "XT60",
+    },
     hardwarePlan: {
       status: "review",
       label: "4 checks open",

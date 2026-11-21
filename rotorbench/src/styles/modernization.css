@@ -569,6 +569,22 @@
   background: var(--accent-soft);
 }
 
+.saved-build-state .is-power-verified {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.saved-build-state .is-power-conflict {
+  color: var(--danger);
+  background: #fbe8e8;
+}
+
+.saved-build-state .is-power-manual,
+.saved-build-state .is-power-review {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
 .saved-build-state .is-fit-unverified {
   color: var(--brand-strong);
   background: var(--brand-soft);

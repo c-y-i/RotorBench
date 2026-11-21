@@ -445,6 +445,10 @@ export default function SavedConfigsPage() {
                                 const selectedRows = componentRows.filter(({ part }) => part);
                                 const previewRows = selectedRows.slice(0, 4);
                                 const buildSummary = summarizeBuild(it);
+                                const hasPowerPath = Boolean(
+                                    componentRows.find(({ category }) => category === "batteries")?.part
+                                    && componentRows.find(({ category }) => category === "escs")?.part,
+                                );
                                 const hardwarePlanStatus = buildSummary.hardwarePlanStatus;
                                 const hardwareReadinessStatus = buildSummary.hardwareReadinessStatus;
                                 const showHardwareState =
@@ -541,6 +545,11 @@ export default function SavedConfigsPage() {
                                             {buildSummary.hasHardwareParts && (
                                                 <span className={`is-host-${buildSummary.radioHostDocumented ? "documented" : "unverified"}`}>
                                                     {buildSummary.radioHostTransportLabel}
+                                                </span>
+                                            )}
+                                            {hasPowerPath && (
+                                                <span className={`is-power-${buildSummary.powerPathStatus}`}>
+                                                    {buildSummary.powerPathLabel}
                                                 </span>
                                             )}
                                             {buildSummary.benchEvidenceConfigured && (

@@ -18,6 +18,7 @@ import {
 import API_BASE from "../config/api";
 import { buildViewerPlacementAudit } from "../assembly/assemblyTransforms";
 import { applyMeasuredGeometry } from "../utils/buildGeometry";
+import { summarizePowerPath } from "../utils/physicalCompatibility";
 import {
   analysisReportFilename,
   createAnalysisReport,
@@ -256,6 +257,10 @@ export default function AnalysisPage() {
   const viewerPlacement = useMemo(() => {
     return buildViewerPlacementAudit(assemblySpec.frame, assemblySpec);
   }, [assemblySpec]);
+  const powerPath = useMemo(
+    () => summarizePowerPath(assemblySpec.battery, assemblySpec.esc),
+    [assemblySpec.battery, assemblySpec.esc],
+  );
 
   const downloadReport = () => {
     const report = createAnalysisReport(
@@ -424,6 +429,14 @@ export default function AnalysisPage() {
                         ? "documented"
                         : "verify target"
                     }`
+                    : "Not selected"}
+                </dd>
+              </div>
+              <div>
+                <dt>Power path</dt>
+                <dd>
+                  {assemblySpec.battery || assemblySpec.esc
+                    ? powerPath.label
                     : "Not selected"}
                 </dd>
               </div>
