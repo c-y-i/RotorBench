@@ -250,6 +250,100 @@ export const AIRFRAMES = [
   { value: "elevonwingsingle", label: "Single-motor elevon wing", motors: 1, servos: 2 },
 ];
 
+const AIRFRAME_LAYOUT_SOURCES = Object.freeze([
+  "aerial-kit/firmware/src/core/flight/ak_mixer.c",
+  "aerial-kit/apps/configurator/src/ui/views/airframes.ts",
+]);
+
+export const AIRFRAME_MOTOR_LAYOUTS = Object.freeze({
+  quadx: Object.freeze({
+    shape: "rotor",
+    servos: 0,
+    sourceRefs: AIRFRAME_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "RR", x: 0.75, z: 0.75, spin: "CW" },
+      { output: 2, label: "FR", x: 0.75, z: -0.75, spin: "CCW" },
+      { output: 3, label: "RL", x: -0.75, z: 0.75, spin: "CCW" },
+      { output: 4, label: "FL", x: -0.75, z: -0.75, spin: "CW" },
+    ]),
+  }),
+  quadx1234: Object.freeze({
+    shape: "rotor",
+    servos: 0,
+    sourceRefs: AIRFRAME_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "FL", x: -0.75, z: -0.75, spin: "CCW" },
+      { output: 2, label: "FR", x: 0.75, z: -0.75, spin: "CW" },
+      { output: 3, label: "RR", x: 0.75, z: 0.75, spin: "CCW" },
+      { output: 4, label: "RL", x: -0.75, z: 0.75, spin: "CW" },
+    ]),
+  }),
+  quadp: Object.freeze({
+    shape: "rotor",
+    servos: 0,
+    sourceRefs: AIRFRAME_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "Rear", x: 0, z: 0.9, spin: "CW" },
+      { output: 2, label: "Right", x: 0.9, z: 0, spin: "CCW" },
+      { output: 3, label: "Left", x: -0.9, z: 0, spin: "CCW" },
+      { output: 4, label: "Front", x: 0, z: -0.9, spin: "CW" },
+    ]),
+  }),
+  y4: Object.freeze({
+    shape: "rotor",
+    servos: 1,
+    sourceRefs: AIRFRAME_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "Rear top", x: 0, z: 0.95, spin: "CW" },
+      { output: 2, label: "Front right", x: 0.75, z: -0.52, spin: "CCW" },
+      { output: 3, label: "Rear bottom", x: 0, z: 0.95, spin: "CCW" },
+      { output: 4, label: "Front left", x: -0.75, z: -0.52, spin: "CW" },
+    ]),
+  }),
+  vtail4: Object.freeze({
+    shape: "rotor",
+    servos: 0,
+    sourceRefs: AIRFRAME_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "RR", x: 0.75, z: 0.75, spin: "CW" },
+      { output: 2, label: "FR", x: 0.75, z: -0.75, spin: "CCW" },
+      { output: 3, label: "RL", x: -0.75, z: 0.75, spin: "CCW" },
+      { output: 4, label: "FL", x: -0.75, z: -0.75, spin: "CW" },
+    ]),
+  }),
+  tri: Object.freeze({
+    shape: "rotor",
+    servos: 1,
+    sourceRefs: AIRFRAME_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "Rear", x: 0, z: 0.95, spin: "CCW" },
+      { output: 2, label: "Right", x: 0.75, z: -0.52, spin: "CW" },
+      { output: 3, label: "Left", x: -0.75, z: -0.52, spin: "CCW" },
+    ]),
+  }),
+  elevonwing: Object.freeze({
+    shape: "wing",
+    servos: 2,
+    sourceRefs: AIRFRAME_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "Left pusher", x: -0.55, z: 0.5, spin: "CCW" },
+      { output: 2, label: "Right pusher", x: 0.55, z: 0.5, spin: "CW" },
+    ]),
+  }),
+  elevonwingsingle: Object.freeze({
+    shape: "wing",
+    servos: 2,
+    sourceRefs: AIRFRAME_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "Centre pusher", x: 0, z: 0.5, spin: "CCW" },
+    ]),
+  }),
+});
+
+export function getAirframeMotorLayout(airframe) {
+  return AIRFRAME_MOTOR_LAYOUTS[airframe] || null;
+}
+
 export const RECEIVER_PROTOCOLS = [
   {
     value: "crsf",

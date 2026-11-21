@@ -6,6 +6,7 @@ import {
   Check,
   CircleAlert,
   Clipboard,
+  Crosshair,
   Cpu,
   Database,
   Download,
@@ -30,6 +31,7 @@ import {
   buildFlightControllerSummary,
   createDefaultFlightControllerConfig,
   getAerialKitControlRoles,
+  getAirframeMotorLayout,
   getBoardProfile,
   getChannelPreset,
   validateFlightControllerConfig,
@@ -242,6 +244,22 @@ export default function FlightControllerSetup({
   const channelMinimum = config.firmwareFamily === "aerialkit" ? 5 : 1;
   const channelMaximum = config.firmwareFamily === "aerialkit" ? 8 : 16;
   const protocol = RECEIVER_PROTOCOLS.find((item) => item.value === config.receiverProtocol);
+  const motorLayout = getAirframeMotorLayout(config.airframe);
+  const motorLayoutNodes = motorLayout
+    ? motorLayout.motors.map((motor, index) => {
+        const duplicateIndex = motorLayout.motors
+          .slice(0, index)
+          .filter((candidate) => (
+            candidate.x === motor.x && candidate.z === motor.z
+          ))
+          .length;
+        return {
+          ...motor,
+          displayX: motor.x + duplicateIndex * 0.16,
+          displayZ: motor.z + duplicateIndex * 0.1,
+        };
+      })
+    : [];
   const issues = useMemo(
     () => validateFlightControllerConfig(config, profile, { buildMotorCount }),
     [buildMotorCount, config, profile],
@@ -662,6 +680,46 @@ export default function FlightControllerSetup({
                 </span>
                 <em>Read-only capability</em>
               </div>
+            )}
+
+            {motorLayout && (
+              <figure className="fc-motor-layout-panel">
+                <figcaption>
+                  <div>
+                    <Crosshair size={16} aria-hidden="true" />
+                    <span>
+                      <small>Aerial Kit mixer order</small>
+                      <strong>Motor output map</strong>
+                    </span>
+                  </div>
+                  <em>{motorLayout.motors.length} motor outputs</em>
+                </figcaption>
+                <div className={`fc-motor-layout is-${motorLayout.shape}`}>
+                  <span className="fc-motor-layout-front">Front</span>
+                  <ol aria-label={`${AIRFRAMES.find((item) => item.value === config.airframe)?.label || "Selected airframe"} motor outputs`}>
+                    {motorLayoutNodes.map((motor) => (
+                      <li
+                        key={motor.output}
+                        style={{
+                          left: `${50 + motor.displayX * 32}%`,
+                          top: `${50 + motor.displayZ * 32}%`,
+                        }}
+                      >
+                        <strong>{motor.output}</strong>
+                        <span>{motor.label}</span>
+                        <small>{motor.spin}</small>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <p>
+                  Output order comes from the Aerial Kit mixer and airframe view.
+                  {motorLayout.servos > 0
+                    ? ` ${motorLayout.servos} servo output${motorLayout.servos === 1 ? "" : "s"} still require direction checks.`
+                    : ""}
+                  {" "}Confirm the physical motor positions and prop directions before power.
+                </p>
+              </figure>
             )}
           </section>
 

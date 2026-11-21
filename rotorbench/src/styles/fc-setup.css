@@ -557,6 +557,165 @@
   text-transform: uppercase;
 }
 
+.fc-motor-layout-panel {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.fc-motor-layout-panel figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fc-motor-layout-panel figcaption > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-motor-layout-panel figcaption svg {
+  flex: 0 0 auto;
+  color: var(--brand);
+}
+
+.fc-motor-layout-panel figcaption span {
+  display: grid;
+  gap: 1px;
+}
+
+.fc-motor-layout-panel figcaption small {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fc-motor-layout-panel figcaption strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.fc-motor-layout-panel figcaption em {
+  padding: 3px 6px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.fc-motor-layout {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  background: var(--ink);
+  border-radius: 6px;
+}
+
+.fc-motor-layout::before,
+.fc-motor-layout::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.fc-motor-layout::before {
+  top: 50%;
+  right: 8%;
+  left: 8%;
+  height: 1px;
+  background: rgba(217, 221, 214, 0.13);
+}
+
+.fc-motor-layout::after {
+  top: 8%;
+  bottom: 8%;
+  left: 50%;
+  width: 1px;
+  background: rgba(217, 221, 214, 0.13);
+}
+
+.fc-motor-layout-front {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  z-index: 1;
+  color: #b9c4be;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+}
+
+.fc-motor-layout ol {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fc-motor-layout li {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  width: 54px;
+  min-height: 54px;
+  padding: 5px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 2px solid var(--brand);
+  border-radius: 50%;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.fc-motor-layout.is-wing li {
+  border-radius: 7px;
+}
+
+.fc-motor-layout li strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.fc-motor-layout li span {
+  overflow: hidden;
+  max-width: 100%;
+  margin-top: 2px;
+  font-size: 8px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-motor-layout li small {
+  color: var(--brand-strong);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.fc-motor-layout-panel > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .fc-feature-list {
   display: flex;
   flex-wrap: wrap;
@@ -1189,6 +1348,19 @@
   .fc-board-log em {
     grid-column: 2;
     width: max-content;
+  }
+
+  .fc-motor-layout-panel figcaption {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fc-motor-layout-panel figcaption em {
+    width: max-content;
+  }
+
+  .fc-motor-layout {
+    min-height: 200px;
   }
 
   .fc-channel-map {

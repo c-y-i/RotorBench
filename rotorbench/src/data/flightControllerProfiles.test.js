@@ -2,10 +2,46 @@ import {
   buildArmingGatePreview,
   buildFlightControllerSummary,
   createDefaultFlightControllerConfig,
+  getAirframeMotorLayout,
   getBoardProfile,
   getChannelPreset,
   validateFlightControllerConfig,
 } from "./flightControllerProfiles";
+
+test("Aerial Kit motor layouts preserve the firmware output order", () => {
+  const quadx = getAirframeMotorLayout("quadx");
+  expect(quadx.motors.map(({ output, label, spin }) => ({ output, label, spin })))
+    .toEqual([
+      { output: 1, label: "RR", spin: "CW" },
+      { output: 2, label: "FR", spin: "CCW" },
+      { output: 3, label: "RL", spin: "CCW" },
+      { output: 4, label: "FL", spin: "CW" },
+    ]);
+  expect(getAirframeMotorLayout("quadx1234").motors.map((motor) => motor.label))
+    .toEqual(["FL", "FR", "RR", "RL"]);
+  expect(getAirframeMotorLayout("quadp").motors.map((motor) => motor.label))
+    .toEqual(["Rear", "Right", "Left", "Front"]);
+  expect(getAirframeMotorLayout("y4").motors
+    .filter((motor) => motor.label.startsWith("Rear"))
+    .map((motor) => motor.spin)).toEqual(["CW", "CCW"]);
+  expect(getAirframeMotorLayout("tri")).toMatchObject({
+    servos: 1,
+    motors: [
+      { output: 1, label: "Rear", spin: "CCW" },
+      { output: 2, label: "Right", spin: "CW" },
+      { output: 3, label: "Left", spin: "CCW" },
+    ],
+  });
+  expect(getAirframeMotorLayout("elevonwing")).toMatchObject({
+    shape: "wing",
+    servos: 2,
+    motors: [
+      { output: 1, label: "Left pusher", spin: "CCW" },
+      { output: 2, label: "Right pusher", spin: "CW" },
+    ],
+  });
+  expect(getAirframeMotorLayout("unknown")).toBeNull();
+});
 
 test("Feather profile rejects a four-motor airframe", () => {
   const config = {

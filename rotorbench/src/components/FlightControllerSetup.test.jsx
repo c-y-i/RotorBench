@@ -15,6 +15,25 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Deadband")).toHaveValue(0.02);
 });
 
+test("shows the selected Aerial Kit airframe motor output map", () => {
+  render(<FlightControllerSetup />);
+  expect(screen.getByText("Motor output map")).toBeInTheDocument();
+  let outputs = screen.getByRole("list", { name: "Quad X motor outputs" });
+  expect(within(outputs).getAllByRole("listitem")).toHaveLength(4);
+  expect(within(outputs).getByText("RR")).toBeInTheDocument();
+  expect(within(outputs).getByText("FL")).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "quadx1234" },
+  });
+  outputs = screen.getByRole("list", {
+    name: "Quad X, motors 1-4 front-left first motor outputs",
+  });
+  const items = within(outputs).getAllByRole("listitem");
+  expect(items[0]).toHaveTextContent("1FLCCW");
+  expect(items[3]).toHaveTextContent("4RLCW");
+});
+
 test("shows the Aerial Kit arm-gate audit without claiming live readiness", () => {
   render(<FlightControllerSetup />);
   expect(screen.getByRole("heading", { name: "Arm-gate preview" })).toBeInTheDocument();
