@@ -20,9 +20,14 @@ test("Aerial Kit defaults preserve the documented serial roles", () => {
   const target = getRadioTarget("aerialkit-elrs-rev-a3");
   expect(target.serial.txBaud).toBe(400000);
   expect(target.serial.rxBaud).toBe(420000);
+  expect(target.hostLink.uart).toMatchObject({
+    baud: 400000,
+    frame: "8N1, non-inverted, full duplex",
+  });
   expect(target.frequency).toBe("2.4 GHz");
   expect(DEFAULT_RADIO_CONFIG.powerDbm).toBe(-18);
   expect(DEFAULT_RADIO_CONFIG.packetRateMode).toBe("250");
+  expect(DEFAULT_RADIO_CONFIG.hostTransport).toBe("native-usb");
 });
 
 test("packet rates expose the source-backed Standard telemetry mapping", () => {
@@ -68,6 +73,7 @@ test("default radio plan has deployment warnings and is not hardware verified", 
   expect(summary.hardwareVerified).toBe(false);
   expect(summary.configuration.packetRateHz).toBe(250);
   expect(summary.configuration.powerMenuMw).toBe(10);
+  expect(summary.configuration.hostTransport).toBe("native-usb");
 });
 
 test("Rev A3 unsupported power and packet rate fail closed", () => {

@@ -397,6 +397,140 @@
   word-break: break-all;
 }
 
+.radio-endpoint-plan {
+  margin-top: 12px;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.radio-endpoint-plan > summary {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 9px 11px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.radio-endpoint-plan > summary::-webkit-details-marker {
+  display: none;
+}
+
+.radio-endpoint-plan > summary:hover {
+  background: var(--surface-soft);
+}
+
+.radio-endpoint-plan > summary > svg {
+  color: var(--brand);
+}
+
+.radio-endpoint-plan > summary > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.radio-endpoint-plan > summary strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.radio-endpoint-plan > summary small {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.radio-endpoint-plan > summary > em {
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.radio-endpoint-plan > summary > em.is-documented {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.radio-endpoint-plan > summary > em.is-unverified {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.radio-endpoint-plan > div {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.radio-endpoint-plan > div > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.radio-endpoint-plan ol {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-inline-start: 20px;
+}
+
+.radio-endpoint-plan li {
+  padding-inline-start: 3px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.radio-endpoint-plan li strong {
+  display: block;
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.radio-endpoint-plan li span {
+  display: block;
+  margin-top: 1px;
+}
+
+.radio-endpoint-plan > div > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.radio-endpoint-plan > div > button:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
 .radio-endpoint-note {
   margin: 11px 0 0;
   padding: 9px 10px;
@@ -800,6 +934,15 @@
 
   .radio-panel {
     padding: 14px;
+  }
+
+  .radio-endpoint-plan > summary {
+    grid-template-columns: 16px minmax(0, 1fr);
+  }
+
+  .radio-endpoint-plan > summary > em {
+    grid-column: 2;
+    width: max-content;
   }
 
   .radio-field-grid,

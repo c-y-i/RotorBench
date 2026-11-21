@@ -1,6 +1,7 @@
 import {
   DEFAULT_RADIO_CONFIG,
   RADIO_DYNAMIC_POWER,
+  RADIO_HOST_TRANSPORTS,
   RADIO_LINK_MODES,
   RADIO_TARGETS,
   RADIO_TELEMETRY_RATIOS,
@@ -125,6 +126,10 @@ export function parseCombinedHardwarePlanJson(text) {
   ) {
     throw new Error("The radio channel map is invalid.");
   }
+  const hostTransport = configuration.hostTransport || DEFAULT_RADIO_CONFIG.hostTransport;
+  if (!RADIO_HOST_TRANSPORTS.some((option) => option.value === hostTransport)) {
+    throw new Error("The radio host transport is unsupported.");
+  }
   const fcDefaults = createDefaultFlightControllerConfig();
   const fcPlan = {
     ...fcDefaults,
@@ -141,6 +146,7 @@ export function parseCombinedHardwarePlanJson(text) {
     ...DEFAULT_RADIO_CONFIG,
     targetId: radioSection.target.id,
     role,
+    hostTransport,
     packetRateMode: packetRate,
     powerDbm: Number(configuration.powerDbm),
     telemetryRatio,

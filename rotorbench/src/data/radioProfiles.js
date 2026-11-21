@@ -30,6 +30,14 @@ export const RADIO_TARGETS = [
       frame: "8N1, non-inverted, full duplex",
       note: "Native USB CDC ignores the selected baud rate.",
     },
+    hostLink: {
+      nativeUsb: true,
+      uart: {
+        baud: 400000,
+        frame: "8N1, non-inverted, full duplex",
+        pins: "J3.4/GPIO44 host TX · J3.3/GPIO43 host RX",
+      },
+    },
     source: "aerial-kit/firmware/elrs-usb-tx-rev-a3/docs/HOST-LINK.md",
   },
   {
@@ -139,6 +147,24 @@ export const RADIO_DYNAMIC_POWER = [
   { value: "aux12", label: "AUX 12" },
 ];
 
+export const RADIO_HOST_TRANSPORTS = [
+  {
+    value: "native-usb",
+    label: "Native USB CDC",
+    note: "Use the target's USB data port; USB CDC ignores the logical UART rate.",
+  },
+  {
+    value: "uart",
+    label: "Host UART",
+    note: "Use the target-specific host UART and confirm its electrical level and pinout.",
+  },
+  {
+    value: "unspecified",
+    label: "Verify target transport",
+    note: "No host-signal map is bundled for this planning target.",
+  },
+];
+
 export const RADIO_CHANNEL_ROLES = [
   { key: "roll", fcRole: null, label: "Roll", channel: 1, aerialKitSupported: true },
   { key: "pitch", fcRole: null, label: "Pitch", channel: 2, aerialKitSupported: true },
@@ -158,6 +184,7 @@ export const DEFAULT_RADIO_CONFIG = {
   targetId: "aerialkit-elrs-rev-a3",
   selectedReceiverId: null,
   role: "tx",
+  hostTransport: "native-usb",
   packetRateMode: "250",
   powerDbm: -18,
   telemetryRatio: "std",
@@ -255,6 +282,11 @@ export function normalizeRadioConfig(config = {}) {
   return {
     ...DEFAULT_RADIO_CONFIG,
     ...config,
+    hostTransport: RADIO_HOST_TRANSPORTS.some(
+      (transport) => transport.value === config.hostTransport,
+    )
+      ? config.hostTransport
+      : DEFAULT_RADIO_CONFIG.hostTransport,
     channelMap: Object.fromEntries(
       Object.entries(channelMap).map(([role, channel]) => [
         role,
@@ -472,9 +504,11 @@ export function buildRadioSummary(config, options = {}) {
       firmwareVersion: target.firmwareVersion || null,
       benchArtifact: target.benchArtifact || null,
       serial: target.serial,
+      hostLink: target.hostLink || null,
     },
     configuration: {
       role: normalized.role,
+      hostTransport: normalized.hostTransport,
       packetRateMode: normalized.packetRateMode,
       packetRateHz: packetRate?.hz ?? null,
       powerDbm: normalized.powerDbm,

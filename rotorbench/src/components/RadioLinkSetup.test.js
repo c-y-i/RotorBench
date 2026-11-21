@@ -25,6 +25,50 @@ test("can switch role and save a local plan", () => {
   expect(screen.getByRole("status")).toHaveTextContent(/No hardware settings were changed/i);
 });
 
+test("Rev A3 separates native USB and host UART from the RX-to-FC path", () => {
+  render(<RadioLinkSetup />);
+  expect(screen.getByLabelText("Host transport")).toHaveValue("native-usb");
+  fireEvent.click(screen.getByText("Endpoint checklist"));
+  let checklist = screen.getByRole("list", {
+    name: "Radio endpoint checklist",
+  });
+  expect(within(checklist).getByText("Use the target's native USB data port"))
+    .toBeInTheDocument();
+  expect(within(checklist).getByText(/Native USB ignores the logical host UART baud/i))
+    .toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Host transport"), {
+    target: { value: "uart" },
+  });
+  checklist = screen.getByRole("list", {
+    name: "Radio endpoint checklist",
+  });
+  expect(within(checklist).getByText(/J3\.4\/GPIO44 host TX.*400000 baud/i))
+    .toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /receiver/i }));
+  checklist = screen.getByRole("list", {
+    name: "Radio endpoint checklist",
+  });
+  expect(within(checklist).getByText(/receiver-to-flight-controller.*420000 baud/i))
+    .toBeInTheDocument();
+});
+
+test("generic radio targets require transport verification", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "generic-elrs-24-tx" },
+  });
+  expect(screen.getByLabelText("Host transport")).toHaveValue("unspecified");
+  fireEvent.click(screen.getByText("Endpoint checklist"));
+  const checklist = screen.getByRole("list", {
+    name: "Radio endpoint checklist",
+  });
+  expect(within(checklist).getByText("Verify the host transport"))
+    .toBeInTheDocument();
+  expect(screen.getByText("Verify target")).toBeInTheDocument();
+});
+
 test("binding material is not written to local storage", () => {
   render(<RadioLinkSetup />);
   fireEvent.change(screen.getByLabelText("Binding phrase"), {

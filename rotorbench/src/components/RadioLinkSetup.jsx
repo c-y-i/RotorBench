@@ -18,6 +18,7 @@ import {
 import {
   DEFAULT_RADIO_CONFIG,
   RADIO_DYNAMIC_POWER,
+  RADIO_HOST_TRANSPORTS,
   RADIO_LINK_MODES,
   RADIO_STORAGE_KEY,
   RADIO_SWITCH_MODES,
@@ -40,6 +41,7 @@ import {
   sanitizeRadioChannelMap,
 } from "../data/radioProfiles";
 import { getBindingIdentity } from "../utils/elrsBinding";
+import { buildRadioEndpointPlan } from "../utils/radioEndpointPlan";
 import "../styles/radio-setup.css";
 
 function readSavedPlan(storageKey) {
@@ -87,6 +89,10 @@ export default function RadioLinkSetup({
   const summary = useMemo(
     () => buildRadioSummary(config, { channelLimit, controlRoles }),
     [channelLimit, config, controlRoles],
+  );
+  const endpointPlan = useMemo(
+    () => buildRadioEndpointPlan(config, target),
+    [config, target],
   );
   const bindingStaged = hasStagedBinding(config);
   const bindingIdentity = getBindingIdentity(config);
@@ -148,6 +154,11 @@ export default function RadioLinkSetup({
         return {
           ...current,
           targetId: value,
+          hostTransport: value === "aerialkit-elrs-rev-a3"
+            ? current.hostTransport === "unspecified"
+              ? "native-usb"
+              : current.hostTransport
+            : "unspecified",
           powerDbm: nextPowerLevels
             && !nextPowerLevels.some((level) => level.value === current.powerDbm)
             ? nextPowerLevels[0].value
@@ -253,6 +264,19 @@ export default function RadioLinkSetup({
     }
   };
 
+  const copyEndpointChecklist = async () => {
+    if (!navigator.clipboard?.writeText) {
+      setMessage("Clipboard access is unavailable in this browser.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(endpointPlan.copyText);
+      setMessage("Radio endpoint checklist copied. RF and hardware state were not verified.");
+    } catch {
+      setMessage("The browser refused clipboard access.");
+    }
+  };
+
   const resetPlan = () => {
     updateConfig(DEFAULT_RADIO_CONFIG);
     setMessage("Radio plan reset to the documented defaults.");
@@ -347,6 +371,22 @@ export default function RadioLinkSetup({
               </select>
             </label>
 
+            <label className="radio-field radio-field-wide">
+              <span>Host transport</span>
+              <select
+                aria-label="Host transport"
+                value={config.hostTransport}
+                onChange={(event) => update("hostTransport", event.target.value)}
+              >
+                {RADIO_HOST_TRANSPORTS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <small>{endpointPlan.hostTransportNote}</small>
+            </label>
+
             <div className="radio-target-summary">
               <span><strong>{target.frequency}</strong> link</span>
               <span>ISM domain compiled into firmware</span>
@@ -362,6 +402,36 @@ export default function RadioLinkSetup({
             <p className="radio-source-note">
               {target.description} Source: <code>{target.source}</code>.
             </p>
+            <details className="radio-endpoint-plan">
+              <summary>
+                <Cable size={15} aria-hidden="true" />
+                <span>
+                  <strong>Endpoint checklist</strong>
+                  <small>{endpointPlan.roleLabel} · {endpointPlan.hostTransportLabel}</small>
+                </span>
+                <em className={endpointPlan.documented ? "is-documented" : "is-unverified"}>
+                  {endpointPlan.documented ? "Transport documented" : "Verify target"}
+                </em>
+              </summary>
+              <div>
+                <p>
+                  Planning checklist only. RotorBench has not tested this USB/UART
+                  path, RF transmission, receiver acquisition, or hardware state.
+                </p>
+                <ol aria-label="Radio endpoint checklist">
+                  {endpointPlan.steps.map((step) => (
+                    <li key={step.id}>
+                      <strong>{step.label}</strong>
+                      <span>{step.detail}</span>
+                    </li>
+                  ))}
+                </ol>
+                <button type="button" onClick={copyEndpointChecklist}>
+                  <Clipboard size={14} aria-hidden="true" />
+                  Copy endpoint checklist
+                </button>
+              </div>
+            </details>
           </section>
 
           <section className="radio-panel" aria-labelledby="radio-link-heading">

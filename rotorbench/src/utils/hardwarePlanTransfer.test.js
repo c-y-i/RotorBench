@@ -41,6 +41,7 @@ test("combined hardware plans round-trip without binding secrets", () => {
     buildId: "build-a",
     radioPlan: {
       planVersion: 3,
+      hostTransport: "native-usb",
       bindingPhrase: "",
       uid: "",
       channelMap: {
@@ -121,6 +122,7 @@ test("imported radio enums fail closed against the selected target", () => {
   const invalidCases = [
     ["powerDbm", 12, /power setting is not valid/i],
     ["packetRateMode", "9000", /packet rate is not valid/i],
+    ["hostTransport", "telepathy", /host transport is unsupported/i],
     ["linkMode", "telepathy", /link mode is unsupported/i],
     ["telemetryRatio", "1:999", /telemetry ratio is unsupported/i],
     ["switchMode", "wide", /switch mode is not valid/i],
