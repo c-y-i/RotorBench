@@ -159,6 +159,7 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
       fenceRadiusM: 250,
       fenceCeilingM: 120,
       rthMinAltM: 30,
+      gpsMinSats: 8,
       alignRollDeg: 0.5,
       alignPitchDeg: -1.5,
       alignYawDeg: 90,
@@ -183,6 +184,7 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
     fcFenceRadiusM: 250,
     fcFenceCeilingM: 120,
     fcRthMinAltM: 30,
+    fcGpsMinSats: 8,
     fcAlignmentRollDeg: 0.5,
     fcAlignmentPitchDeg: -1.5,
     fcAlignmentYawDeg: 90,
@@ -190,7 +192,7 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
     fcPidDenom: 2,
   });
   expect(describeNavigationSafety(readiness)).toBe(
-    "Fence 250 m / 120 m ceiling · Floor 30 m · Pack RTH on",
+    "Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",
   );
 });
 

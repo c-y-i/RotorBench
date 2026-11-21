@@ -105,6 +105,7 @@ export function buildFlightControllerCommands(
     finite(config.fenceRadiusM) &&
     finite(config.fenceCeilingM) &&
     finite(config.rthMinAltM) &&
+    integer(config.gpsMinSats) &&
     finite(config.alignRollDeg) &&
     finite(config.alignPitchDeg) &&
     finite(config.alignYawDeg) &&
@@ -157,6 +158,7 @@ export function buildFlightControllerCommands(
     `set fence_radius_m ${Number(config.fenceRadiusM)}`,
     `set fence_ceiling_m ${Number(config.fenceCeilingM)}`,
     `set rth_min_alt_m ${Number(config.rthMinAltM)}`,
+    `set gps_min_sats ${Number(config.gpsMinSats)}`,
     `set align_roll_deg ${Number(config.alignRollDeg)}`,
     `set align_pitch_deg ${Number(config.alignPitchDeg)}`,
     `set align_yaw_deg ${Number(config.alignYawDeg)}`,

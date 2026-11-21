@@ -254,6 +254,7 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "fence_radius_m=250 status=0",
     "fence_ceiling_m=120 status=0",
     "rth_min_alt_m=30 status=0",
+    "gps_min_sats=8 status=0",
     "align_roll_deg=0 status=0",
     "align_pitch_deg=0 status=0",
     "align_yaw_deg=90 status=0",
@@ -275,6 +276,7 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     fenceRadiusM: 200,
     fenceCeilingM: 0,
     rthMinAltM: 20,
+    gpsMinSats: 6,
     alignRollDeg: 0,
     alignPitchDeg: 0,
     alignYawDeg: 0,
@@ -302,6 +304,8 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
   expect(checks.find((check) => check.id === "fc-param-fence-ceiling-m").status)
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-rth-min-alt-m").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-gps-min-sats").status)
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-align-yaw-deg").status)
     .toBe("fail");

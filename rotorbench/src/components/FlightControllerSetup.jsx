@@ -77,6 +77,7 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "fence-radius-required": { id: "fc-fence-radius", label: "geofence radius" },
   "fence-ceiling-range": { id: "fc-fence-ceiling", label: "geofence ceiling" },
   "rth-min-alt-range": { id: "fc-rth-min-alt", label: "return floor" },
+  "gps-min-sats-range": { id: "fc-gps-min-sats", label: "GPS navigation minimum" },
   "align-roll-range": { id: "fc-align-roll", label: "board alignment" },
   "align-pitch-range": { id: "fc-align-pitch", label: "board alignment" },
   "align-yaw-range": { id: "fc-align-yaw", label: "board alignment" },
@@ -1454,7 +1455,7 @@ export default function FlightControllerSetup({
                   </span>
                   <em>{config.fenceEnabled ? "Enabled" : "Off"}</em>
                 </label>
-                <div className="fc-field-grid fc-field-grid-three">
+                <div className="fc-field-grid fc-calibration-grid">
                   <Field
                     label="Fence radius"
                     htmlFor="fc-fence-radius"
@@ -1501,6 +1502,22 @@ export default function FlightControllerSetup({
                       aria-invalid={numericInvalid(config.rthMinAltM)}
                       value={numericValue(config.rthMinAltM)}
                       onChange={(event) => update("rthMinAltM", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field
+                    label="GPS minimum"
+                    htmlFor="fc-gps-min-sats"
+                    hint="Satellites required for navigation, 5 to 10"
+                  >
+                    <input
+                      id="fc-gps-min-sats"
+                      type="number"
+                      min="5"
+                      max="10"
+                      step="1"
+                      aria-invalid={integerInvalid(config.gpsMinSats)}
+                      value={numericValue(config.gpsMinSats)}
+                      onChange={(event) => update("gpsMinSats", numericInput(event.target.value))}
                     />
                   </Field>
                 </div>

@@ -592,6 +592,7 @@ export function createDefaultFlightControllerConfig(
     fenceRadiusM: 0,
     fenceCeilingM: 0,
     rthMinAltM: 0,
+    gpsMinSats: 6,
     alignRollDeg: 0,
     alignPitchDeg: 0,
     alignYawDeg: 0,
@@ -844,6 +845,13 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "rth-min-alt-range",
         message: "Return floor must be between 0 and 500 metres; 0 disables the floor.",
+      });
+    }
+    if (!integer(config.gpsMinSats) || Number(config.gpsMinSats) < 5 || Number(config.gpsMinSats) > 10) {
+      issues.push({
+        severity: "error",
+        code: "gps-min-sats-range",
+        message: "GPS navigation minimum must be a whole number from 5 to 10 satellites.",
       });
     }
     for (const [key, code, label] of [
@@ -1222,7 +1230,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
           `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell, critical-pack return ${config.batteryRthEnabled ? "enabled" : "disabled"}`,
-          `Geofence: ${config.fenceEnabled ? "enabled" : "disabled"}; radius ${config.fenceRadiusM} m, ceiling ${Number(config.fenceCeilingM) === 0 ? "none" : `${config.fenceCeilingM} m`}`,
+          `Geofence: ${config.fenceEnabled ? "enabled" : "disabled"}; radius ${config.fenceRadiusM} m, ceiling ${Number(config.fenceCeilingM) === 0 ? "none" : `${config.fenceCeilingM} m`}, GPS gate ${config.gpsMinSats} satellites`,
           `Return floor: ${Number(config.rthMinAltM) === 0 ? "none" : `${config.rthMinAltM} m`}`,
         ]
       : []),

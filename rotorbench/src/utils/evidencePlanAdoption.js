@@ -356,6 +356,14 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => value === 0 ? "No floor" : `${value} m`,
     },
     {
+      key: "gpsMinSats",
+      source: "gps_min_sats",
+      snapshotKey: "gps_min_sats",
+      label: "GPS minimum satellites",
+      parse: (raw) => boundedInteger(raw, 5, 10),
+      display: (value) => `${value} satellites`,
+    },
+    {
       key: "alignRollDeg",
       source: "align_roll_deg",
       snapshotKey: "align_roll_deg",

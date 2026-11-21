@@ -552,6 +552,7 @@ const PARAMETER_PLAN_KEYS = {
   fence_radius_m: "fenceRadiusM",
   fence_ceiling_m: "fenceCeilingM",
   rth_min_alt_m: "rthMinAltM",
+  gps_min_sats: "gpsMinSats",
   align_roll_deg: "alignRollDeg",
   align_pitch_deg: "alignPitchDeg",
   align_yaw_deg: "alignYawDeg",

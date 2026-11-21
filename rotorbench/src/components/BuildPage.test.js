@@ -766,6 +766,7 @@ test("saved navigation safety remains visible on the build hardware plan", async
     fenceRadiusM: 250,
     fenceCeilingM: 120,
     rthMinAltM: 30,
+    gpsMinSats: 8,
     batteryRthEnabled: true,
   }));
 
@@ -781,7 +782,7 @@ test("saved navigation safety remains visible on the build hardware plan", async
   });
 
   expect(screen.getByText(
-    "Navigation safety: Fence 250 m / 120 m ceiling · Floor 30 m · Pack RTH on",
+    "Navigation safety: Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",
   )).toBeInTheDocument();
 });
 

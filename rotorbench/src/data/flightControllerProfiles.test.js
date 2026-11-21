@@ -164,7 +164,7 @@ test("summary keeps the receiver and safety mapping visible", () => {
     "Battery telemetry: divider 11:1, cells auto, warning 3.5 V/cell, minimum 3.3 V/cell, critical-pack return disabled",
   );
   expect(summary).toContain(
-    "Geofence: disabled; radius 0 m, ceiling none",
+    "Geofence: disabled; radius 0 m, ceiling none, GPS gate 6 satellites",
   );
   expect(summary).toContain("Return floor: none");
   expect(summary).toContain(
@@ -188,6 +188,7 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     fenceRadiusM: 0,
     fenceCeilingM: 5001,
     rthMinAltM: 501,
+    gpsMinSats: 11,
     features: { ...defaults.features, gps: false },
     alignRollDeg: -181,
     alignPitchDeg: 181,
@@ -210,6 +211,7 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     "fence-radius-required",
     "fence-ceiling-range",
     "rth-min-alt-range",
+    "gps-min-sats-range",
   ]));
 });
 

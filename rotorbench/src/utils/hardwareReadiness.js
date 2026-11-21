@@ -251,6 +251,9 @@ export function summarizeHardwareReadiness({
     fcRthMinAltM: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.rthMinAltM
       : null,
+    fcGpsMinSats: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.gpsMinSats
+      : null,
     fcAlignmentRollDeg: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.alignRollDeg
       : null,
@@ -324,6 +327,7 @@ export function sanitizeHardwareReadiness(readiness) {
     fcFenceRadiusM: readiness.fcFenceRadiusM ?? null,
     fcFenceCeilingM: readiness.fcFenceCeilingM ?? null,
     fcRthMinAltM: readiness.fcRthMinAltM ?? null,
+    fcGpsMinSats: readiness.fcGpsMinSats ?? null,
     fcAlignmentRollDeg: readiness.fcAlignmentRollDeg ?? null,
     fcAlignmentPitchDeg: readiness.fcAlignmentPitchDeg ?? null,
     fcAlignmentYawDeg: readiness.fcAlignmentYawDeg ?? null,
@@ -355,5 +359,8 @@ export function describeNavigationSafety(readiness) {
   const packReturn = readiness.fcBatteryRthEnabled
     ? "Pack RTH on"
     : "Pack RTH off";
-  return `${fence} · ${floor} · ${packReturn}`;
+  const gpsGate = Number(readiness.fcGpsMinSats) > 0
+    ? `GPS ${readiness.fcGpsMinSats} sats`
+    : "GPS gate unverified";
+  return `${fence} · ${floor} · ${gpsGate} · ${packReturn}`;
 }

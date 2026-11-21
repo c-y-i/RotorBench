@@ -80,6 +80,7 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       fcFenceRadiusM: 250,
       fcFenceCeilingM: 120,
       fcRthMinAltM: 30,
+      fcGpsMinSats: 8,
       fcBatteryRthEnabled: true,
       radioPowerDbm: 25,
       radioRegulatoryRegionLabel: "CE",
@@ -98,7 +99,7 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
     "Motor order: Normal · props in / 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
   );
   expect(briefing.text).toContain(
-    "Navigation safety: Fence 250 m / 120 m ceiling · Floor 30 m · Pack RTH on",
+    "Navigation safety: Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",
   );
   expect(briefing.text).toContain(
     "RF limit: CE / 25 planned / 20 dBm max / OVER CAP",
