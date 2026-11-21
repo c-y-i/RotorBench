@@ -101,6 +101,21 @@ test("Ranger Nano selects its documented module bay and regional power bounds", 
   expect(screen.getByText("CE · 20 dBm")).toBeInTheDocument();
 });
 
+test("Ranger Micro uses its documented JR micro-bay profile", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-ranger-micro-elrs-24-tx" },
+  });
+
+  expect(screen.getByLabelText("Host transport")).toHaveValue("module-bay");
+  expect(screen.getByLabelText("RF region")).toHaveValue("verify");
+  expect(screen.getByRole("spinbutton", { name: /TX power \(dBm\)/i })).toHaveValue(20);
+  expect(screen.getByText(/JR-style micro module bay/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Endpoint checklist"));
+  expect(screen.getByText(/JR-style micro 5-pin: NC, NC, 5-12 V, GND, CRSF/i))
+    .toBeInTheDocument();
+});
+
 test("binding material is not written to local storage", () => {
   render(<RadioLinkSetup />);
   fireEvent.change(screen.getByLabelText("Binding phrase"), {

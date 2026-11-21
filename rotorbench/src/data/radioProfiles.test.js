@@ -131,6 +131,26 @@ test("Ranger Nano warns on regional power bounds without inventing a menu", () =
   expect(summary.target.sourceUrl).toContain("radiomasterrc.com");
 });
 
+test("Ranger Micro and Ranger keep their published module-bay profiles", () => {
+  const micro = getRadioTarget("radiomaster-ranger-micro-elrs-24-tx");
+  const ranger = getRadioTarget("radiomaster-ranger-elrs-24-tx");
+
+  for (const target of [micro, ranger]) {
+    expect(target.roles).toEqual(["tx"]);
+    expect(target.defaultHostTransport).toBe("module-bay");
+    expect(target.serial.txBaud).toBeNull();
+    expect(target.power).toMatchObject({
+      defaultDbm: 20,
+      defaultMw: 100,
+      menuVerified: false,
+    });
+    expect(target.hostLink.moduleBay.voltage).toMatch(/5-12 V|6-16\.8 V/);
+    expect(target.sourceUrl).toContain("radiomasterrc.com/products/");
+  }
+  expect(micro.hostLink.moduleBay.pins).toMatch(/JR-style micro 5-pin.*CRSF/i);
+  expect(ranger.hostLink.moduleBay.pins).toMatch(/JR 5-pin and Nano 8-pin adapters/i);
+});
+
 test("Ranger Nano applies the selected regulatory ceiling", () => {
   const fccWarnings = buildRadioWarnings({
     ...DEFAULT_RADIO_CONFIG,
