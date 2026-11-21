@@ -39,6 +39,7 @@ import {
   setMeasuredGeometryValue,
 } from "../utils/buildGeometry";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
+import { getRadioReceiverBandCompatibility, getRadioTarget } from "../data/radioProfiles";
 import {
   readBenchEvidenceAttachment,
   readCurrentBenchEvidenceScope,
@@ -716,6 +717,14 @@ export default function BuildPage() {
     ),
     [catalogAssemblySpec, geometryOverrides],
   );
+  const hardwareReadiness = useMemo(
+    () => summarizeHardwareReadiness({
+      buildId: workingBuildId,
+      flightController: selectedFlightControllerPart,
+      receiver: selectedReceiverPart,
+    }),
+    [selectedFlightControllerPart, selectedReceiverPart, workingBuildId],
+  );
   const viewerPlacementAudit = useMemo(
     () => buildViewerPlacementAudit(assemblySpec.frame, assemblySpec),
     [assemblySpec],
@@ -816,7 +825,36 @@ export default function BuildPage() {
       physicalChecksFor("flight_controllers", part, assemblySpec),
       [checkFlightControllerVoltage(part, selectedBatteryPart)],
     ),
-    receivers: () => ({ ok: true, verified: false, reason: "No catalogued receiver fit checks apply." }),
+    receivers: (part) => {
+      if (!hardwareReadiness.configured) {
+        return {
+          ok: true,
+          verified: false,
+          reason: "Save a radio plan to check receiver RF bands.",
+        };
+      }
+      const target = getRadioTarget(hardwareReadiness.radioPlan.targetId);
+      const bands = getRadioReceiverBandCompatibility(target.id, part);
+      if (bands.status === "conflict") {
+        return {
+          ok: false,
+          verified: false,
+          reason: `No documented RF band is shared with ${target.name}.`,
+        };
+      }
+      if (bands.status === "unverified") {
+        return {
+          ok: true,
+          verified: false,
+          reason: "Receiver or transmitter RF band metadata is incomplete.",
+        };
+      }
+      return {
+        ok: true,
+        verified: false,
+        reason: `Shares ${bands.sharedBandLabels.join(" / ")} with ${target.name}; RF setup is still unverified.`,
+      };
+    },
   };
 
   const selectedPhysicalChecks = [
@@ -878,14 +916,6 @@ export default function BuildPage() {
   const buildEvidence = useMemo(
     () => summarizeBuildEvidence(assemblySpec),
     [assemblySpec],
-  );
-  const hardwareReadiness = useMemo(
-    () => summarizeHardwareReadiness({
-      buildId: workingBuildId,
-      flightController: selectedFlightControllerPart,
-      receiver: selectedReceiverPart,
-    }),
-    [selectedFlightControllerPart, selectedReceiverPart, workingBuildId],
   );
   const assemblyPropellerDirection = useMemo(() => (
     hardwareReadiness.configured &&

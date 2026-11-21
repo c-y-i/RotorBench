@@ -695,6 +695,48 @@ test("restores an automatically saved unsaved build draft", async () => {
   expect(screen.getByLabelText("Build notes")).toHaveValue("Recovered note");
 });
 
+test("receiver picker explains RF-band compatibility with the saved radio plan", async () => {
+  const buildId = "rf-picker-build";
+  localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
+    version: 1,
+    id: buildId,
+    name: "RF picker draft",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-tmotor-f1404-3800kv",
+      propellerId: "prop-gemfan-hurricane-3520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  }));
+  localStorage.setItem(`rotorbench:hardware-plan:${buildId}:radio`, JSON.stringify({
+    planVersion: 3,
+    selectedReceiverId: "rx-radiomaster-rp4td",
+    targetId: "aerialkit-elrs-rev-a3",
+    role: "tx",
+  }));
+
+  render(
+    <MemoryRouter initialEntries={["/build"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  fireEvent.click(screen.getByRole("button", {
+    name: /RadioMaster RP4TD.*CRSF/i,
+  }));
+  expect(await screen.findByRole("option", {
+    name: /RadioMaster XR4.*2.4 GHz.*Sub-G 900 MHz.*Shares 2.4 GHz with Aerial Kit/i,
+  })).toBeInTheDocument();
+});
+
 test("saved Betaflight QUAD X direction drives the assembly prop handedness", async () => {
   const buildId = "props-in-build";
   localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
