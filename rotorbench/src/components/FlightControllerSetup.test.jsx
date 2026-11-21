@@ -243,6 +243,37 @@ test("selecting Matek F405-WMN exposes its documented INAV wing mapping", () => 
     .toHaveTextContent("Documented");
 });
 
+test("Matek keeps its documented mapping when switching to ArduPilot", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-matek-f405-wmn",
+        name: "Matek F405-WMN",
+        processor: "STM32F405RGT6",
+        imu: "ICM42688-P",
+        firmware: ["INAV", "ArduPilot"],
+      }}
+    />,
+  );
+
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "ardupilot" },
+  });
+  expect(screen.getByLabelText("Board profile"))
+    .toHaveValue("matek-f405-wmn-ardupilot");
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART2");
+  expect(screen.getByRole("checkbox", { name: "GPS navigation" }))
+    .toBeChecked();
+  fireEvent.click(screen.getByText("Serial allocation"));
+  const ports = screen.getByRole("list", {
+    name: "Documented serial port allocation",
+  });
+  expect(within(ports).getByText("ArduPilot GPS1").closest("li"))
+    .toHaveTextContent("GPS");
+  expect(within(ports).getByText("ArduPilot GPS2").closest("li"))
+    .toHaveTextContent("Documented");
+});
+
 test("shows the documented serial map and marks active plan routes", async () => {
   const { container } = render(
     <FlightControllerSetup

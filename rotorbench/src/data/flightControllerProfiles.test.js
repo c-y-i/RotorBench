@@ -389,6 +389,16 @@ test("Matek F405-WMN selects its documented INAV wing profile", () => {
     "UART5",
   ]);
   expect(profile.notes.join(" ")).toMatch(/shared between motors and servos/i);
+
+  const arduPilotProfile = getBoardProfile("matek-f405-wmn-ardupilot");
+  expect(arduPilotProfile).toMatchObject({
+    family: "ardupilot",
+    board: "MATEKF405TE",
+    receiverUart: "UART2",
+    gpsUart: "UART5",
+    sharedPwmOutputs: 12,
+  });
+  expect(arduPilotProfile.notes.join(" ")).toMatch(/SERIAL3\/UART5 GPS1/i);
 });
 
 test.each(FC_BOARD_PROFILES)(
