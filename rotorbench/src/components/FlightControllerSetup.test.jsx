@@ -279,6 +279,38 @@ test("selecting SpeedyBee F405 Mini exposes its documented BT stack", () => {
   expect(screen.getByText(/8 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
+test("selecting SpeedyBee F405 V4 exposes its documented 30x30 mapping", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-speedybee-f405-v4",
+        name: "SpeedyBee F405 V4",
+        processor: "STM32F405",
+        imu: "ICM42688P",
+        firmware: ["Betaflight"],
+      }}
+    />,
+  );
+
+  expect(screen.getByLabelText("Firmware family")).toHaveValue("betaflight");
+  expect(screen.getByLabelText("Board profile")).toHaveValue("speedybee-f405-v4");
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART2");
+  expect(screen.getByLabelText("Receiver UART")).toBeDisabled();
+  expect(screen.getByRole("checkbox", { name: "GPS navigation" }))
+    .toBeChecked();
+  expect(screen.getByText("8 motors / 1 servo")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Serial allocation"));
+  const ports = screen.getByRole("list", {
+    name: "Documented serial port allocation",
+  });
+  expect(within(ports).getByText("ESC telemetry").closest("li"))
+    .toHaveTextContent("R5 / TEL only");
+  expect(within(ports).getByText(/T6 \/ R6/).closest("li"))
+    .toHaveTextContent("GPS");
+  expect(screen.getByText(/MicroSD blackbox · card required/i))
+    .toBeInTheDocument();
+});
+
 test("selecting Matek F405-WMN exposes its documented INAV wing mapping", () => {
   render(
     <FlightControllerSetup

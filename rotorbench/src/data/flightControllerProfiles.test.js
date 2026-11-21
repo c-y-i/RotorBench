@@ -466,6 +466,34 @@ test("SpeedyBee F405 Mini selects its documented Betaflight target", () => {
   expect(profile.notes.join(" ")).toMatch(/SERIALRX_UART to USART2/i);
 });
 
+test("SpeedyBee F405 V4 selects its documented Betaflight target", () => {
+  const selected = {
+    id: "fc-speedybee-f405-v4",
+    name: "SpeedyBee F405 V4",
+    processor: "STM32F405",
+    imu: "ICM42688P",
+    firmware: ["Betaflight"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config).toMatchObject({
+    firmwareFamily: "betaflight",
+    profileId: "speedybee-f405-v4",
+    airframe: "quadx",
+  });
+  expect(profile).toMatchObject({
+    label: "SpeedyBee F405 V4",
+    board: "SPEEDYBEEF405V4",
+    receiverUart: "UART2",
+    gpsUart: "UART6",
+    sbusNeedsInverter: true,
+    outputs: { motors: 8, servos: 1 },
+    flightLog: { label: "MicroSD blackbox · card required" },
+  });
+  expect(profile.notes.join(" ")).toMatch(/SDXC is not supported/i);
+});
+
 test.each(FC_BOARD_PROFILES)(
   "$label serial map includes its documented receiver and GPS routes",
   (profile) => {

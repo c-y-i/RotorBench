@@ -896,7 +896,7 @@ export default function FlightControllerSetup({
                 <strong>
                   {profile.sharedPwmOutputs
                     ? `${profile.sharedPwmOutputs} shared PWM pads`
-                    : `${profile.outputs.motors} motors / ${profile.outputs.servos} servos`}
+                    : `${profile.outputs.motors} motors / ${profile.outputs.servos} servo${profile.outputs.servos === 1 ? "" : "s"}`}
                 </strong>
               </div>
             </div>
