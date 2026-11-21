@@ -7,7 +7,7 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(12);
+  expect(PLATFORM_PRESETS).toHaveLength(13);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
@@ -18,6 +18,7 @@ test("every starter platform references a complete catalog build", () => {
         "source-5",
         "source-5-aos-supernova",
         "source-5-aos-supernova-51499",
+        "source-5-volador-51499",
       ].includes(preset.id)
         ? "unverified"
         : "verified",
@@ -69,6 +70,18 @@ test("every starter platform references a complete catalog build", () => {
     name: "5-inch AOS Supernova 51499 freestyle build",
     componentIds: {
       frameId: "frame-aos-5-v5",
+      motorId: "motor-aos-supernova-2207-1980kv",
+      propellerId: "prop-gemfan-hurricane-51499-3",
+      escId: "esc-holybro-tekko32-f4-65a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-v6-6s-1480-160c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  });
+  expect(getPlatformPreset("source-5-volador-51499")).toMatchObject({
+    name: "5-inch Volador II VX5 51499 build",
+    componentIds: {
+      frameId: "frame-volador-ii-vx5-o4",
       motorId: "motor-aos-supernova-2207-1980kv",
       propellerId: "prop-gemfan-hurricane-51499-3",
       escId: "esc-holybro-tekko32-f4-65a",

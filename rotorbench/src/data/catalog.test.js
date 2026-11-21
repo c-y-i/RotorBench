@@ -430,6 +430,30 @@ test("AOS 5 V5 adds a current 5-inch frame with published interfaces", () => {
   expect(frame.estimatedFields).not.toContain("weight");
 });
 
+test("Volador II VX5 keeps published interfaces separate from estimated geometry", () => {
+  const frame = componentsData.frames.find(
+    (item) => item.id === "frame-volador-ii-vx5-o4",
+  );
+
+  expect(frame).toMatchObject({
+    name: "FlyFishRC Volador II VX5 O4",
+    size: 225,
+    weight: 177.4,
+    motorCount: 4,
+    maxPropSize: 5.1,
+    stackMountPatternsMm: [[20, 20], [30.5, 30.5]],
+    motorMountPatternsMm: [[16, 16]],
+    price: 69.9,
+    modelStatus: "not_available",
+    sourceUrl: expect.stringContaining("flyfishrc.com"),
+  });
+  expect(frame.estimatedFields).toEqual([
+    "motor positions",
+    "stackHeight",
+    "dimensionsMm",
+  ]);
+});
+
 test("HQProp PizzaCutters 5037 adds a source-backed five-inch propeller", () => {
   const propeller = componentsData.propellers.find(
     (item) => item.id === "prop-hqprop-pizzacutters-5037-3",

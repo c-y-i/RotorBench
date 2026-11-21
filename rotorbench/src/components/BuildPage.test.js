@@ -392,6 +392,31 @@ test("the 5.5-inch XING2 6S preset exposes estimated geometry honestly", async (
   expect(screen.getByText("2/8 verified · 6 estimated")).toBeInTheDocument();
 });
 
+test("Volador II VX5 starter loads its source-backed physical interfaces", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=source-5-volador-51499"]}>
+      <BuildProvider>
+        <BuildPage />
+        <LocationProbe />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-frame", "frame-volador-ii-vx5-o4");
+  expect(viewer).toHaveAttribute("data-motor", "motor-aos-supernova-2207-1980kv");
+  expect(viewer).toHaveAttribute("data-propeller", "prop-gemfan-hurricane-51499-3");
+  expect(viewer).toHaveAttribute("data-battery", "battery-tattu-rline-v6-6s-1480-160c");
+  expect(screen.getByLabelText("Starter platform"))
+    .toHaveValue("source-5-volador-51499");
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+  expect(screen.getByText("Fit needs manual verification")).toBeInTheDocument();
+});
+
 test("build-local measurements update fit evidence without claiming verification", async () => {
   const measuredBuild = {
     id: "measured-build",

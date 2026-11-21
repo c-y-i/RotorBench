@@ -86,6 +86,20 @@ export const PLATFORM_PRESETS = [
     },
   },
   {
+    id: "source-5-volador-51499",
+    name: "5-inch Volador II VX5 51499 build",
+    description: "Volador II VX5 O4, AOS Supernova 2207 1980KV, Gemfan 51499, Tekko32 65A, Kakute H7 V2, RP4TD-M, Tattu V6 6S",
+    componentIds: {
+      frameId: "frame-volador-ii-vx5-o4",
+      motorId: "motor-aos-supernova-2207-1980kv",
+      propellerId: "prop-gemfan-hurricane-51499-3",
+      escId: "esc-holybro-tekko32-f4-65a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-v6-6s-1480-160c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  },
+  {
     id: "source-55-diversity",
     name: "5.5-inch diversity source build",
     description: "AOS 5.5, EMAX 2207, HQ R42, Kakute H7 V2, RP4TD Diversity, Tattu 6S",
