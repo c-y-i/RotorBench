@@ -105,6 +105,7 @@ export function buildFlightControllerCommands(
     finite(config.rcDeadband) &&
     optionalInteger(config.velocityChannel) &&
     optionalInteger(config.missionChannel) &&
+    optionalInteger(config.launchChannel) &&
     optionalInteger(config.manualChannel) &&
     optionalInteger(config.ctrlChannel) &&
     optionalInteger(config.sysidChannel) &&
@@ -121,6 +122,9 @@ export function buildFlightControllerCommands(
     finite(config.fenceRadiusM) &&
     finite(config.fenceCeilingM) &&
     finite(config.rthMinAltM) &&
+    finite(config.launchThrottle) &&
+    finite(config.launchClimbDeg) &&
+    integer(config.launchTimeoutS) &&
     integer(config.gpsMinSats) &&
     finite(config.alignRollDeg) &&
     finite(config.alignPitchDeg) &&
@@ -157,6 +161,7 @@ export function buildFlightControllerCommands(
     lines.push(`set velocity_channel ${Number(config.velocityChannel ?? 0)}`);
   }
   lines.push(`set mission_channel ${Number(config.missionChannel ?? 0)}`);
+  lines.push(`set launch_channel ${Number(config.launchChannel ?? 0)}`);
   lines.push(
     `set arm_hold_ms ${Number(config.armHoldMs)}`,
     `set arm_max_tilt_deg ${Number(config.armMaxTiltDeg)}`,
@@ -175,6 +180,9 @@ export function buildFlightControllerCommands(
     `set fence_radius_m ${Number(config.fenceRadiusM)}`,
     `set fence_ceiling_m ${Number(config.fenceCeilingM)}`,
     `set rth_min_alt_m ${Number(config.rthMinAltM)}`,
+    `set launch_throttle ${Number(config.launchThrottle)}`,
+    `set launch_climb_deg ${Number(config.launchClimbDeg)}`,
+    `set launch_timeout_s ${Number(config.launchTimeoutS)}`,
     `set gps_min_sats ${Number(config.gpsMinSats)}`,
     `set align_roll_deg ${Number(config.alignRollDeg)}`,
     `set align_pitch_deg ${Number(config.alignPitchDeg)}`,

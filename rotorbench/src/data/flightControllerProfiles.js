@@ -500,16 +500,27 @@ export const AERIALKIT_PUBLIC_CONTROL_ROLES = Object.freeze([
   { key: "flightMode", label: "flight mode" },
   { key: "velocity", label: "velocity mode" },
   { key: "mission", label: "mission" },
+  { key: "launch", label: "launch" },
 ]);
 
 export const AERIALKIT_WORKSPACE_CONTROL_ROLES = Object.freeze([
   { key: "arm", label: "arm" },
   { key: "flightMode", label: "flight mode" },
   { key: "mission", label: "mission" },
+  { key: "launch", label: "launch" },
   { key: "manual", label: "manual" },
   { key: "control", label: "control" },
   { key: "systemId", label: "system ID" },
 ]);
+
+const AERIALKIT_LAUNCH_AIRFRAMES = Object.freeze([
+  "elevonwing",
+  "elevonwingsingle",
+]);
+
+export function supportsAerialKitLaunch(airframe) {
+  return AERIALKIT_LAUNCH_AIRFRAMES.includes(airframe);
+}
 
 export function getAerialKitControlRoles(profile = CUSTOM_BOARD_PROFILE) {
   return profile?.buildScope === "workspace"
@@ -616,6 +627,10 @@ export function createDefaultFlightControllerConfig(
     beeperChannel: channelPreset?.beeperChannel ?? null,
     velocityChannel: null,
     missionChannel: null,
+    launchChannel: null,
+    launchThrottle: 0.7,
+    launchClimbDeg: 18,
+    launchTimeoutS: 5,
     manualChannel: null,
     ctrlChannel: null,
     sysidChannel: null,
@@ -920,6 +935,60 @@ export function validateFlightControllerConfig(
   }
 
   if (
+    config.firmwareFamily === "aerialkit" &&
+    (
+      !finite(config.launchThrottle) ||
+      Number(config.launchThrottle) < 0 ||
+      Number(config.launchThrottle) > 1
+    )
+  ) {
+    issues.push({
+      severity: "error",
+      code: "launch-throttle-range",
+      message: "Launch throttle must be between 0 and 1, where 0.70 is 70 per cent.",
+    });
+  }
+  if (
+    config.firmwareFamily === "aerialkit" &&
+    (
+      !finite(config.launchClimbDeg) ||
+      Number(config.launchClimbDeg) < 0 ||
+      Number(config.launchClimbDeg) > 45
+    )
+  ) {
+    issues.push({
+      severity: "error",
+      code: "launch-climb-range",
+      message: "Launch climb attitude must be between 0 and 45 degrees.",
+    });
+  }
+  if (
+    config.firmwareFamily === "aerialkit" &&
+    (
+      !integer(config.launchTimeoutS) ||
+      Number(config.launchTimeoutS) < 0 ||
+      Number(config.launchTimeoutS) > 60
+    )
+  ) {
+    issues.push({
+      severity: "error",
+      code: "launch-timeout-range",
+      message: "Launch timeout must be a whole number of seconds from 0 to 60.",
+    });
+  }
+  if (
+    config.firmwareFamily === "aerialkit" &&
+    config.launchChannel != null &&
+    !supportsAerialKitLaunch(config.airframe)
+  ) {
+    issues.push({
+      severity: "error",
+      code: "launch-airframe-mismatch",
+      message: "The hand-launch switch is only available for Aerial Kit elevon-wing airframes.",
+    });
+  }
+
+  if (
     config.firmwareFamily === "betaflight" &&
     (
       !integer(config.failsafeThrottle) ||
@@ -997,6 +1066,7 @@ export function validateFlightControllerConfig(
     config.modeChannel,
     config.velocityChannel,
     config.missionChannel,
+    config.launchChannel,
     config.beeperChannel,
     config.manualChannel,
     config.ctrlChannel,
@@ -1008,6 +1078,7 @@ export function validateFlightControllerConfig(
     ["flight mode", config.modeChannel],
     ["velocity mode", config.velocityChannel],
     ["mission", config.missionChannel],
+    ["launch", config.launchChannel],
     ["beeper", config.beeperChannel],
     ["manual", config.manualChannel],
     ["control", config.ctrlChannel],
@@ -1231,6 +1302,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     flightMode: config.modeChannel,
     velocity: config.velocityChannel,
     mission: config.missionChannel,
+    launch: config.launchChannel,
     manual: config.manualChannel,
     control: config.ctrlChannel,
     systemId: config.sysidChannel,
@@ -1262,6 +1334,13 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell, critical-pack return ${config.batteryRthEnabled ? "enabled" : "disabled"}`,
           `Geofence: ${config.fenceEnabled ? "enabled" : "disabled"}; radius ${config.fenceRadiusM} m, ceiling ${Number(config.fenceCeilingM) === 0 ? "none" : `${config.fenceCeilingM} m`}, GPS gate ${config.gpsMinSats} satellites`,
           `Return floor: ${Number(config.rthMinAltM) === 0 ? "none" : `${config.rthMinAltM} m`}`,
+          `Launch: ${supportsAerialKitLaunch(config.airframe)
+            ? config.launchChannel == null
+              ? "off"
+              : `switch CH${config.launchChannel}, throttle ${Math.round(Number(config.launchThrottle) * 100)}%, climb ${config.launchClimbDeg}°, timeout ${config.launchTimeoutS} s`
+            : config.launchChannel == null
+              ? "not applicable to the selected airframe"
+              : `configured on CH${config.launchChannel} but blocked for the selected airframe`}`,
         ]
       : []),
     `Outputs: DShot ${config.dshotKhz} kHz`,

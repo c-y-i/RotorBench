@@ -332,10 +332,11 @@ test("mission switch appears as an optional Aerial Kit radio role", () => {
   render(
     <RadioLinkSetup
       channelLimit={8}
-      controlRoles={["arm", "flightMode", "velocity", "mission"]}
+      controlRoles={["arm", "flightMode", "velocity", "mission", "launch"]}
     />,
   );
   expect(screen.getByLabelText("Mission switch channel")).toBeInTheDocument();
+  expect(screen.getByLabelText("Hand launch channel")).toBeInTheDocument();
   expect(screen.getByLabelText("Velocity mode channel")).toBeInTheDocument();
 });
 

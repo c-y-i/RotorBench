@@ -119,6 +119,7 @@ export default function SetupPage() {
         beeper: fallback.beeperChannel ?? null,
         velocity: fallback.velocityChannel ?? null,
         mission: fallback.missionChannel ?? null,
+        launch: fallback.launchChannel ?? null,
       },
     };
     setRadioPlan(readStoredPlan(radioStorageKey, radioFallback));

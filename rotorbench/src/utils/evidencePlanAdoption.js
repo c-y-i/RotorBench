@@ -177,6 +177,15 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       nullWhen: (raw) => Number(raw) === 0,
     },
     {
+      key: "launchChannel",
+      source: "launch_channel",
+      snapshotKey: "launch_channel",
+      label: "Launch channel",
+      parse: optionalChannel,
+      allowNull: true,
+      nullWhen: (raw) => Number(raw) === 0,
+    },
+    {
       key: "manualChannel",
       source: "manual_channel",
       snapshotKey: "manual_channel",
@@ -363,6 +372,36 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
         return number != null && number >= 0 && number <= 500 ? number : null;
       },
       display: (value) => value === 0 ? "No floor" : `${value} m`,
+    },
+    {
+      key: "launchThrottle",
+      source: "launch_throttle",
+      snapshotKey: "launch_throttle",
+      label: "Launch throttle",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 1 ? number : null;
+      },
+      display: (value) => `${Math.round(value * 100)}%`,
+    },
+    {
+      key: "launchClimbDeg",
+      source: "launch_climb_deg",
+      snapshotKey: "launch_climb_deg",
+      label: "Launch climb attitude",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 45 ? number : null;
+      },
+      display: (value) => `${value}°`,
+    },
+    {
+      key: "launchTimeoutS",
+      source: "launch_timeout_s",
+      snapshotKey: "launch_timeout_s",
+      label: "Launch timeout",
+      parse: (raw) => boundedInteger(raw, 0, 60),
+      display: (value) => `${value} s`,
     },
     {
       key: "gpsMinSats",

@@ -244,6 +244,10 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "arm_channel=5 status=0",
     "mode_channel=6 status=0",
     "mission_channel=7 status=0",
+    "launch_channel=8 status=0",
+    "launch_throttle=0.65 status=0",
+    "launch_climb_deg=20 status=0",
+    "launch_timeout_s=6 status=0",
     "rc_min=172 status=0",
     "rc_deadband=0.02 status=0",
     "vbat_ratio=10.8 status=0",
@@ -267,6 +271,10 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     armChannel: 5,
     modeChannel: 7,
     missionChannel: 8,
+    launchChannel: 9,
+    launchThrottle: 0.7,
+    launchClimbDeg: 18,
+    launchTimeoutS: 5,
     rcMin: 172,
     rcDeadband: 0.02,
     vbatRatio: 11,
@@ -292,6 +300,14 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
   expect(checks.find((check) => check.id === "fc-param-mode-channel").status)
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-mission-channel").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-launch-channel").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-launch-throttle").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-launch-climb-deg").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-launch-timeout-s").status)
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-rth-enable").status)
     .toBe("pass");

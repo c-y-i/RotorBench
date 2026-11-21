@@ -7,6 +7,7 @@ import {
   getChannelPreset,
   getMotorOutputByCorner,
   getPropellerDirectionForOutputMap,
+  supportsAerialKitLaunch,
   validateFlightControllerConfig,
 } from "./flightControllerProfiles";
 
@@ -158,7 +159,8 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain("arm 6");
   expect(summary).toContain("velocity mode off");
   expect(summary).toContain("mission off");
-  expect(summary).toContain("arm, flight mode, velocity mode, mission only");
+  expect(summary).toContain("launch off");
+  expect(summary).toContain("arm, flight mode, velocity mode, mission, launch only");
   expect(summary).toContain("Motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW");
   expect(summary).toContain("Failsafe: Firmware-derived");
   expect(summary).toContain(
@@ -301,6 +303,41 @@ test("Betaflight Stage 2 landing throttle is validated and summarized honestly",
       code: "failsafe-throttle-range",
       severity: "error",
     }),
+  ]));
+});
+
+test("Aerial Kit hand-launch planning is wing-only and range-checked", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    airframe: "elevonwing",
+    launchChannel: 8,
+    launchThrottle: 0.7,
+    launchClimbDeg: 18,
+    launchTimeoutS: 5,
+  };
+  const profile = getBoardProfile(config.profileId);
+  const summary = buildFlightControllerSummary(config, profile).join("\n");
+
+  expect(supportsAerialKitLaunch("elevonwing")).toBe(true);
+  expect(supportsAerialKitLaunch("quadx")).toBe(false);
+  expect(summary).toContain(
+    "Launch: switch CH8, throttle 70%, climb 18°, timeout 5 s",
+  );
+  expect(validateFlightControllerConfig(config, profile))
+    .not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "launch-airframe-mismatch" }),
+    ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    airframe: "quadx",
+    launchThrottle: 1.1,
+    launchClimbDeg: 46,
+    launchTimeoutS: 61,
+  }, profile)).toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "launch-airframe-mismatch", severity: "error" }),
+    expect.objectContaining({ code: "launch-throttle-range", severity: "error" }),
+    expect.objectContaining({ code: "launch-climb-range", severity: "error" }),
+    expect.objectContaining({ code: "launch-timeout-range", severity: "error" }),
   ]));
 });
 
@@ -589,7 +626,7 @@ test("workspace Aerial Kit profiles expose manual, control, and system-ID roles"
   };
   expect(profile.notes.join(" ")).toMatch(/remains disarmed and refuses to arm/i);
   expect(buildFlightControllerSummary(config, profile).join("\n"))
-    .toContain("Aerial Kit control roles: arm, flight mode, mission, manual, control, system ID only");
+    .toContain("Aerial Kit control roles: arm, flight mode, mission, launch, manual, control, system ID only");
   expect(validateFlightControllerConfig({
     ...config,
     manualChannel: 7,

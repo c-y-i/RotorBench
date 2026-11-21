@@ -35,6 +35,9 @@ test("Aerial Kit runbook uses read-only discovery and explicit mutations", () =>
   expect(runbook.stages.find((stage) => stage.id === "discovery").commands
     .some((command) => command.includes("mission_channel")))
     .toBe(true);
+  expect(runbook.stages.find((stage) => stage.id === "discovery").commands
+    .some((command) => command.includes("launch_channel")))
+    .toBe(true);
   expect(runbook.stages.find((stage) => stage.id === "identity").commands)
     .not.toEqual(expect.arrayContaining([expect.stringContaining("ak radio capture")]));
   expect(runbook.stages.find((stage) => stage.id === "identity").commands)

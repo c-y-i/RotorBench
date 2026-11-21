@@ -398,17 +398,21 @@ test("configured optional FC roles must also exist in the radio map", () => {
   expect(warnings.join(" ")).toMatch(/manual override/i);
 });
 
-test("mission channel mismatches stay visible across the FC and radio plans", () => {
+test("mission and launch mismatches stay visible across the FC and radio plans", () => {
   const warnings = buildChannelMappingWarnings(
     {
       armChannel: 6,
       modeChannel: 5,
       missionChannel: 7,
+      launchChannel: 8,
     },
     DEFAULT_RADIO_CONFIG,
   );
   expect(warnings).toContain(
     "Radio mission switch is CH not mapped; flight controller uses CH 7.",
+  );
+  expect(warnings).toContain(
+    "Radio hand launch is CH not mapped; flight controller uses CH 8.",
   );
 });
 
@@ -473,6 +477,7 @@ test("flight-controller mapping can be copied into every shared radio role", () 
     modeChannel: 6,
     beeperChannel: 9,
     missionChannel: 7,
+    launchChannel: 10,
     manualChannel: 8,
     ctrlChannel: null,
     sysidChannel: null,
@@ -482,6 +487,7 @@ test("flight-controller mapping can be copied into every shared radio role", () 
     flightMode: 6,
     beeper: 9,
     mission: 7,
+    launch: 10,
     manual: 8,
     control: null,
     systemId: null,

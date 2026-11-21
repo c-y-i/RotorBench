@@ -336,6 +336,7 @@ export const RADIO_CHANNEL_ROLES = [
   { key: "arm", fcRole: "arm", label: "Arm", channel: 6, aerialKitSupported: true },
   { key: "velocity", fcRole: "velocity", label: "Velocity mode", channel: null, optional: true, aerialKitSupported: true },
   { key: "mission", fcRole: "mission", label: "Mission switch", channel: null, optional: true, aerialKitSupported: true },
+  { key: "launch", fcRole: "launch", label: "Hand launch", channel: null, optional: true, aerialKitSupported: true },
   { key: "beeper", fcRole: "beeper", label: "Beeper / AUX5", channel: 9, optional: true, aerialKitSupported: false },
   { key: "manual", fcRole: "manual", label: "Manual override", channel: null, optional: true, aerialKitSupported: false },
   { key: "control", fcRole: "control", label: "Control mode", channel: null, optional: true, aerialKitSupported: false },
@@ -909,6 +910,7 @@ export function buildRadioSummary(config, options = {}) {
       channelMap.flightMode === 6 &&
       channelMap.velocity == null &&
       channelMap.mission == null &&
+      channelMap.launch == null &&
       channelMap.beeper == null &&
       channelMap.manual == null &&
       channelMap.control == null &&
@@ -931,6 +933,7 @@ export function buildChannelMappingWarnings(
     ["flightMode", "Flight mode", flightControllerConfig.modeChannel],
     ["velocity", "Velocity mode", flightControllerConfig.velocityChannel],
     ["mission", "Mission switch", flightControllerConfig.missionChannel],
+    ["launch", "Hand launch", flightControllerConfig.launchChannel],
     ["beeper", "Beeper", flightControllerConfig.beeperChannel],
     ["manual", "Manual override", flightControllerConfig.manualChannel],
     ["control", "Control mode", flightControllerConfig.ctrlChannel],
@@ -971,6 +974,7 @@ export function applyFlightControllerChannelMap(
       beeper: assign("beeper", flightControllerConfig.beeperChannel ?? null),
       velocity: assign("velocity", flightControllerConfig.velocityChannel ?? null),
       mission: assign("mission", flightControllerConfig.missionChannel ?? null),
+      launch: assign("launch", flightControllerConfig.launchChannel ?? null),
       manual: assign("manual", flightControllerConfig.manualChannel ?? null),
       control: assign("control", flightControllerConfig.ctrlChannel ?? null),
       systemId: assign("systemId", flightControllerConfig.sysidChannel ?? null),

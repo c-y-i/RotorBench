@@ -37,6 +37,7 @@ import {
   getAirframeMotorLayout,
   getBoardProfile,
   getChannelPreset,
+  supportsAerialKitLaunch,
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
 import { buildFlightControllerCommands } from "../utils/flightControllerCommands";
@@ -60,6 +61,10 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
     id: "fc-failsafe-throttle",
     label: "Stage 2 landing throttle",
   },
+  "launch-throttle-range": { id: "fc-launch-throttle", label: "launch throttle" },
+  "launch-climb-range": { id: "fc-launch-climb", label: "launch climb attitude" },
+  "launch-timeout-range": { id: "fc-launch-timeout", label: "launch timeout" },
+  "launch-airframe-mismatch": { id: "fc-airframe", label: "airframe" },
   "uart-conflict": { id: "fc-uart", label: "receiver UART" },
   "no-gps-uart": { id: "fc-feature-gps", label: "GPS feature" },
   "throttle-low-range": { id: "fc-throttle-low", label: "low-throttle gate" },
@@ -229,6 +234,7 @@ export default function FlightControllerSetup({
     (preset) => preset.id === channelPreset?.id,
   );
   const aerialKitControlRoles = getAerialKitControlRoles(profile);
+  const aerialKitLaunchAvailable = supportsAerialKitLaunch(config.airframe);
   const aerialKitRoleKeys = new Set(
     aerialKitControlRoles.map((role) => role.key),
   );
@@ -242,6 +248,11 @@ export default function FlightControllerSetup({
       id: "mission",
       label: "Mission switch",
       mode: "High starts, low ends; 0 disables",
+    },
+    launch: {
+      id: "launch",
+      label: "Hand launch",
+      mode: "Elevon wings only; 0 disables",
     },
     manual: {
       id: "manual",
@@ -404,6 +415,7 @@ export default function FlightControllerSetup({
         ? config.velocityChannel ?? null
         : null,
       missionChannel: aerialKit ? config.missionChannel ?? null : null,
+      launchChannel: aerialKit ? config.launchChannel ?? null : null,
       manualChannel: !aerialKit || roleKeys.has("manual")
         ? config.manualChannel ?? null
         : null,
@@ -710,7 +722,20 @@ export default function FlightControllerSetup({
               </Field>
 
               <Field label="Airframe" htmlFor="fc-airframe">
-                <select id="fc-airframe" value={config.airframe} onChange={(event) => update("airframe", event.target.value)}>
+                <select
+                  id="fc-airframe"
+                  value={config.airframe}
+                  onChange={(event) => {
+                    const airframe = event.target.value;
+                    updateConfig({
+                      ...config,
+                      airframe,
+                      launchChannel: supportsAerialKitLaunch(airframe)
+                        ? config.launchChannel ?? null
+                        : null,
+                    });
+                  }}
+                >
                   {AIRFRAMES.map((airframe) => (
                     <option key={airframe.value} value={airframe.value}>
                       {airframe.label} · {airframe.motors} motor{airframe.motors === 1 ? "" : "s"}
@@ -1596,6 +1621,100 @@ export default function FlightControllerSetup({
                 </p>
               </div>
             )}
+            {config.firmwareFamily === "aerialkit" && aerialKitLaunchAvailable && (
+              <div className="fc-calibration fc-launch-plan">
+                <div className="fc-calibration-heading">
+                  <strong>Hand-launch plan</strong>
+                  <span>
+                    The firmware holds a climb attitude and throttle after the
+                    pilot arms and raises the launch switch.
+                  </span>
+                </div>
+                <div className="fc-field-grid fc-calibration-grid">
+                  <Field
+                    label="Launch channel"
+                    htmlFor="fc-launch-channel"
+                    hint="Optional AUX 5–8; leave 0 or blank to disable"
+                  >
+                    <input
+                      id="fc-launch-channel"
+                      type="number"
+                      min={channelMinimum}
+                      max={channelMaximum}
+                      aria-invalid={channelIsInvalid(config.launchChannel)}
+                      value={config.launchChannel ?? ""}
+                      onChange={(event) => update(
+                        "launchChannel",
+                        optionalChannel(event.target.value),
+                      )}
+                    />
+                  </Field>
+                  <Field
+                    label="Launch throttle"
+                    htmlFor="fc-launch-throttle"
+                    hint="0 to 1; 0.70 is 70 per cent"
+                  >
+                    <input
+                      id="fc-launch-throttle"
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      aria-invalid={numericInvalid(config.launchThrottle)}
+                      value={numericValue(config.launchThrottle)}
+                      onChange={(event) => update(
+                        "launchThrottle",
+                        numericInput(event.target.value),
+                      )}
+                    />
+                  </Field>
+                  <Field
+                    label="Launch climb"
+                    htmlFor="fc-launch-climb"
+                    hint="Degrees; 0 to 45"
+                  >
+                    <input
+                      id="fc-launch-climb"
+                      type="number"
+                      min="0"
+                      max="45"
+                      step="1"
+                      aria-invalid={numericInvalid(config.launchClimbDeg)}
+                      value={numericValue(config.launchClimbDeg)}
+                      onChange={(event) => update(
+                        "launchClimbDeg",
+                        numericInput(event.target.value),
+                      )}
+                    />
+                  </Field>
+                  <Field
+                    label="Launch timeout"
+                    htmlFor="fc-launch-timeout"
+                    hint="Seconds; 0 to 60"
+                  >
+                    <input
+                      id="fc-launch-timeout"
+                      type="number"
+                      min="0"
+                      max="60"
+                      step="1"
+                      aria-invalid={integerInvalid(config.launchTimeoutS)}
+                      value={numericValue(config.launchTimeoutS)}
+                      onChange={(event) => update(
+                        "launchTimeoutS",
+                        numericInput(event.target.value),
+                      )}
+                    />
+                  </Field>
+                </div>
+                <p className="fc-alignment-note">
+                  A roll, pitch, or yaw stick past one-fifteenth of travel ends
+                  the launch; the throttle stick does not. Switching launch low,
+                  timeout, disarm, fence return, or failsafe also ends it. Test
+                  the switch and output directions with the propeller removed.
+                </p>
+              </div>
+            )}
           </section>
 
           <section className="fc-section" aria-labelledby="fc-channels-title">
@@ -1639,6 +1758,7 @@ export default function FlightControllerSetup({
                   arm: config.armChannel,
                   velocity: config.velocityChannel,
                   mission: config.missionChannel,
+                  launch: config.launchChannel,
                   beeper: config.beeperChannel,
                   manual: config.manualChannel,
                   control: config.ctrlChannel,

@@ -494,6 +494,52 @@ test("mission switch is optional, scoped to Aerial Kit, and lands in the channel
   expect(onChange.mock.calls.at(-1)[0]).toMatchObject({ missionChannel: null });
 });
 
+test("hand-launch planning is wing-only and reaches the parent plan", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+  expect(screen.queryByLabelText("Launch channel")).not.toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "elevonwing" },
+  });
+  expect(screen.getByText("Hand-launch plan"))
+    .toBeInTheDocument();
+  expect(screen.getByLabelText("Launch channel")).toHaveValue(null);
+  expect(screen.getByLabelText("Launch throttle")).toHaveValue(0.7);
+  expect(screen.getByLabelText("Launch climb")).toHaveValue(18);
+  expect(screen.getByLabelText("Launch timeout")).toHaveValue(5);
+
+  fireEvent.change(screen.getByLabelText("Launch channel"), {
+    target: { value: "8" },
+  });
+  fireEvent.change(screen.getByLabelText("Launch throttle"), {
+    target: { value: "0.65" },
+  });
+  fireEvent.change(screen.getByLabelText("Launch climb"), {
+    target: { value: "20" },
+  });
+  fireEvent.change(screen.getByLabelText("Launch timeout"), {
+    target: { value: "6" },
+  });
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    launchChannel: 8,
+    launchThrottle: 0.65,
+    launchClimbDeg: 20,
+    launchTimeoutS: 6,
+  }));
+  expect(screen.getByText("Hand launch")).toBeInTheDocument();
+  expect(screen.getByText("CH 8")).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "quadx" },
+  });
+  expect(screen.queryByLabelText("Launch channel")).not.toBeInTheDocument();
+  expect(onChange.mock.calls.at(-1)[0]).toMatchObject({
+    airframe: "quadx",
+    launchChannel: null,
+  });
+});
+
 test("board alignment order and angles reach the parent plan", () => {
   const onChange = jest.fn();
   render(<FlightControllerSetup onChange={onChange} />);
