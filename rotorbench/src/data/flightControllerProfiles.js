@@ -255,6 +255,11 @@ const AIRFRAME_LAYOUT_SOURCES = Object.freeze([
   "aerial-kit/apps/configurator/src/ui/views/airframes.ts",
 ]);
 
+const BETAFLIGHT_LAYOUT_SOURCES = Object.freeze([
+  "betaflight.com/docs/wiki/app/motors-tab",
+  "betaflight.com/docs/wiki/guides/current/Reversed-motor-direction",
+]);
+
 export const AIRFRAME_MOTOR_LAYOUTS = Object.freeze({
   quadx: Object.freeze({
     shape: "rotor",
@@ -340,7 +345,26 @@ export const AIRFRAME_MOTOR_LAYOUTS = Object.freeze({
   }),
 });
 
-export function getAirframeMotorLayout(airframe) {
+export const BETAFLIGHT_AIRFRAME_MOTOR_LAYOUTS = Object.freeze({
+  quadx: Object.freeze({
+    shape: "rotor",
+    servos: 0,
+    directionProfile: "props-in",
+    sourceRefs: BETAFLIGHT_LAYOUT_SOURCES,
+    motors: Object.freeze([
+      { output: 1, label: "RR", x: 0.75, z: 0.75, spin: "CW" },
+      { output: 2, label: "FR", x: 0.75, z: -0.75, spin: "CCW" },
+      { output: 3, label: "RL", x: -0.75, z: 0.75, spin: "CCW" },
+      { output: 4, label: "FL", x: -0.75, z: -0.75, spin: "CW" },
+    ]),
+  }),
+});
+
+export function getAirframeMotorLayout(airframe, firmwareFamily = "aerialkit") {
+  if (firmwareFamily === "betaflight") {
+    return BETAFLIGHT_AIRFRAME_MOTOR_LAYOUTS[airframe] || null;
+  }
+  if (firmwareFamily !== "aerialkit") return null;
   return AIRFRAME_MOTOR_LAYOUTS[airframe] || null;
 }
 
@@ -993,9 +1017,13 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
   const aerialKitSwitches = aerialKitRoles
     .map((role) => `${role.label} ${aerialKitChannelValues[role.key] ?? "off"}`)
     .join(", ");
-  const motorLayout = config.firmwareFamily === "aerialkit"
-    ? getAirframeMotorLayout(config.airframe)
-    : null;
+  const motorLayout = getAirframeMotorLayout(
+    config.airframe,
+    config.firmwareFamily,
+  );
+  const motorOrderLabel = config.firmwareFamily === "betaflight"
+    ? "Betaflight normal QUAD X motor order"
+    : "Motor order";
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -1010,7 +1038,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     `Outputs: DShot ${config.dshotKhz} kHz`,
     ...(motorLayout
       ? [
-          `Motor order: ${motorLayout.motors
+          `${motorOrderLabel}: ${motorLayout.motors
             .map((motor) => `${motor.output} ${motor.label} ${motor.spin}`)
             .join(", ")}`,
         ]

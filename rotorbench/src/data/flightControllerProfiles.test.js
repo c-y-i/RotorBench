@@ -40,6 +40,17 @@ test("Aerial Kit motor layouts preserve the firmware output order", () => {
       { output: 2, label: "Right pusher", spin: "CW" },
     ],
   });
+  expect(getAirframeMotorLayout("quadx", "betaflight")).toMatchObject({
+    directionProfile: "props-in",
+    motors: [
+      { output: 1, label: "RR", spin: "CW" },
+      { output: 2, label: "FR", spin: "CCW" },
+      { output: 3, label: "RL", spin: "CCW" },
+      { output: 4, label: "FL", spin: "CW" },
+    ],
+  });
+  expect(getAirframeMotorLayout("quadp", "betaflight")).toBeNull();
+  expect(getAirframeMotorLayout("quadx", "inav")).toBeNull();
   expect(getAirframeMotorLayout("unknown")).toBeNull();
 });
 
@@ -122,14 +133,21 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain("Failsafe: Firmware-derived");
 });
 
-test("non-Aerial-Kit summary does not fingerprint Aerial Kit motor order", () => {
+test("Betaflight summary fingerprints its own normal QUAD X motor order", () => {
   const profile = getBoardProfile("custom-board");
   const config = {
     ...createDefaultFlightControllerConfig(),
     firmwareFamily: "betaflight",
   };
   const summary = buildFlightControllerSummary(config, profile).join("\n");
-  expect(summary).not.toContain("Motor order:");
+  expect(summary).toContain(
+    "Betaflight normal QUAD X motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW",
+  );
+  const inav = buildFlightControllerSummary({
+    ...config,
+    firmwareFamily: "inav",
+  }, profile).join("\n");
+  expect(inav).not.toContain("motor order");
 });
 
 test("selected SBUS receiver drives the initial serial plan", () => {

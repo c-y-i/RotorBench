@@ -716,6 +716,38 @@
   line-height: 1.45;
 }
 
+.fc-motor-layout-missing {
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr);
+  gap: 9px;
+  margin-top: 12px;
+  padding: 11px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.fc-motor-layout-missing > svg {
+  margin-top: 1px;
+  color: var(--ink-faint);
+}
+
+.fc-motor-layout-missing > span {
+  display: grid;
+  gap: 2px;
+}
+
+.fc-motor-layout-missing strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.fc-motor-layout-missing small {
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .fc-feature-list {
   display: flex;
   flex-wrap: wrap;

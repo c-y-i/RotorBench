@@ -244,9 +244,16 @@ export default function FlightControllerSetup({
   const channelMinimum = config.firmwareFamily === "aerialkit" ? 5 : 1;
   const channelMaximum = config.firmwareFamily === "aerialkit" ? 8 : 16;
   const protocol = RECEIVER_PROTOCOLS.find((item) => item.value === config.receiverProtocol);
-  const motorLayout = config.firmwareFamily === "aerialkit"
-    ? getAirframeMotorLayout(config.airframe)
-    : null;
+  const motorLayout = getAirframeMotorLayout(
+    config.airframe,
+    config.firmwareFamily,
+  );
+  const motorLayoutSource = config.firmwareFamily === "betaflight"
+    ? "Betaflight normal QUAD X"
+    : "Aerial Kit mixer order";
+  const motorLayoutBoundary = config.firmwareFamily === "betaflight"
+    ? "Normal Betaflight QUAD X assumes props-in at the front. For props-out, enable reversed motor direction and verify every output in Motor Test with props removed."
+    : "Confirm the physical motor positions and prop directions before power.";
   const motorLayoutNodes = motorLayout
     ? motorLayout.motors.map((motor, index) => {
         const duplicateIndex = motorLayout.motors
@@ -690,7 +697,7 @@ export default function FlightControllerSetup({
                   <div>
                     <Crosshair size={16} aria-hidden="true" />
                     <span>
-                      <small>Aerial Kit mixer order</small>
+                      <small>{motorLayoutSource}</small>
                       <strong>Motor output map</strong>
                     </span>
                   </div>
@@ -715,13 +722,29 @@ export default function FlightControllerSetup({
                   </ol>
                 </div>
                 <p>
-                  Output order comes from the Aerial Kit mixer and airframe view.
+                  Output order comes from the selected firmware's published mixer layout.
                   {motorLayout.servos > 0
                     ? ` ${motorLayout.servos} servo output${motorLayout.servos === 1 ? "" : "s"} still require direction checks.`
                     : ""}
-                  {" "}Confirm the physical motor positions and prop directions before power.
+                  {" "}{motorLayoutBoundary}
                 </p>
               </figure>
+            )}
+            {!motorLayout && config.firmwareFamily !== "aerialkit" && (
+              <div className="fc-motor-layout-missing" role="note">
+                <Crosshair size={16} aria-hidden="true" />
+                <span>
+                  <strong>Motor output map unavailable</strong>
+                  <small>
+                    {config.firmwareFamily === "betaflight"
+                      ? "RotorBench currently bundles Betaflight's normal QUAD X order only. Select Quad X or verify this mixer order directly in Betaflight."
+                      : `No verified ${
+                        FIRMWARE_FAMILIES.find((family) => family.id === config.firmwareFamily)?.label
+                          || config.firmwareFamily
+                      } motor map is bundled. Verify the mixer in its configurator.`}
+                  </small>
+                </span>
+              </div>
             )}
           </section>
 

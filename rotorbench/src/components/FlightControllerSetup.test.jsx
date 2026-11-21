@@ -54,7 +54,21 @@ test("does not show Aerial Kit live gates for another firmware family", () => {
     target: { value: "betaflight" },
   });
   expect(screen.queryByRole("heading", { name: "Arm-gate preview" })).not.toBeInTheDocument();
-  expect(screen.queryByText("Motor output map")).not.toBeInTheDocument();
+  expect(screen.getByText("Motor output map")).toBeInTheDocument();
+  expect(screen.getByText("Betaflight normal QUAD X")).toBeInTheDocument();
+});
+
+test("Betaflight exposes a missing map for unsupported mixer orders", () => {
+  render(<FlightControllerSetup />);
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "betaflight" },
+  });
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "quadp" },
+  });
+  const note = screen.getByRole("note");
+  expect(note).toHaveTextContent("Motor output map unavailable");
+  expect(note).toHaveTextContent(/normal QUAD X order only/i);
 });
 
 test("changing to an ESP32 profile exposes its documented UART", () => {
