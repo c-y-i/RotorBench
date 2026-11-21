@@ -131,6 +131,28 @@ test("renders the hardware planning page and switches to radio setup", () => {
   );
 });
 
+test("copies a sanitized human-readable hardware plan summary", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  renderSetup();
+
+  fireEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+
+  await waitFor(() => {
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("RotorBench hardware plan briefing"),
+    );
+  });
+  const text = writeText.mock.calls[0][0];
+  expect(text).toContain("## Flight-controller plan");
+  expect(text).toContain("## Radio plan");
+  expect(text).toContain("Binding phrase and direct UID are intentionally excluded.");
+  expect(await screen.findByText(/Binding material was excluded/i)).toBeInTheDocument();
+});
+
 test("passes the staged binding UID to imported bench evidence review", () => {
   localStorage.setItem(
     "rotorbench:hardware-plan:standalone:radio",

@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Check,
   CircleStop,
+  Clipboard,
   Cpu,
   Download,
   Play,
@@ -43,6 +44,7 @@ import {
   createCombinedHardwarePlan,
   parseCombinedHardwarePlanJson,
 } from "../utils/hardwarePlanTransfer";
+import { createHardwarePlanBriefing } from "../utils/hardwarePlanBriefing";
 import { buildBenchRunbook } from "../utils/benchRunbook";
 import { getBindingIdentity } from "../utils/elrsBinding";
 import { createBenchEvidenceScope } from "../utils/benchEvidenceAttachment";
@@ -418,6 +420,34 @@ export default function SetupPage() {
     setMessage("Combined hardware plan exported.");
   };
 
+  const copyHardwarePlanBriefing = async () => {
+    const briefing = createHardwarePlanBriefing({
+      build,
+      flightController: selectedFlightController,
+      receiver: selectedReceiver,
+      fcPlan,
+      fcProfile,
+      fcIssues,
+      radioPlan,
+      channelLimit: radioChannelLimit,
+      controlRoles: radioControlRoles,
+      radioWarnings,
+      mappingWarnings,
+    });
+    if (!navigator.clipboard?.writeText) {
+      setMessage("Clipboard access is unavailable in this browser.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(briefing.text);
+      setMessage(
+        "Hardware plan summary copied. Binding material was excluded and nothing was sent to hardware.",
+      );
+    } catch {
+      setMessage("The browser refused clipboard access.");
+    }
+  };
+
   const importCombinedPlan = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -534,6 +564,14 @@ export default function SetupPage() {
           </button>
         </div>
         <div className="setup-plan-transfer">
+          <button
+            type="button"
+            className="setup-export"
+            onClick={copyHardwarePlanBriefing}
+          >
+            <Clipboard size={17} aria-hidden="true" />
+            Copy summary
+          </button>
           <button
             type="button"
             className="setup-export"

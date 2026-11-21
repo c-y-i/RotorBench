@@ -167,6 +167,7 @@
 .setup-plan-transfer {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   margin-inline-start: auto;
 }
@@ -2623,7 +2624,7 @@
   }
 
   .setup-plan-transfer .setup-export {
-    flex: 1 1 0;
+    flex: 1 1 150px;
   }
 
   .bench-file-review-heading {
