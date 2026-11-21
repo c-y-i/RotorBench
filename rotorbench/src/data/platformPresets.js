@@ -44,6 +44,20 @@ export const PLATFORM_PRESETS = [
     },
   },
   {
+    id: "source-5-aos-v5",
+    name: "5-inch AOS 5 V5 source build",
+    description: "AOS 5 V5, XING2 2207 1855KV, HQProp 5037, SpeedyBee 50A, Kakute H7 V2, RP4TD, Tattu 6S",
+    componentIds: {
+      frameId: "frame-aos-5-v5",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-v3-6s-1050-120c",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  },
+  {
     id: "source-55-diversity",
     name: "5.5-inch diversity source build",
     description: "AOS 5.5, EMAX 2207, HQ R42, Kakute H7 V2, RP4TD Diversity, Tattu 6S",
