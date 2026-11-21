@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import {
   AIRFRAMES,
+  BETAFLIGHT_FAILSAFE_THROTTLE,
   CHANNEL_PRESETS,
   DEFAULT_CHANNELS,
   FAILSAFE_ACTIONS,
@@ -55,6 +56,10 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "dshot-rate": { id: "fc-dshot", label: "DShot rate" },
   "arm-hold-range": { id: "fc-arm-hold", label: "arm hold" },
   "arm-tilt-range": { id: "fc-arm-tilt", label: "maximum arm tilt" },
+  "failsafe-throttle-range": {
+    id: "fc-failsafe-throttle",
+    label: "Stage 2 landing throttle",
+  },
   "uart-conflict": { id: "fc-uart", label: "receiver UART" },
   "no-gps-uart": { id: "fc-feature-gps", label: "GPS feature" },
   "throttle-low-range": { id: "fc-throttle-low", label: "low-throttle gate" },
@@ -136,12 +141,12 @@ function useFlightControllerConfig(
   ];
 }
 
-function Field({ label, hint, children, htmlFor }) {
+function Field({ label, hint, hintId, children, htmlFor }) {
   return (
     <div className="fc-field">
       <label htmlFor={htmlFor}>{label}</label>
       {children}
-      {hint && <small>{hint}</small>}
+      {hint && <small id={hintId}>{hint}</small>}
     </div>
   );
 }
@@ -384,6 +389,9 @@ export default function FlightControllerSetup({
         ? nextProfile.sbusBaud
         : nextProfile.receiverBaud,
       features: featuresForBoard(nextProfile, config.receiverProtocol, familyId),
+      failsafeThrottle: familyId === "betaflight"
+        ? config.failsafeThrottle ?? BETAFLIGHT_FAILSAFE_THROTTLE.defaultPwm
+        : null,
       modeChannel: preset?.modeChannel ?? null,
       armChannel: preset?.armChannel ?? null,
       beeperChannel: preset?.beeperChannel ?? null,
@@ -1394,6 +1402,40 @@ export default function FlightControllerSetup({
                   ))}
                 </select>
               </Field>
+              {config.firmwareFamily === "betaflight" && (
+                <Field
+                  label="Stage 2 landing throttle"
+                  htmlFor="fc-failsafe-throttle"
+                  hintId="fc-failsafe-throttle-help"
+                  hint={(
+                    <>
+                      {BETAFLIGHT_FAILSAFE_THROTTLE.minPwm}–{BETAFLIGHT_FAILSAFE_THROTTLE.maxPwm} PWM
+                      {" · 1000 is throttle off · "}
+                      Sets <code>failsafe_throttle</code>. Betaflight uses it only in
+                      Stage 2 Landing Mode; confirm the board&apos;s selected procedure first.
+                    </>
+                  )}
+                >
+                  <input
+                    id="fc-failsafe-throttle"
+                    aria-describedby="fc-failsafe-throttle-help"
+                    type="number"
+                    min={BETAFLIGHT_FAILSAFE_THROTTLE.minPwm}
+                    max={BETAFLIGHT_FAILSAFE_THROTTLE.maxPwm}
+                    step="1"
+                    aria-invalid={
+                      integerInvalid(config.failsafeThrottle)
+                      || Number(config.failsafeThrottle) < BETAFLIGHT_FAILSAFE_THROTTLE.minPwm
+                      || Number(config.failsafeThrottle) > BETAFLIGHT_FAILSAFE_THROTTLE.maxPwm
+                    }
+                    value={numericValue(config.failsafeThrottle)}
+                    onChange={(event) => update(
+                      "failsafeThrottle",
+                      numericInput(event.target.value),
+                    )}
+                  />
+                </Field>
+              )}
               <Field label="Low-throttle gate" htmlFor="fc-throttle-low" hint="0 to 0.5">
                 <input
                   id="fc-throttle-low"
@@ -1696,7 +1738,13 @@ export default function FlightControllerSetup({
               {commandPreview.supported ? (
                 <>
                   {commandPreview.reason && <p>{commandPreview.reason}</p>}
-                  <pre>{commandPreview.text}</pre>
+                  <pre
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Flight controller command preview"
+                  >
+                    {commandPreview.text}
+                  </pre>
                   <button type="button" onClick={copyCommands}>
                     <Clipboard size={14} aria-hidden="true" />
                     Copy commands

@@ -445,6 +445,12 @@ export const FAILSAFE_ACTIONS = [
   { value: "return", label: "Return home when supported", description: "Use return behaviour only with a valid position estimate and RTH enabled." },
 ];
 
+export const BETAFLIGHT_FAILSAFE_THROTTLE = Object.freeze({
+  defaultPwm: 1000,
+  minPwm: 1000,
+  maxPwm: 2000,
+});
+
 export const CHANNEL_PRESETS = [
   {
     id: "aerialkit-firmware",
@@ -600,6 +606,9 @@ export function createDefaultFlightControllerConfig(
     pidDenom: 1,
     dshotKhz: 300,
     failsafeAction: "firmware-derived",
+    failsafeThrottle: betaflightLike
+      ? BETAFLIGHT_FAILSAFE_THROTTLE.defaultPwm
+      : null,
     armChannel: channelPreset?.armChannel ?? null,
     modeChannel: channelPreset?.modeChannel ?? null,
     beeperChannel: channelPreset?.beeperChannel ?? null,
@@ -904,6 +913,21 @@ export function validateFlightControllerConfig(
       severity: "error",
       code: "arm-tilt-range",
       message: "Maximum arm tilt must be between 0 and 180 degrees.",
+    });
+  }
+
+  if (
+    config.firmwareFamily === "betaflight" &&
+    (
+      !integer(config.failsafeThrottle) ||
+      Number(config.failsafeThrottle) < BETAFLIGHT_FAILSAFE_THROTTLE.minPwm ||
+      Number(config.failsafeThrottle) > BETAFLIGHT_FAILSAFE_THROTTLE.maxPwm
+    )
+  ) {
+    issues.push({
+      severity: "error",
+      code: "failsafe-throttle-range",
+      message: "Betaflight Stage 2 landing throttle must be a whole PWM value from 1000 to 2000.",
     });
   }
 
@@ -1250,6 +1274,11 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
       : `Optional channels: manual ${config.manualChannel ?? "off"}, control ${config.ctrlChannel ?? "off"}, system ID ${config.sysidChannel ?? "off"}`,
     `Arm gate: ${config.armHoldMs} ms hold, ${config.armMaxTiltDeg} degree maximum tilt`,
     `Failsafe: ${FAILSAFE_ACTIONS.find((item) => item.value === config.failsafeAction)?.label || config.failsafeAction}`,
+    ...(config.firmwareFamily === "betaflight"
+      ? [
+          `Betaflight Stage 2 landing throttle: ${config.failsafeThrottle} PWM (used only in Landing Mode; confirm the board's Stage 2 procedure)`,
+        ]
+      : []),
     `Receiver timeout: ${config.rcTimeoutMs} ms; low throttle ${config.throttleLow}; RTH ${config.rthEnabled ? "enabled" : "disabled"}`,
     `Features: ${enabledFeatures.join(", ") || "none"}`,
   ];

@@ -223,6 +223,32 @@ test("choosing Betaflight switches to its documented bench channel preset", () =
   expect(screen.getByLabelText("Mapping preset")).toHaveValue("betaflight-bench");
 });
 
+test("Betaflight exposes its source-backed Stage 2 landing throttle", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+  expect(screen.queryByLabelText("Stage 2 landing throttle"))
+    .not.toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "betaflight" },
+  });
+  const throttle = screen.getByLabelText("Stage 2 landing throttle");
+  expect(throttle).toHaveValue(1000);
+  expect(screen.getByText(/1000 is throttle off/i)).toBeInTheDocument();
+  expect(screen.getByText(/uses it only in Stage 2 Landing Mode/i)).toBeInTheDocument();
+
+  fireEvent.change(throttle, { target: { value: "1200" } });
+  expect(onChange).toHaveBeenCalledWith(
+    expect.objectContaining({ failsafeThrottle: 1200 }),
+  );
+
+  fireEvent.change(throttle, { target: { value: "999" } });
+  expect(throttle).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getByRole("button", {
+    name: "Review Stage 2 landing throttle",
+  })).toBeInTheDocument();
+});
+
 test("INAV requires an explicit channel map instead of inheriting Betaflight", () => {
   render(<FlightControllerSetup />);
   fireEvent.change(screen.getByLabelText("Firmware family"), {
@@ -259,6 +285,7 @@ test("returning to Aerial Kit removes control roles its firmware cannot register
     ctrlChannel: null,
     sysidChannel: null,
     beeperChannel: null,
+    failsafeThrottle: null,
   });
   expect(screen.queryByLabelText("Manual channel")).not.toBeInTheDocument();
 });
@@ -330,6 +357,9 @@ test("command preview uses Aerial Kit syntax or unified MSP discovery without gu
   });
   expect(screen.getByText(/Betaflight settings must be addressed by exact name/i)).toBeInTheDocument();
   expect(screen.getByText(/ak fc status --port/)).toBeInTheDocument();
+  expect(screen.getByRole("region", {
+    name: "Flight controller command preview",
+  })).toHaveAttribute("tabindex", "0");
 
   fireEvent.change(screen.getByLabelText("Firmware family"), {
     target: { value: "inav" },

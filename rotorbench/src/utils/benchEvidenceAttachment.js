@@ -31,6 +31,7 @@ const FLIGHT_CONTROLLER_SCOPE_KEYS = [
   "rcDeadband",
   "dshotKhz",
   "failsafeAction",
+  "failsafeThrottle",
   "armChannel",
   "modeChannel",
   "beeperChannel",

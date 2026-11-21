@@ -156,6 +156,33 @@ test("hardware-plan import validates the motor-direction enum", () => {
     .toThrow(/motor direction is unsupported/i);
 });
 
+test("hardware-plan import preserves and validates Betaflight failsafe throttle", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    firmwareFamily: "betaflight",
+    failsafeThrottle: 1200,
+  };
+  const exported = createCombinedHardwarePlan({
+    build: { id: "build-bf-failsafe", name: "Betaflight failsafe", componentIds: {} },
+    flightController: {
+      config,
+      profile: getBoardProfile(config.profileId),
+      issues: [],
+    },
+    radio: DEFAULT_RADIO_CONFIG,
+  });
+  expect(parseCombinedHardwarePlanJson(JSON.stringify(exported)).fcPlan)
+    .toMatchObject({ failsafeThrottle: 1200 });
+
+  delete exported.flightController.config.failsafeThrottle;
+  expect(parseCombinedHardwarePlanJson(JSON.stringify(exported)).fcPlan)
+    .toMatchObject({ failsafeThrottle: 1000 });
+
+  exported.flightController.config.failsafeThrottle = 999;
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(exported)))
+    .toThrow(/failsafe throttle must be a whole PWM value/i);
+});
+
 test("older partial v1 plans merge over safe configurator defaults", () => {
   const exported = samplePlan();
   delete exported.flightController.config.features;

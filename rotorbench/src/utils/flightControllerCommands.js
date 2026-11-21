@@ -1,3 +1,5 @@
+import { BETAFLIGHT_FAILSAFE_THROTTLE } from "../data/flightControllerProfiles";
+
 export const AERIALKIT_AIRFRAME_IDS = {
   quadx: 0,
   elevonwing: 1,
@@ -20,12 +22,25 @@ export function buildFlightControllerCommands(
 ) {
   if (config.firmwareFamily !== "aerialkit") {
     if (config.firmwareFamily === "betaflight") {
+      const failsafeThrottle = Number(config.failsafeThrottle);
+      const failsafeThrottleValid = (
+        Number.isInteger(failsafeThrottle)
+        && failsafeThrottle >= BETAFLIGHT_FAILSAFE_THROTTLE.minPwm
+        && failsafeThrottle <= BETAFLIGHT_FAILSAFE_THROTTLE.maxPwm
+      );
       const lines = [
         "# Aerial Kit unified FC client preview.",
         "# Reads use the Betaflight MSP client on the selected serial port.",
         "ak fc status --port /dev/ttyACM0 --protocol betaflight --json fc-status.json",
         "ak fc preflight --port /dev/ttyACM0 --protocol betaflight --json fc-preflight.json",
         "ak fc rc --port /dev/ttyACM0 --protocol betaflight --json fc-rc.json",
+        "ak fc get failsafe_throttle --port /dev/ttyACM0",
+        ...(failsafeThrottleValid
+          ? [
+              `ak fc set failsafe_throttle ${failsafeThrottle} --port /dev/ttyACM0 --write`,
+              "# Confirm Stage 2 uses Landing Mode before changing or relying on failsafe_throttle.",
+            ]
+          : []),
         "ak fc params --port /dev/ttyACM0 --name <exact-setting>",
         "# Writes require exact setting names, a disarmed aircraft, and --write:",
         "ak fc set <exact-setting> <value> --port /dev/ttyACM0 --write",
@@ -36,7 +51,7 @@ export function buildFlightControllerCommands(
         lines,
         text: lines.join("\n"),
         reason:
-          "Betaflight settings must be addressed by exact name. RotorBench provides discovery commands, not a fabricated write list.",
+          "Betaflight settings must be addressed by exact name. RotorBench emits only the source-backed failsafe_throttle write; other settings require exact names.",
       };
     }
     if (config.firmwareFamily === "inav") {

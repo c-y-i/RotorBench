@@ -272,7 +272,35 @@ test("selected commercial controller infers its listed firmware family", () => {
   expect(config.profileId).toBe("custom-board");
   expect(config.armChannel).toBe(5);
   expect(config.beeperChannel).toBe(9);
+  expect(config.failsafeThrottle).toBe(1000);
   expect(getChannelPreset(config)?.id).toBe("betaflight-bench");
+});
+
+test("Betaflight Stage 2 landing throttle is validated and summarized honestly", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    firmwareFamily: "betaflight",
+    failsafeThrottle: 1200,
+  };
+  const profile = getBoardProfile(config.profileId);
+  const summary = buildFlightControllerSummary(config, profile).join("\n");
+
+  expect(summary).toContain(
+    "Betaflight Stage 2 landing throttle: 1200 PWM (used only in Landing Mode; confirm the board's Stage 2 procedure)",
+  );
+  expect(validateFlightControllerConfig(config, profile))
+    .not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "failsafe-throttle-range" }),
+    ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    failsafeThrottle: 999,
+  }, profile)).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "failsafe-throttle-range",
+      severity: "error",
+    }),
+  ]));
 });
 
 test("INAV does not inherit Betaflight channel presets", () => {

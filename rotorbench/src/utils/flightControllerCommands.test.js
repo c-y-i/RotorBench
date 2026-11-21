@@ -93,6 +93,22 @@ test("Betaflight receives discovery commands but no invented setting names", () 
   expect(preview.reason).toMatch(/Betaflight settings must be addressed by exact name/i);
 });
 
+test("Betaflight preview carries only the source-backed failsafe throttle write", () => {
+  const preview = buildFlightControllerCommands({
+    ...config,
+    firmwareFamily: "betaflight",
+    failsafeThrottle: 1200,
+  });
+  expect(preview.lines).toEqual(expect.arrayContaining([
+    "ak fc get failsafe_throttle --port /dev/ttyACM0",
+    "ak fc set failsafe_throttle 1200 --port /dev/ttyACM0 --write",
+  ]));
+  expect(preview.text).toContain(
+    "Confirm Stage 2 uses Landing Mode before changing or relying on failsafe_throttle.",
+  );
+  expect(preview.text).toContain("--name <exact-setting>");
+});
+
 test("INAV does not inherit the Betaflight settings client", () => {
   const preview = buildFlightControllerCommands({
     ...config,

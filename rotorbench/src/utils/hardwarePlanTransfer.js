@@ -19,6 +19,7 @@ import {
   normalizeRadioConfig,
 } from "../data/radioProfiles";
 import {
+  BETAFLIGHT_FAILSAFE_THROTTLE,
   buildFlightControllerSummary,
   createDefaultFlightControllerConfig,
   getBoardProfile,
@@ -209,6 +210,20 @@ export function parseCombinedHardwarePlanJson(text) {
       ...(importedFcPlan.features || {}),
     },
   };
+  if (fcPlan.firmwareFamily === "betaflight") {
+    if (fcPlan.failsafeThrottle == null) {
+      fcPlan.failsafeThrottle = BETAFLIGHT_FAILSAFE_THROTTLE.defaultPwm;
+    }
+    if (
+      !Number.isInteger(Number(fcPlan.failsafeThrottle))
+      || Number(fcPlan.failsafeThrottle) < BETAFLIGHT_FAILSAFE_THROTTLE.minPwm
+      || Number(fcPlan.failsafeThrottle) > BETAFLIGHT_FAILSAFE_THROTTLE.maxPwm
+    ) {
+      throw new Error(
+        "Betaflight failsafe throttle must be a whole PWM value from 1000 to 2000.",
+      );
+    }
+  }
   if (!MOTOR_DIRECTIONS.some(
     (option) => option.value === fcPlan.motorDirection,
   )) {
