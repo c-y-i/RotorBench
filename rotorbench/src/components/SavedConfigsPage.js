@@ -538,6 +538,11 @@ export default function SavedConfigsPage() {
                                                         : "Verify pins"}
                                                 </span>
                                             )}
+                                            {buildSummary.hasHardwareParts && (
+                                                <span className={`is-host-${buildSummary.radioHostDocumented ? "documented" : "unverified"}`}>
+                                                    {buildSummary.radioHostTransportLabel}
+                                                </span>
+                                            )}
                                             {buildSummary.benchEvidenceConfigured && (
                                                 <span className={`saved-evidence-state is-${buildSummary.benchEvidenceStatus}`}>
                                                     {buildSummary.benchEvidenceLabel}

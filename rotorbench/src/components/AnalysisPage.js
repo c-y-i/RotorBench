@@ -415,6 +415,18 @@ export default function AnalysisPage() {
                     : "Not selected"}
                 </dd>
               </div>
+              <div>
+                <dt>Radio host</dt>
+                <dd>
+                  {hasHardwareSelection
+                    ? `${hardwareReadiness.radioHostTransportLabel} · ${
+                      hardwareReadiness.radioHostDocumented
+                        ? "documented"
+                        : "verify target"
+                    }`
+                    : "Not selected"}
+                </dd>
+              </div>
               {benchEvidence.configured && (
                 <div className="analysis-hardware-evidence">
                   <dt>Imported evidence</dt>

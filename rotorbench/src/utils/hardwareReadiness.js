@@ -12,6 +12,7 @@ import {
   getRadioTarget,
 } from "../data/radioProfiles";
 import { buildReceiverWiringPlan } from "./receiverWiring";
+import { buildRadioEndpointPlan } from "./radioEndpointPlan";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -113,6 +114,7 @@ export function summarizeHardwareReadiness({
     (item) => item.value === fcPlan.receiverProtocol,
   );
   const radioTarget = getRadioTarget(radioPlan.targetId);
+  const radioEndpoint = buildRadioEndpointPlan(radioPlan, radioTarget);
 
   return {
     status,
@@ -135,6 +137,10 @@ export function summarizeHardwareReadiness({
     wiringStatus: wiring.documented ? "documented" : "unverified",
     wiringScope: wiring.scope,
     radioTargetName: radioTarget.name,
+    radioHostTransport: radioEndpoint.hostTransport,
+    radioHostTransportLabel: radioEndpoint.hostTransportLabel,
+    radioHostDocumented: radioEndpoint.documented,
+    radioHostScope: radioEndpoint.scope,
     hardwareVerified: false,
   };
 }
@@ -156,6 +162,10 @@ export function sanitizeHardwareReadiness(readiness) {
     wiringStatus: readiness.wiringStatus || "unverified",
     wiringScope: readiness.wiringScope || "planning continuity checklist; hardware not tested",
     radioTarget: readiness.radioTargetName || null,
+    radioHostTransport: readiness.radioHostTransport || null,
+    radioHostTransportLabel: readiness.radioHostTransportLabel || null,
+    radioHostDocumented: Boolean(readiness.radioHostDocumented),
+    radioHostScope: readiness.radioHostScope || "planning endpoint checklist; RF and hardware not tested",
     hardwareVerified: false,
   };
 }

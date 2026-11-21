@@ -1732,13 +1732,21 @@ export default function BuildPage() {
                   : "Plan receiver wiring, channel roles, firmware profile, and the link."}
               </span>
               {selectedFlightControllerPart && (
-                <small>
-                  {hardwareReadiness.firmwareLabel} · {hardwareReadiness.protocolLabel} ·{" "}
-                  {hardwareReadiness.receiverUart} / {hardwareReadiness.receiverBaud} baud ·{" "}
-                  {hardwareReadiness.wiringStatus === "documented"
-                    ? "Pins documented"
-                    : "Verify pins"}
-                </small>
+                <>
+                  <small>
+                    {hardwareReadiness.firmwareLabel} · {hardwareReadiness.protocolLabel} ·{" "}
+                    {hardwareReadiness.receiverUart} / {hardwareReadiness.receiverBaud} baud ·{" "}
+                    {hardwareReadiness.wiringStatus === "documented"
+                      ? "Pins documented"
+                      : "Verify pins"}
+                  </small>
+                  <small>
+                    Radio host: {hardwareReadiness.radioHostTransportLabel} ·{" "}
+                    {hardwareReadiness.radioHostDocumented
+                      ? "Transport documented"
+                      : "Verify transport"}
+                  </small>
+                </>
               )}
             </div>
             <button type="button" onClick={openHardwareSetup}>

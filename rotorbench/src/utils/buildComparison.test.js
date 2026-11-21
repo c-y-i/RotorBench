@@ -44,6 +44,7 @@ test("comparison rows include all seven component categories", () => {
       "geometry-fallbacks",
       "hardware-plan",
       "receiver-wiring",
+      "radio-host",
       "bench-evidence",
       "frame-size",
       "motor-kv",
@@ -91,11 +92,18 @@ test("comparison summaries expose documented versus unverified receiver wiring",
   expect(left).toMatchObject({
     receiverPins: expect.any(String),
     receiverWiringStatus: expect.stringMatching(/documented|unverified/),
+    radioHostTransport: "native-usb",
+    radioHostTransportLabel: "Native USB CDC",
+    radioHostDocumented: true,
   });
   const rows = comparisonRows(left, summarizeBuild(build));
   expect(rows.find((row) => row.id === "receiver-wiring")).toMatchObject({
     changed: false,
     left: expect.stringMatching(/documented|unverified/),
+  });
+  expect(rows.find((row) => row.id === "radio-host")).toMatchObject({
+    changed: false,
+    left: "Native USB CDC · documented",
   });
 });
 

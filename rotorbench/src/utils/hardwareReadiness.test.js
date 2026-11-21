@@ -38,6 +38,9 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     receiverBaud: 420000,
     receiverPins: "Not mapped",
     wiringStatus: "unverified",
+    radioHostTransport: "native-usb",
+    radioHostTransportLabel: "Native USB CDC",
+    radioHostDocumented: true,
   });
   expect(readiness.firmwareLabel).toBe("Betaflight");
   expect(readiness.protocolLabel).toBe("CRSF / ExpressLRS");

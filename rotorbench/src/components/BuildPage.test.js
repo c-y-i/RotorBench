@@ -436,6 +436,8 @@ test("hardware setup carries the unsaved draft identity and selected FC/receiver
   expect(screen.getByText(/Betaflight · CRSF \/ ExpressLRS · UART1 \/ 420000 baud/i))
     .toBeInTheDocument();
   expect(screen.getByText(/Verify pins/i)).toBeInTheDocument();
+  expect(screen.getByText(/Native USB CDC · Transport documented/i))
+    .toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Open setup" }));
 
   expect(screen.getByTestId("location-path")).toHaveTextContent("/setup");

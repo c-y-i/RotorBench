@@ -74,6 +74,8 @@ The receiver section now expands into a board-specific `Receiver wiring` checkli
 
 The radio planner now separates host transport from the RF path. A `Host transport` field distinguishes native USB CDC, target-specific host UART, and an explicitly unverified generic transport. Rev A3’s documented host UART is 400000 baud, 8N1, non-inverted and full duplex on J3.4/GPIO44 host TX and J3.3/GPIO43 host RX; the RX-to-FC CRSF UART remains 420000 baud. An `Endpoint checklist` covers role/image selection, antenna or RF load, host transport, the separate FC UART for RX role, and the requirement to observe receiver RC plus link statistics before claiming RF success.
 
+Shared hardware readiness now also carries the selected radio host transport, its display label, and whether that transport is documented. Build shows the host path beneath the receiver route; Analysis includes a Radio host fact; Saved includes the host chip; Compare adds a radio-host row; sanitized hardware plans retain the same fields. None of these fields imply USB, UART, or RF verification.
+
 The shared hardware-readiness model now carries `receiverPins`, `wiringStatus`, and the planning-only `wiringScope`. Build’s hardware card shows `Pins documented` or `Verify pins`; Analysis adds a wiring fact; Saved adds a wiring chip; Compare adds a wiring row; build sheets and analysis reports retain the sanitized fields. A documented pin route therefore remains visible across routes without becoming an electrical verification claim.
 
 Documented board profiles lock their compiled receiver UART and baud. Custom boards leave those fields editable. The preferred Aerial Kit with ExpressLRS preset uses arm channel 5 and flight-mode channel 6; a separate legacy preset preserves the firmware's arm 6 / mode 5 defaults.
@@ -504,7 +506,7 @@ The ESP32 documented receiver-wiring state was rendered with a `UART2 / GPIO17 T
 
 The Rev A3 Host UART state was rendered with `J3.4/GPIO44 host TX`, `J3.3/GPIO43 host RX`, `400000 baud`, `8N1`, non-inverted full duplex. The checklist kept RF and receiver acquisition explicitly unverified. It reports `Transport documented`, remains free of overflow, keeps 44px controls, and passes axe WCAG A/AA at both widths.
 
-The same saved documented route was rendered on Build as `Pins documented` in the hardware card and on Saved as a wiring chip. Both retain the `hardware not tested` boundary, remain free of horizontal overflow, and pass axe WCAG A/AA at both widths.
+The same saved documented route was rendered on Build as `Pins documented` plus `Radio host: Native USB CDC · Transport documented`, and on Saved as both wiring and host chips. All states retain the `hardware not tested` boundary, remain free of horizontal overflow, and pass axe WCAG A/AA at both widths.
 
 The Build `Fit overlay` was rendered with the complete 3.5-inch source preset. Four propeller sweep envelopes and motor-interface outlines appear in-scene, the legend reports all three interface states, and the 44px toggle remains operable at 390 and 1440 widths. There is no horizontal overflow and axe reports zero WCAG A/AA violations at both sizes.
 

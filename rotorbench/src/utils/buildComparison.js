@@ -145,6 +145,9 @@ export function summarizeBuild(build) {
     hardwareReadinessLabel: hardwareReadiness.label,
     receiverWiringStatus: hardwareReadiness.wiringStatus,
     receiverPins: hardwareReadiness.receiverPins,
+    radioHostTransport: hardwareReadiness.radioHostTransport,
+    radioHostTransportLabel: hardwareReadiness.radioHostTransportLabel,
+    radioHostDocumented: hardwareReadiness.radioHostDocumented,
     hardwareIssueCount: hardwareReadiness.configured
       ? hardwareReadiness.issueCount
       : null,
@@ -221,6 +224,9 @@ export function createComparisonReport(
       hardwareReadinessStatus: build.hardwareReadinessStatus,
       receiverWiringStatus: build.receiverWiringStatus,
       receiverPins: build.receiverPins,
+      radioHostTransport: build.radioHostTransport,
+      radioHostTransportLabel: build.radioHostTransportLabel,
+      radioHostDocumented: build.radioHostDocumented,
       benchEvidenceStatus: build.benchEvidenceStatus,
       sourceBackedCount: build.sourceBackedCount,
       estimatedFieldCount: build.estimatedFieldCount,
@@ -417,6 +423,13 @@ export function comparisonRows(left, right) {
       left: left.receiverWiringStatus,
       right: right.receiverWiringStatus,
       format: (value) => value === "documented" ? "Pins documented" : "Verify pins",
+    },
+    {
+      id: "radio-host",
+      label: "Radio host transport",
+      left: `${left.radioHostTransportLabel} · ${left.radioHostDocumented ? "documented" : "verify"}`,
+      right: `${right.radioHostTransportLabel} · ${right.radioHostDocumented ? "documented" : "verify"}`,
+      format: (value) => value,
     },
     {
       id: "bench-evidence",

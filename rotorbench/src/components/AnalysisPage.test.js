@@ -127,6 +127,8 @@ test("renders the completed analysis and opens the browser print dialog", async 
   expect(within(hardwareSection).getByText("Local plan · hardware not tested"))
     .toBeInTheDocument();
   expect(within(hardwareSection).getByText("Verify pins")).toBeInTheDocument();
+  expect(within(hardwareSection).getByText("Native USB CDC · documented"))
+    .toBeInTheDocument();
 
   await userEvent.click(screen.getByRole("button", { name: "Download report" }));
   expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
@@ -284,6 +286,6 @@ test("does not present fallback hardware defaults when no FC or receiver is sele
   const hardwareSection = await screen.findByRole("region", {
     name: "No hardware selected",
   });
-  expect(within(hardwareSection).getAllByText("Not selected")).toHaveLength(3);
+  expect(within(hardwareSection).getAllByText("Not selected")).toHaveLength(4);
   expect(within(hardwareSection).queryByText(/Aerial Kit Firmware/i)).not.toBeInTheDocument();
 });
