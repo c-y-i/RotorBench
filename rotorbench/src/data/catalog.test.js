@@ -101,6 +101,37 @@ test("iFlight XING2 2207 keeps published mechanics and estimates explicit", () =
   });
 });
 
+test("AOS Supernova retains published motor data and prop-specific test status", () => {
+  const motor = componentsData.motors.find(
+    (item) => item.id === "motor-aos-supernova-2207-1980kv",
+  );
+
+  expect(motor).toMatchObject({
+    name: "AOS Supernova 2207 1980KV",
+    kv: 1980,
+    weight: 31,
+    maxCurrent: 61,
+    voltage: { min: 18.5, max: 25.2 },
+    mountingPatternMm: [16, 16],
+    dimensionsMm: [27.6, 19.5, 27.6],
+    bellDiameterMm: 27.6,
+    propShaftMm: 5,
+    configuration: "12N14P",
+    statorDiameterMm: 22,
+    statorHeightMm: 7,
+    internalResistanceOhm: 0.045,
+    idleCurrentA: 1.1,
+    maxContinuousPowerW: 1456,
+    price: 34.99,
+    modelStatus: "not_available",
+    performanceDataStatus: "published_prop_specific_tables_not_normalized",
+    sourceUrl: "https://www.aos-rc.com/designs/aos-supernova-2207-1980kv",
+  });
+  expect(motor.estimatedFields).toEqual(["mounting_point"]);
+  expect(motor.thrustData).toEqual([]);
+  expect(motor.propMountSourceUrl).toContain("fioparts.com");
+});
+
 test("Tattu R-Line 6S pack keeps pack dimensions and estimated curves explicit", () => {
   const battery = componentsData.batteries.find(
     (item) => item.id === "battery-tattu-rline-v3-6s-1050-120c",

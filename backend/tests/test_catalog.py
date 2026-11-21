@@ -39,7 +39,7 @@ class CatalogContractTests(unittest.TestCase):
             counts,
             {
                 "frames": 10,
-                "motors": 15,
+                "motors": 16,
                 "propellers": 10,
                 "batteries": 10,
                 "escs": 7,
@@ -47,7 +47,7 @@ class CatalogContractTests(unittest.TestCase):
                 "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 70)
+        self.assertEqual(sum(counts.values()), 71)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 70)
+        self.assertEqual(len(records), 71)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -206,6 +206,26 @@ class CatalogContractTests(unittest.TestCase):
             self.assertIn("mounting_point", motor.estimated_fields)
             self.assertNotIn("mountingPatternMm", motor.estimated_fields)
             self.assertNotIn("propShaftMm", motor.estimated_fields)
+
+    def test_aos_supernova_keeps_published_motor_data_and_estimated_mounting_point(self):
+        motor = next(
+            item for item in self.database.motors
+            if item.id == "motor-aos-supernova-2207-1980kv"
+        )
+        self.assertEqual(motor.kv, 1980)
+        self.assertEqual(motor.weight, 31)
+        self.assertEqual(motor.max_current, 61)
+        self.assertEqual(motor.voltage.min, 18.5)
+        self.assertEqual(motor.voltage.max, 25.2)
+        self.assertEqual(motor.mounting_pattern_mm, [16, 16])
+        self.assertEqual(motor.dimensions_mm, [27.6, 19.5, 27.6])
+        self.assertEqual(motor.prop_shaft_mm, 5)
+        self.assertEqual(motor.price, 34.99)
+        self.assertEqual(motor.estimated_fields, ["mounting_point"])
+        self.assertEqual(
+            motor.performance_data_status,
+            "published_prop_specific_tables_not_normalized",
+        )
 
     def test_measured_geometry_survives_build_round_trip_and_hydration(self):
         config = DroneBuildConfig(
