@@ -1,16 +1,28 @@
 import { getRadioTarget } from "../data/radioProfiles";
 
 export const BENCH_SOURCE = Object.freeze({
-  commit: "2cb69bc",
+  commit: "a2f25c1",
   packageVersion: "0.4.6",
   firmware: "ExpressLRS 4.1.0",
   artifact: "9b48f01f522783d872b72f36c69c7171bcc851e2fcbfe5f60cb717efcb0331b4",
 });
 
 const FC_FAMILIES_WITH_CLI = new Set(["aerialkit", "betaflight"]);
+const STAGE_KIND_LABELS = Object.freeze({
+  "read-only": "Read-only",
+  mutating: "Changes hardware",
+  "live-input": "Live input · changes hardware",
+});
 
 function commandStage(id, title, kind, commands, note) {
-  return { id, title, kind, commands, note };
+  return {
+    id,
+    title,
+    kind,
+    kindLabel: STAGE_KIND_LABELS[kind] || kind,
+    commands,
+    note,
+  };
 }
 
 export function buildBenchRunbook(fcPlan, radioPlan) {
@@ -24,6 +36,7 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
     "Use a props-off aircraft and fit an antenna or RF load before powering either radio role.",
     "RotorBench prepared these commands only. It did not connect to, write, flash, or arm hardware.",
     "USB writes and a completed drive do not prove RF. RF remains NOT TESTED by RotorBench until it observes receiver RC and link statistics; imported files are reviewed separately and do not change hardware readiness.",
+    "The optional live-input stage can arm through the transmitter. Keep the aircraft restrained with props off; a sent arm request is not proof that the flight controller armed.",
   ];
 
   if (FC_FAMILIES_WITH_CLI.has(fcPlan?.firmwareFamily)) {
@@ -128,7 +141,34 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
       : "Pairing is only qualified for Rev A3. Use the generic target's own firmware documentation.",
   );
 
-  const stages = [discovery, identity, pairing];
+  const liveInputQualified = revA3 && FC_FAMILIES_WITH_CLI.has(fcPlan?.firmwareFamily);
+  const teleopCommand = liveInputQualified
+    ? [
+        "ak radio teleop",
+        "--port /dev/ttyACM1",
+        `--baud ${txBaud}`,
+        `--profile ${txProfile}`,
+        "--duration 30",
+        "--hz 150",
+        ...channelArgs,
+        "--write",
+        "--confirm-arm",
+        "--json teleop.json",
+      ].join(" ")
+    : null;
+  const liveInput = commandStage(
+    "live-input",
+    "Exercise bounded live input",
+    "live-input",
+    teleopCommand ? [teleopCommand] : [],
+    liveInputQualified
+      ? "Optional Rev A3 stage. Use a restrained aircraft with props off, antennas or RF loads fitted, and minimum RF power. Confirm the receiver is disarmed before Enter; hold throttle low through the arm hold and do not raise it. Use X panic first, then test Ctrl-C and timeout. Require stop_reason=panic and disarmed_at_end=true."
+      : revA3
+        ? "Live keyboard input is not generated for firmware families without a reviewed Aerial Kit bench path."
+        : "Live keyboard input is only qualified for the documented Rev A3 endpoint. Use the selected target's own firmware and bench procedure.",
+  );
+
+  const stages = [discovery, identity, pairing, liveInput];
   const readOnlyStages = stages.filter(
     (stage) => stage.kind === "read-only" && stage.commands.length > 0,
   );
@@ -137,7 +177,7 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
     "# Props off. Antennas fitted. Replace example ports and the phrase placeholder.",
     ...stages.flatMap((stage) => [
       "",
-      `# ${stage.title} (${stage.kind})`,
+      `# ${stage.title} (${stage.kindLabel})`,
       ...stage.commands,
     ]),
     "",
@@ -156,6 +196,7 @@ export function buildBenchRunbook(fcPlan, radioPlan) {
     "The pair command exits only after both endpoints read back the same non-zero six-byte UID.",
     "The two-board bench must report RF PASS with receiver RC frames and link statistics observed.",
     "USB writes, a matching UID, or TX-only drive output do not prove that RF reached the receiver.",
+    "If using the optional live-input stage, panic, Ctrl-C, and timeout must each report disarmed_at_end=true; the panic run must also report stop_reason=panic.",
   ];
 
   return {

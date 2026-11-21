@@ -14,7 +14,7 @@ test("Aerial Kit runbook uses read-only discovery and explicit mutations", () =>
 
   expect(runbook.executedByRotorBench).toBe(false);
   expect(runbook.source).toMatchObject({
-    commit: "2cb69bc",
+    commit: "a2f25c1",
     packageVersion: "0.4.6",
   });
   expect(runbook.stages.find((stage) => stage.id === "discovery").commands)
@@ -44,8 +44,14 @@ test("Aerial Kit runbook uses read-only discovery and explicit mutations", () =>
       expect.stringContaining("--write"),
     ],
   });
+  expect(runbook.stages.find((stage) => stage.id === "live-input")).toMatchObject({
+    kind: "live-input",
+    commands: [
+      expect.stringContaining("ak radio teleop"),
+    ],
+  });
   expect(runbook.stages.map((stage) => stage.id))
-    .toEqual(["discovery", "identity", "pairing"]);
+    .toEqual(["discovery", "identity", "pairing", "live-input"]);
   const pairingCommand = runbook.stages.find((stage) => stage.id === "pairing").commands[0];
   expect(pairingCommand).toContain("--arm-channel 6");
   expect(pairingCommand).toContain("--mode-channel 5");
@@ -53,10 +59,25 @@ test("Aerial Kit runbook uses read-only discovery and explicit mutations", () =>
   expect(pairingCommand).toContain("--profile aerial-kit");
   expect(pairingCommand).toContain("--write");
   expect(pairingCommand).not.toContain("ak radio drive");
+  const liveInputCommand = runbook.stages
+    .find((stage) => stage.id === "live-input").commands[0];
+  expect(liveInputCommand).toContain("--port /dev/ttyACM1");
+  expect(liveInputCommand).toContain("--baud 400000");
+  expect(liveInputCommand).toContain("--profile aerial-kit");
+  expect(liveInputCommand).toContain("--arm-channel 6");
+  expect(liveInputCommand).toContain("--mode-channel 5");
+  expect(liveInputCommand).toContain("--velocity-channel 0");
+  expect(liveInputCommand).toContain("--write");
+  expect(liveInputCommand).toContain("--confirm-arm");
   expect(runbook.copyText).not.toContain("ak radio capture");
+  expect(runbook.copyText).toContain("ak radio teleop");
+  expect(runbook.copyText).toContain("Live input · changes hardware");
   expect(runbook.readOnlyCopyText).not.toContain("--write");
+  expect(runbook.readOnlyCopyText).not.toContain("ak radio teleop");
   expect(runbook.readOnlyCopyText).toContain("ak radio status");
   expect(runbook.evidenceRequirements.join(" ")).toMatch(/receiver RC frames and link statistics/i);
+  expect(runbook.evidenceRequirements.join(" ")).toMatch(/disarmed_at_end=true/i);
+  expect(runbook.warnings.join(" ")).toMatch(/sent arm request is not proof/i);
   expect(runbook.copyText).toContain("replace-with-your-phrase");
   expect(runbook.copyText).not.toContain("do-not-copy-this-phrase");
   expect(runbook.expectedSettings).toMatchObject({
@@ -82,6 +103,8 @@ test("runbook omits unsupported FC commands and warns for MAVLink families", () 
 
   expect(runbook.stages.find((stage) => stage.id === "discovery").commands)
     .not.toEqual(expect.arrayContaining([expect.stringMatching(/^ak fc/)]));
+  expect(runbook.stages.find((stage) => stage.id === "live-input").commands)
+    .toEqual([]);
   expect(runbook.warnings.join(" ")).toMatch(/does not provide a verified INAV, PX4, or ArduPilot configuration path/i);
 });
 
@@ -102,6 +125,8 @@ test("Aerial Kit log reads are not generated for a Betaflight MSP board", () => 
     "ak fc rc --port /dev/ttyACM0 --protocol betaflight --json fc-rc.json",
   );
   expect(commands).not.toContain("ak fc logs --port /dev/ttyACM0");
+  expect(runbook.stages.find((stage) => stage.id === "live-input").commands[0])
+    .toContain("--profile betaflight");
 });
 
 test("generic radio targets use baud placeholders instead of guessing", () => {
@@ -120,6 +145,10 @@ test("generic radio targets use baud placeholders instead of guessing", () => {
   });
   expect(runbook.stages.find((stage) => stage.id === "pairing")).toMatchObject({
     kind: "mutating",
+    commands: [],
+  });
+  expect(runbook.stages.find((stage) => stage.id === "live-input")).toMatchObject({
+    kind: "live-input",
     commands: [],
   });
   expect(runbook.warnings.join(" ")).toMatch(/not the documented Rev A3 endpoint/i);

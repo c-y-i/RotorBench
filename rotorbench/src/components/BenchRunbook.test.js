@@ -26,8 +26,11 @@ test("shows a copy-only source-backed bench runbook", async () => {
   await userEvent.click(screen.getByText("Bench runbook"));
   expect(screen.getByText("Read identity before changing anything")).toBeInTheDocument();
   expect(screen.getAllByText("Changes hardware")).toHaveLength(1);
+  expect(screen.getByText("Live input · changes hardware")).toBeInTheDocument();
   expect(screen.getByText(/RF remains NOT TESTED/i)).toBeInTheDocument();
   expect(screen.getByText(/never exports staged binding material/i)).toBeInTheDocument();
+  expect(screen.getByText(/Require stop_reason=panic and disarmed_at_end=true/i))
+    .toBeInTheDocument();
   expect(screen.getByText(new RegExp(runbook.source.artifact))).toBeInTheDocument();
 
   const fullCopy = screen.getByRole("button", { name: "Copy full runbook" });
@@ -35,11 +38,14 @@ test("shows a copy-only source-backed bench runbook", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Copy discovery" }));
   expect(navigator.clipboard.writeText).toHaveBeenCalledWith(runbook.readOnlyCopyText);
   expect(runbook.readOnlyCopyText).not.toContain("--write");
+  expect(runbook.readOnlyCopyText).not.toContain("ak radio teleop");
   expect(screen.getByText(/RF acceptance evidence/i)).toBeInTheDocument();
   await waitFor(() => {
     expect(screen.getByRole("status")).toHaveTextContent(/Read-only discovery copied/i);
   });
-  await userEvent.click(screen.getByRole("checkbox", { name: /I reviewed the props-off setup/i }));
+  await userEvent.click(screen.getByRole("checkbox", {
+    name: /I reviewed the props-off and restrained-aircraft setup/i,
+  }));
   expect(fullCopy).toBeEnabled();
   await userEvent.click(fullCopy);
   expect(navigator.clipboard.writeText).toHaveBeenCalledWith(runbook.copyText);

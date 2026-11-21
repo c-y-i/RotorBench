@@ -19,7 +19,8 @@ export default function BenchRunbook({
   const [message, setMessage] = useState("");
   const [mutationAcknowledged, setMutationAcknowledged] = useState(false);
   const hasMutatingCommands = runbook.stages.some(
-    (stage) => stage.kind === "mutating" && stage.commands.length > 0,
+    (stage) => ["mutating", "live-input"].includes(stage.kind)
+      && stage.commands.length > 0,
   );
 
   const copyText = async (text, successMessage) => {
@@ -64,7 +65,7 @@ export default function BenchRunbook({
               <div className="bench-runbook-stage-heading">
                 <h2 id={`bench-stage-${stage.id}`}>{stage.title}</h2>
                 <span className={`is-${stage.kind}`}>
-                  {stage.kind === "mutating" ? "Changes hardware" : "Read-only"}
+                  {stage.kindLabel}
                 </span>
               </div>
               <p>{stage.note}</p>
@@ -130,8 +131,9 @@ export default function BenchRunbook({
               onChange={(event) => setMutationAcknowledged(event.target.checked)}
             />
             <span>
-              I reviewed the props-off setup, antennas or RF loads, role switch,
-              channel map, and the command that changes hardware.
+              I reviewed the props-off and restrained-aircraft setup, antennas
+              or RF loads, role switch, channel map, panic path, disconnect
+              behavior, and every mutating or live-input command.
             </span>
           </label>
         )}

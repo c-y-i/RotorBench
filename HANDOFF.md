@@ -127,7 +127,7 @@ The Setup page also flags cross-plan channel mismatches for arm, flight mode, ve
 
 ### Pinned Aerial Kit truth
 
-The current Aerial Kit integration pin is `main` at `2cb69bc` after merged PR #72, package `0.4.6`. The tested Rev A3 firmware artifact remains SHA-256 `9b48f01f522783d872b72f36c69c7171bcc851e2fcbfe5f60cb717efcb0331b4`. The merged CLI now emits machine-readable FC status, preflight, parameters, RC, and related operations while preserving protocol-specific semantics.
+The current Aerial Kit integration pin is `main` at `a2f25c1` after merged PR #74, package `0.4.6`. The tested Rev A3 firmware artifact remains SHA-256 `9b48f01f522783d872b72f36c69c7171bcc851e2fcbfe5f60cb717efcb0331b4`. The merged CLI emits machine-readable FC status, preflight, parameters, RC, and related operations while preserving protocol-specific semantics, and exposes the complete top-level command surface including bounded `ak radio teleop`.
 
 * Rev A3 TX host link: 400000 baud, 8N1, non-inverted, full duplex.
 * Rev A3 RX-to-FC link: 420000 baud, 8N1, non-inverted.
@@ -145,8 +145,9 @@ The Setup page includes a collapsible, source-backed `Bench runbook`. It convert
 * stable `/dev/serial/by-id/` discovery, machine-readable FC status/preflight/RC, radio device information, and TX/RX boot identity with explicit 400000/420000 logical baud roles;
 * UID, TX monitor, and TX parameter-tree reads before any mutation, including the module settings needed to attribute a later RF run to the planned packet rate, power, telemetry, switch, dynamic-power, and Model Match values;
 * one explicitly hardware-changing `ak radio pair` stage that writes a placeholder phrase, verifies both endpoint UIDs, and runs the bounded two-board TX/RX bench with the current arm, mode, and optional velocity channel overrides.
+* an optional Rev A3-only `ak radio teleop` acceptance stage after pairing, generated with `--write --confirm-arm` and the current channel map. The stage carries Aerial Kit's low-throttle arm hold, panic, Ctrl-C, and timeout checks but is never executed by RotorBench.
 
-The pair command drives TX and observes RX concurrently, so the runbook does not ask the user to start a separate sequential capture after the drive has ended. It requires both endpoints to read back the same non-zero UID and never marks RF as verified unless receiver RC frames and link statistics are observed. The UI offers a write-free discovery copy at any time, while copying the full mutating runbook requires an explicit props-off/antenna/role/channel review acknowledgement. It never inserts the user's staged phrase or UID. PX4/ArduPilot omit the unsupported `ak fc` commands; generic ELRS targets use baud placeholders rather than guessed serial values, and no Rev A3-specific pair command is emitted for them.
+The pair command drives TX and observes RX concurrently, so the runbook does not ask the user to start a separate sequential capture after the drive has ended. It requires both endpoints to read back the same non-zero UID and never marks RF as verified unless receiver RC frames and link statistics are observed. The UI offers a write-free discovery copy at any time, while copying the full write-capable runbook requires an explicit props-off/restraint/antenna/role/channel/panic review acknowledgement. The live-input stage remains copy-only and requires `disarmed_at_end=true` for panic, Ctrl-C, and timeout paths; a sent arm request is not presented as proof that the controller armed. It never inserts the user's staged phrase or UID. PX4/ArduPilot omit the unsupported `ak fc` commands; generic ELRS targets use baud placeholders rather than guessed serial values, and no Rev A3-specific pair or teleop command is emitted for them.
 
 The runbook footer displays the pinned tested artifact SHA-256 alongside package and firmware versions.
 

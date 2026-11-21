@@ -115,7 +115,7 @@ test("renders the hardware planning page and switches to radio setup", () => {
   renderSetup();
   expect(screen.getByRole("heading", { name: "Hardware setup" })).toBeInTheDocument();
   expect(screen.getByText(/Flight controller panel/)).toBeInTheDocument();
-  expect(screen.getByText(/Bench runbook: 3 stages · plan UID: none/)).toBeInTheDocument();
+  expect(screen.getByText(/Bench runbook: 4 stages · plan UID: none/)).toBeInTheDocument();
   expect(screen.getAllByText(/Read-only serial capture: 400000 \/ tx/)).toHaveLength(1);
   expect(screen.getByText(/Read-only serial capture: 420000 \/ rx/)).toBeInTheDocument();
   const initialSession = screen.getByText(/^…/).textContent;

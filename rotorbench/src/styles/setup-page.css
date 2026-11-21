@@ -476,6 +476,12 @@
   background: var(--accent-soft);
 }
 
+.bench-runbook-stage-heading span.is-live-input {
+  color: var(--danger);
+  background: #fff0f0;
+  border: 1px solid #dfb9b9;
+}
+
 .bench-runbook-stages section > p {
   margin: 0;
   color: var(--ink-soft);
