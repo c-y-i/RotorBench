@@ -13,6 +13,11 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Centre")).toHaveValue(992);
   expect(screen.getByLabelText("Full high")).toHaveValue(1811);
   expect(screen.getByLabelText("Deadband")).toHaveValue(0.02);
+  expect(screen.getByText("Battery telemetry plan")).toBeInTheDocument();
+  expect(screen.getByLabelText("ADC divider ratio")).toHaveValue(11);
+  expect(screen.getByLabelText("Cell override")).toHaveValue(0);
+  expect(screen.getByLabelText("Warning threshold")).toHaveValue(3.5);
+  expect(screen.getByLabelText("Minimum threshold")).toHaveValue(3.3);
 });
 
 test("shows the selected Aerial Kit airframe motor output map", () => {
@@ -57,6 +62,7 @@ test("does not show Aerial Kit live gates for another firmware family", () => {
   expect(screen.getByText("Motor output map")).toBeInTheDocument();
   expect(screen.getByText("Betaflight Normal · props in QUAD X")).toBeInTheDocument();
   expect(screen.getByLabelText("Motor direction")).toHaveValue("props-in");
+  expect(screen.queryByText("Battery telemetry plan")).not.toBeInTheDocument();
 });
 
 test("Betaflight props-out flips the motor map directions", () => {
@@ -345,6 +351,29 @@ test("receiver calibration changes reach the parent plan", () => {
 
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ rcMin: 180 }));
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ rcDeadband: 0.03 }));
+});
+
+test("battery telemetry parameters reach the parent plan", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+
+  fireEvent.change(screen.getByLabelText("ADC divider ratio"), {
+    target: { value: "10.8" },
+  });
+  fireEvent.change(screen.getByLabelText("Cell override"), {
+    target: { value: "4" },
+  });
+  fireEvent.change(screen.getByLabelText("Warning threshold"), {
+    target: { value: "3.4" },
+  });
+  fireEvent.change(screen.getByLabelText("Minimum threshold"), {
+    target: { value: "3.2" },
+  });
+
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatRatio: 10.8 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatCells: 4 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatWarnCell: 3.4 }));
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ vbatMinCell: 3.2 }));
 });
 
 test("workspace Aerial Kit boards expose workspace switches instead of velocity", () => {

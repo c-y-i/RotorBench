@@ -95,7 +95,11 @@ export function buildFlightControllerCommands(
     integer(config.armHoldMs) &&
     finite(config.armMaxTiltDeg) &&
     finite(config.throttleLow) &&
-    integer(config.rcTimeoutMs);
+    integer(config.rcTimeoutMs) &&
+    finite(config.vbatRatio) &&
+    integer(config.vbatCells) &&
+    finite(config.vbatWarnCell) &&
+    finite(config.vbatMinCell);
 
   if (!validPlan) {
     return {
@@ -134,6 +138,10 @@ export function buildFlightControllerCommands(
     `set rc_mid ${Number(config.rcMid)}`,
     `set rc_max ${Number(config.rcMax)}`,
     `set rc_deadband ${Number(config.rcDeadband)}`,
+    `set vbat_ratio ${Number(config.vbatRatio)}`,
+    `set vbat_cells ${Number(config.vbatCells)}`,
+    `set vbat_warn_cell ${Number(config.vbatWarnCell)}`,
+    `set vbat_min_cell ${Number(config.vbatMinCell)}`,
     `set rth_enable ${config.rthEnabled ? 1 : 0}`,
   );
 

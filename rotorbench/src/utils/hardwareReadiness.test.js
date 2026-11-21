@@ -135,6 +135,39 @@ test("documented board profiles expose a documented wiring readiness state", () 
   });
 });
 
+test("Aerial Kit battery telemetry remains available outside Setup", () => {
+  const base = "rotorbench:hardware-plan:build-battery";
+  const storage = memoryStorage({
+    [`${base}:fc`]: JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: fc.id,
+      selectedReceiverId: receiver.id,
+      firmwareFamily: "aerialkit",
+      profileId: "esp32dev",
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+      vbatRatio: 10.8,
+      vbatCells: 4,
+      vbatWarnCell: 3.4,
+      vbatMinCell: 3.2,
+    }),
+  });
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-battery",
+    flightController: fc,
+    receiver,
+    storage,
+  });
+
+  expect(readiness).toMatchObject({
+    fcBatteryDividerRatio: 10.8,
+    fcBatteryCellOverride: 4,
+    fcBatteryWarnCellV: 3.4,
+    fcBatteryMinCellV: 3.2,
+  });
+});
+
 test("plans for another FC or receiver are ignored", () => {
   const base = "rotorbench:hardware-plan:build-test";
   const storage = memoryStorage({

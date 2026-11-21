@@ -160,6 +160,26 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain("arm, flight mode, velocity mode only");
   expect(summary).toContain("Motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW");
   expect(summary).toContain("Failsafe: Firmware-derived");
+  expect(summary).toContain(
+    "Battery telemetry: divider 11:1, cells auto, warning 3.5 V/cell, minimum 3.3 V/cell",
+  );
+});
+
+test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
+  const defaults = createDefaultFlightControllerConfig();
+  const issues = validateFlightControllerConfig({
+    ...defaults,
+    vbatRatio: 0,
+    vbatCells: 9,
+    vbatWarnCell: 3.2,
+    vbatMinCell: 3.4,
+  });
+
+  expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+    "vbat-ratio-range",
+    "vbat-cells-range",
+    "vbat-threshold-order",
+  ]));
 });
 
 test("Betaflight summary fingerprints its own normal QUAD X motor order", () => {

@@ -18,6 +18,10 @@ const config = {
   rcMid: 992,
   rcMax: 1811,
   rcDeadband: 0.02,
+  vbatRatio: 11,
+  vbatCells: 0,
+  vbatWarnCell: 3.5,
+  vbatMinCell: 3.3,
   rthEnabled: false,
 };
 
@@ -38,6 +42,10 @@ test("Aerial Kit preview uses current runtime parameter names and omits save", (
     "set rc_mid 992",
     "set rc_max 1811",
     "set rc_deadband 0.02",
+    "set vbat_ratio 11",
+    "set vbat_cells 0",
+    "set vbat_warn_cell 3.5",
+    "set vbat_min_cell 3.3",
     "set rth_enable 0",
     "set velocity_channel 0",
   ]));

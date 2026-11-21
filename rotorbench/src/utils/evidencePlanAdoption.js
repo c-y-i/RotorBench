@@ -263,6 +263,46 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       },
     },
     {
+      key: "vbatRatio",
+      source: "vbat_ratio",
+      snapshotKey: "vbat_ratio",
+      label: "Battery divider ratio",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 1 && number <= 50 ? number : null;
+      },
+    },
+    {
+      key: "vbatCells",
+      source: "vbat_cells",
+      snapshotKey: "vbat_cells",
+      label: "Battery cell override",
+      parse: (raw) => boundedInteger(raw, 0, 8),
+      display: (value) => value === 0 ? "Auto-detect" : `${value} cells`,
+    },
+    {
+      key: "vbatWarnCell",
+      source: "vbat_warn_cell",
+      snapshotKey: "vbat_warn_cell",
+      label: "Battery warning threshold",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 1 && number <= 5 ? number : null;
+      },
+      display: (value) => `${value} V/cell`,
+    },
+    {
+      key: "vbatMinCell",
+      source: "vbat_min_cell",
+      snapshotKey: "vbat_min_cell",
+      label: "Battery minimum threshold",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 1 && number <= 5 ? number : null;
+      },
+      display: (value) => `${value} V/cell`,
+    },
+    {
       key: "rthEnabled",
       source: "rth_enable",
       snapshotKey: "rth_enable",

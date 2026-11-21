@@ -583,6 +583,10 @@ export function createDefaultFlightControllerConfig(
     rcMid: 992,
     rcMax: 1811,
     rcDeadband: 0.02,
+    vbatRatio: 11,
+    vbatCells: 0,
+    vbatWarnCell: 3.5,
+    vbatMinCell: 3.3,
     dshotKhz: 300,
     failsafeAction: "firmware-derived",
     armChannel: channelPreset?.armChannel ?? null,
@@ -744,6 +748,45 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "rc-calibration-order",
         message: "Receiver calibration must satisfy full-low < centre < full-high.",
+      });
+    }
+    if (!finite(config.vbatRatio) || Number(config.vbatRatio) < 1 || Number(config.vbatRatio) > 50) {
+      issues.push({
+        severity: "error",
+        code: "vbat-ratio-range",
+        message: "Battery divider ratio must be between 1 and 50 pack volts per ADC-pin volt.",
+      });
+    }
+    if (!integer(config.vbatCells) || Number(config.vbatCells) < 0 || Number(config.vbatCells) > 8) {
+      issues.push({
+        severity: "error",
+        code: "vbat-cells-range",
+        message: "Battery cell override must be a whole number from 0 to 8; 0 uses firmware auto-detection.",
+      });
+    }
+    if (!finite(config.vbatWarnCell) || Number(config.vbatWarnCell) < 1 || Number(config.vbatWarnCell) > 5) {
+      issues.push({
+        severity: "error",
+        code: "vbat-warn-range",
+        message: "Battery warning threshold must be between 1.0 and 5.0 volts per cell.",
+      });
+    }
+    if (!finite(config.vbatMinCell) || Number(config.vbatMinCell) < 1 || Number(config.vbatMinCell) > 5) {
+      issues.push({
+        severity: "error",
+        code: "vbat-min-range",
+        message: "Battery minimum threshold must be between 1.0 and 5.0 volts per cell.",
+      });
+    }
+    if (
+      finite(config.vbatWarnCell) &&
+      finite(config.vbatMinCell) &&
+      Number(config.vbatMinCell) >= Number(config.vbatWarnCell)
+    ) {
+      issues.push({
+        severity: "error",
+        code: "vbat-threshold-order",
+        message: "Battery minimum threshold must be below the warning threshold.",
       });
     }
   }
@@ -1092,6 +1135,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     ...(config.firmwareFamily === "aerialkit"
       ? [
           `Receiver calibration: min ${config.rcMin}, mid ${config.rcMid}, max ${config.rcMax}, deadband ${config.rcDeadband}`,
+          `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell`,
         ]
       : []),
     `Outputs: DShot ${config.dshotKhz} kHz`,

@@ -543,6 +543,10 @@ const PARAMETER_PLAN_KEYS = {
   rc_mid: "rcMid",
   rc_max: "rcMax",
   rc_deadband: "rcDeadband",
+  vbat_ratio: "vbatRatio",
+  vbat_cells: "vbatCells",
+  vbat_warn_cell: "vbatWarnCell",
+  vbat_min_cell: "vbatMinCell",
   rth_enable: "rthEnabled",
 };
 

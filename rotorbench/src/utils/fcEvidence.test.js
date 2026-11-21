@@ -245,6 +245,10 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "mode_channel=6 status=0",
     "rc_min=172 status=0",
     "rc_deadband=0.02 status=0",
+    "vbat_ratio=10.8 status=0",
+    "vbat_cells=0 status=0",
+    "vbat_warn_cell=3.5 status=0",
+    "vbat_min_cell=3.3 status=0",
     "rth_enable=0 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
@@ -252,6 +256,10 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     modeChannel: 7,
     rcMin: 172,
     rcDeadband: 0.02,
+    vbatRatio: 11,
+    vbatCells: 0,
+    vbatWarnCell: 3.5,
+    vbatMinCell: 3.3,
     rthEnabled: false,
   });
 
@@ -260,6 +268,10 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
   expect(checks.find((check) => check.id === "fc-param-mode-channel").status)
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-rth-enable").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-vbat-ratio").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-vbat-cells").status)
     .toBe("pass");
 });
 

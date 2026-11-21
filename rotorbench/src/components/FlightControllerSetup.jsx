@@ -64,6 +64,11 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "rc-max-range": { id: "fc-rc-max", label: "receiver calibration" },
   "rc-deadband-range": { id: "fc-rc-deadband", label: "receiver calibration" },
   "rc-calibration-order": { id: "fc-rc-min", label: "receiver calibration" },
+  "vbat-ratio-range": { id: "fc-vbat-ratio", label: "battery divider" },
+  "vbat-cells-range": { id: "fc-vbat-cells", label: "battery cells" },
+  "vbat-warn-range": { id: "fc-vbat-warn", label: "battery warning" },
+  "vbat-min-range": { id: "fc-vbat-min", label: "battery minimum" },
+  "vbat-threshold-order": { id: "fc-vbat-min", label: "battery thresholds" },
   "channel-range": { id: "fc-arm-channel", label: "control channels" },
   "unsupported-control-role": { id: "fc-arm-channel", label: "control channels" },
   "mode-channel-unset": { id: "fc-mode-channel", label: "flight-mode channel" },
@@ -917,6 +922,68 @@ export default function FlightControllerSetup({
                       aria-invalid={numericInvalid(config.rcDeadband)}
                       value={numericValue(config.rcDeadband)}
                       onChange={(event) => update("rcDeadband", numericInput(event.target.value))}
+                    />
+                  </Field>
+                </div>
+              </div>
+            )}
+
+            {config.firmwareFamily === "aerialkit" && (
+              <div className="fc-calibration fc-battery-plan">
+                <div className="fc-calibration-heading">
+                  <strong>Battery telemetry plan</strong>
+                  <span>
+                    Firmware parameters for pack-voltage scaling and cell thresholds.
+                    Verify the divider against a measured pack before flight.
+                  </span>
+                </div>
+                <div className="fc-field-grid fc-calibration-grid">
+                  <Field label="ADC divider ratio" htmlFor="fc-vbat-ratio" hint="Pack volts per pin volt, 1 to 50">
+                    <input
+                      id="fc-vbat-ratio"
+                      type="number"
+                      min="1"
+                      max="50"
+                      step="0.001"
+                      aria-invalid={numericInvalid(config.vbatRatio)}
+                      value={numericValue(config.vbatRatio)}
+                      onChange={(event) => update("vbatRatio", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field label="Cell override" htmlFor="fc-vbat-cells" hint="0 = auto-detect; 1 to 8">
+                    <input
+                      id="fc-vbat-cells"
+                      type="number"
+                      min="0"
+                      max="8"
+                      step="1"
+                      aria-invalid={integerInvalid(config.vbatCells)}
+                      value={numericValue(config.vbatCells)}
+                      onChange={(event) => update("vbatCells", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field label="Warning threshold" htmlFor="fc-vbat-warn" hint="Volts per cell, 1 to 5">
+                    <input
+                      id="fc-vbat-warn"
+                      type="number"
+                      min="1"
+                      max="5"
+                      step="0.01"
+                      aria-invalid={numericInvalid(config.vbatWarnCell)}
+                      value={numericValue(config.vbatWarnCell)}
+                      onChange={(event) => update("vbatWarnCell", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field label="Minimum threshold" htmlFor="fc-vbat-min" hint="Volts per cell, 1 to 5">
+                    <input
+                      id="fc-vbat-min"
+                      type="number"
+                      min="1"
+                      max="5"
+                      step="0.01"
+                      aria-invalid={numericInvalid(config.vbatMinCell)}
+                      value={numericValue(config.vbatMinCell)}
+                      onChange={(event) => update("vbatMinCell", numericInput(event.target.value))}
                     />
                   </Field>
                 </div>

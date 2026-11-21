@@ -224,6 +224,18 @@ export function summarizeHardwareReadiness({
     fcMotorLayoutSource: motorLayout
       ? fcPlan.firmwareFamily === "betaflight" ? "Betaflight" : "Aerial Kit"
       : null,
+    fcBatteryDividerRatio: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.vbatRatio
+      : null,
+    fcBatteryCellOverride: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.vbatCells
+      : null,
+    fcBatteryWarnCellV: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.vbatWarnCell
+      : null,
+    fcBatteryMinCellV: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.vbatMinCell
+      : null,
     hardwareVerified: false,
   };
 }
@@ -273,6 +285,10 @@ export function sanitizeHardwareReadiness(readiness) {
     fcMotorOutputByCorner: readiness.fcMotorOutputByCorner || null,
     fcPropellerDirection: readiness.fcPropellerDirection || null,
     fcMotorLayoutSource: readiness.fcMotorLayoutSource || null,
+    fcBatteryDividerRatio: readiness.fcBatteryDividerRatio ?? null,
+    fcBatteryCellOverride: readiness.fcBatteryCellOverride ?? null,
+    fcBatteryWarnCellV: readiness.fcBatteryWarnCellV ?? null,
+    fcBatteryMinCellV: readiness.fcBatteryMinCellV ?? null,
     hardwareVerified: false,
   };
 }
