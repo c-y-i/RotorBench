@@ -227,6 +227,39 @@ test("AOS 7 and XING 2806.5 add source-backed long-range mechanics", () => {
   });
 });
 
+test("AOS Cine25 and Gemfan 2520 add a source-backed compact platform", () => {
+  const frame = componentsData.frames.find(
+    (item) => item.id === "frame-aos-cine25-v5",
+  );
+  const propeller = componentsData.propellers.find(
+    (item) => item.id === "prop-gemfan-hurricane-2520-3",
+  );
+
+  expect(frame).toMatchObject({
+    size: 120,
+    weight: 58,
+    maxPropSize: 2.5,
+    stackMountPatternsMm: [[20, 20], [25.5, 25.5]],
+    motorMountPatternsMm: [[9, 9]],
+    dimensionsMm: [171, 34, 147],
+    sourceUrl: expect.stringContaining("aos-rc.com"),
+  });
+  expect(frame.estimatedFields).toEqual(
+    expect.arrayContaining(["stackHeight", "motor positions"]),
+  );
+  expect(propeller).toMatchObject({
+    size: 2.5,
+    pitch: 2,
+    weight: 1,
+    hubThicknessMm: 5.5,
+    shaftMm: 1.5,
+    dimensionsMm: [64, 5.5, 64],
+    performanceDataStatus: "not_published",
+    thrustData: [],
+    sourceUrl: expect.stringContaining("gemfanhobby.com"),
+  });
+});
+
 test("source-backed fit metadata is not mislabeled as estimated", () => {
   const emax = componentsData.motors.find(
     (motor) => motor.id === "motor-emax-eco-ii-2207-1900kv",

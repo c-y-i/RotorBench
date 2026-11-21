@@ -7,7 +7,7 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(7);
+  expect(PLATFORM_PRESETS).toHaveLength(8);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
@@ -53,6 +53,15 @@ test("every starter platform references a complete catalog build", () => {
       motorId: "motor-iflight-xing-2806-5-1300kv",
       propellerId: "prop-gemfan-flash-7040-3",
       batteryId: "battery-tattu-rline-6s-1300-120c",
+    },
+  });
+  expect(getPlatformPreset("source-25")).toMatchObject({
+    componentIds: {
+      frameId: "frame-aos-cine25-v5",
+      motorId: "motor-tmotor-f1404-4600kv",
+      propellerId: "prop-gemfan-hurricane-2520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      batteryId: "battery-tattu-rline-4s-850-95c",
     },
   });
 });

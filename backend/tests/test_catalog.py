@@ -25,16 +25,16 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(
             counts,
             {
-                "frames": 8,
+                "frames": 9,
                 "motors": 15,
-                "propellers": 8,
+                "propellers": 9,
                 "batteries": 9,
                 "escs": 7,
                 "flight_controllers": 8,
                 "receivers": 8,
             },
         )
-        self.assertEqual(sum(counts.values()), 63)
+        self.assertEqual(sum(counts.values()), 65)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -54,7 +54,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 63)
+        self.assertEqual(len(records), 65)
         self.assertTrue(all(record.id for record in records))
 
     def test_rp2_keeps_published_and_estimated_fields_separate(self):
@@ -244,6 +244,31 @@ class CatalogContractTests(unittest.TestCase):
             "performance analysis is unavailable",
             " ".join(analysis.warnings),
         )
+
+    def test_cine25_frame_and_propeller_use_published_mechanics(self):
+        frame = next(
+            item for item in self.database.frames
+            if item.id == "frame-aos-cine25-v5"
+        )
+        propeller = next(
+            item for item in self.database.propellers
+            if item.id == "prop-gemfan-hurricane-2520-3"
+        )
+        self.assertEqual(frame.size, 120)
+        self.assertEqual(frame.weight, 58)
+        self.assertEqual(frame.max_prop_size, 2.5)
+        self.assertEqual(frame.stack_mount_patterns_mm, [[20, 20], [25.5, 25.5]])
+        self.assertEqual(frame.motor_mount_patterns_mm, [[9, 9]])
+        self.assertEqual(frame.dimensions_mm, [171, 34, 147])
+        self.assertIn("motor positions", frame.estimated_fields)
+        self.assertEqual(propeller.size, 2.5)
+        self.assertEqual(propeller.pitch, 2)
+        self.assertEqual(propeller.weight, 1.0)
+        self.assertEqual(propeller.shaft_mm, 1.5)
+        self.assertEqual(propeller.hub_thickness_mm, 5.5)
+        self.assertEqual(propeller.dimensions_mm, [64, 5.5, 64])
+        self.assertEqual(propeller.performance_data_status, "not_published")
+        self.assertEqual(propeller.thrust_data, [])
 
 
 if __name__ == "__main__":

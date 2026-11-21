@@ -99,6 +99,20 @@ export const PLATFORM_PRESETS = [
       receiverId: "rx-radiomaster-rp4td",
     },
   },
+  {
+    id: "source-25",
+    name: "2.5-inch AOS Cine25 source build",
+    description: "AOS Cine25 V5, F1404 4600KV, Gemfan 2520, SpeedyBee 35A stack, Tattu 4S",
+    componentIds: {
+      frameId: "frame-aos-cine25-v5",
+      motorId: "motor-tmotor-f1404-4600kv",
+      propellerId: "prop-gemfan-hurricane-2520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  },
 ];
 
 const idCategory = {
