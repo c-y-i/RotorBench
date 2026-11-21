@@ -889,15 +889,12 @@ export default function BuildPage() {
   );
   const assemblyPropellerDirection = useMemo(() => (
     hardwareReadiness.configured &&
-    hardwareReadiness.fcMotorLayoutSource === "Betaflight" &&
-    hardwareReadiness.fcAirframe === "quadx"
-      ? hardwareReadiness.fcMotorDirection || "props-out"
+    hardwareReadiness.fcPropellerDirection
+      ? hardwareReadiness.fcPropellerDirection
       : "props-out"
   ), [
     hardwareReadiness.configured,
-    hardwareReadiness.fcAirframe,
-    hardwareReadiness.fcMotorDirection,
-    hardwareReadiness.fcMotorLayoutSource,
+    hardwareReadiness.fcPropellerDirection,
   ]);
   const physicalFitState = selectedPhysicalChecks.length === 0
     ? "pending"

@@ -739,6 +739,48 @@ test("saved Betaflight QUAD X direction drives the assembly prop handedness", as
   expect(screen.getByText("OUT 4")).toBeInTheDocument();
 });
 
+test("saved Aerial Kit QUAD X derives props-in from its corner map", async () => {
+  const buildId = "aerialkit-props-in-build";
+  localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
+    version: 1,
+    id: buildId,
+    name: "Aerial Kit props-in draft",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-tmotor-f1404-3800kv",
+      propellerId: "prop-gemfan-hurricane-3520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp1-v2",
+    },
+  }));
+  localStorage.setItem(`rotorbench:hardware-plan:${buildId}:fc`, JSON.stringify({
+    planVersion: 3,
+    selectedFlightControllerId: "fc-speedybee-f405-mini",
+    selectedReceiverId: "rx-radiomaster-rp1-v2",
+    firmwareFamily: "aerialkit",
+    profileId: "custom-board",
+    airframe: "quadx",
+    motorDirection: "props-in",
+  }));
+
+  render(
+    <MemoryRouter initialEntries={["/build"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(screen.getByTestId("assembly-viewer"))
+    .toHaveAttribute("data-propeller-direction", "props-in");
+  expect(screen.getByText("props in · outputs mapped")).toBeInTheDocument();
+});
+
 test("new build requests ignore and consume an existing draft", async () => {
   localStorage.setItem("rotorbench:build-draft:v1", JSON.stringify({
     version: 1,

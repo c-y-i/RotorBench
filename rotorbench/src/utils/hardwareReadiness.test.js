@@ -48,6 +48,7 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     fcMotorDirectionLabel: "Normal · props in",
     fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
     fcMotorLayoutSource: "Betaflight",
+    fcPropellerDirection: "props-in",
     fcMotorOutputByCorner: {
       upperLeft: { output: 4, label: "FL", spin: "CW" },
       upperRight: { output: 2, label: "FR", spin: "CCW" },
@@ -232,5 +233,6 @@ test("Betaflight plan direction and order propagate through readiness", () => {
     fcMotorDirectionLabel: "Reversed · props out",
     fcMotorOrder: "1 RR CCW · 2 FR CW · 3 RL CW · 4 FL CCW",
     fcMotorLayoutSource: "Betaflight",
+    fcPropellerDirection: "props-out",
   });
 });

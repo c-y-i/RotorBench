@@ -6,6 +6,7 @@ import {
   getBoardProfile,
   getChannelPreset,
   getMotorOutputByCorner,
+  getPropellerDirectionForOutputMap,
   validateFlightControllerConfig,
 } from "./flightControllerProfiles";
 
@@ -68,6 +69,15 @@ test("Aerial Kit motor layouts preserve the firmware output order", () => {
     });
   expect(getMotorOutputByCorner(getAirframeMotorLayout("quadp", "aerialkit")))
     .toBeNull();
+  expect(getPropellerDirectionForOutputMap(
+    getMotorOutputByCorner(getAirframeMotorLayout("quadx", "aerialkit")),
+  )).toBe("props-in");
+  expect(getPropellerDirectionForOutputMap(
+    getMotorOutputByCorner(getAirframeMotorLayout("quadx1234", "aerialkit")),
+  )).toBe("props-out");
+  expect(getPropellerDirectionForOutputMap(
+    getMotorOutputByCorner(getAirframeMotorLayout("quadx", "betaflight", "props-out")),
+  )).toBe("props-out");
   expect(getAirframeMotorLayout("quadp", "betaflight")).toBeNull();
   expect(getAirframeMotorLayout("quadx", "inav")).toBeNull();
   expect(getAirframeMotorLayout("unknown")).toBeNull();
