@@ -500,6 +500,35 @@ test("MAMBA F722 MK2 exposes its target map without invented defaults", () => {
     ]));
 });
 
+test("Borg 5S RX exposes its built-in receiver and spare serial map", () => {
+  const selected = {
+    id: "fc-iflight-borg-5s-rx",
+    name: "iFlight Borg 5S RX",
+    processor: "AT32F435RGT7",
+    imu: "ICM42688",
+    firmware: ["Betaflight"],
+  };
+  const config = createDefaultFlightControllerConfig(selected);
+  const profile = getBoardProfile(config.profileId, selected);
+
+  expect(config).toMatchObject({
+    firmwareFamily: "betaflight",
+    profileId: "iflight-borg-5s-rx",
+    airframe: "quadx",
+  });
+  expect(profile).toMatchObject({
+    label: "iFlight Borg 5S RX",
+    board: "IFLIGHT_BLITZ_ATF435",
+    receiverUart: "UART4",
+    receiverUartLocked: false,
+    gpsUart: "UART5",
+    outputs: { motors: 4, servos: 0 },
+    featureSupport: { barometer: false, gps: true },
+    flightLog: { label: "16 MB onboard blackbox" },
+  });
+  expect(profile.notes.join(" ")).toMatch(/external receiver/i);
+});
+
 test("SpeedyBee F405 Mini selects its documented Betaflight target", () => {
   const selected = {
     id: "fc-speedybee-f405-mini",

@@ -859,13 +859,17 @@
       "name": "iFlight Borg 5S RX",
       "manufacturer": "iFlight",
       "processor": "AT32F435RGT7",
-      "weight": 6.9,
+      "weight": 6.8,
       "mounting_point": [0, -13, 10],
       "firmware": ["Betaflight"],
       "imu": "ICM42688",
       "maxVoltage": 33.6,
       "features": ["OSD", "Blackbox", "Built-in Receiver"],
-      "price": 50.99
+      "price": 39.99,
+      "sourceUrl": "https://shop.iflight.com/drone-frame-cat346/quad-parts-cat20/cinewhoop-cat370/electronics-cat27/Borg-5S-RX-Flight-Controller-Pro2267",
+      "priceSourceUrl": "https://shop.iflight.com/drone-frame-cat346/quad-parts-cat20/cinewhoop-cat370/electronics-cat27/Borg-5S-RX-Flight-Controller-Pro2267",
+      "dataStatus": "verified_specs_estimated_mounting",
+      "estimatedFields": ["mounting_point"]
     },
     {
       "id": "fc-speedybee-f405-v3",

@@ -349,6 +349,24 @@ test("MAMBA F722 MK2 carries the target flash and sensor feature set", () => {
   ]));
 });
 
+test("Borg 5S RX reflects the official controller package", () => {
+  const flightController = componentsData.flight_controllers.find(
+    (item) => item.id === "fc-iflight-borg-5s-rx",
+  );
+
+  expect(flightController).toMatchObject({
+    processor: "AT32F435RGT7",
+    imu: "ICM42688",
+    weight: 6.8,
+    maxVoltage: 33.6,
+    price: 39.99,
+    sourceUrl: expect.stringContaining("Borg-5S-RX"),
+    priceSourceUrl: expect.stringContaining("Borg-5S-RX"),
+    dataStatus: "verified_specs_estimated_mounting",
+    estimatedFields: ["mounting_point"],
+  });
+});
+
 test("SpeedyBee F405 V5 preserves current controller specifications", () => {
   const flightController = componentsData.flight_controllers.find(
     (item) => item.id === "fc-speedybee-f405-v5",

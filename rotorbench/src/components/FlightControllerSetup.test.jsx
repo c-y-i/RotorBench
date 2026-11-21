@@ -320,6 +320,39 @@ test("selecting MAMBA F722 MK2 exposes its target map as a planning choice", () 
   expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
+test("selecting Borg 5S RX exposes its integrated receiver mapping", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-iflight-borg-5s-rx",
+        name: "iFlight Borg 5S RX",
+        processor: "AT32F435RGT7",
+        imu: "ICM42688",
+        firmware: ["Betaflight"],
+      }}
+    />,
+  );
+
+  expect(screen.getByLabelText("Firmware family")).toHaveValue("betaflight");
+  expect(screen.getByLabelText("Board profile")).toHaveValue("iflight-borg-5s-rx");
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART4");
+  expect(screen.getByLabelText("Receiver UART")).not.toBeDisabled();
+  expect(screen.getByRole("checkbox", { name: "GPS navigation" }))
+    .toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "Barometer altitude" }))
+    .toBeDisabled();
+  expect(screen.getByText("4 motors / 0 servos")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Serial allocation"));
+  const ports = screen.getByRole("list", {
+    name: "Documented serial port allocation",
+  });
+  expect(within(ports).getByText("ESC telemetry").closest("li"))
+    .toHaveTextContent("Dedicated ESC telemetry route");
+  expect(within(ports).getByText("GPS-capable user serial").closest("li"))
+    .toHaveTextContent("GPS");
+  expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
+});
+
 test("selecting SpeedyBee F405 Mini exposes its documented BT stack", () => {
   render(
     <FlightControllerSetup
