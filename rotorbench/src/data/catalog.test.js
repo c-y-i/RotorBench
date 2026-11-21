@@ -342,6 +342,32 @@ test("SpeedyBee F405 V5 preserves current controller specifications", () => {
   ]));
 });
 
+test("SpeedyBee OX32 ESC preserves published electrical and physical limits", () => {
+  const esc = componentsData.escs.find(
+    (item) => item.id === "esc-speedybee-ox32-55a",
+  );
+
+  expect(esc).toMatchObject({
+    name: "SpeedyBee OX32 55A 4-in-1",
+    currentRating: 55,
+    burstCurrent: 70,
+    weight: 19.1,
+    mountingPatternMm: [30.5, 30.5],
+    dimensionsMm: [40.9, 8, 44.9],
+    voltage: { min: 11.1, max: 25.2 },
+    includedPowerConnector: "XT60",
+    powerConnection: "connector",
+    price: 73.99,
+    sourceUrl: expect.stringContaining("speedybee.com"),
+    estimatedFields: ["mounting_point"],
+  });
+  expect(esc.features).toEqual(expect.arrayContaining([
+    "Current sensor",
+    "ESC telemetry",
+    "TVS protection",
+  ]));
+});
+
 test("AOS 7 and XING 2806.5 add source-backed long-range mechanics", () => {
   const frame = componentsData.frames.find(
     (item) => item.id === "frame-aos-7-evo-v12",

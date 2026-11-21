@@ -100,6 +100,20 @@ export const PLATFORM_PRESETS = [
     },
   },
   {
+    id: "source-5-volador-f405v5",
+    name: "5-inch Volador F405 V5 OX32 build",
+    description: "Volador II VX5 O4, XING2 2207 1855KV, HQProp 5037, SpeedyBee F405 V5 and OX32 55A, RP4TD-M, Tattu V6 6S",
+    componentIds: {
+      frameId: "frame-volador-ii-vx5-o4",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      escId: "esc-speedybee-ox32-55a",
+      flightControllerId: "fc-speedybee-f405-v5",
+      batteryId: "battery-tattu-rline-v6-6s-1480-160c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  },
+  {
     id: "source-55-diversity",
     name: "5.5-inch diversity source build",
     description: "AOS 5.5, EMAX 2207, HQ R42, Kakute H7 V2, RP4TD Diversity, Tattu 6S",

@@ -417,6 +417,30 @@ test("Volador II VX5 starter loads its source-backed physical interfaces", async
   expect(screen.getByText("Fit needs manual verification")).toBeInTheDocument();
 });
 
+test("F405 V5 and OX32 starter keeps the published stack fully aligned", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=source-5-volador-f405v5"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-frame", "frame-volador-ii-vx5-o4");
+  expect(viewer).toHaveAttribute("data-esc", "esc-speedybee-ox32-55a");
+  expect(viewer).toHaveAttribute("data-flight-controller", "fc-speedybee-f405-v5");
+  expect(screen.getByLabelText("Starter platform"))
+    .toHaveValue("source-5-volador-f405v5");
+  expect(screen.getAllByText("5 verified · no data gaps").length)
+    .toBeGreaterThanOrEqual(2);
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+});
+
 test("build-local measurements update fit evidence without claiming verification", async () => {
   const measuredBuild = {
     id: "measured-build",

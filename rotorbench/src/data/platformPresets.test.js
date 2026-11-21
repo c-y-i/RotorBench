@@ -7,7 +7,7 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(13);
+  expect(PLATFORM_PRESETS).toHaveLength(14);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
@@ -86,6 +86,18 @@ test("every starter platform references a complete catalog build", () => {
       propellerId: "prop-gemfan-hurricane-51499-3",
       escId: "esc-holybro-tekko32-f4-65a",
       flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-v6-6s-1480-160c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  });
+  expect(getPlatformPreset("source-5-volador-f405v5")).toMatchObject({
+    name: "5-inch Volador F405 V5 OX32 build",
+    componentIds: {
+      frameId: "frame-volador-ii-vx5-o4",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      escId: "esc-speedybee-ox32-55a",
+      flightControllerId: "fc-speedybee-f405-v5",
       batteryId: "battery-tattu-rline-v6-6s-1480-160c",
       receiverId: "rx-radiomaster-rp4td-m",
     },

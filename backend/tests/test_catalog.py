@@ -42,12 +42,12 @@ class CatalogContractTests(unittest.TestCase):
                 "motors": 16,
                 "propellers": 11,
                 "batteries": 11,
-                "escs": 7,
+                "escs": 8,
                 "flight_controllers": 9,
                 "receivers": 10,
             },
         )
-        self.assertEqual(sum(counts.values()), 75)
+        self.assertEqual(sum(counts.values()), 76)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 75)
+        self.assertEqual(len(records), 76)
         self.assertTrue(all(record.id for record in records))
 
     def test_model_manifest_binds_existing_glb_assets(self):
@@ -315,6 +315,23 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(flight_controller.estimated_fields, ["mounting_point"])
         self.assertNotIn("dimensionsMm", flight_controller.estimated_fields)
         self.assertNotIn("weight", flight_controller.estimated_fields)
+
+    def test_speedybee_ox32_preserves_esc_limits_and_power_contract(self):
+        esc = next(
+            item for item in self.database.escs
+            if item.id == "esc-speedybee-ox32-55a"
+        )
+        self.assertEqual(esc.current_rating, 55)
+        self.assertEqual(esc.burst_current, 70)
+        self.assertEqual(esc.weight, 19.1)
+        self.assertEqual(esc.mounting_pattern_mm, [30.5, 30.5])
+        self.assertEqual(esc.dimensions_mm, [40.9, 8, 44.9])
+        self.assertEqual(esc.voltage.min, 11.1)
+        self.assertEqual(esc.voltage.max, 25.2)
+        self.assertEqual(esc.included_power_connector, "XT60")
+        self.assertEqual(esc.power_connection, "connector")
+        self.assertEqual(esc.price, 73.99)
+        self.assertEqual(esc.estimated_fields, ["mounting_point"])
 
     def test_tattu_rline_v6_keeps_specs_and_estimated_curve_separate(self):
         battery = next(

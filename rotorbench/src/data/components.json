@@ -824,6 +824,33 @@
       "priceSourceUrl": "https://shop.iflight.com/motor-controllers-cat373/race-quads-cat28/electronics-cat27/BLITZ-E55-4-IN-1-2-6S-ESC-Pro1694",
       "dataStatus": "verified_specs_estimated_mounting",
       "estimatedFields": ["mounting_point"]
+    },
+    {
+      "id": "esc-speedybee-ox32-55a",
+      "name": "SpeedyBee OX32 55A 4-in-1",
+      "manufacturer": "SpeedyBee",
+      "currentRating": 55,
+      "burstCurrent": 70,
+      "weight": 19.1,
+      "mounting_point": [0, 0, 0],
+      "mountingPatternMm": [30.5, 30.5],
+      "dimensionsMm": [40.9, 8, 44.9],
+      "voltage": {
+        "min": 11.1,
+        "max": 25.2
+      },
+      "protocol": ["DShot600", "DShot300", "OX32"],
+      "features": ["Current sensor", "ESC telemetry", "TVS protection"],
+      "includedPowerConnector": "XT60",
+      "powerConnection": "connector",
+      "connectorSourceUrl": "https://www.racedayquads.com/products/speedybee-55a-3-6s-ox32-4-in-1-esc-30-5x30-5",
+      "price": 73.99,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://www.speedybee.com/speedybee-f405-v5-55a-stack/",
+      "priceSourceUrl": "https://www.racedayquads.com/products/speedybee-55a-3-6s-ox32-4-in-1-esc-30-5x30-5",
+      "dataStatus": "verified_specs_estimated_mounting",
+      "estimatedFields": ["mounting_point"]
     }
   ],
   "flight_controllers": [
