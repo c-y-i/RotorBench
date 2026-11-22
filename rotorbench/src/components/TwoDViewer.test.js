@@ -41,6 +41,9 @@ test("renders the sample top view with four motors and three-blade propellers", 
   expect(screen.getAllByText(/^M[1-4]/)).toHaveLength(4);
   expect(screen.getByText("X 155.6 mm")).toBeInTheDocument();
   expect(screen.getByText("Z 155.6 mm")).toBeInTheDocument();
+  expect(screen.getByText("CG EST.")).toBeInTheDocument();
+  expect(container.querySelector(".assembly-plan-cg")).toBeInTheDocument();
+  expect(screen.getByText(/CG X 0 \/ Z -/)).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Download SVG" })).toBeInTheDocument();
   await expect(getA11yViolations(container)).resolves.toEqual([]);
 });
@@ -112,6 +115,8 @@ test("exports a self-contained standalone SVG with source mount coordinates", ()
   expect(exported).toContain('"source": "selected-build"');
   expect(exported).toContain('"units": "mm"');
   expect(exported).toContain('"front": "-Z"');
+  expect(exported).toContain('"centerOfGravity"');
+  expect(exported).toContain('"status": "unavailable"');
   expect(exported).toContain('"motorStationSource": "frame.motorPositionsMm"');
   expect(exported).toContain('"leftToRight": 460');
   expect(exported).toContain('"frontToRear": 0');

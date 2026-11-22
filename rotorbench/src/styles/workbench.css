@@ -3868,6 +3868,34 @@
   letter-spacing: 0.04em;
 }
 
+.assembly-plan-cg-ring {
+  fill: none;
+  stroke: #d5ff4f;
+  stroke-width: 1.3;
+}
+
+.assembly-plan-cg line {
+  stroke: #d5ff4f;
+  stroke-linecap: round;
+  stroke-width: 0.65;
+}
+
+.assembly-plan-cg-point {
+  fill: #d5ff4f;
+  stroke: #101816;
+  stroke-width: 0.8;
+}
+
+.assembly-plan-cg text {
+  fill: #d5ff4f;
+  stroke: #202826;
+  stroke-width: 0.7px;
+  paint-order: stroke fill;
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .home-preview-panel .preview-controls {
   margin: 12px 14px 0;
   border-color: #34403c;

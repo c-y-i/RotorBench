@@ -7,12 +7,14 @@ import {
   getPropellerOriginsMm,
   getPropellerSweepDiameterMm,
 } from "../assembly/assemblyTransforms";
+import { estimateAssemblyCenterOfGravity } from "../utils/assemblyCenterOfGravity";
 
 const SAMPLE_SPEC = {
   frame: {
     id: "sample-frame",
     name: "Sample 5-inch frame",
     size: 220,
+    weight: 100,
     motorCount: 4,
     dimensionsMm: [220, 30, 190],
   },
@@ -20,18 +22,21 @@ const SAMPLE_SPEC = {
     id: "sample-motor",
     name: "Sample 2207 motor",
     size: "2207",
+    weight: 10,
     mountingPatternMm: [16, 16],
   },
   propeller: {
     id: "sample-propeller",
     name: "Sample 5.1-inch tri-blade",
     size: 5.1,
+    weight: 2,
     bladeCount: 3,
     hubThicknessMm: 7,
   },
   battery: {
     id: "sample-battery",
     name: "Sample 6S pack",
+    weight: 100,
     dimensionsMm: [75, 32, 36],
     mounting_point: [0, 16, -4],
   },
@@ -137,6 +142,7 @@ export function buildSchematicModel({
     Math.max(largest[1], entry.dims[1]),
     Math.max(largest[2], entry.dims[2]),
   ], [0, 0, 0]);
+  const centerOfGravity = estimateAssemblyCenterOfGravity(spec);
 
   const xValues = [
     -frameDims[0] / 2,
@@ -207,13 +213,18 @@ export function buildSchematicModel({
     propellersVisible ? `${bladeCount}-blade propellers, ` : "no propellers visible, "
   }${propellerDirection}. ${dimensionSummary}${
     dimensionSummary ? ". " : ""
-  }${labelParts.join("; ")}.`;
+  }${labelParts.join("; ")}.${
+    centerOfGravity.planarOffsetMm
+      ? ` Estimated center of gravity X ${formatMillimeters(centerOfGravity.planarOffsetMm.lateral)} millimetres, Z ${formatMillimeters(centerOfGravity.planarOffsetMm.longitudinal)} millimetres; not measured.`
+      : ""
+  }`;
 
   return {
     battery,
     batteryPlacement,
     batteryVisible,
     bladeCount,
+    centerOfGravity,
     electronics,
     electronicsDims,
     frame,
@@ -314,6 +325,19 @@ export function buildSchematicExportMetadata(
         z: model.batteryPlacement.origin[2],
       }
       : null,
+    centerOfGravity: model.centerOfGravity.planarOffsetMm
+      ? {
+          scope: "catalog mass at resolved assembly origins; not measured",
+          status: model.centerOfGravity.status,
+          massG: model.centerOfGravity.massG,
+          lateralMm: model.centerOfGravity.planarOffsetMm.lateral,
+          longitudinalMm: model.centerOfGravity.planarOffsetMm.longitudinal,
+          magnitudeMm: model.centerOfGravity.planarOffsetMm.magnitude,
+        }
+      : {
+          status: "unavailable",
+          reason: model.centerOfGravity.reason,
+        },
     visibleComponents,
     boundaries: {
       planningSchematic: true,
@@ -381,6 +405,18 @@ const STANDALONE_SCHEMATIC_STYLES = `
     fill: #dce7df; stroke: #202826; stroke-width: 0.75px;
     paint-order: stroke fill; font-family: "IBM Plex Mono", monospace;
     font-weight: 600; letter-spacing: 0.04em;
+  }
+  .assembly-plan-cg-ring {
+    fill: none; stroke: #d5ff4f; stroke-width: 1.3;
+  }
+  .assembly-plan-cg line {
+    stroke: #d5ff4f; stroke-width: 0.65; stroke-linecap: round;
+  }
+  .assembly-plan-cg-point { fill: #d5ff4f; stroke: #101816; stroke-width: 0.8; }
+  .assembly-plan-cg text {
+    fill: #d5ff4f; stroke: #202826; stroke-width: 0.7px; paint-order: stroke fill;
+    font-family: "IBM Plex Mono", monospace; font-weight: 700;
+    letter-spacing: 0.04em;
   }
   .assembly-plan-export-title {
     fill: #d5ff4f; font-family: "IBM Plex Mono", monospace; font-weight: 700;
@@ -486,6 +522,7 @@ export default function TwoDViewer({
   const {
     batteryPlacement,
     bladeCount,
+    centerOfGravity,
     electronics,
     electronicsDims,
     hidden,
@@ -545,6 +582,9 @@ export default function TwoDViewer({
           <span>
             {mounts.length} motor station{mounts.length === 1 ? "" : "s"} ·
             schematic, not product-exact
+            {centerOfGravity.planarOffsetMm
+              ? ` · CG X ${formatMillimeters(centerOfGravity.planarOffsetMm.lateral)} / Z ${formatMillimeters(centerOfGravity.planarOffsetMm.longitudinal)} mm`
+              : ""}
           </span>
         </div>
         <button
@@ -787,6 +827,33 @@ export default function TwoDViewer({
                 </text>
               </>
             )}
+          </g>
+        )}
+
+        {centerOfGravity.planarOffsetMm && (
+          <g
+            className="assembly-plan-cg"
+            transform={`translate(${centerOfGravity.planarOffsetMm.lateral} ${centerOfGravity.planarOffsetMm.longitudinal})`}
+            aria-label={`Estimated center of gravity: X ${formatMillimeters(centerOfGravity.planarOffsetMm.lateral)} millimetres, Z ${formatMillimeters(centerOfGravity.planarOffsetMm.longitudinal)} millimetres. Not measured.`}
+          >
+            <circle className="assembly-plan-cg-ring" r={labelSize * 2.1} />
+            <line x1={-labelSize * 2.8} y1="0" x2={labelSize * 2.8} y2="0" />
+            <line x1="0" y1={-labelSize * 2.8} x2="0" y2={labelSize * 2.8} />
+            <line
+              x1={-labelSize * 2.1}
+              y1={labelSize * 2.1}
+              x2={-labelSize * 7}
+              y2={labelSize * 4}
+            />
+            <circle className="assembly-plan-cg-point" r={labelSize * 0.8} />
+            <text
+              x={-labelSize * 7.2}
+              y={labelSize * 4.3}
+              textAnchor="end"
+              fontSize={labelSize * 0.92}
+            >
+              CG EST.
+            </text>
           </g>
         )}
       </svg>
