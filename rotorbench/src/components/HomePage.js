@@ -487,6 +487,7 @@ export default function HomePage() {
             )}
             {visiblePlatforms.map((preset) => {
               const size = preset.name.match(/^[\d.]+/)?.[0] || "—";
+              const platformSummary = platformSummaries[preset.id] || {};
               const propeller = componentsData.propellers.find(
                 (part) => part.id === preset.componentIds.propellerId,
               );
@@ -504,6 +505,14 @@ export default function HomePage() {
                 : geometry.catalogModelCount === 0
                   ? `${geometry.total} fallback meshes`
                   : `${geometry.catalogModelCount}/${geometry.total} catalog models`;
+              const rawWeight = platformSummary.totalWeight;
+              const rawPrice = platformSummary.totalPrice;
+              const weightLabel = rawWeight != null && Number.isFinite(Number(rawWeight))
+                ? `${Math.round(Number(rawWeight))} g`
+                : "weight unavailable";
+              const priceLabel = rawPrice != null && Number.isFinite(Number(rawPrice))
+                ? `$${Number(rawPrice).toFixed(2)}`
+                : "price unavailable";
               const statusId = `starter-platform-status-${preset.id}`;
               return (
                 <button
@@ -535,10 +544,13 @@ export default function HomePage() {
                       <span className={`starter-platform-geometry is-${geometry.fallbackCount === 0 ? "catalog" : "fallback"}`}>
                         {geometryLabel}
                       </span>
+                      <span className="starter-platform-metric">{weightLabel}</span>
+                      <span className="starter-platform-metric">{priceLabel}</span>
                     </span>
                     <span id={statusId} className="visually-hidden">
                       {thrustLabel}. {PLATFORM_FIT_LABELS[fitStatus]}.{" "}
-                      {geometryLabel}.
+                      {geometryLabel}. Build weight {weightLabel}. Catalog total{" "}
+                      {priceLabel}.
                     </span>
                   </span>
                   <span className="starter-platform-action" aria-hidden="true">

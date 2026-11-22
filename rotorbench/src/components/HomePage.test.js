@@ -72,7 +72,9 @@ test("offers all complete source-backed platforms from an empty overview", async
   })).getByText("7 fallback meshes")).toBeInTheDocument();
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS 5 V5 source build",
-  })).toHaveAccessibleDescription(/7 fallback meshes/i);
+  })).toHaveAccessibleDescription(
+    /7 fallback meshes.*Build weight \d+ g.*Catalog total \$\d+\.\d{2}/i,
+  );
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
 }, 10000);
