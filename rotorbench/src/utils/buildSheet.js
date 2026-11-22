@@ -14,6 +14,7 @@ import {
   summarizeMeasuredGeometry,
 } from "./buildGeometry";
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
+import { summarizeBuildPlanning } from "./planningSummary";
 
 function selectedPhysicalChecks(assemblySpec) {
   return [
@@ -73,6 +74,7 @@ export function createBuildSheet({
     : electricalFit.verified
       ? "verified"
       : "unverified";
+  const planning = summarizeBuildPlanning(build);
 
   return {
     schema: "rotorbench.build-sheet.v1",
@@ -80,6 +82,18 @@ export function createBuildSheet({
     status: "draft",
     analysisIncluded: false,
     hardwareVerified: false,
+    planning: {
+      scope: "catalog planning estimate; not measured takeoff weight",
+      selectedPartCount: planning.selectedCount,
+      catalogWeightG: planning.catalogWeight,
+      planningAllowanceG: planning.planningAllowanceG,
+      totalWeightG: planning.totalWeight,
+      totalPriceUsd: planning.totalPrice,
+      publishedTakeoffRangeG: planning.publishedTakeoffRangeG,
+      takeoffEnvelopeStatus: planning.takeoffEnvelopeStatus,
+      takeoffEnvelopeShortLabel: planning.takeoffEnvelopeShortLabel,
+      takeoffEnvelopeLabel: planning.takeoffEnvelopeLabel,
+    },
     hardwarePlan: sanitizeHardwareReadiness(hardwareReadiness),
     importedEvidence: importedEvidence?.configured
       ? {
@@ -215,13 +229,20 @@ export function parseBuildSheetJson(text, {
     throw new Error("The build sheet does not contain any known component selections.");
   }
 
+  const geometryOverrides = normalizeGeometryOverrides(
+    sheet.build.geometryOverrides,
+  );
+  const planning = summarizeBuildPlanning({
+    componentIds,
+    geometryOverrides,
+  });
   return {
     name: String(sheet.build.name || "Imported build").trim() || "Imported build",
     note: String(sheet.build.note || "").trim().slice(0, 600),
     componentIds,
-    geometryOverrides: normalizeGeometryOverrides(sheet.build.geometryOverrides),
+    geometryOverrides,
     createdAt: now,
     updatedAt: now,
-    totalWeight: 0,
+    totalWeight: planning.totalWeight,
   };
 }

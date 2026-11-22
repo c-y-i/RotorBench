@@ -95,6 +95,39 @@ test("build sheet filenames are portable and deterministic", () => {
   expect(buildSheetFilename("")).toBe("rotorbench-build-build-sheet.json");
 });
 
+test("build sheets carry planning weight and published-envelope fit", () => {
+  const sheet = createBuildSheet({
+    build: {
+      id: "t1-build-sheet",
+      name: "T1 Ranger",
+      componentIds: {
+        frameId: "frame-heewing-t1-ranger",
+        motorId: "motor-heewing-fx1406-3150kv",
+        propellerId: "prop-heewing-fx3830-2",
+        escId: "esc-heewing-fx20a-bls-twin",
+        flightControllerId: "fc-matek-f405-wmn",
+        batteryId: "battery-cnhl-black-4s-1500-100c",
+        receiverId: "rx-radiomaster-rp4td-m",
+      },
+    },
+    assemblySpec: {},
+    generatedAt: "2026-11-21T00:00:00.000Z",
+  });
+
+  expect(sheet.planning).toEqual({
+    scope: "catalog planning estimate; not measured takeoff weight",
+    selectedPartCount: 7,
+    catalogWeightG: 456,
+    planningAllowanceG: 50,
+    totalWeightG: 506,
+    totalPriceUsd: 297.89,
+    publishedTakeoffRangeG: [350, 500],
+    takeoffEnvelopeStatus: "above",
+    takeoffEnvelopeShortLabel: "+6 g over 500 g envelope",
+    takeoffEnvelopeLabel: "506 g planning estimate · 6 g over the 500 g published maximum · verify with a scale",
+  });
+});
+
 test("build sheets include sanitized local hardware-plan context", () => {
   const geometryOverrides = {
     schema: "rotorbench.measured-geometry.v1",
@@ -271,6 +304,7 @@ test("imported build sheets validate schema and catalog IDs", () => {
       },
     },
   });
+  expect(imported.totalWeight).toBeGreaterThan(0);
   expect(imported).not.toHaveProperty("id");
 });
 
