@@ -399,6 +399,65 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
           },
         ],
       },
+      logInventory: [{
+        status: "available",
+        requestedSource: 0,
+        source: 0,
+        sourceName: "fast",
+        count: 2,
+      }],
+      logSample: {
+        source: 0,
+        sourceName: "fast",
+        first: 0,
+        count: 2,
+        requestedCount: 2,
+        hz: 20,
+        observedAt: new Date().toISOString(),
+        frames: [
+          {
+            status: "record",
+            source: 0,
+            sourceName: "fast",
+            index: 0,
+            record: {
+              index: 0,
+              version: 4,
+              bytes: 87,
+              timeMs: 100,
+              gyro: [1, 2, 3],
+              accel: [4, 5, 6],
+              rollDeg: 1,
+              pitchDeg: 2,
+              yawDeg: 3,
+              altMm: 1000,
+              stick: [10, 20, 30, 40],
+              torque: [1, 2, 3],
+              motors: [11, 12, 13, 14],
+              state: 0,
+              flags: 0x10,
+              lat: 0,
+              lon: 0,
+              gyroFiltered: [7, 8, 9],
+              notchHz: [120, 130, 140],
+              notchEngaged: [1, 0, 2],
+              timeUs: 987654,
+              rateSetpoint: [10, 20, 30],
+              pidP: [1, 2, 3],
+              pidI: [4, 5, 6],
+              pidD: [7, 8, 9],
+              vbatMv: 15800,
+            },
+          },
+          {
+            status: "done",
+            source: 0,
+            sourceName: "fast",
+            index: 2,
+            record: null,
+          },
+        ],
+      },
     }, "live-status.json"),
   );
 
@@ -429,6 +488,9 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("100000 eRPM")).toBeInTheDocument();
   expect(screen.getByText("7142 RPM")).toBeInTheDocument();
   expect(screen.getByText("Not heard")).toBeInTheDocument();
+  expect(screen.getByText("Record #0")).toBeInTheDocument();
+  expect(screen.getByText("DONE at #2")).toBeInTheDocument();
+  expect(screen.getByText("15800 mV")).toBeInTheDocument();
 });
 
 test("keeps a live snapshot with no preflight checklist unverified", async () => {

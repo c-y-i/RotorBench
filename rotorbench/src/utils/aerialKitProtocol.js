@@ -13,6 +13,7 @@ export const AERIAL_KIT_FEATURE_PARAM_INFO = 1 << 0;
 export const AERIAL_KIT_FEATURE_RC_CHANNELS = 1 << 4;
 export const AERIAL_KIT_FEATURE_SENSOR_INFO = 1 << 5;
 export const AERIAL_KIT_FEATURE_OUTPUT_INFO = 1 << 6;
+export const AERIAL_KIT_FEATURE_LOG_STREAM = 1 << 8;
 export const AERIAL_KIT_FEATURE_PREFLIGHT = 1 << 9;
 export const AERIAL_KIT_FEATURE_PERF = 1 << 12;
 export const AERIAL_KIT_FEATURE_MOTOR_TELEMETRY = 1 << 13;
@@ -22,6 +23,7 @@ export const AERIAL_KIT_PREFLIGHT_NAME_MAX = 24;
 export const AERIAL_KIT_PERF_SECTIONS = 5;
 export const AERIAL_KIT_MOTOR_MAX = 4;
 export const AERIAL_KIT_MOTOR_ENTRY_BYTES = 19;
+export const AERIAL_KIT_LOG_STREAM_MAX_HZ = 50;
 export const AERIAL_KIT_COMMANDS = Object.freeze({
   hello: 0x01,
   paramGet: 0x02,
@@ -31,9 +33,11 @@ export const AERIAL_KIT_COMMANDS = Object.freeze({
   rcChannels: 0x0d,
   sensorInfo: 0x0e,
   outputInfo: 0x0f,
+  logStream: 0x11,
   preflight: 0x12,
   perf: 0x15,
   motorTelemetry: 0x16,
+  logSource: 0x09,
 });
 
 export const AERIAL_KIT_SENSOR_TOPICS = Object.freeze([
@@ -84,6 +88,18 @@ const MOTOR_FLAGS = Object.freeze([
   { bit: 1 << 3, name: "voltage" },
   { bit: 1 << 4, name: "current" },
 ]);
+
+const LOG_SOURCE_NAMES = Object.freeze({
+  0: "fast",
+  1: "long",
+  2: "flash",
+});
+
+const LOG_STREAM_STATUS_NAMES = Object.freeze({
+  0: "record",
+  1: "hole",
+  2: "done",
+});
 
 export const AERIAL_KIT_PARAMETER_TYPES = Object.freeze({
   0: "float",
@@ -815,6 +831,157 @@ export function parseAerialKitMotorTelemetry(payload) {
   };
 }
 
+export function parseAerialKitLogSource(payload, requestedSource) {
+  const bytes = asBytes(payload);
+  if (bytes.length !== 4) {
+    throw new Error("LOG_SOURCE must carry status, source, and count.");
+  }
+  if (bytes[0] !== 0) {
+    return {
+      status: "unavailable",
+      requestedSource,
+      source: null,
+      sourceName: LOG_SOURCE_NAMES[requestedSource] || `Source ${requestedSource}`,
+      count: null,
+    };
+  }
+  if (![0, 1, 2].includes(bytes[1])) {
+    throw new Error(`LOG_SOURCE selected unknown source ${bytes[1]}.`);
+  }
+  return {
+    status: "available",
+    requestedSource,
+    source: bytes[1],
+    sourceName: LOG_SOURCE_NAMES[bytes[1]],
+    count: u16le(bytes, 2, "LOG_SOURCE record count"),
+  };
+}
+
+export function parseAerialKitLogStreamReply(payload) {
+  const bytes = asBytes(payload);
+  if (bytes.length !== 7) {
+    throw new Error("LOG_STREAM reply must carry seven bytes.");
+  }
+  const source = bytes[1];
+  if (![0, 1, 2].includes(source)) {
+    throw new Error(`LOG_STREAM named unknown source ${source}.`);
+  }
+  if (bytes[0] !== 0) {
+    return {
+      status: "refused",
+      source: null,
+      sourceName: null,
+      first: null,
+      count: null,
+      hz: null,
+    };
+  }
+  return {
+    status: "accepted",
+    source,
+    sourceName: LOG_SOURCE_NAMES[source],
+    first: u16le(bytes, 2, "LOG_STREAM first index"),
+    count: u16le(bytes, 4, "LOG_STREAM count"),
+    hz: bytes[6],
+  };
+}
+
+function logRecordBodyLength(available) {
+  if ([51, 66, 87].includes(available)) return available;
+  throw new Error(
+    `Aerial Kit log record must carry 51, 66, or 87 bytes; this one carries ${available}.`,
+  );
+}
+
+function decodeAerialKitLogRecord(body, index) {
+  const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
+  const version = body.length === 51 ? 2 : body.length === 66 ? 3 : 4;
+  const vector16 = (offset) => [
+    view.getInt16(offset, true),
+    view.getInt16(offset + 2, true),
+    view.getInt16(offset + 4, true),
+  ];
+  return {
+    index,
+    version,
+    bytes: body.length,
+    timeMs: view.getUint32(0, true),
+    gyro: vector16(4),
+    accel: vector16(10),
+    rollDeg: view.getInt16(16, true) / 10,
+    pitchDeg: view.getInt16(18, true) / 10,
+    yawDeg: view.getInt16(20, true) / 10,
+    altMm: view.getInt32(22, true),
+    stick: [
+      view.getInt16(26, true),
+      view.getInt16(28, true),
+      view.getInt16(30, true),
+      view.getInt16(32, true),
+    ],
+    torque: [body[34], body[35], body[36]],
+    motors: Array.from(body.slice(37, 41)),
+    state: body[41],
+    flags: body[42],
+    lat: view.getInt32(43, true) / 1e7,
+    lon: view.getInt32(47, true) / 1e7,
+    gyroFiltered: version >= 3 ? vector16(51) : null,
+    notchHz: version >= 3
+      ? [
+          view.getUint16(57, true),
+          view.getUint16(59, true),
+          view.getUint16(61, true),
+        ]
+      : null,
+    notchEngaged: version >= 3
+      ? Array.from(body.slice(63, 66))
+      : null,
+    timeUs: version >= 4 ? view.getUint32(66, true) : null,
+    rateSetpoint: version >= 4 ? vector16(70) : null,
+    pidP: version >= 4 ? Array.from(body.slice(76, 79)) : null,
+    pidI: version >= 4 ? Array.from(body.slice(79, 82)) : null,
+    pidD: version >= 4 ? Array.from(body.slice(82, 85)) : null,
+    vbatMv: version >= 4 && (body[42] & 0x10) !== 0
+      ? view.getUint16(85, true)
+      : null,
+  };
+}
+
+export function parseAerialKitLogStreamFrame(payload) {
+  const bytes = asBytes(payload);
+  if (bytes.length < 4) {
+    throw new Error("LOG_STREAM frame header is incomplete.");
+  }
+  const status = bytes[0];
+  const source = bytes[1];
+  if (![0, 1, 2].includes(status)) {
+    throw new Error(`LOG_STREAM returned unknown frame status ${status}.`);
+  }
+  if (![0, 1, 2].includes(source)) {
+    throw new Error(`LOG_STREAM returned unknown source ${source}.`);
+  }
+  const index = u16le(bytes, 2, "LOG_STREAM frame index");
+  if (status !== 0) {
+    if (bytes.length !== 4) {
+      throw new Error("A LOG_STREAM hole or done frame must carry only its four-byte header.");
+    }
+    return {
+      status: LOG_STREAM_STATUS_NAMES[status],
+      source,
+      sourceName: LOG_SOURCE_NAMES[source],
+      index,
+      record: null,
+    };
+  }
+  const bodyLength = logRecordBodyLength(bytes.length - 4);
+  return {
+    status: "record",
+    source,
+    sourceName: LOG_SOURCE_NAMES[source],
+    index,
+    record: decodeAerialKitLogRecord(bytes.subarray(4, 4 + bodyLength), index),
+  };
+}
+
 export function parseAerialKitSensorInfo(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) throw new Error("Aerial Kit SENSOR_INFO payload is empty.");
@@ -1228,6 +1395,8 @@ export function createAerialKitStatusEvidence({
   preflight = null,
   performance = null,
   motorTelemetry = null,
+  logInventory = null,
+  logSample = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -1269,6 +1438,8 @@ export function createAerialKitStatusEvidence({
         ...(preflight ? ["PREFLIGHT"] : []),
         ...(performance ? ["PERF"] : []),
         ...(motorTelemetry ? ["MOTOR_TELEMETRY"] : []),
+        ...(logInventory ? ["LOG_SOURCE"] : []),
+        ...(logSample ? ["LOG_STREAM"] : []),
       ],
     },
     hello,
@@ -1322,6 +1493,15 @@ export function createAerialKitStatusEvidence({
             : null,
         }
       : null,
+    logInventory,
+    logSample: logSample
+      ? {
+          ...logSample,
+          observedAt: Number.isFinite(logSample.observedAtMs)
+            ? new Date(logSample.observedAtMs).toISOString()
+            : null,
+        }
+      : null,
     parser: protocolStats,
     boundaries: {
       readOnlyQueriesOnly: true,
@@ -1341,12 +1521,14 @@ export class AerialKitReadOnlySession {
     timeoutMs = 2000,
     onIssue = null,
     onClose = null,
+    onLogFrame = null,
   }) {
     this.reader = reader;
     this.writer = writer;
     this.timeoutMs = timeoutMs;
     this.onIssue = onIssue;
     this.onClose = onClose;
+    this.onLogFrame = onLogFrame;
     this.decoder = new AerialKitFrameDecoder();
     this.pending = null;
     this.active = true;
@@ -1388,6 +1570,14 @@ export class AerialKitReadOnlySession {
 
   handleFrame(frame) {
     if (!frame.response) {
+      if (frame.command === AERIAL_KIT_COMMANDS.logStream) {
+        try {
+          this.onLogFrame?.(parseAerialKitLogStreamFrame(frame.payload));
+        } catch (error) {
+          this.onIssue?.(error.message);
+        }
+        return;
+      }
       this.onIssue?.(
         `Unexpected unsolicited AKP frame 0x${frame.command.toString(16)}.`,
       );

@@ -11,6 +11,9 @@ import {
   parseAerialKitHello,
   parseAerialKitParamHelpSlice,
   parseAerialKitParamInfoPage,
+  parseAerialKitLogSource,
+  parseAerialKitLogStreamFrame,
+  parseAerialKitLogStreamReply,
   parseAerialKitMotorTelemetry,
   parseAerialKitOutputInfo,
   parseAerialKitParamGet,
@@ -410,6 +413,154 @@ test("parses motor telemetry without inventing stopped or measured fields", () =
     .toThrow(/predates MOTOR_TELEMETRY/i);
 });
 
+test("parses log inventory, stream ranges, holes, completion, and record versions", () => {
+  expect(parseAerialKitLogSource(
+    Uint8Array.from([0, 2, 0x34, 0x12]),
+    2,
+  )).toEqual({
+    status: "available",
+    requestedSource: 2,
+    source: 2,
+    sourceName: "flash",
+    count: 0x1234,
+  });
+  expect(parseAerialKitLogSource(Uint8Array.of(1, 0, 0, 0), 1)).toEqual({
+    status: "unavailable",
+    requestedSource: 1,
+    source: null,
+    sourceName: "long",
+    count: null,
+  });
+  expect(parseAerialKitLogStreamReply(
+    Uint8Array.of(0, 2, 10, 0, 8, 0, 20),
+  )).toEqual({
+    status: "accepted",
+    source: 2,
+    sourceName: "flash",
+    first: 10,
+    count: 8,
+    hz: 20,
+  });
+  expect(parseAerialKitLogStreamReply(
+    Uint8Array.of(1, 2, 0, 0, 0, 0, 0),
+  )).toEqual({
+    status: "refused",
+    source: null,
+    sourceName: null,
+    first: null,
+    count: null,
+    hz: null,
+  });
+
+  const record = new Uint8Array(87);
+  const view = new DataView(record.buffer);
+  view.setUint32(0, 123456, true);
+  [1, 2, 3, 4, 5, 6].forEach((value, index) => {
+    view.setInt16(4 + index * 2, value, true);
+  });
+  view.setInt16(16, 125, true);
+  view.setInt16(18, -25, true);
+  view.setInt16(20, 900, true);
+  view.setInt32(22, 1500, true);
+  [1000, 1500, 2000, 2500].forEach((value, index) => {
+    view.setInt16(26 + index * 2, value, true);
+  });
+  record.set([1, 2, 3, 11, 12, 13, 14], 34);
+  record[41] = 1;
+  record[42] = 0x10;
+  view.setInt32(43, 376774000, true);
+  view.setInt32(47, -1224194000, true);
+  [7, 8, 9].forEach((value, index) => {
+    view.setInt16(51 + index * 2, value, true);
+  });
+  [120, 130, 140].forEach((value, index) => {
+    view.setUint16(57 + index * 2, value, true);
+  });
+  record.set([1, 0, 2], 63);
+  view.setUint32(66, 987654, true);
+  [10, 20, 30].forEach((value, index) => {
+    view.setInt16(70 + index * 2, value, true);
+  });
+  record.set([1, 2, 3, 4, 5, 6, 7, 8, 9], 76);
+  view.setUint16(85, 15800, true);
+  const frame = parseAerialKitLogStreamFrame(
+    Uint8Array.from([0, 0, 7, 0, ...record]),
+  );
+  expect(frame).toMatchObject({
+    status: "record",
+    sourceName: "fast",
+    index: 7,
+    record: {
+      index: 7,
+      version: 4,
+      bytes: 87,
+      timeMs: 123456,
+      gyro: [1, 2, 3],
+      accel: [4, 5, 6],
+      rollDeg: 12.5,
+      pitchDeg: -2.5,
+      yawDeg: 90,
+      altMm: 1500,
+      stick: [1000, 1500, 2000, 2500],
+      torque: [1, 2, 3],
+      motors: [11, 12, 13, 14],
+      state: 1,
+      flags: 0x10,
+      lat: 37.6774,
+      lon: -122.4194,
+      gyroFiltered: [7, 8, 9],
+      notchHz: [120, 130, 140],
+      notchEngaged: [1, 0, 2],
+      timeUs: 987654,
+      rateSetpoint: [10, 20, 30],
+      pidP: [1, 2, 3],
+      pidI: [4, 5, 6],
+      pidD: [7, 8, 9],
+      vbatMv: 15800,
+    },
+  });
+  expect(parseAerialKitLogStreamFrame(
+    Uint8Array.from([0, 1, 8, 0, ...record.subarray(0, 51)]),
+  )).toMatchObject({
+    status: "record",
+    record: {
+      version: 2,
+      bytes: 51,
+      gyroFiltered: null,
+      timeUs: null,
+      vbatMv: null,
+    },
+  });
+  expect(parseAerialKitLogStreamFrame(
+    Uint8Array.from([0, 2, 9, 0, ...record.subarray(0, 66)]),
+  )).toMatchObject({
+    status: "record",
+    record: {
+      version: 3,
+      bytes: 66,
+      gyroFiltered: [7, 8, 9],
+      timeUs: null,
+    },
+  });
+  expect(parseAerialKitLogStreamFrame(Uint8Array.of(1, 2, 10, 0))).toEqual({
+    status: "hole",
+    source: 2,
+    sourceName: "flash",
+    index: 10,
+    record: null,
+  });
+  expect(parseAerialKitLogStreamFrame(Uint8Array.of(2, 2, 18, 0))).toEqual({
+    status: "done",
+    source: 2,
+    sourceName: "flash",
+    index: 18,
+    record: null,
+  });
+  expect(() => parseAerialKitLogStreamFrame(
+    Uint8Array.from([0, 0, 1, 0, ...new Uint8Array(52)]),
+  )).toThrow(/51, 66, or 87 bytes/i);
+});
+
 test("parses sensor presence without inventing a body for an absent sensor", () => {
   const body = new Uint8Array(46);
   body.set(Buffer.from("BMI270"), 0);
@@ -793,6 +944,56 @@ test("creates a sanitized live-status evidence boundary", () => {
       }],
       observedAtMs: 1250,
     },
+    logInventory: [{
+      status: "available",
+      requestedSource: 0,
+      source: 0,
+      sourceName: "fast",
+      count: 2,
+    }],
+    logSample: {
+      source: 0,
+      sourceName: "fast",
+      first: 0,
+      count: 1,
+      requestedCount: 1,
+      hz: 20,
+      frames: [{
+        status: "record",
+        source: 0,
+        sourceName: "fast",
+        index: 0,
+        record: {
+          index: 0,
+          version: 2,
+          bytes: 51,
+          timeMs: 100,
+          gyro: [1, 2, 3],
+          accel: [4, 5, 6],
+          rollDeg: 1,
+          pitchDeg: 2,
+          yawDeg: 3,
+          altMm: 1000,
+          stick: [10, 20, 30, 40],
+          torque: [1, 2, 3],
+          motors: [11, 12, 13, 14],
+          state: 0,
+          flags: 0,
+          lat: 0,
+          lon: 0,
+          gyroFiltered: null,
+          notchHz: null,
+          notchEngaged: null,
+          timeUs: null,
+          rateSetpoint: null,
+          pidP: null,
+          pidI: null,
+          pidD: null,
+          vbatMv: null,
+        },
+      }],
+      observedAtMs: 1250,
+    },
     connectionActive: true,
     nowMs: 1500,
   });
@@ -813,6 +1014,8 @@ test("creates a sanitized live-status evidence boundary", () => {
         "PREFLIGHT",
         "PERF",
         "MOTOR_TELEMETRY",
+        "LOG_SOURCE",
+        "LOG_STREAM",
       ],
     },
     status: {
@@ -853,6 +1056,15 @@ test("creates a sanitized live-status evidence boundary", () => {
         measured: true,
         rpm: 7142,
       }],
+    },
+    logInventory: [{
+      requestedSource: 0,
+      status: "available",
+      count: 2,
+    }],
+    logSample: {
+      sourceName: "fast",
+      observedAt: "1970-01-01T00:00:01.250Z",
     },
     boundaries: {
       readOnlyQueriesOnly: true,

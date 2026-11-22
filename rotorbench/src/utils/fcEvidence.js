@@ -297,6 +297,142 @@ function normalizedMotorTelemetry(value) {
   };
 }
 
+function normalizedLogInventory(value) {
+  if (!Array.isArray(value)) return null;
+  return value
+    .filter((entry) => (
+      entry
+      && Number.isInteger(entry.requestedSource)
+      && entry.requestedSource >= 0
+      && entry.requestedSource <= 2
+    ))
+    .map((entry) => {
+      const available = entry.status === "available";
+      return {
+        status: available ? "available" : "unavailable",
+        requestedSource: entry.requestedSource,
+        source: available && Number.isInteger(entry.source) ? entry.source : null,
+        sourceName: available ? sensorString(entry.sourceName) : sensorString(entry.sourceName),
+        count: available ? sensorNumber(entry.count) : null,
+      };
+    });
+}
+
+function normalizedLogRecord(value, index) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Log frame ${index} has no record body.`);
+  }
+  const version = sensorNumber(value.version);
+  const bytes = sensorNumber(value.bytes);
+  if (
+    ![2, 3, 4].includes(version)
+    || bytes !== ({ 2: 51, 3: 66, 4: 87 })[version]
+  ) {
+    throw new Error(`Log frame ${index} has an invalid record version.`);
+  }
+  const scalars = {
+    timeMs: sensorNumber(value.timeMs),
+    rollDeg: sensorNumber(value.rollDeg),
+    pitchDeg: sensorNumber(value.pitchDeg),
+    yawDeg: sensorNumber(value.yawDeg),
+    altMm: sensorNumber(value.altMm),
+    state: sensorNumber(value.state),
+    flags: sensorNumber(value.flags),
+    lat: sensorNumber(value.lat),
+    lon: sensorNumber(value.lon),
+    timeUs: sensorNumber(value.timeUs),
+    vbatMv: sensorNumber(value.vbatMv),
+  };
+  if (
+    scalars.timeMs == null
+    || scalars.rollDeg == null
+    || scalars.pitchDeg == null
+    || scalars.yawDeg == null
+    || scalars.altMm == null
+    || scalars.state == null
+    || scalars.flags == null
+    || scalars.lat == null
+    || scalars.lon == null
+  ) {
+    throw new Error(`Log frame ${index} has incomplete record fields.`);
+  }
+  const gyro = sensorVector(value.gyro);
+  const accel = sensorVector(value.accel);
+  const stick = sensorVector(value.stick, 4);
+  const torque = sensorVector(value.torque);
+  const motors = sensorVector(value.motors, 4);
+  if (!gyro || !accel || !stick || !torque || !motors) {
+    throw new Error(`Log frame ${index} has incomplete vector fields.`);
+  }
+  return {
+    index,
+    version,
+    bytes,
+    ...scalars,
+    gyro,
+    accel,
+    stick,
+    torque,
+    motors,
+    gyroFiltered: value.gyroFiltered == null
+      ? null
+      : sensorVector(value.gyroFiltered),
+    notchHz: value.notchHz == null ? null : sensorVector(value.notchHz),
+    notchEngaged: value.notchEngaged == null
+      ? null
+      : sensorVector(value.notchEngaged),
+    rateSetpoint: value.rateSetpoint == null
+      ? null
+      : sensorVector(value.rateSetpoint),
+    pidP: value.pidP == null ? null : sensorVector(value.pidP),
+    pidI: value.pidI == null ? null : sensorVector(value.pidI),
+    pidD: value.pidD == null ? null : sensorVector(value.pidD),
+  };
+}
+
+function normalizedLogSample(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!Array.isArray(value.frames) || value.frames.length > 32) {
+    throw new Error("The Aerial Kit log sample has an invalid frame list.");
+  }
+  const frames = value.frames.map((frame, index) => {
+    if (
+      !["record", "hole", "done"].includes(frame?.status)
+      || !Number.isInteger(frame.source)
+      || frame.source < 0
+      || frame.source > 2
+      || !Number.isInteger(frame.index)
+      || frame.index < 0
+      || frame.index > 0xffff
+    ) {
+      throw new Error(`Log sample frame ${index} has an invalid header.`);
+    }
+    return {
+      status: frame.status,
+      source: frame.source,
+      sourceName: sensorString(frame.sourceName),
+      index: frame.index,
+      record: frame.status === "record"
+        ? normalizedLogRecord(frame.record, frame.index)
+        : null,
+    };
+  });
+  return {
+    source: sensorNumber(value.source),
+    sourceName: sensorString(value.sourceName),
+    first: sensorNumber(value.first),
+    count: sensorNumber(value.count),
+    requestedCount: sensorNumber(value.requestedCount),
+    hz: sensorNumber(value.hz),
+    records: frames.filter((frame) => frame.status === "record").length,
+    holes: frames.filter((frame) => frame.status === "hole").length,
+    done: frames.some((frame) => frame.status === "done"),
+    noStream: value.noStream === true,
+    frames,
+    observedAtMs: timestampMilliseconds(value.observedAt),
+  };
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -605,6 +741,8 @@ export function parseAerialKitLiveStatusJson(payload) {
   }
   const performance = normalizedPerformanceWindow(payload.performance);
   const motorTelemetry = normalizedMotorTelemetry(payload.motorTelemetry);
+  const logInventory = normalizedLogInventory(payload.logInventory);
+  const logSample = normalizedLogSample(payload.logSample);
   return {
     kind: "fc-live-status",
     identity,
@@ -623,6 +761,8 @@ export function parseAerialKitLiveStatusJson(payload) {
     preflight,
     performance,
     motorTelemetry,
+    logInventory,
+    logSample,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

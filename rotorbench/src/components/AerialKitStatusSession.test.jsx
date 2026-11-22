@@ -71,6 +71,32 @@ function motorTelemetryReply(status = 0) {
   return buildAerialKitFrame(0x96, payload);
 }
 
+function logRecordBody(bytes, timeMs) {
+  const payload = new Uint8Array(bytes);
+  const view = new DataView(payload.buffer);
+  view.setUint32(0, timeMs, true);
+  [1, 2, 3, 4, 5, 6].forEach((value, index) => {
+    view.setInt16(4 + index * 2, value, true);
+  });
+  view.setInt16(16, 125, true);
+  view.setInt16(18, -25, true);
+  view.setInt16(20, 900, true);
+  view.setInt32(22, 1500, true);
+  payload.set([11, 12, 13, 14], 37);
+  view.setInt32(43, 376774000, true);
+  view.setInt32(47, -1224194000, true);
+  if (bytes >= 66) {
+    [7, 8, 9].forEach((value, index) => {
+      view.setInt16(51 + index * 2, value, true);
+    });
+  }
+  if (bytes >= 87) {
+    payload[42] = 0x10;
+    view.setUint16(85, 15800, true);
+  }
+  return payload;
+}
+
 function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   perfStatus = 0,
   motorStatus = 0,
@@ -261,6 +287,42 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
       }
       else if (command === 0x16) {
         deliver(motorTelemetryReply(motorStatus));
+      }
+      else if (command === 0x09) {
+        const source = frame[5];
+        if (source === 1) {
+          deliver(buildAerialKitFrame(
+            0x89,
+            Uint8Array.from([1, 0, 0, 0]),
+          ));
+        } else {
+          const count = source === 2 ? 24 : 3;
+          deliver(buildAerialKitFrame(
+            0x89,
+            Uint8Array.from([
+              0,
+              source,
+              count & 0xff,
+              (count >> 8) & 0xff,
+            ]),
+          ));
+        }
+      }
+      else if (command === 0x11) {
+        deliver(buildAerialKitFrame(
+          0x91,
+          Uint8Array.from([0, 0, 0, 0, 3, 0, 20]),
+        ));
+        deliver(buildAerialKitFrame(
+          0x11,
+          Uint8Array.from([0, 0, 0, 0, ...logRecordBody(51, 100)]),
+        ));
+        deliver(buildAerialKitFrame(0x11, Uint8Array.of(1, 0, 1, 0)));
+        deliver(buildAerialKitFrame(
+          0x11,
+          Uint8Array.from([0, 0, 2, 0, ...logRecordBody(87, 200)]),
+        ));
+        deliver(buildAerialKitFrame(0x11, Uint8Array.of(2, 0, 3, 0)));
       }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
@@ -632,6 +694,47 @@ test("keeps a missing ESC telemetry path distinct from stopped motors", async ()
   expect(screen.getByText(/does not replace that answer with a list of stopped motors/i))
     .toBeInTheDocument();
   expect(screen.queryByText("Motor 1")).not.toBeInTheDocument();
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads bounded log samples while retaining holes, completion, and record versions", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_WITH_MOTORS);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read log inventory",
+  }));
+  expect(await screen.findByText("2 sources")).toBeInTheDocument();
+  expect(screen.getByText("3 records")).toBeInTheDocument();
+  expect(screen.getByText("Not available on this build")).toBeInTheDocument();
+  expect(screen.getByText("24 records")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read latest sample",
+  }));
+  expect(await screen.findByText("2 records · 1 holes")).toBeInTheDocument();
+  expect(screen.getByText("Record #0")).toBeInTheDocument();
+  expect(screen.getByText("HOLE at #1")).toBeInTheDocument();
+  expect(screen.getByText("Record #2")).toBeInTheDocument();
+  expect(screen.getByText("DONE at #3")).toBeInTheDocument();
+  expect(screen.getByText("v2 · 51 B")).toBeInTheDocument();
+  expect(screen.getByText("v4 · 87 B")).toBeInTheDocument();
+  expect(screen.getByText("15800 mV")).toBeInTheDocument();
+
+  const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
+  expect(commands).toContain(0x09);
+  expect(commands).toContain(0x11);
+  expect(commands).not.toContain(0x10);
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

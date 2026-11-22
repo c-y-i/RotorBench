@@ -27,6 +27,7 @@ import RadioParameterSnapshot from "./RadioParameterSnapshot";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
+import AerialKitLogReadings from "./AerialKitLogReadings";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -1376,6 +1377,33 @@ export default function BenchEvidenceReview({
                   />
                 </>
               )}
+            </section>
+          )}
+
+          {(evidence.fcEvidence?.liveStatus?.logInventory
+            || evidence.fcEvidence?.liveStatus?.logSample) && (
+            <section
+              className="aerial-kit-logs"
+              aria-label="Imported Aerial Kit log sample"
+            >
+              <div className="aerial-kit-section-heading">
+                <strong>Imported flight-log sample</strong>
+                <span>
+                  {evidence.fcEvidence.liveStatus.logSample
+                    ? `${evidence.fcEvidence.liveStatus.logSample.records} records · ${evidence.fcEvidence.liveStatus.logSample.holes} holes`
+                    : `${evidence.fcEvidence.liveStatus.logInventory?.filter((entry) => entry.status === "available").length || 0} sources`}
+                </span>
+              </div>
+              <p>
+                Source availability, record indexes, holes, completion, and
+                record versions are preserved from the imported read-only
+                snapshot.
+              </p>
+              <AerialKitLogReadings
+                inventory={evidence.fcEvidence.liveStatus.logInventory}
+                sample={evidence.fcEvidence.liveStatus.logSample}
+                sourceLabels={["Fast ring", "Long ring", "Flash log"]}
+              />
             </section>
           )}
 

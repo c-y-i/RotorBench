@@ -25,6 +25,8 @@ import {
   AERIAL_KIT_FEATURE_PREFLIGHT,
   AERIAL_KIT_FEATURE_PERF,
   AERIAL_KIT_FEATURE_MOTOR_TELEMETRY,
+  AERIAL_KIT_FEATURE_LOG_STREAM,
+  AERIAL_KIT_LOG_STREAM_MAX_HZ,
   AERIAL_KIT_PARAMETER_READ_LIMIT,
   AERIAL_KIT_SENSOR_TOPICS,
   AerialKitReadOnlySession,
@@ -35,6 +37,8 @@ import {
   parseAerialKitParamHelpSlice,
   parseAerialKitParamGet,
   parseAerialKitParamInfoPage,
+  parseAerialKitLogSource,
+  parseAerialKitLogStreamReply,
   parseAerialKitMotorTelemetry,
   parseAerialKitPerf,
   parseAerialKitPreflightPage,
@@ -51,6 +55,7 @@ import {
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
+import AerialKitLogReadings from "./AerialKitLogReadings";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -78,6 +83,14 @@ const ROLE_LABELS = {
   systemId: "System ID",
   beeper: "Beeper",
 };
+
+const LOG_SOURCE_LABELS = [
+  "Fast ring",
+  "Long ring",
+  "Flash log",
+];
+
+const LOG_SAMPLE_LIMIT = 8;
 
 function hexWord(value) {
   return value == null
@@ -161,6 +174,11 @@ export default function AerialKitStatusSession({
   const [motorTelemetry, setMotorTelemetry] = useState(null);
   const [motorState, setMotorState] = useState("idle");
   const [motorError, setMotorError] = useState("");
+  const [logInventory, setLogInventory] = useState(null);
+  const [logSource, setLogSource] = useState(0);
+  const [logState, setLogState] = useState("idle");
+  const [logError, setLogError] = useState("");
+  const [logSample, setLogSample] = useState(null);
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -170,6 +188,7 @@ export default function AerialKitStatusSession({
   const sessionRef = useRef(null);
   const pollTimerRef = useRef(null);
   const observationRef = useRef(null);
+  const logCollectorRef = useRef(null);
 
   useEffect(() => {
     if (!["monitoring", "connecting"].includes(sessionState)) return undefined;
@@ -233,12 +252,19 @@ export default function AerialKitStatusSession({
     setMotorTelemetry(null);
     setMotorState("idle");
     setMotorError("");
+    setLogInventory(null);
+    setLogSource(0);
+    setLogState("idle");
+    setLogError("");
+    setLogSample(null);
+    logCollectorRef.current = null;
     observationRef.current = null;
     onObservation?.(null);
   };
 
   const closeSession = useCallback(async (nextState = "stopped") => {
     activeRef.current = false;
+    logCollectorRef.current = null;
     if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     pollTimerRef.current = null;
     if (sessionRef.current) setProtocolStats({ ...sessionRef.current.stats });
@@ -905,6 +931,185 @@ export default function AerialKitStatusSession({
     }
   };
 
+  const readLogInventory = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_LOG_STREAM) === 0
+    ) {
+      setLogError(
+        "The HELLO capability word does not claim LOG_STREAM, so RotorBench did not ask about the logs.",
+      );
+      setLogState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setLogError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setLogError("");
+    setLogState("reading");
+    setLogSample(null);
+    const inventory = [];
+    try {
+      for (const source of [0, 1, 2]) {
+        inventory.push(parseAerialKitLogSource(
+          await session.request(
+            AERIAL_KIT_COMMANDS.logSource,
+            Uint8Array.of(source),
+          ),
+          source,
+        ));
+      }
+      if (!mountedRef.current) return;
+      setLogInventory(inventory);
+      const selected = inventory.find(
+        (entry) => entry.source === logSource && entry.status === "available",
+      ) || inventory.find((entry) => entry.status === "available");
+      if (selected) setLogSource(selected.source);
+      setLogState("ready");
+      setMessage(
+        "Read the three log sources without erasing, rewriting, or streaming a log.",
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setLogInventory(inventory);
+      setLogState("error");
+      setLogError(readError.message);
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
+  const readLogSample = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    const selected = logInventory?.find(
+      (entry) => entry.source === logSource,
+    );
+    if (!selected || selected.status !== "available") {
+      setLogError("Choose a log source that the board reports as available.");
+      setLogState("error");
+      return;
+    }
+    if (!selected.count) {
+      setLogError("The selected log is available and empty; there is no sample to read.");
+      setLogState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setLogError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setLogError("");
+    setLogState("reading");
+    setLogSample({
+      source: logSource,
+      sourceName: selected.sourceName,
+      requestedCount: Math.min(LOG_SAMPLE_LIMIT, selected.count),
+      frames: [],
+      records: 0,
+      holes: 0,
+      done: false,
+      observedAtMs: Date.now(),
+    });
+    let resolveDone;
+    let rejectDone;
+    const donePromise = new Promise((resolve, reject) => {
+      resolveDone = resolve;
+      rejectDone = reject;
+    });
+    let completionTimer = null;
+    logCollectorRef.current = (frame) => {
+      if (frame.source !== logSource) {
+        rejectDone(new Error(
+          `The board streamed source ${frame.source} while ${selected.sourceName} was selected.`,
+        ));
+        return;
+      }
+      setLogSample((current) => {
+        if (!current) return current;
+        const frames = [...current.frames, frame];
+        return {
+          ...current,
+          frames,
+          records: frames.filter((entry) => entry.status === "record").length,
+          holes: frames.filter((entry) => entry.status === "hole").length,
+          done: frame.status === "done",
+        };
+      });
+      if (frame.status === "done") resolveDone(frame);
+    };
+    try {
+      const count = Math.min(LOG_SAMPLE_LIMIT, selected.count);
+      const first = selected.count - count;
+      const payload = new Uint8Array(6);
+      payload[0] = logSource;
+      payload[1] = first & 0xff;
+      payload[2] = (first >> 8) & 0xff;
+      payload[3] = count & 0xff;
+      payload[4] = (count >> 8) & 0xff;
+      payload[5] = Math.min(20, AERIAL_KIT_LOG_STREAM_MAX_HZ);
+      const reply = parseAerialKitLogStreamReply(
+        await session.request(AERIAL_KIT_COMMANDS.logStream, payload),
+      );
+      if (reply.status === "refused") {
+        throw new Error("The board refused the selected log stream.");
+      }
+      if (reply.count === 0 || reply.hz === 0) {
+        logCollectorRef.current = null;
+        setLogSample((current) => current && ({
+          ...current,
+          first: reply.first,
+          count: reply.count,
+          hz: reply.hz,
+          done: true,
+          noStream: true,
+          observedAtMs: Date.now(),
+        }));
+        setLogState("ready");
+        setMessage("The board accepted the request but reports that no log frames will be sent.");
+        return;
+      }
+      setLogSample((current) => current && ({
+        ...current,
+        first: reply.first,
+        count: reply.count,
+        hz: reply.hz,
+        observedAtMs: Date.now(),
+      }));
+      completionTimer = setTimeout(() => {
+        logCollectorRef.current = null;
+        rejectDone(new Error(
+          `The board did not finish the ${reply.count}-record log stream within 6 seconds.`,
+        ));
+      }, 6000);
+      await donePromise;
+      if (!mountedRef.current) return;
+      setLogState("ready");
+      setMessage(
+        `Read a bounded ${reply.count}-record sample from ${reply.sourceName}; holes and completion are preserved.`,
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setLogState("error");
+      setLogError(readError.message);
+    } finally {
+      if (completionTimer) clearTimeout(completionTimer);
+      logCollectorRef.current = null;
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -926,6 +1131,7 @@ export default function AerialKitStatusSession({
         reader,
         writer,
         onIssue: addIssue,
+        onLogFrame: (frame) => logCollectorRef.current?.(frame),
         onClose: (reason) => {
           if (!mountedRef.current || !activeRef.current) return;
           activeRef.current = false;
@@ -999,6 +1205,8 @@ export default function AerialKitStatusSession({
       preflight,
       performance,
       motorTelemetry,
+      logInventory,
+      logSample,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -1060,7 +1268,13 @@ export default function AerialKitStatusSession({
   });
   const rcAgeMs = lastRcAt == null ? null : Math.max(0, clockNow - lastRcAt);
   const canDownload = Boolean(
-    hello || liveStatus || rc || preflight || performance || motorTelemetry,
+    hello
+      || liveStatus
+      || rc
+      || preflight
+      || performance
+      || motorTelemetry
+      || logInventory,
   );
   const metadataClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) !== 0;
@@ -1074,6 +1288,8 @@ export default function AerialKitStatusSession({
     || (hello.features & AERIAL_KIT_FEATURE_PERF) !== 0;
   const motorTelemetryClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_MOTOR_TELEMETRY) !== 0;
+  const logClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_LOG_STREAM) !== 0;
   const busy = ["selecting", "connecting", "stopping"].includes(sessionState);
   const active = ["connecting", "monitoring"].includes(sessionState);
 
@@ -1539,6 +1755,103 @@ export default function AerialKitStatusSession({
                     />
                   </>
                 )}
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-logs"
+                aria-label="Aerial Kit log inventory and sample"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Flight log sample</strong>
+                  <span>
+                    {logState === "reading"
+                      ? "Reading"
+                      : logState === "ready"
+                        ? logSample
+                          ? `${logSample.records} records · ${logSample.holes} holes`
+                          : `${logInventory?.filter((entry) => entry.status === "available").length || 0} sources`
+                        : logState === "error"
+                          ? "Read stopped"
+                          : !logClaimed
+                            ? "Not claimed"
+                            : "Not read"}
+                  </span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || logState === "reading"
+                      || !logClaimed
+                    }
+                    onClick={readLogInventory}
+                  >
+                    <Search size={15} aria-hidden="true" />
+                    Read log inventory
+                  </button>
+                  <label className="aerial-kit-log-source">
+                    <span>Source</span>
+                    <select
+                      value={logSource}
+                      disabled={
+                        !active
+                        || sessionState !== "monitoring"
+                        || logState === "reading"
+                      }
+                      onChange={(event) => {
+                        setLogSource(Number(event.target.value));
+                        setLogSample(null);
+                      }}
+                    >
+                      {LOG_SOURCE_LABELS.map((label, source) => (
+                        <option key={label} value={source}>{label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || logState === "reading"
+                      || !logInventory
+                      || !logInventory.find(
+                        (entry) => (
+                          entry.source === logSource
+                          && entry.status === "available"
+                          && entry.count > 0
+                        ),
+                      )
+                    }
+                    onClick={readLogSample}
+                  >
+                    <Download size={15} aria-hidden="true" />
+                    Read latest sample
+                  </button>
+                </div>
+                <p>
+                  Reads the newest {LOG_SAMPLE_LIMIT} records or fewer at 20 Hz.
+                  Source selection is protocol state only; RotorBench does not erase,
+                  rewrite, or download the whole log.
+                </p>
+                {logError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Log read unavailable</strong>
+                      <small>{logError}</small>
+                    </span>
+                  </div>
+                )}
+                <AerialKitLogReadings
+                  inventory={logInventory}
+                  sample={logSample}
+                  sourceLabels={LOG_SOURCE_LABELS}
+                />
               </section>
             )}
 
