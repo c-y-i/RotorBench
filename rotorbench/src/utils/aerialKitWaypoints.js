@@ -153,3 +153,71 @@ export function buildAerialKitRouteSummary(inventory) {
     },
   };
 }
+
+export function buildAerialKitRouteSketch(inventory) {
+  if (!inventory || typeof inventory !== "object") {
+    throw new Error("Read a waypoint inventory before sketching route geometry.");
+  }
+  if (inventory.status !== "ok" || inventory.complete !== true) {
+    return {
+      status: "unavailable",
+      reason: inventory.reason || inventory.status || "inventory-incomplete",
+      points: [],
+      bounds: null,
+      projection: "local-equirectangular",
+      northUp: true,
+    };
+  }
+  const slots = inventory.slots;
+  if (slots.length === 0) {
+    return {
+      status: "empty",
+      reason: "no-waypoints",
+      points: [],
+      bounds: null,
+      projection: "local-equirectangular",
+      northUp: true,
+    };
+  }
+  const latitudes = slots.map((slot) => slot.lat);
+  const longitudes = slots.map((slot) => slot.lon);
+  const bounds = {
+    minLat: Math.min(...latitudes),
+    maxLat: Math.max(...latitudes),
+    minLon: Math.min(...longitudes),
+    maxLon: Math.max(...longitudes),
+  };
+  const centerLat = (bounds.minLat + bounds.maxLat) / 2;
+  const centerLon = (bounds.minLon + bounds.maxLon) / 2;
+  const longitudeScale = Math.cos(radians(centerLat));
+  const local = slots.map((slot) => ({
+    index: slot.index,
+    x: (slot.lon - centerLon) * longitudeScale,
+    y: slot.lat - centerLat,
+  }));
+  const minX = Math.min(...local.map((point) => point.x));
+  const maxX = Math.max(...local.map((point) => point.x));
+  const minY = Math.min(...local.map((point) => point.y));
+  const maxY = Math.max(...local.map((point) => point.y));
+  const spanX = maxX - minX;
+  const spanY = maxY - minY;
+  const drawableSpan = 76;
+  const scale = Math.min(
+    spanX > 0 ? drawableSpan / spanX : Number.POSITIVE_INFINITY,
+    spanY > 0 ? drawableSpan / spanY : Number.POSITIVE_INFINITY,
+  );
+  const finiteScale = Number.isFinite(scale) ? scale : 1;
+  const points = local.map((point) => ({
+    index: point.index,
+    x: 50 + (point.x - (minX + maxX) / 2) * finiteScale,
+    y: 50 - (point.y - (minY + maxY) / 2) * finiteScale,
+  }));
+  return {
+    status: "ok",
+    reason: null,
+    points,
+    bounds,
+    projection: "local-equirectangular",
+    northUp: true,
+  };
+}

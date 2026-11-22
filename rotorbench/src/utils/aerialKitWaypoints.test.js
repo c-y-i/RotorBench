@@ -1,4 +1,5 @@
 import {
+  buildAerialKitRouteSketch,
   buildAerialKitRouteSummary,
   buildAerialKitWaypointInventory,
   greatCircleDistanceM,
@@ -146,5 +147,56 @@ test("does not calculate route distance for incomplete or zero-point inventories
     waypointCount: 0,
     legs: [],
     totalDistanceM: 0,
+  });
+});
+
+test("projects a north-up local route sketch without inventing a basemap", () => {
+  const inventory = buildAerialKitWaypointInventory([
+    { name: "wp_count", value: "3" },
+    { name: "wp0_lat", value: "0" },
+    { name: "wp0_lon", value: "0" },
+    { name: "wp1_lat", value: "0" },
+    { name: "wp1_lon", value: "0.1" },
+    { name: "wp2_lat", value: "0.1" },
+    { name: "wp2_lon", value: "0.1" },
+  ]);
+  const sketch = buildAerialKitRouteSketch(inventory);
+  expect(sketch).toMatchObject({
+    status: "ok",
+    projection: "local-equirectangular",
+    northUp: true,
+    bounds: {
+      minLat: 0,
+      maxLat: 0.1,
+      minLon: 0,
+      maxLon: 0.1,
+    },
+  });
+  expect(sketch.points).toHaveLength(3);
+  expect(sketch.points[1].x).toBeGreaterThan(sketch.points[0].x);
+  expect(sketch.points[2].y).toBeLessThan(sketch.points[1].y);
+  sketch.points.forEach((point) => {
+    expect(point.x).toBeGreaterThanOrEqual(10);
+    expect(point.x).toBeLessThanOrEqual(90);
+    expect(point.y).toBeGreaterThanOrEqual(10);
+    expect(point.y).toBeLessThanOrEqual(90);
+  });
+});
+
+test("centers a single waypoint and keeps empty sketches separate", () => {
+  const single = buildAerialKitWaypointInventory([
+    { name: "wp_count", value: "1" },
+    { name: "wp0_lat", value: "37" },
+    { name: "wp0_lon", value: "-122" },
+  ]);
+  expect(buildAerialKitRouteSketch(single).points).toEqual([
+    { index: 0, x: 50, y: 50 },
+  ]);
+  const empty = buildAerialKitWaypointInventory([
+    { name: "wp_count", value: "0" },
+  ]);
+  expect(buildAerialKitRouteSketch(empty)).toMatchObject({
+    status: "empty",
+    points: [],
   });
 });

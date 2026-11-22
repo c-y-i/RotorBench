@@ -1073,6 +1073,10 @@ test("reads a waypoint inventory from advertised parameters without upload contr
   expect(screen.getByText("Total route")).toBeInTheDocument();
   expect(screen.getByText("WP 0 → WP 1")).toBeInTheDocument();
   expect(screen.getByText(/Spherical great-circle estimate/i)).toBeInTheDocument();
+  expect(screen.getByRole("img", {
+    name: "Local north-up sketch of board-reported waypoint coordinates",
+  })).toBeInTheDocument();
+  expect(screen.getByText(/not a basemap or flown path/i)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /upload waypoint/i }))
     .not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /save mission/i }))

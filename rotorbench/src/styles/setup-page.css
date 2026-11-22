@@ -3467,6 +3467,95 @@
   line-height: 1.45;
 }
 
+.aerial-kit-route-sketch {
+  display: grid;
+  gap: 5px;
+  justify-self: center;
+  width: min(100%, 240px);
+  margin: 0;
+}
+
+.aerial-kit-route-sketch svg {
+  width: 100%;
+  aspect-ratio: 1;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-route-sketch figcaption {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.route-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.route-point {
+  fill: var(--surface-raised);
+  stroke: currentColor;
+  stroke-width: 1;
+}
+
+.route-point.is-start {
+  fill: currentColor;
+}
+
+.route-point-label {
+  fill: currentColor;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 3.2px;
+  font-weight: 600;
+}
+
+.route-north-line,
+.route-north-arrow {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.route-north-label {
+  fill: currentColor;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 3.5px;
+  font-weight: 700;
+}
+
+.aerial-kit-route-sketch.is-empty {
+  padding: 9px 10px;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-route-sketch.is-empty > span {
+  display: grid;
+  gap: 2px;
+}
+
+.aerial-kit-route-sketch.is-empty strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.aerial-kit-route-sketch.is-empty small {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
 .aerial-kit-log-frames {
   display: grid;
   gap: 5px;

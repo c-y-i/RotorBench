@@ -72,6 +72,7 @@ import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
 import AerialKitLogReadings from "./AerialKitLogReadings";
 import AerialKitWaypointRouteSummary from "./AerialKitWaypointRouteSummary";
+import AerialKitRouteSketch from "./AerialKitRouteSketch";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -2341,6 +2342,7 @@ export default function AerialKitStatusSession({
                         ))}
                       </ol>
                     )}
+                    <AerialKitRouteSketch inventory={waypointInventory} />
                     <AerialKitWaypointRouteSummary route={routeSummary} />
                   </div>
                 )}
