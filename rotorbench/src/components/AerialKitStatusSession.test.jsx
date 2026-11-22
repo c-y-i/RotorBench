@@ -731,6 +731,28 @@ test("reads bounded log samples while retaining holes, completion, and record ve
   expect(screen.getByText("v4 · 87 B")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();
 
+  const originalCreateObjectUrl = URL.createObjectURL;
+  const originalRevokeObjectUrl = URL.revokeObjectURL;
+  const originalAnchorClick = HTMLAnchorElement.prototype.click;
+  const createObjectUrl = jest.fn(() => "blob:log-sample");
+  const anchorClick = jest.fn();
+  URL.createObjectURL = createObjectUrl;
+  URL.revokeObjectURL = jest.fn();
+  HTMLAnchorElement.prototype.click = anchorClick;
+  try {
+    await userEvent.click(screen.getByRole("button", {
+      name: "Export sample",
+    }));
+    expect(createObjectUrl).toHaveBeenCalledTimes(1);
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/exported with its source, range, holes/i))
+      .toBeInTheDocument();
+  } finally {
+    URL.createObjectURL = originalCreateObjectUrl;
+    URL.revokeObjectURL = originalRevokeObjectUrl;
+    HTMLAnchorElement.prototype.click = originalAnchorClick;
+  }
+
   const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
   expect(commands).toContain(0x09);
   expect(commands).toContain(0x11);

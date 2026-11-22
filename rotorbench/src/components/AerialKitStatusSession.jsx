@@ -52,6 +52,7 @@ import {
   hasWebSerial,
   serialCaptureErrorMessage,
 } from "../utils/webSerialCapture";
+import { createAerialKitLogExport } from "../utils/aerialKitLogExport";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
@@ -1110,6 +1111,31 @@ export default function AerialKitStatusSession({
     }
   };
 
+  const downloadLogSample = () => {
+    try {
+      const exported = createAerialKitLogExport({
+        inventory: logInventory,
+        sample: logSample,
+        targetName: targetName || hello?.product || null,
+        nowMs: Date.now(),
+      });
+      const blob = new Blob([JSON.stringify(exported, null, 2)], {
+        type: "application/json",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `rotorbench-log-sample-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setMessage(
+        "Bounded log sample exported with its source, range, holes, completion, and record-version manifest.",
+      );
+    } catch (exportError) {
+      setLogError(exportError.message);
+      setLogState("error");
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -1832,11 +1858,20 @@ export default function AerialKitStatusSession({
                     <Download size={15} aria-hidden="true" />
                     Read latest sample
                   </button>
+                  <button
+                    type="button"
+                    disabled={!logSample?.done && !logSample?.noStream}
+                    onClick={downloadLogSample}
+                  >
+                    <Download size={15} aria-hidden="true" />
+                    Export sample
+                  </button>
                 </div>
                 <p>
                   Reads the newest {LOG_SAMPLE_LIMIT} records or fewer at 20 Hz.
                   Source selection is protocol state only; RotorBench does not erase,
-                  rewrite, or download the whole log.
+                  rewrite, or download the whole log. Export is a JSON sample plus
+                  manifest and excludes serial-port identity.
                 </p>
                 {logError && (
                   <div className="aerial-kit-rc-unavailable" role="note">
