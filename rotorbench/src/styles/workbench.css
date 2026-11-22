@@ -618,6 +618,7 @@
 
 .build-viewer-frame {
   position: relative;
+  --babylon-viewer-height: 100%;
   min-height: clamp(360px, 54vh, 650px);
   overflow: hidden;
   border: 1px solid #26383f;
@@ -4072,6 +4073,7 @@
 }
 
 .build-preview-panel .build-viewer-frame {
+  height: clamp(410px, 58vh, 700px);
   min-height: clamp(410px, 58vh, 700px);
   border: 0;
   border-radius: 0;

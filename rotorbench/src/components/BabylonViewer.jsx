@@ -1658,7 +1658,7 @@ const BabylonViewer = ({
     <div
       style={{
         width: "100%",
-        height: "clamp(320px, 52vh, 620px)",
+        height: "var(--babylon-viewer-height, clamp(320px, 52vh, 620px))",
         border: "1px solid #222",
         borderRadius: 8,
         overflow: "hidden",
