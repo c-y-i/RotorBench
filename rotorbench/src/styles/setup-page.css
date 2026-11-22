@@ -113,6 +113,119 @@
   color: var(--brand);
 }
 
+.setup-claim-ledger {
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface-raised);
+}
+
+.setup-claim-ledger-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 15px;
+  border-bottom: 1px solid var(--line);
+}
+
+.setup-claim-ledger-heading > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.setup-claim-ledger-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.setup-claim-ledger-heading p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.setup-claim-ledger-heading button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.setup-claim-ledger-heading button:hover {
+  border-color: var(--ink);
+  background: var(--surface-soft);
+}
+
+.setup-claim-ledger-items {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.setup-claim-ledger-items li {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  min-height: 104px;
+  padding: 13px 15px 15px;
+  border-inline-start: 1px solid var(--line);
+}
+
+.setup-claim-ledger-items li:first-child {
+  border-inline-start: 0;
+}
+
+.setup-claim-ledger-items li.is-requested {
+  background: color-mix(in srgb, var(--accent-soft) 52%, transparent);
+}
+
+.setup-claim-ledger-items span {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.setup-claim-ledger-items li.is-requested span {
+  color: var(--warn);
+}
+
+.setup-claim-ledger-items strong {
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.setup-claim-ledger-items small {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .setup-tabs {
   display: flex;
   align-items: center;
@@ -3243,6 +3356,18 @@
     justify-content: flex-end;
   }
 
+  .setup-claim-ledger-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .setup-claim-ledger-items li:nth-child(3) {
+    border-inline-start: 0;
+  }
+
+  .setup-claim-ledger-items li:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+
   .bench-runbook-footer {
     align-items: flex-start;
     flex-direction: column;
@@ -3340,6 +3465,29 @@
   .setup-context-link {
     justify-content: flex-start;
     min-height: 42px;
+  }
+
+  .setup-claim-ledger-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .setup-claim-ledger-heading button {
+    width: 100%;
+  }
+
+  .setup-claim-ledger-items {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-claim-ledger-items li,
+  .setup-claim-ledger-items li:nth-child(3) {
+    min-height: 0;
+    border-inline-start: 0;
+  }
+
+  .setup-claim-ledger-items li + li {
+    border-top: 1px solid var(--line);
   }
 
   .setup-tabs {

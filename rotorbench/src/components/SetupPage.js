@@ -775,6 +775,64 @@ export default function SetupPage() {
         </Link>
       </section>
 
+      <section
+        className="setup-claim-ledger"
+        aria-labelledby="setup-claim-ledger-title"
+      >
+        <div className="setup-claim-ledger-heading">
+          <div>
+            <h2 id="setup-claim-ledger-title">What the plan can prove</h2>
+            <p>
+              A requested value, a device readback, a running change, and
+              stored memory are separate facts.
+            </p>
+          </div>
+          <button type="button" onClick={openEvidenceReview}>
+            Review readback
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+        </div>
+        <ol className="setup-claim-ledger-items">
+          <li className={unsavedPlanLabels.length > 0 ? "is-requested" : ""}>
+            <span>Requested</span>
+            <strong>
+              {unsavedPlanLabels.length > 0
+                ? "Changes staged locally"
+                : "Current local values"}
+            </strong>
+            <small>
+              {unsavedPlanLabels.length > 0
+                ? "Save the changed plan to keep this request in the browser."
+                : "This is a local request, not a hardware state."}
+            </small>
+          </li>
+          <li>
+            <span>Echoed</span>
+            <strong>Readback not imported</strong>
+            <small>
+              A device answer can show reception, not that a controller
+              applied it.
+            </small>
+          </li>
+          <li>
+            <span>Applied</span>
+            <strong>Not established</strong>
+            <small>
+              RotorBench does not infer running controller state from a
+              readback.
+            </small>
+          </li>
+          <li>
+            <span>Persisted</span>
+            <strong>Not established</strong>
+            <small>
+              Require a device-side save and a fresh readback before claiming
+              persistence.
+            </small>
+          </li>
+        </ol>
+      </section>
+
       <div className="setup-tabs">
         <div
           className="setup-tab-list"

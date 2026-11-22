@@ -157,6 +157,15 @@ test("renders the hardware planning page and switches to radio setup", async () 
   fireEvent.click(screen.getByRole("button", { name: "New capture session" }));
   expect(screen.getByText(/^…/).textContent).not.toBe(initialSession);
   expect(screen.getByLabelText("Import combined hardware plan")).toBeInTheDocument();
+  const claimLedger = screen.getByRole("region", {
+    name: "What the plan can prove",
+  });
+  expect(within(claimLedger).getByText("Requested")).toBeInTheDocument();
+  expect(within(claimLedger).getByText("Current local values"))
+    .toBeInTheDocument();
+  expect(within(claimLedger).getByText("Readback not imported"))
+    .toBeInTheDocument();
+  expect(within(claimLedger).getAllByText("Not established")).toHaveLength(2);
 
   fireEvent.click(screen.getByRole("tab", { name: "Radio link" }));
   expect(screen.getByText(/Radio panel: none \/ roles arm,flightMode,velocity/)).toBeInTheDocument();
@@ -191,6 +200,24 @@ test("opens the evidence review directly from bench tools", () => {
   fireEvent.click(screen.getByRole("button", {
     name: /Review imported evidence/i,
   }));
+  expect(screen.getByTestId("mock-bench-runbook")).toHaveAttribute(
+    "data-open",
+    "true",
+  );
+});
+
+test("opens evidence review from the plan claim ledger", () => {
+  renderSetup();
+
+  const claimLedger = screen.getByRole("region", {
+    name: "What the plan can prove",
+  });
+  fireEvent.click(within(claimLedger).getByRole("button", {
+    name: "Review readback",
+  }));
+
+  expect(screen.getByTestId("setup-bench-tools"))
+    .toHaveAttribute("open");
   expect(screen.getByTestId("mock-bench-runbook")).toHaveAttribute(
     "data-open",
     "true",
