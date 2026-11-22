@@ -197,6 +197,34 @@ test("receiver metadata exposes published dual-band and telemetry details", () =
   )).toBeInTheDocument();
 });
 
+test("receiver metadata distinguishes PWM-capable outputs", () => {
+  render(
+    <PartPicker
+      category="receivers"
+      parts={[{
+        id: "rx-er6",
+        name: "RadioMaster ER6",
+        protocol: "CRSF",
+        frequencyBands: ["2.4 GHz"],
+        channels: 16,
+        pwmOutputs: 6,
+        telemetryPowerMw: 100,
+        weight: 14.5,
+        price: 24.99,
+        sourceUrl: "https://example.com/er6",
+      }]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
+      placeholder="Choose a receiver"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a receiver/i }));
+  expect(screen.getByText(/6 PWM outputs/)).toBeInTheDocument();
+  expect(screen.getByText(/16 channels/)).toBeInTheDocument();
+});
+
 test("flight-controller metadata distinguishes documented and custom mappings", () => {
   render(
     <PartPicker

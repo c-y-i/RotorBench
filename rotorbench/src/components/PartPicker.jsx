@@ -113,6 +113,9 @@ function getMeta(category, part) {
         part.protocol,
         part.frequencyBands?.join(" / "),
         footprintLabel(part),
+        Number(part.pwmOutputs)
+          ? `${Number(part.pwmOutputs)} PWM outputs`
+          : null,
         part.telemetryPowerMw
           ? `${part.telemetryPowerMw} mW telemetry`
           : null,

@@ -152,8 +152,9 @@ function factsFor(part, key) {
       part.protocol || "",
       formatList(part.frequencyBands),
       dimensions,
+      Number(part.pwmOutputs) ? `${Number(part.pwmOutputs)} PWM outputs` : "",
       Number(part.channels) ? `${Number(part.channels)} channels` : dimensions,
-    ].filter(Boolean).slice(0, 4);
+    ].filter(Boolean).slice(0, 5);
   }
   if (key === "battery") {
     return [

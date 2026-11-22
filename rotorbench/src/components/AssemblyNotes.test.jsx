@@ -113,6 +113,14 @@ test("labels catalog GLBs that can be scaled to a complete envelope", () => {
   expect(notes[0].modelLabel).toBe("Catalog GLB · envelope-targeted");
 });
 
+test("receiver notes surface source-backed PWM output count", () => {
+  const notes = getAssemblyNotes({
+    receiver: getPart("receivers", "rx-radiomaster-er6-24-pwm"),
+  });
+
+  expect(notes[0].facts).toContain("6 PWM outputs");
+});
+
 test("copies a source-labelled handoff without upgrading the planning boundary", async () => {
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
