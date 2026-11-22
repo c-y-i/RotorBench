@@ -1070,6 +1070,9 @@ test("reads a waypoint inventory from advertised parameters without upload contr
     .toBeInTheDocument();
   expect(screen.getByText("37.6774000, -122.4194000")).toBeInTheDocument();
   expect(screen.getByText("37.7000000, -122.4000000")).toBeInTheDocument();
+  expect(screen.getByText("Total route")).toBeInTheDocument();
+  expect(screen.getByText("WP 0 → WP 1")).toBeInTheDocument();
+  expect(screen.getByText(/Spherical great-circle estimate/i)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /upload waypoint/i }))
     .not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /save mission/i }))

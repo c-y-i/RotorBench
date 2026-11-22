@@ -79,3 +79,77 @@ export function buildAerialKitWaypointInventory(parameters) {
     complete,
   };
 }
+
+const EARTH_MEAN_RADIUS_M = 6371008.8;
+
+function radians(degrees) {
+  return degrees * Math.PI / 180;
+}
+
+export function greatCircleDistanceM(lat1, lon1, lat2, lon2) {
+  const phi1 = radians(lat1);
+  const phi2 = radians(lat2);
+  const deltaPhi = radians(lat2 - lat1);
+  const deltaLambda = radians(lon2 - lon1);
+  const sinPhi = Math.sin(deltaPhi / 2);
+  const sinLambda = Math.sin(deltaLambda / 2);
+  const a = Math.min(
+    1,
+    Math.max(
+      0,
+      sinPhi * sinPhi
+        + Math.cos(phi1) * Math.cos(phi2) * sinLambda * sinLambda,
+    ),
+  );
+  const angle = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return EARTH_MEAN_RADIUS_M * angle;
+}
+
+export function buildAerialKitRouteSummary(inventory) {
+  if (!inventory || typeof inventory !== "object") {
+    throw new Error("Read a waypoint inventory before calculating route geometry.");
+  }
+  if (inventory.status !== "ok" || inventory.complete !== true) {
+    return {
+      status: "unavailable",
+      reason: inventory.reason || inventory.status || "inventory-incomplete",
+      waypointCount: inventory.count ?? null,
+      legs: [],
+      totalDistanceM: null,
+      boundaries: {
+        greatCircleEstimate: true,
+        terrainNotConsidered: true,
+        flownPathNotObserved: true,
+        returnToHomeIncluded: false,
+      },
+    };
+  }
+  const slots = inventory.slots;
+  const legs = slots.slice(1).map((slot, offset) => {
+    const from = slots[offset];
+    return {
+      from: from.index,
+      to: slot.index,
+      distanceM: greatCircleDistanceM(
+        from.lat,
+        from.lon,
+        slot.lat,
+        slot.lon,
+      ),
+    };
+  });
+  const totalDistanceM = legs.reduce((total, leg) => total + leg.distanceM, 0);
+  return {
+    status: "ok",
+    reason: null,
+    waypointCount: slots.length,
+    legs,
+    totalDistanceM,
+    boundaries: {
+      greatCircleEstimate: true,
+      terrainNotConsidered: true,
+      flownPathNotObserved: true,
+      returnToHomeIncluded: false,
+    },
+  };
+}

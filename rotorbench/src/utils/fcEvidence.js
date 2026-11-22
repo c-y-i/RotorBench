@@ -1,4 +1,5 @@
 import { getBoardProfile } from "../data/flightControllerProfiles";
+import { buildAerialKitRouteSummary } from "./aerialKitWaypoints";
 
 const STATUS_PROTOCOLS = new Set(["akp", "betaflight"]);
 const PREFLIGHT_VERDICTS = {
@@ -953,6 +954,9 @@ export function parseAerialKitLiveStatusJson(payload) {
   const mission = normalizedMissionStatus(payload.mission);
   const calibration = normalizedCalibrationStatus(payload.calibration);
   const waypointInventory = normalizedWaypointInventory(payload.waypointInventory);
+  const routeSummary = waypointInventory
+    ? buildAerialKitRouteSummary(waypointInventory)
+    : null;
   return {
     kind: "fc-live-status",
     identity,
@@ -977,6 +981,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     mission,
     calibration,
     waypointInventory,
+    routeSummary,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

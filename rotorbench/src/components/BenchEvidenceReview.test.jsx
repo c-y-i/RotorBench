@@ -602,6 +602,8 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
     name: "Imported Aerial Kit waypoint inventory",
   })).toBeInTheDocument();
   expect(screen.getByText("37.6774000, -122.4194000")).toBeInTheDocument();
+  expect(screen.getByText("WP 0 → WP 1")).toBeInTheDocument();
+  expect(screen.getByText(/Spherical great-circle estimate/i)).toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();

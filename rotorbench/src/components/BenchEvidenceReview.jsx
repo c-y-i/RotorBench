@@ -28,6 +28,7 @@ import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
 import AerialKitLogReadings from "./AerialKitLogReadings";
+import AerialKitWaypointRouteSummary from "./AerialKitWaypointRouteSummary";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -1590,6 +1591,9 @@ export default function BenchEvidenceReview({
                   ))}
                 </ol>
               )}
+              <AerialKitWaypointRouteSummary
+                route={evidence.fcEvidence.liveStatus.routeSummary}
+              />
             </section>
           )}
 

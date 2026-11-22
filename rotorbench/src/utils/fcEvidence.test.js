@@ -299,6 +299,16 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
         },
       ],
     },
+    routeSummary: {
+      status: "ok",
+      waypointCount: 2,
+      legs: [
+        {
+          from: 0,
+          to: 1,
+        },
+      ],
+    },
     logInventory: [{
       status: "available",
       requestedSource: 0,

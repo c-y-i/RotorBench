@@ -63,11 +63,15 @@ import {
   createAerialKitLogExport,
   serializeAerialKitLogCsv,
 } from "../utils/aerialKitLogExport";
-import { buildAerialKitWaypointInventory } from "../utils/aerialKitWaypoints";
+import {
+  buildAerialKitRouteSummary,
+  buildAerialKitWaypointInventory,
+} from "../utils/aerialKitWaypoints";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
 import AerialKitLogReadings from "./AerialKitLogReadings";
+import AerialKitWaypointRouteSummary from "./AerialKitWaypointRouteSummary";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -1706,6 +1710,12 @@ export default function AerialKitStatusSession({
         && clockNow - telemetryStream.startedAtMs > telemetryFreshAfterMs
       )
     );
+  const routeSummary = useMemo(
+    () => waypointInventory
+      ? buildAerialKitRouteSummary(waypointInventory)
+      : null,
+    [waypointInventory],
+  );
   const canDownload = Boolean(
     hello
       || liveStatus
@@ -2331,6 +2341,7 @@ export default function AerialKitStatusSession({
                         ))}
                       </ol>
                     )}
+                    <AerialKitWaypointRouteSummary route={routeSummary} />
                   </div>
                 )}
               </section>

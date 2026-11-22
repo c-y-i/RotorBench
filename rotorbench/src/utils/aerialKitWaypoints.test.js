@@ -1,4 +1,8 @@
-import { buildAerialKitWaypointInventory } from "./aerialKitWaypoints";
+import {
+  buildAerialKitRouteSummary,
+  buildAerialKitWaypointInventory,
+  greatCircleDistanceM,
+} from "./aerialKitWaypoints";
 
 test("builds ordered waypoint coordinates from advertised parameters", () => {
   expect(buildAerialKitWaypointInventory([
@@ -88,5 +92,59 @@ test("marks missing, out-of-range, and over-count waypoint slots incomplete", ()
     status: "incomplete",
     reason: "count-exceeds-slots",
     complete: false,
+  });
+});
+
+test("calculates ordered great-circle legs without inventing a flown path", () => {
+  expect(greatCircleDistanceM(0, 0, 0, 1)).toBeCloseTo(111195.08, 2);
+  const inventory = buildAerialKitWaypointInventory([
+    { name: "wp_count", value: "3" },
+    { name: "wp0_lat", value: "0" },
+    { name: "wp0_lon", value: "0" },
+    { name: "wp1_lat", value: "0" },
+    { name: "wp1_lon", value: "1" },
+    { name: "wp2_lat", value: "0" },
+    { name: "wp2_lon", value: "0" },
+  ]);
+  const route = buildAerialKitRouteSummary(inventory);
+  expect(route).toMatchObject({
+    status: "ok",
+    waypointCount: 3,
+    legs: [
+      { from: 0, to: 1 },
+      { from: 1, to: 2 },
+    ],
+    boundaries: {
+      greatCircleEstimate: true,
+      terrainNotConsidered: true,
+      flownPathNotObserved: true,
+      returnToHomeIncluded: false,
+    },
+  });
+  expect(route.legs[0].distanceM).toBeCloseTo(111195.08, 2);
+  expect(route.legs[1].distanceM).toBeCloseTo(111195.08, 2);
+  expect(route.totalDistanceM).toBeCloseTo(222390.16, 2);
+});
+
+test("does not calculate route distance for incomplete or zero-point inventories", () => {
+  expect(buildAerialKitRouteSummary({
+    status: "incomplete",
+    complete: false,
+    reason: "invalid-coordinate",
+    count: 2,
+    slots: [],
+  })).toMatchObject({
+    status: "unavailable",
+    reason: "invalid-coordinate",
+    totalDistanceM: null,
+  });
+  const empty = buildAerialKitWaypointInventory([
+    { name: "wp_count", value: "0" },
+  ]);
+  expect(buildAerialKitRouteSummary(empty)).toMatchObject({
+    status: "ok",
+    waypointCount: 0,
+    legs: [],
+    totalDistanceM: 0,
   });
 });
