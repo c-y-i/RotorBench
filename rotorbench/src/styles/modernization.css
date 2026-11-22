@@ -168,12 +168,10 @@
 }
 
 .analysis-hardware-copy p {
-  overflow: hidden;
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--ink-soft);
   font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .analysis-hardware-facts {
@@ -190,13 +188,11 @@
 }
 
 .analysis-hardware-facts dd {
-  overflow: hidden;
   margin: 0;
+  overflow-wrap: anywhere;
   color: var(--ink);
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .analysis-hardware-facts .analysis-hardware-evidence {
@@ -519,6 +515,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -558,6 +555,7 @@
 }
 
 .saved-page .saved-title {
+  flex: 1 1 14rem;
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -1030,8 +1028,13 @@
 
 .saved-title-actions {
   display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  max-width: 100%;
+  margin-inline-start: auto;
 }
 
 .saved-compare-toggle {
