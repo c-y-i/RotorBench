@@ -10,6 +10,7 @@ import {
   AERIALKIT_RC_PROTOCOL_IDS,
 } from "./flightControllerCommands";
 import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
+import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
 
 const INFERRED_AIRFRAMES = Object.fromEntries(
   Object.entries(AERIALKIT_AIRFRAME_IDS).map(([name, id]) => [id, name]),
@@ -537,6 +538,36 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
         return key.includes("DynMin")
           ? "Use static cutoff"
           : "Disabled";
+      },
+    })),
+    ...AERIALKIT_DYNAMIC_NOTCH_FIELDS.map(({ key, runtimeName, label }) => ({
+      key,
+      source: runtimeName,
+      snapshotKey: runtimeName,
+      label,
+      parse: (raw) => {
+        if (key === "dynNotchCount") return boundedInteger(raw, 0, 5);
+        const number = finite(raw);
+        if (key === "dynNotchQ") {
+          return number != null && number >= 1 && number <= 1000
+            ? number
+            : null;
+        }
+        if (key === "dynNotchMinHz") {
+          return number != null && number >= 20 && number <= 250
+            ? number
+            : null;
+        }
+        return number != null && number >= 200 && number <= 1000
+          ? number
+          : null;
+      },
+      display: (value) => {
+        if (key === "dynNotchCount") {
+          return value === 0 ? "Disabled" : `${value} per axis`;
+        }
+        if (key === "dynNotchQ") return `Q ${value / 100}`;
+        return `${value} Hz`;
       },
     })),
     {

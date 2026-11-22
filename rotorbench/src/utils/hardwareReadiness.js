@@ -35,6 +35,10 @@ import {
   AERIALKIT_FILTER_FIELDS,
   buildAerialKitFilterPlan,
 } from "./aerialKitFilters";
+import {
+  AERIALKIT_DYNAMIC_NOTCH_FIELDS,
+  buildAerialKitNotchPlan,
+} from "./aerialKitNotch";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -107,6 +111,9 @@ export function summarizeHardwareReadiness({
   const profile = getBoardProfile(fcPlan.profileId, flightController);
   const fcFilterPlan = fcPlan.firmwareFamily === "aerialkit"
     ? buildAerialKitFilterPlan(fcPlan)
+    : null;
+  const fcNotchPlan = fcPlan.firmwareFamily === "aerialkit"
+    ? buildAerialKitNotchPlan(fcPlan)
     : null;
   const fcParameterRequirements = getArdupilotParameterRequirements(
     fcPlan,
@@ -417,6 +424,15 @@ export function summarizeHardwareReadiness({
     fcFilterLoopHz: fcFilterPlan?.loopHz ?? null,
     fcFilterMaxCutoffHz: fcFilterPlan?.maxFilterHz ?? null,
     fcFilterClampedCount: fcFilterPlan?.clampedCount ?? null,
+    ...Object.fromEntries(AERIALKIT_DYNAMIC_NOTCH_FIELDS.map(({ key }) => [
+      `fc${key[0].toUpperCase()}${key.slice(1)}`,
+      fcPlan.firmwareFamily === "aerialkit" ? fcPlan[key] : null,
+    ])),
+    fcDynamicNotchStatus: fcNotchPlan?.status ?? null,
+    fcDynamicNotchEligible: fcNotchPlan?.eligible ?? null,
+    fcDynamicNotchLoopHz: fcNotchPlan?.loopHz ?? null,
+    fcDynamicNotchAnalysisRateHz: fcNotchPlan?.analysisRateHz ?? null,
+    fcDynamicNotchBinHz: fcNotchPlan?.binHz ?? null,
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
@@ -582,6 +598,16 @@ export function sanitizeHardwareReadiness(readiness) {
     fcFilterLoopHz: readiness.fcFilterLoopHz ?? null,
     fcFilterMaxCutoffHz: readiness.fcFilterMaxCutoffHz ?? null,
     fcFilterClampedCount: readiness.fcFilterClampedCount ?? null,
+    ...Object.fromEntries(AERIALKIT_DYNAMIC_NOTCH_FIELDS.map(({ key }) => {
+      const readinessKey = `fc${key[0].toUpperCase()}${key.slice(1)}`;
+      return [readinessKey, readiness[readinessKey] ?? null];
+    })),
+    fcDynamicNotchStatus: readiness.fcDynamicNotchStatus || null,
+    fcDynamicNotchEligible: readiness.fcDynamicNotchEligible ?? null,
+    fcDynamicNotchLoopHz: readiness.fcDynamicNotchLoopHz ?? null,
+    fcDynamicNotchAnalysisRateHz:
+      readiness.fcDynamicNotchAnalysisRateHz ?? null,
+    fcDynamicNotchBinHz: readiness.fcDynamicNotchBinHz ?? null,
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
     fcRateCenterDps: readiness.fcRateCenterDps ?? null,
     fcRateExpo: readiness.fcRateExpo ?? null,

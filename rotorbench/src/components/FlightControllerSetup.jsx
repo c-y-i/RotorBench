@@ -56,6 +56,7 @@ import {
   summarizeAerialKitRateFeel,
 } from "../utils/aerialKitRateCurve";
 import { buildAerialKitFilterPlan } from "../utils/aerialKitFilters";
+import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -128,6 +129,11 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "dtermLpf2StaticHz-range": { id: "fc-dterm-lpf2-static", label: "D-term LPF2 static cutoff" },
   "gyro-filter-dynamic-order": { id: "fc-gyro-lpf1-dyn-min", label: "gyro filter bounds" },
   "dterm-filter-dynamic-order": { id: "fc-dterm-lpf1-dyn-min", label: "D-term filter bounds" },
+  "dyn-notch-count-range": { id: "fc-dyn-notch-count", label: "dynamic notch count" },
+  "dyn-notch-q-range": { id: "fc-dyn-notch-q", label: "dynamic notch Q" },
+  "dyn-notch-min-range": { id: "fc-dyn-notch-min", label: "dynamic notch low" },
+  "dyn-notch-max-range": { id: "fc-dyn-notch-max", label: "dynamic notch high" },
+  "dyn-notch-band-order": { id: "fc-dyn-notch-min", label: "dynamic notch band" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -460,7 +466,20 @@ function FilterStageRow({
   );
 }
 
-function FilterChainsPanel({ config, plan, onFilterChange }) {
+function FilterChainsPanel({
+  config,
+  plan,
+  notchPlan,
+  onFilterChange,
+}) {
+  const notchStatusLabel = {
+    off: "Off",
+    unverified: "Gate unverified",
+    "loop-gate": "Below 2 kHz",
+    "band-invalid": "Band invalid",
+    eligible: "Eligible",
+  }[notchPlan.status];
+
   return (
     <section className="fc-section" aria-labelledby="fc-filters-title">
       <div className="fc-section-heading">
@@ -603,6 +622,144 @@ function FilterChainsPanel({ config, plan, onFilterChange }) {
           </fieldset>
         ))}
       </div>
+      <details className="fc-notch-plan">
+        <summary>
+          <span>
+            <strong>Dynamic notch bank</strong>
+            <small>
+              {notchPlan.count === 0
+                ? "Disabled"
+                : `${notchPlan.count} per axis · ${notchPlan.requestedMinHz}–${notchPlan.requestedMaxHz} Hz · Q ${notchPlan.q}`}
+            </small>
+          </span>
+          <em className={`is-${notchPlan.status}`}>{notchStatusLabel}</em>
+        </summary>
+        <div className="fc-notch-plan-body">
+          <div className="fc-notch-status" role="note">
+            <span>
+              <small>Runtime gate</small>
+              <strong>{notchStatusLabel}</strong>
+            </span>
+            <p>{notchPlan.detail}</p>
+          </div>
+          <dl className="fc-notch-analysis">
+            <div>
+              <dt>Requested loop</dt>
+              <dd>{formatFilterHz(notchPlan.loopHz)}</dd>
+            </div>
+            <div>
+              <dt>Analysis rate</dt>
+              <dd>{formatFilterHz(notchPlan.analysisRateHz)}</dd>
+            </div>
+            <div>
+              <dt>Bin width</dt>
+              <dd>{formatFilterHz(notchPlan.binHz)}</dd>
+            </div>
+            <div>
+              <dt>Search bins</dt>
+              <dd>
+                {notchPlan.effectiveMinHz == null
+                  ? "Unverified"
+                  : `${formatFilterHz(notchPlan.effectiveMinHz)} – ${formatFilterHz(notchPlan.effectiveMaxHz)}`}
+              </dd>
+            </div>
+          </dl>
+          <div className="fc-field-grid fc-notch-fields">
+            <Field
+              label="Notches per axis"
+              htmlFor="fc-dyn-notch-count"
+              hint="0 disables; 1 to 5 tracked peaks"
+              hintId="fc-dyn-notch-count-hint"
+            >
+              <input
+                id="fc-dyn-notch-count"
+                type="number"
+                min="0"
+                max="5"
+                step="1"
+                aria-invalid={
+                  filterInputInvalid(config.dynNotchCount)
+                  || !Number.isInteger(Number(config.dynNotchCount))
+                }
+                aria-describedby="fc-dyn-notch-count-hint"
+                value={filterInputValue(config.dynNotchCount)}
+                onChange={(event) => onFilterChange(
+                  "dynNotchCount",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Notch Q · hundredths"
+              htmlFor="fc-dyn-notch-q"
+              hint="1 to 1000; 300 means Q 3"
+              hintId="fc-dyn-notch-q-hint"
+            >
+              <input
+                id="fc-dyn-notch-q"
+                type="number"
+                min="1"
+                max="1000"
+                step="1"
+                aria-invalid={filterInputInvalid(config.dynNotchQ)}
+                aria-describedby="fc-dyn-notch-q-hint"
+                value={filterInputValue(config.dynNotchQ)}
+                onChange={(event) => onFilterChange(
+                  "dynNotchQ",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Search low"
+              htmlFor="fc-dyn-notch-min"
+              hint="20 to 250 Hz"
+              hintId="fc-dyn-notch-min-hint"
+            >
+              <input
+                id="fc-dyn-notch-min"
+                type="number"
+                min="20"
+                max="250"
+                step="1"
+                aria-invalid={filterInputInvalid(config.dynNotchMinHz)}
+                aria-describedby="fc-dyn-notch-min-hint"
+                value={filterInputValue(config.dynNotchMinHz)}
+                onChange={(event) => onFilterChange(
+                  "dynNotchMinHz",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Search high"
+              htmlFor="fc-dyn-notch-max"
+              hint="200 to 1000 Hz; must exceed the low edge"
+              hintId="fc-dyn-notch-max-hint"
+            >
+              <input
+                id="fc-dyn-notch-max"
+                type="number"
+                min="200"
+                max="1000"
+                step="1"
+                aria-invalid={filterInputInvalid(config.dynNotchMaxHz)}
+                aria-describedby="fc-dyn-notch-max-hint"
+                value={filterInputValue(config.dynNotchMaxHz)}
+                onChange={(event) => onFilterChange(
+                  "dynNotchMaxHz",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+          </div>
+          <p>
+            Eligible is a local gate result, not proof of a notch. The bank
+            engages only when live gyro spectra contain a peak above the
+            firmware noise floor.
+          </p>
+        </div>
+      </details>
       <p className="fc-filter-boundary">
         These are staged firmware values. RotorBench has not measured the
         spectrum, loop timing, or filter response on the selected aircraft.
@@ -715,6 +872,10 @@ export default function FlightControllerSetup({
   });
   const filterPlan = useMemo(
     () => buildAerialKitFilterPlan(config),
+    [config],
+  );
+  const notchPlan = useMemo(
+    () => buildAerialKitNotchPlan(config),
     [config],
   );
   const aerialKitRoleKeys = new Set(
@@ -1765,6 +1926,7 @@ export default function FlightControllerSetup({
             <FilterChainsPanel
               config={config}
               plan={filterPlan}
+              notchPlan={notchPlan}
               onFilterChange={(key, nextValue) => update(key, nextValue)}
             />
           )}

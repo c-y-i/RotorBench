@@ -5,6 +5,7 @@ import {
   supportsAerialKitWingFailsafe,
 } from "../data/flightControllerProfiles";
 import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
+import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
 
 export const AERIALKIT_AIRFRAME_IDS = {
   quadx: 0,
@@ -158,6 +159,16 @@ export function buildFlightControllerCommands(
       && Number(config[key]) >= 0
       && Number(config[key]) <= 1000
     )) &&
+    AERIALKIT_DYNAMIC_NOTCH_FIELDS.every(({ key }) => finite(config[key])) &&
+    integer(config.dynNotchCount) &&
+    Number(config.dynNotchCount) >= 0 &&
+    Number(config.dynNotchCount) <= 5 &&
+    Number(config.dynNotchQ) >= 1 &&
+    Number(config.dynNotchQ) <= 1000 &&
+    Number(config.dynNotchMinHz) >= 20 &&
+    Number(config.dynNotchMinHz) <= 250 &&
+    Number(config.dynNotchMaxHz) >= 200 &&
+    Number(config.dynNotchMaxHz) <= 1000 &&
     finite(config.maxRateDps) &&
     finite(config.rateCenterDps) &&
     finite(config.rateExpo) &&
@@ -249,6 +260,9 @@ export function buildFlightControllerCommands(
     `set gyro_rate_hz ${Number(config.gyroRateHz)}`,
     `set pid_denom ${Number(config.pidDenom)}`,
     ...AERIALKIT_FILTER_FIELDS.map(({ key, runtimeName }) => (
+      `set ${runtimeName} ${Number(config[key])}`
+    )),
+    ...AERIALKIT_DYNAMIC_NOTCH_FIELDS.map(({ key, runtimeName }) => (
       `set ${runtimeName} ${Number(config[key])}`
     )),
     `set max_rate_dps ${Number(config.maxRateDps)}`,

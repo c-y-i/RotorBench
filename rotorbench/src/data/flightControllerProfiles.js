@@ -2,6 +2,7 @@ import {
   AERIALKIT_FILTER_FIELDS,
   buildAerialKitFilterPlan,
 } from "../utils/aerialKitFilters";
+import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
 
 export const FIRMWARE_FAMILIES = [
   {
@@ -1766,6 +1767,10 @@ export function createDefaultFlightControllerConfig(
     dtermLpf1DynMinHz: 75,
     dtermLpf1DynMaxHz: 150,
     dtermLpf2StaticHz: 150,
+    dynNotchCount: 3,
+    dynNotchQ: 300,
+    dynNotchMinHz: 100,
+    dynNotchMaxHz: 600,
     maxRateDps: 700,
     rateCenterDps: 0,
     rateExpo: 0,
@@ -2146,6 +2151,63 @@ export function validateFlightControllerConfig(
         });
       }
     });
+    if (
+      !integer(config.dynNotchCount)
+      || Number(config.dynNotchCount) < 0
+      || Number(config.dynNotchCount) > 5
+    ) {
+      issues.push({
+        severity: "error",
+        code: "dyn-notch-count-range",
+        message: "Dynamic notch count must be a whole number from 0 to 5 per axis; 0 disables the bank.",
+      });
+    }
+    if (
+      !finite(config.dynNotchQ)
+      || Number(config.dynNotchQ) < 1
+      || Number(config.dynNotchQ) > 1000
+    ) {
+      issues.push({
+        severity: "error",
+        code: "dyn-notch-q-range",
+        message: "Dynamic notch Q must be between 1 and 1000 in hundredths; 300 means Q 3.",
+      });
+    }
+    if (
+      !finite(config.dynNotchMinHz)
+      || Number(config.dynNotchMinHz) < 20
+      || Number(config.dynNotchMinHz) > 250
+    ) {
+      issues.push({
+        severity: "error",
+        code: "dyn-notch-min-range",
+        message: "Dynamic notch search low must be between 20 and 250 Hz.",
+      });
+    }
+    if (
+      !finite(config.dynNotchMaxHz)
+      || Number(config.dynNotchMaxHz) < 200
+      || Number(config.dynNotchMaxHz) > 1000
+    ) {
+      issues.push({
+        severity: "error",
+        code: "dyn-notch-max-range",
+        message: "Dynamic notch search high must be between 200 and 1000 Hz.",
+      });
+    }
+    if (
+      finite(config.dynNotchCount)
+      && Number(config.dynNotchCount) > 0
+      && finite(config.dynNotchMinHz)
+      && finite(config.dynNotchMaxHz)
+      && Number(config.dynNotchMaxHz) <= Number(config.dynNotchMinHz)
+    ) {
+      issues.push({
+        severity: "warning",
+        code: "dyn-notch-band-order",
+        message: "Dynamic notch search high must be above its low edge; the firmware refuses this bank.",
+      });
+    }
     if (
       !finite(config.maxRateDps)
       || Number(config.maxRateDps) < 10
@@ -2868,6 +2930,9 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
   const filterPlan = config.firmwareFamily === "aerialkit"
     ? buildAerialKitFilterPlan(config)
     : null;
+  const notchPlan = config.firmwareFamily === "aerialkit"
+    ? buildAerialKitNotchPlan(config)
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -2892,6 +2957,9 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
               ? `${filterPlan.clampedCount} cutoff${filterPlan.clampedCount === 1 ? "" : "s"} clamped to the ${filterPlan.maxFilterHz} Hz quarter-loop ceiling`
               : "runtime quarter-loop clamp unverified because gyro rate follows the board driver"
           }`,
+          `Dynamic notch: ${notchPlan.count === 0
+            ? "disabled"
+            : `${notchPlan.count} per axis, ${notchPlan.requestedMinHz}–${notchPlan.requestedMaxHz} Hz, Q ${notchPlan.q}`}; ${notchPlan.detail}`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,
           ...(supportsAerialKitWingFailsafe(config.airframe)

@@ -1,6 +1,7 @@
 import { getBoardProfile } from "../data/flightControllerProfiles";
 import { buildAerialKitRouteSummary } from "./aerialKitWaypoints";
 import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
+import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
 
 const STATUS_PROTOCOLS = new Set(["akp", "betaflight"]);
 const PREFLIGHT_VERDICTS = {
@@ -1548,6 +1549,10 @@ const PARAMETER_PLAN_KEYS = {
   gyro_rate_hz: "gyroRateHz",
   pid_denom: "pidDenom",
   ...Object.fromEntries(AERIALKIT_FILTER_FIELDS.map(({ runtimeName, key }) => [
+    runtimeName,
+    key,
+  ])),
+  ...Object.fromEntries(AERIALKIT_DYNAMIC_NOTCH_FIELDS.map(({ runtimeName, key }) => [
     runtimeName,
     key,
   ])),

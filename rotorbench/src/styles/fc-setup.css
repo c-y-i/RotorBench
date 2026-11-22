@@ -1162,6 +1162,172 @@
   line-height: 1.45;
 }
 
+.fc-notch-plan {
+  margin-top: 10px;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.fc-notch-plan > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 12px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.fc-notch-plan > summary::-webkit-details-marker {
+  display: none;
+}
+
+.fc-notch-plan > summary:hover {
+  background: var(--surface-soft);
+}
+
+.fc-notch-plan > summary > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.fc-notch-plan > summary strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.fc-notch-plan > summary small {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-notch-plan > summary em {
+  padding: 4px 7px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.fc-notch-plan > summary em.is-eligible {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-color: transparent;
+}
+
+.fc-notch-plan > summary em.is-loop-gate,
+.fc-notch-plan > summary em.is-band-invalid {
+  color: var(--warn);
+  background: var(--accent-soft);
+  border-color: #e2bd9e;
+}
+
+.fc-notch-plan-body {
+  display: grid;
+  gap: 11px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.fc-notch-status {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.36fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.fc-notch-status > span {
+  display: grid;
+  gap: 1px;
+}
+
+.fc-notch-status small,
+.fc-notch-analysis dt {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fc-notch-status strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+}
+
+.fc-notch-status p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.fc-notch-analysis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding-block: 9px;
+  border-block: 1px solid var(--line);
+}
+
+.fc-notch-analysis > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding-inline: 9px;
+  border-inline-end: 1px solid var(--line);
+}
+
+.fc-notch-analysis > div:first-child {
+  padding-inline-start: 0;
+}
+
+.fc-notch-analysis > div:last-child {
+  border-inline-end: 0;
+}
+
+.fc-notch-analysis dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-notch-fields {
+  padding-top: 1px;
+}
+
+.fc-notch-plan-body > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .fc-sysid-plan {
   display: grid;
   gap: 11px;
@@ -2598,6 +2764,23 @@
     grid-template-columns: 1fr;
   }
 
+  .fc-notch-status {
+    grid-template-columns: 1fr;
+  }
+
+  .fc-notch-analysis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 9px;
+  }
+
+  .fc-notch-analysis > div:nth-child(2) {
+    border-inline-end: 0;
+  }
+
+  .fc-notch-analysis > div:nth-child(3) {
+    padding-inline-start: 0;
+  }
+
   .fc-feature-unavailable ul {
     grid-template-columns: 1fr;
   }
@@ -2733,6 +2916,14 @@
 
   .fc-receiver-dual-output-heading em {
     grid-column: 2;
+  }
+
+  .fc-notch-plan > summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fc-notch-plan > summary em {
+    width: max-content;
   }
 
   .fc-channel-map {

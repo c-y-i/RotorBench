@@ -53,6 +53,10 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("D-term LPF1 dynamic low")).toHaveValue(75);
   expect(screen.getByLabelText("D-term LPF1 dynamic high")).toHaveValue(150);
   expect(screen.getByLabelText("D-term LPF2 static")).toHaveValue(150);
+  expect(screen.getByLabelText("Notches per axis")).toHaveValue(3);
+  expect(screen.getByLabelText("Notch Q · hundredths")).toHaveValue(300);
+  expect(screen.getByLabelText("Search low")).toHaveValue(100);
+  expect(screen.getByLabelText("Search high")).toHaveValue(600);
   expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
   expect(screen.getByLabelText("Centre slope")).toHaveValue(0);
   expect(screen.getByLabelText("Rate expo")).toHaveValue(0);
@@ -134,6 +138,45 @@ test("plans Aerial Kit filter chains against the requested loop clamp", async ()
     dtermLpf1DynMaxHz: 150,
   }));
   expect(screen.getAllByText("Static").length).toBeGreaterThan(0);
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("plans the Aerial Kit dynamic notch gate and analysis resolution", async () => {
+  const onChange = jest.fn();
+  const { container } = render(<FlightControllerSetup onChange={onChange} />);
+  const notchDetails = screen.getByText("Dynamic notch bank").closest("details");
+
+  expect(screen.getByText("Dynamic notch bank")).toBeInTheDocument();
+  expect(screen.getAllByText("Gate unverified").length).toBeGreaterThan(0);
+  expect(screen.queryByText(/does not measure or filter/i)).not.toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Requested gyro rate"), {
+    target: { value: "4000" },
+  });
+  fireEvent.change(screen.getByLabelText("Loop divisor"), {
+    target: { value: "2" },
+  });
+  expect(screen.getAllByText("Eligible").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("2000 Hz").length).toBeGreaterThan(0);
+  expect(screen.getByText("31.3 Hz")).toBeInTheDocument();
+  expect(screen.getByText("93.8 Hz – 593.8 Hz")).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Requested gyro rate"), {
+    target: { value: "3200" },
+  });
+  expect(within(notchDetails).getByText(/requested 1600 Hz loop is below/i))
+    .toBeInTheDocument();
+  expect(screen.getAllByText("Below 2 kHz").length).toBeGreaterThan(0);
+
+  fireEvent.change(screen.getByLabelText("Notches per axis"), {
+    target: { value: "0" },
+  });
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+    gyroRateHz: 3200,
+    pidDenom: 2,
+    dynNotchCount: 0,
+  }));
+  expect(screen.getAllByText("Off").length).toBeGreaterThan(0);
   expect(await getA11yViolations(container)).toEqual([]);
 });
 

@@ -1027,6 +1027,10 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     "gyro_lpf1_dyn_min_hz=250 status=0",
     "gyro_lpf1_dyn_max_hz=400 status=0",
     "dterm_lpf1_dyn_max_hz=150 status=0",
+    "dyn_notch_count=4 status=0",
+    "dyn_notch_q=300 status=0",
+    "dyn_notch_min_hz=100 status=0",
+    "dyn_notch_max_hz=700 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
     gyroLpf1StaticHz: 250,
@@ -1034,6 +1038,10 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     gyroLpf1DynMaxHz: 500,
     gyroLpf2StaticHz: 500,
     dtermLpf1DynMaxHz: 150,
+    dynNotchCount: 4,
+    dynNotchQ: 300,
+    dynNotchMinHz: 100,
+    dynNotchMaxHz: 600,
   });
 
   expect(checks.find((check) => check.id === "fc-param-gyro-lpf1-static-hz").status)
@@ -1049,6 +1057,13 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     .toBe("pass");
   expect(checks.find((check) => check.id === "fc-param-gyro-lpf2-static-hz").status)
     .toBe("unverified");
+  expect(checks.find((check) => check.id === "fc-param-dyn-notch-count").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-dyn-notch-max-hz"))
+    .toMatchObject({
+      status: "fail",
+      detail: expect.stringMatching(/plan expects 600/i),
+    });
 });
 
 test("parses Mission Planner and QGroundControl parameter files", () => {

@@ -246,6 +246,10 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     dtermLpf1DynMinHz: 75,
     dtermLpf1DynMaxHz: 150,
     dtermLpf2StaticHz: 150,
+    dynNotchCount: 3,
+    dynNotchQ: 300,
+    dynNotchMinHz: 100,
+    dynNotchMaxHz: 600,
   });
   const issues = validateFlightControllerConfig({
     ...config,
@@ -265,6 +269,25 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     expect.objectContaining({
       severity: "error",
       code: "gyroLpf2StaticHz-range",
+    }),
+  ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    dynNotchMinHz: 600,
+    dynNotchMaxHz: 600,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "warning",
+      code: "dyn-notch-band-order",
+    }),
+  ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    dynNotchCount: 6,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "dyn-notch-count-range",
     }),
   ]));
 });
