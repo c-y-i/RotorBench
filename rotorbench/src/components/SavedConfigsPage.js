@@ -370,6 +370,9 @@ export default function SavedConfigsPage() {
             if (statusFilter === "evidence") {
                 return summary.benchEvidenceConfigured;
             }
+            if (statusFilter === "envelope-review") {
+                return ["above", "below"].includes(summary.takeoffEnvelopeStatus);
+            }
             return true;
         });
     }, [items, q, statusFilter]);
@@ -480,6 +483,7 @@ export default function SavedConfigsPage() {
                             <option value="power-review">Power-path review</option>
                             <option value="hardware-review">Hardware plan review</option>
                             <option value="hardware-clear">Hardware plan clear</option>
+                            <option value="envelope-review">Outside takeoff envelope</option>
                             <option value="evidence">Imported evidence</option>
                         </select>
                     </label>

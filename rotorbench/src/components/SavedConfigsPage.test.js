@@ -246,7 +246,7 @@ test("status filters isolate hardware-plan review from clear plans", async () =>
   expect(screen.getByRole("heading", { name: "Offline build" })).toBeInTheDocument();
 });
 
-test("saved builds can be sorted by planning weight and catalog price", async () => {
+test("saved builds can be sorted by planning totals and isolated by envelope", async () => {
   const lightBuild = {
     ...offlineBuild,
     id: "light-build",
@@ -293,6 +293,13 @@ test("saved builds can be sorted by planning weight and catalog price", async ()
   expect(headings.indexOf("Heavy build")).toBeLessThan(
     headings.indexOf("Light build"),
   );
+
+  fireEvent.change(screen.getByLabelText("Filter saved builds by status"), {
+    target: { value: "envelope-review" },
+  });
+  expect(screen.getByRole("heading", { name: "Heavy build" })).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "Light build" }))
+    .not.toBeInTheDocument();
 });
 
 test("saved builds copy sanitized portable share links", async () => {
