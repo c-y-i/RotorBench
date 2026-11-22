@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ArcRotateCamera,
   Color3,
+  DynamicTexture,
   Engine,
   HemisphericLight,
+  Mesh,
   MeshBuilder,
   Scene,
   SceneLoader,
@@ -311,6 +313,58 @@ const createMotorFallback = (scene, motor = {}, position, index) => {
   return root;
 };
 
+const createMotorLabel = (scene, root, motorLabel, index) => {
+  if (!root || !motorLabel) return null;
+  const plane = MeshBuilder.CreatePlane(
+    `motor_label_${index}`,
+    { width: 0.045, height: 0.018 },
+    scene,
+  );
+  const texture = new DynamicTexture(
+    `motor_label_texture_${index}`,
+    { width: 320, height: 128 },
+    scene,
+    false,
+  );
+  texture.hasAlpha = true;
+  const context = texture.getContext();
+  context.clearRect(0, 0, 320, 128);
+  context.fillStyle = "rgba(16, 24, 22, 0.9)";
+  context.fillRect(5, 5, 310, 118);
+  context.strokeStyle = "#d5ff4f";
+  context.lineWidth = 5;
+  context.strokeRect(5, 5, 310, 118);
+  context.textAlign = "center";
+  context.fillStyle = "#f3f5f3";
+  context.font = "700 32px monospace";
+  context.fillText(
+    `OUT ${motorLabel.output} · ${motorLabel.label || "M"}`,
+    160,
+    50,
+  );
+  context.fillStyle = motorLabel.spin === "CW" ? "#d5ff4f" : "#9ce5d8";
+  context.font = "700 28px monospace";
+  context.fillText(motorLabel.spin || "SPIN N/A", 160, 92);
+  texture.update();
+
+  const material = new StandardMaterial(
+    `motor_label_material_${index}`,
+    scene,
+  );
+  material.diffuseTexture = texture;
+  material.emissiveTexture = texture;
+  material.opacityTexture = texture;
+  material.disableLighting = true;
+  material.backFaceCulling = false;
+  plane.material = material;
+  plane.parent = root;
+  plane.position.y = 0.11;
+  plane.billboardMode = Mesh.BILLBOARDMODE_ALL;
+  plane.isPickable = false;
+  plane.metadata = { componentType: "motor-label" };
+  return plane;
+};
+
 const createPropellerFallback = (
   scene,
   propeller = {},
@@ -450,6 +504,7 @@ const BabylonViewer = ({
   frameCornerPositions = [], // motor mount positions from frame data
   motorUrl,
   motorMountingPoint = [0, 0, 0], // [x,y,z] offset from motor origin to mounting point
+  motorLabels = [],
   batteryUrl,
   batteryMountingPoint = [0, 0, 0],
   fcUrl,
@@ -504,6 +559,9 @@ const BabylonViewer = ({
   const frameLoadPromiseRef = useRef(Promise.resolve());
   const previousClearedComponentsRef = useRef([]);
   const unitScaleRef = useRef(FIXED_UNIT_SCALE);
+  const motorLabelSignature = motorLabels
+    .map((label) => `${label?.output}:${label?.label}:${label?.spin}`)
+    .join("|");
 
   const SAMPLE_CAMERA = { alpha: 7.85, beta: 1.2, radius: 460 };
 
@@ -1684,6 +1742,9 @@ const BabylonViewer = ({
         });
       }
       scene.__motorRoots = motorRoots.sort((a, b) => a.name.localeCompare(b.name));
+      scene.__motorRoots.forEach((root, index) => {
+        createMotorLabel(scene, root, motorLabels[index], index);
+      });
       scene.__motorReady = true;
     };
 
@@ -1788,7 +1849,7 @@ const BabylonViewer = ({
     previousClearedComponentsRef.current = clearedComponents;
     // Assembly helpers are local to this effect and intentionally stable for its lifecycle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelUrl, modelUrls, frameCornerPositions, motorUrl, motorMountingPoint, batteryUrl, batteryMountingPoint, fcUrl, fcMountingPoint, escUrl, escMountingPoint, receiverUrl, receiverMountingPoint, propellerUrl, propellerCWUrl, propellerCCWUrl, propellerDirection, propellerMountingPoint, assemblySpec, groundClearance, resetKey, clearedComponents]);
+  }, [modelUrl, modelUrls, frameCornerPositions, motorUrl, motorMountingPoint, motorLabelSignature, batteryUrl, batteryMountingPoint, fcUrl, fcMountingPoint, escUrl, escMountingPoint, receiverUrl, receiverMountingPoint, propellerUrl, propellerCWUrl, propellerCCWUrl, propellerDirection, propellerMountingPoint, assemblySpec, groundClearance, resetKey, clearedComponents]);
 
   return (
     <div

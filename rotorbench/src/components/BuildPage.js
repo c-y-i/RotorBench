@@ -101,6 +101,7 @@ import {
   ExternalLink,
   Fan,
   FileCheck2,
+  Hash,
   Layers,
   LoaderCircle,
   Radio,
@@ -481,6 +482,7 @@ export default function BuildPage() {
     () => searchParams.get("exploded") === "1",
   );
   const [showFitOverlay, setShowFitOverlay] = useState(false);
+  const [showMotorLabels, setShowMotorLabels] = useState(false);
   const [measurementTarget, setMeasurementTarget] = useState(null);
   const [selectedPresetId, setSelectedPresetId] = useState(requestedPreset?.id || "");
 
@@ -1424,6 +1426,21 @@ export default function BuildPage() {
                   <Fan size={14} aria-hidden="true" />
                   <span>Fit overlay</span>
                 </button>
+                {selectedMotor
+                  && selectedPropeller
+                  && hardwareReadiness.fcMotorOutputs?.length > 0 && (
+                  <button
+                    type="button"
+                    className={`visibility-chip viewer-label-toggle ${
+                      showMotorLabels ? "is-active" : ""
+                    }`}
+                    aria-pressed={showMotorLabels}
+                    onClick={() => setShowMotorLabels((current) => !current)}
+                  >
+                    <Hash size={14} aria-hidden="true" />
+                    <span>Motor IDs</span>
+                  </button>
+                )}
                 {[
                   { id: "frame", label: "Frame", Icon: Box, has: selectedFrame },
                   { id: "motor", label: "Motors", Icon: Cog, has: selectedMotor },
@@ -1479,6 +1496,9 @@ export default function BuildPage() {
                   modelUrls={modelUrls}
                   motorUrl={motorModelUrl}
                   motorMountingPoint={motorMountingPoint}
+                  motorLabels={
+                    showMotorLabels ? hardwareReadiness.fcMotorOutputs : []
+                  }
                   frameCornerPositions={frameCornerPositions}
                   propellerUrl={propellerModelUrl}
                   propellerCWUrl={propellerCWModelUrl}

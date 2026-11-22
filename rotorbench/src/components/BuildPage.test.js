@@ -20,6 +20,7 @@ jest.mock("./BabylonViewer.jsx", () => ({
   estimatedCgMm,
   measuredCgMm,
   propellerDirection,
+  motorLabels,
   showFitOverlay,
   fitOverlayStatus,
   onReady,
@@ -38,6 +39,7 @@ jest.mock("./BabylonViewer.jsx", () => ({
     data-motor-measured={assemblySpec?.motor?.measuredFields?.join(",") || ""}
     data-propeller={assemblySpec?.propeller?.id || ""}
     data-propeller-direction={propellerDirection || ""}
+    data-motor-label-count={motorLabels?.length || 0}
     data-esc={assemblySpec?.esc?.id || ""}
     data-battery={assemblySpec?.battery?.id || ""}
     data-flight-controller={assemblySpec?.flightController?.id || ""}
@@ -760,6 +762,25 @@ test("a saved Aerial Kit wing plan maps the T1 left and right outputs", async ()
     .toHaveTextContent("2/3 outputs mapped");
   expect(within(servos).getByLabelText("Servo output coverage"))
     .toHaveTextContent("1 catalogued servo output remains unassigned");
+});
+
+test("motor IDs can be overlaid from the saved output map", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=source-5-aos-v5"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  const viewer = await screen.findByTestId("assembly-viewer");
+  const motorIds = screen.getByRole("button", { name: "Motor IDs" });
+  expect(motorIds).toHaveAttribute("aria-pressed", "false");
+  expect(viewer).toHaveAttribute("data-motor-label-count", "0");
+
+  fireEvent.click(motorIds);
+  expect(motorIds).toHaveAttribute("aria-pressed", "true");
+  expect(viewer).toHaveAttribute("data-motor-label-count", "4");
 });
 
 test("the 5.5-inch XING2 6S preset exposes estimated geometry honestly", async () => {
