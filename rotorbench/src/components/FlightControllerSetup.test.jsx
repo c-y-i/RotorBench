@@ -589,6 +589,49 @@ test("selecting Matek H743-WING exposes the ArduPilot UART and servo map", () =>
   expect(screen.getByLabelText("Board profile")).toHaveValue("custom-board");
 });
 
+test("copies the H743 ArduPilot parameter plan without writing hardware", async () => {
+  const originalClipboard = navigator.clipboard;
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+
+  try {
+    render(
+      <FlightControllerSetup
+        selectedFlightController={{
+          id: "fc-matek-h743-wing-v3",
+          name: "Matek H743-WING V3",
+          processor: "STM32H743VIT6",
+          imu: "ICM42688P",
+          firmware: ["ArduPilot"],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "Copy ArduPilot parameter plan",
+    }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const text = writeText.mock.calls[0][0];
+    expect(text).toContain("BRD_ALT_CONFIG=1");
+    expect(text).toContain("SERIAL7_PROTOCOL=23");
+    expect(text).toContain("does not write or save controller parameters");
+    expect(await screen.findByText(/ArduPilot parameter plan copied/i))
+      .toBeInTheDocument();
+  } finally {
+    if (originalClipboard) {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: originalClipboard,
+      });
+    } else {
+      delete navigator.clipboard;
+    }
+  }
+});
+
 test("Matek keeps its documented mapping when switching to ArduPilot", () => {
   render(
     <FlightControllerSetup

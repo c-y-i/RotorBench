@@ -2552,6 +2552,10 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     .join(", ");
   const airframe = AIRFRAMES.find((item) => item.value === config.airframe);
   const serialAllocation = buildSerialAllocationSummary(config, profile);
+  const ardupilotParameterRequirements = getArdupilotParameterRequirements(
+    config,
+    profile,
+  );
   const motorLayout = getAirframeMotorLayout(
     config.airframe,
     config.firmwareFamily,
@@ -2569,6 +2573,13 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     `Airframe: ${airframe?.label || config.airframe}`,
     `Receiver: ${protocol?.label || config.receiverProtocol} on ${config.receiverUart} at ${config.receiverBaud} baud`,
     ...(serialAllocation ? [serialAllocation] : []),
+    ...(ardupilotParameterRequirements.length
+      ? [
+          `ArduPilot receiver parameters: ${ardupilotParameterRequirements
+            .map((requirement) => `${requirement.name}=${requirement.value}`)
+            .join(", ")} (compare with an imported parameter snapshot; nothing is written)`,
+        ]
+      : []),
     ...(config.firmwareFamily === "aerialkit"
       ? [
           `Receiver calibration: min ${config.rcMin}, mid ${config.rcMid}, max ${config.rcMax}, deadband ${config.rcDeadband}`,
@@ -2621,4 +2632,29 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     `Receiver timeout: ${config.rcTimeoutMs} ms; low throttle ${config.throttleLow}; RTH ${config.rthEnabled ? "enabled" : "disabled"}`,
     `Features: ${enabledFeatures.join(", ") || "none"}`,
   ];
+}
+
+export function getArdupilotParameterRequirements(config, profile = null) {
+  const resolvedProfile = profile || getBoardProfile(config?.profileId);
+  return (resolvedProfile?.parameterRequirements || []).filter((requirement) => (
+    !requirement.whenReceiverProtocol
+    || requirement.whenReceiverProtocol === config?.receiverProtocol
+  ));
+}
+
+export function buildArdupilotParameterPlanText(config, profile = null) {
+  const resolvedProfile = profile || getBoardProfile(config?.profileId);
+  const requirements = getArdupilotParameterRequirements(
+    config,
+    resolvedProfile,
+  );
+  if (!requirements.length) return "";
+  return [
+    `ArduPilot parameter plan — ${resolvedProfile.label}`,
+    ...requirements.map((requirement) => (
+      `${requirement.name}=${requirement.value}  # ${requirement.description}`
+    )),
+    "Compare these values with an imported Mission Planner, QGroundControl, or compatible parameter snapshot.",
+    "RotorBench does not write or save controller parameters.",
+  ].join("\n");
 }

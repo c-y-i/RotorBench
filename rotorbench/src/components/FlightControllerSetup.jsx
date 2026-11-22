@@ -33,11 +33,13 @@ import {
   FIRMWARE_FAMILIES,
   MOTOR_DIRECTIONS,
   RECEIVER_PROTOCOLS,
+  buildArdupilotParameterPlanText,
   buildArmingGatePreview,
   buildFlightControllerSummary,
   createDefaultFlightControllerConfig,
   getAerialKitControlRoles,
   getAirframeMotorLayout,
+  getArdupilotParameterRequirements,
   getBoardProfile,
   getChannelPreset,
   buildSerialAllocationText,
@@ -236,12 +238,10 @@ export default function FlightControllerSetup({
         }
       : profileBase;
   }, [config.firmwareFamily, config.profileId, selectedFlightController]);
-  const ardupilotParameterRequirements = (
-    profile.parameterRequirements || []
-  ).filter((requirement) => (
-    !requirement.whenReceiverProtocol
-    || requirement.whenReceiverProtocol === config.receiverProtocol
-  ));
+  const ardupilotParameterRequirements = getArdupilotParameterRequirements(
+    config,
+    profile,
+  );
   const channelPreset = getChannelPreset(config);
   const availableChannelPresets = CHANNEL_PRESETS.filter((preset) => (
     config.firmwareFamily === "aerialkit"
@@ -594,6 +594,23 @@ export default function FlightControllerSetup({
       );
       setSaveState(
         "Serial allocation copied. No UART, peripheral, continuity, or hardware state was verified.",
+      );
+    } catch {
+      setSaveState("The browser refused clipboard access.");
+    }
+  };
+
+  const copyArdupilotParameters = async () => {
+    if (!navigator.clipboard?.writeText) {
+      setSaveState("Clipboard access is unavailable in this browser.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(
+        buildArdupilotParameterPlanText(config, profile),
+      );
+      setSaveState(
+        "ArduPilot parameter plan copied. No controller parameter was written or saved.",
       );
     } catch {
       setSaveState("The browser refused clipboard access.");
@@ -1291,6 +1308,10 @@ export default function FlightControllerSetup({
                       </li>
                     ))}
                   </ul>
+                  <button type="button" onClick={copyArdupilotParameters}>
+                    <Clipboard size={14} aria-hidden="true" />
+                    Copy ArduPilot parameter plan
+                  </button>
                 </div>
               )}
 

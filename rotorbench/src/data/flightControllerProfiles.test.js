@@ -1,5 +1,6 @@
 import {
   buildArmingGatePreview,
+  buildArdupilotParameterPlanText,
   buildFlightControllerSummary,
   buildSerialAllocationSummary,
   createDefaultFlightControllerConfig,
@@ -79,6 +80,16 @@ test("Matek H743-WING resolves to its documented ArduPilot wing map", () => {
     profileId: "matek-h743-wing-v3-ardupilot",
     airframe: "elevonwing",
   });
+  expect(buildFlightControllerSummary(
+    createDefaultFlightControllerConfig(controller),
+    profile,
+  ).join("\n")).toContain(
+    "ArduPilot receiver parameters: BRD_ALT_CONFIG=1, SERIAL7_PROTOCOL=23",
+  );
+  expect(buildArdupilotParameterPlanText(
+    createDefaultFlightControllerConfig(controller),
+    profile,
+  )).toContain("RotorBench does not write or save controller parameters.");
 });
 
 test("the Feather product resolves to the public Aerial Kit wing map", () => {

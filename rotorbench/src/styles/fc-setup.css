@@ -531,6 +531,27 @@
   text-align: end;
 }
 
+.fc-ardupilot-parameter-plan > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 6px;
+  min-height: var(--control-min-height);
+  padding: 0 10px;
+  color: var(--brand-strong);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fc-ardupilot-parameter-plan > button:hover {
+  border-color: var(--brand);
+}
+
 .fc-calibration-heading {
   display: flex;
   align-items: baseline;
