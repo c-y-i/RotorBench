@@ -2985,6 +2985,7 @@
 .aerial-kit-parameter-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 10px;
 }
@@ -3092,6 +3093,14 @@
   font-family: "IBM Plex Mono", monospace;
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-parameter-list li small {
+  grid-column: 1 / -1;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  line-height: 1.4;
 }
 
 .aerial-kit-rc-unavailable,

@@ -9,13 +9,37 @@ export const AERIAL_KIT_PROTOCOL_VERSION = 1;
 export const AERIAL_KIT_RESPONSE_BIT = 0x80;
 export const AERIAL_KIT_MAX_PAYLOAD = 96;
 export const AERIAL_KIT_UNKNOWN_COMMAND = 0x7f;
+export const AERIAL_KIT_FEATURE_PARAM_INFO = 1 << 0;
 export const AERIAL_KIT_FEATURE_RC_CHANNELS = 1 << 4;
 export const AERIAL_KIT_PARAMETER_READ_LIMIT = 255;
 export const AERIAL_KIT_COMMANDS = Object.freeze({
   hello: 0x01,
   paramGet: 0x02,
   status: 0x05,
+  paramInfo: 0x0a,
   rcChannels: 0x0d,
+});
+
+export const AERIAL_KIT_PARAMETER_TYPES = Object.freeze({
+  0: "float",
+  1: "u32",
+  2: "text",
+});
+
+export const AERIAL_KIT_PARAMETER_GROUPS = Object.freeze({
+  0: "none",
+  1: "rates",
+  2: "angle",
+  3: "arming",
+  4: "receiver",
+  5: "airframe",
+  6: "outputs",
+  7: "power",
+  8: "failsafe",
+  9: "navigation",
+  10: "sensors",
+  11: "network",
+  12: "timing",
 });
 
 export const AERIAL_KIT_FLIGHT_STATES = Object.freeze([
@@ -329,6 +353,107 @@ export function parseAerialKitParamGet(payload, index) {
   };
 }
 
+export function parseAerialKitParamInfoPage(payload, askedFrom) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) throw new Error("Aerial Kit PARAM_INFO payload is empty.");
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates PARAM_INFO and answered with the unknown-command status.",
+    );
+  }
+  if (bytes[0] === 1) {
+    return {
+      status: "no-index",
+      first: askedFrom,
+      entries: [],
+    };
+  }
+  if (![0, 2].includes(bytes[0])) {
+    throw new Error(`PARAM_INFO returned status ${bytes[0]}.`);
+  }
+  if (bytes.length < 3) throw new Error("PARAM_INFO page header is incomplete.");
+  const first = bytes[1];
+  const carried = bytes[2];
+  if (first !== (askedFrom & 0xff)) {
+    throw new Error(`PARAM_INFO asked from ${askedFrom} but answered from ${first}.`);
+  }
+  if (bytes[0] === 2) {
+    return {
+      status: "too-big",
+      first,
+      entries: [],
+    };
+  }
+  let offset = 3;
+  const entries = [];
+  for (let entryIndex = 0; entryIndex < carried; entryIndex += 1) {
+    const name = readCString(bytes, offset, `PARAM_INFO entry ${entryIndex} name`);
+    offset = name.next;
+    if (offset + 4 > bytes.length) {
+      throw new Error(`PARAM_INFO entry ${entryIndex} header is incomplete.`);
+    }
+    const type = bytes[offset];
+    const group = bytes[offset + 1];
+    const decimals = bytes[offset + 2];
+    const flags = bytes[offset + 3];
+    offset += 4;
+    let min = null;
+    let max = null;
+    let maxLength = null;
+    if (type === 2) {
+      if (offset >= bytes.length) {
+        throw new Error(`PARAM_INFO entry ${entryIndex} is missing its text limit.`);
+      }
+      maxLength = bytes[offset];
+      offset += 1;
+    } else if (type === 0 || type === 1) {
+      const minimum = readCString(bytes, offset, `PARAM_INFO entry ${entryIndex} minimum`);
+      const maximum = readCString(
+        bytes,
+        minimum.next,
+        `PARAM_INFO entry ${entryIndex} maximum`,
+      );
+      min = minimum.value;
+      max = maximum.value;
+      offset = maximum.next;
+    } else {
+      throw new Error(
+        `PARAM_INFO entry ${entryIndex} has unknown type ${type}.`,
+      );
+    }
+    const defaultValue = readCString(
+      bytes,
+      offset,
+      `PARAM_INFO entry ${entryIndex} default`,
+    );
+    offset = defaultValue.next;
+    entries.push({
+      name: name.value,
+      type,
+      typeName: AERIAL_KIT_PARAMETER_TYPES[type] || null,
+      group,
+      groupName: AERIAL_KIT_PARAMETER_GROUPS[group] || null,
+      decimals,
+      flags,
+      secret: (flags & 1) !== 0,
+      min,
+      max,
+      maxLength,
+      default: defaultValue.value,
+    });
+  }
+  if (offset !== bytes.length) {
+    throw new Error(
+      `PARAM_INFO carried ${bytes.length - offset} unexpected trailing bytes.`,
+    );
+  }
+  return {
+    status: "ok",
+    first,
+    entries,
+  };
+}
+
 export function parseAerialKitRcChannels(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) throw new Error("Aerial Kit RC_CHANNELS payload is empty.");
@@ -465,6 +590,7 @@ export function createAerialKitStatusEvidence({
   rc = null,
   rcError = null,
   parameters = null,
+  parameterMetadata = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -473,6 +599,18 @@ export function createAerialKitStatusEvidence({
   connectionActive = false,
   nowMs = Date.now(),
 } = {}) {
+  const secretNames = new Set(
+    (parameterMetadata || [])
+      .filter((parameter) => parameter.secret === true && parameter.name)
+      .map((parameter) => parameter.name),
+  );
+  const safeParameters = parameters
+    ? parameters.map((parameter) => (
+        secretNames.has(parameter.name)
+          ? { ...parameter, value: "[SECRET REDACTED]" }
+          : parameter
+      ))
+    : null;
   return {
     schema: "rotorbench.aerial-kit-live-status.v1",
     observedAt: new Date(nowMs).toISOString(),
@@ -485,6 +623,7 @@ export function createAerialKitStatusEvidence({
         "STATUS",
         "RC_CHANNELS",
         ...(parameters ? ["PARAM_GET"] : []),
+        ...(parameterMetadata ? ["PARAM_INFO"] : []),
       ],
     },
     hello,
@@ -510,7 +649,8 @@ export function createAerialKitStatusEvidence({
         }
       : null,
     rcError: rcError || null,
-    parameters,
+    parameters: safeParameters,
+    parameterMetadata,
     parser: protocolStats,
     boundaries: {
       readOnlyQueriesOnly: true,

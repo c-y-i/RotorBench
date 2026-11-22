@@ -19,12 +19,14 @@ import {
 import {
   AERIAL_KIT_COMMANDS,
   AERIAL_KIT_FEATURE_RC_CHANNELS,
+  AERIAL_KIT_FEATURE_PARAM_INFO,
   AERIAL_KIT_PARAMETER_READ_LIMIT,
   AerialKitReadOnlySession,
   aerialKitArmedState,
   createAerialKitStatusEvidence,
   parseAerialKitHello,
   parseAerialKitParamGet,
+  parseAerialKitParamInfoPage,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
 } from "../utils/aerialKitProtocol";
@@ -106,6 +108,13 @@ export default function AerialKitStatusSession({
     total: 0,
   });
   const [parameterError, setParameterError] = useState("");
+  const [parameterMetadata, setParameterMetadata] = useState(null);
+  const [metadataState, setMetadataState] = useState("idle");
+  const [metadataProgress, setMetadataProgress] = useState({
+    read: 0,
+    total: 0,
+  });
+  const [metadataError, setMetadataError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -155,6 +164,10 @@ export default function AerialKitStatusSession({
     setParameterState("idle");
     setParameterProgress({ read: 0, total: 0 });
     setParameterError("");
+    setParameterMetadata(null);
+    setMetadataState("idle");
+    setMetadataProgress({ read: 0, total: 0 });
+    setMetadataError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -326,6 +339,94 @@ export default function AerialKitStatusSession({
     }
   };
 
+  const readParameterMetadata = async () => {
+    const session = sessionRef.current;
+    const count = hello?.parameterCount;
+    if (!activeRef.current || !session) return;
+    if (
+      !Number.isInteger(count)
+      || count < 0
+      || count > AERIAL_KIT_PARAMETER_READ_LIMIT
+    ) {
+      setMetadataError(
+        `HELLO reports ${count ?? "an invalid"} parameters; this reader is bounded to ${AERIAL_KIT_PARAMETER_READ_LIMIT}.`,
+      );
+      setMetadataState("error");
+      return;
+    }
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) === 0
+    ) {
+      setMetadataError(
+        "The HELLO capability word does not claim PARAM_INFO, so RotorBench did not ask the board to describe its parameters.",
+      );
+      setMetadataState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setMetadataError(
+        "Wait for the current STATUS/RC poll to finish before reading metadata.",
+      );
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setMetadataError("");
+    setMetadataState("reading");
+    setMetadataProgress({ read: 0, total: count });
+    const read = [];
+    let index = 0;
+    try {
+      while (index < count) {
+        if (!activeRef.current) break;
+        const payload = await session.request(
+          AERIAL_KIT_COMMANDS.paramInfo,
+          Uint8Array.of(index),
+        );
+        const page = parseAerialKitParamInfoPage(payload, index);
+        if (page.status === "no-index") break;
+        if (page.status === "too-big") {
+          read.push({
+            index,
+            name: null,
+            unavailable: "The board says this entry does not fit one frame.",
+          });
+          index += 1;
+          setMetadataProgress({ read: index, total: count });
+          continue;
+        }
+        if (page.entries.length === 0) break;
+        const pageIndex = index;
+        page.entries.forEach((entry, offset) => {
+          read.push({
+            ...entry,
+            index: pageIndex + offset,
+          });
+        });
+        index += page.entries.length;
+        setMetadataProgress({ read: index, total: count });
+      }
+      if (!mountedRef.current) return;
+      setParameterMetadata(read);
+      setMetadataState("ready");
+      setMessage(
+        `Read ${read.length} board-reported metadata row${read.length === 1 ? "" : "s"} without writing or saving settings.`,
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setParameterMetadata(read);
+      setMetadataState("error");
+      setMetadataError(
+        `${readError.message} ${read.length} metadata row${read.length === 1 ? "" : "s"} were read before the stop.`,
+      );
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -414,6 +515,7 @@ export default function AerialKitStatusSession({
       targetName,
       protocolStats,
       parameters,
+      parameterMetadata,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -436,14 +538,38 @@ export default function AerialKitStatusSession({
     });
     return labels;
   }, [channelMap]);
+  const inventoryRows = useMemo(() => {
+    const rows = new Map();
+    (parameters || []).forEach((parameter) => {
+      rows.set(parameter.index, {
+        ...parameter,
+        name: parameter.name || `Index ${parameter.index}`,
+      });
+    });
+    (parameterMetadata || []).forEach((metadata) => {
+      rows.set(metadata.index, {
+        ...rows.get(metadata.index),
+        ...metadata,
+        name: metadata.name || rows.get(metadata.index)?.name || `Index ${metadata.index}`,
+        value: metadata.secret
+          ? "Secret / redacted"
+          : rows.get(metadata.index)?.value,
+      });
+    });
+    return [...rows.values()].sort((left, right) => left.index - right.index);
+  }, [parameterMetadata, parameters]);
   const visibleParameters = useMemo(() => {
     const normalizedQuery = parameterQuery.trim().toLowerCase();
-    return (parameters || []).filter((parameter) => (
+    return inventoryRows.filter((parameter) => (
       !normalizedQuery
       || parameter.name.toLowerCase().includes(normalizedQuery)
-      || parameter.value.toLowerCase().includes(normalizedQuery)
+      || String(parameter.value || "").toLowerCase().includes(normalizedQuery)
+      || String(parameter.groupName || "").toLowerCase().includes(normalizedQuery)
+      || String(parameter.typeName || "").toLowerCase().includes(normalizedQuery)
+      || String(parameter.default || "").toLowerCase().includes(normalizedQuery)
+      || String(parameter.unavailable || "").toLowerCase().includes(normalizedQuery)
     ));
-  }, [parameterQuery, parameters]);
+  }, [inventoryRows, parameterQuery]);
   const armed = aerialKitArmedState(liveStatus, {
     observedAtMs: lastStatusAt,
     nowMs: clockNow,
@@ -451,6 +577,8 @@ export default function AerialKitStatusSession({
   });
   const rcAgeMs = lastRcAt == null ? null : Math.max(0, clockNow - lastRcAt);
   const canDownload = Boolean(hello || liveStatus || rc);
+  const metadataClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) !== 0;
   const busy = ["selecting", "connecting", "stopping"].includes(sessionState);
   const active = ["connecting", "monitoring"].includes(sessionState);
 
@@ -741,9 +869,9 @@ export default function AerialKitStatusSession({
                 aria-label="Observed parameter values"
               >
                 <div className="aerial-kit-section-heading">
-                  <strong>Parameter values</strong>
+                  <strong>Parameter inventory</strong>
                   <span>
-                    {hello.parameterCount} advertised · PARAM_GET only
+                    {hello.parameterCount} advertised
                   </span>
                 </div>
                 <div className="aerial-kit-parameter-actions">
@@ -759,6 +887,22 @@ export default function AerialKitStatusSession({
                     <SlidersHorizontal size={15} aria-hidden="true" />
                     Read parameter values
                   </button>
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || metadataState === "reading"
+                      || !metadataClaimed
+                    }
+                    title={!metadataClaimed
+                      ? "The HELLO capability word does not claim PARAM_INFO."
+                      : undefined}
+                    onClick={readParameterMetadata}
+                  >
+                    <SlidersHorizontal size={15} aria-hidden="true" />
+                    Read ranges/defaults
+                  </button>
                   <span>
                     {parameterState === "reading"
                       ? `Reading ${parameterProgress.read}/${parameterProgress.total}`
@@ -767,12 +911,23 @@ export default function AerialKitStatusSession({
                         : parameterState === "error"
                           ? "Read stopped"
                           : "Not read"}
+                    {" · "}
+                    {metadataState === "reading"
+                      ? `metadata ${metadataProgress.read}/${metadataProgress.total}`
+                      : metadataState === "ready"
+                        ? `${parameterMetadata?.length || 0} metadata rows`
+                        : metadataState === "error"
+                          ? "metadata stopped"
+                          : !metadataClaimed
+                            ? "PARAM_INFO not claimed"
+                            : "metadata not read"}
                   </span>
                 </div>
                 <p>
-                  Names and values come from read-only `PARAM_GET` replies.
-                  Ranges, defaults, and descriptions require separate commands
-                  and are not inferred here.
+                  Values come from `PARAM_GET`; type, group, range, and default
+                  come from capability-gated `PARAM_INFO` pages. Descriptions
+                  from `PARAM_HELP` are not read in this pass. Nothing is
+                  inferred from a local table.
                 </p>
                 {parameterError && (
                   <div className="aerial-kit-rc-unavailable" role="note">
@@ -783,7 +938,16 @@ export default function AerialKitStatusSession({
                     </span>
                   </div>
                 )}
-                {parameters && (
+                {metadataError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Parameter metadata incomplete</strong>
+                      <small>{metadataError}</small>
+                    </span>
+                  </div>
+                )}
+                {inventoryRows.length > 0 && (
                   <>
                     <label className="aerial-kit-parameter-search">
                       <Search size={14} aria-hidden="true" />
@@ -794,7 +958,7 @@ export default function AerialKitStatusSession({
                         type="search"
                         value={parameterQuery}
                         onChange={(event) => setParameterQuery(event.target.value)}
-                        placeholder="Filter names or values"
+                        placeholder="Filter names, values, groups, or types"
                       />
                     </label>
                     {visibleParameters.length > 0 ? (
@@ -805,13 +969,38 @@ export default function AerialKitStatusSession({
                         {visibleParameters.map((parameter) => (
                           <li key={`${parameter.index}-${parameter.name}`}>
                             <span>{parameter.name}</span>
-                            <code>{parameter.value || "Empty"}</code>
+                            <code>
+                              {parameter.value == null
+                                ? "Value not read"
+                                : parameter.value || "Empty"}
+                            </code>
+                            {(parameter.groupName
+                              || parameter.typeName
+                              || parameter.min != null
+                              || parameter.max != null
+                              || parameter.default != null
+                              || parameter.unavailable) && (
+                              <small>
+                                {parameter.unavailable || [
+                                  parameter.groupName || `Group ${parameter.group}`,
+                                  parameter.typeName || `Type ${parameter.type}`,
+                                  parameter.maxLength != null
+                                    ? `max ${parameter.maxLength} chars`
+                                    : parameter.min != null
+                                      ? `${parameter.min} to ${parameter.max}`
+                                      : null,
+                                  parameter.default != null
+                                    ? `default ${parameter.default}`
+                                    : null,
+                                ].filter(Boolean).join(" · ")}
+                              </small>
+                            )}
                           </li>
                         ))}
                       </ol>
                     ) : (
                       <p>
-                        {parameters.length === 0
+                        {inventoryRows.length === 0
                           ? "The board advertises no parameters."
                           : "No observed parameter matches the current filter."}
                       </p>

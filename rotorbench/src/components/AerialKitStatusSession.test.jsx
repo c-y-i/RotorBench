@@ -85,6 +85,39 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC) {
           Uint8Array.from([0, ...Buffer.from(`${name}\0${value}\0`)]),
         ));
       }
+      else if (command === 0x0a) {
+        const first = frame[5];
+        const entries = [
+          {
+            name: "rate_kp_roll",
+            min: "0.000",
+            max: "3.000",
+            defaultValue: "0.250",
+          },
+          {
+            name: "rate_ki_roll",
+            min: "0.000",
+            max: "2.000",
+            defaultValue: "0.150",
+          },
+        ].slice(first, first + 2);
+        const payload = [
+          0,
+          first,
+          entries.length,
+          ...entries.flatMap((entry) => [
+            ...Buffer.from(`${entry.name}\0`),
+            0,
+            1,
+            3,
+            0,
+            ...Buffer.from(`${entry.min}\0`),
+            ...Buffer.from(`${entry.max}\0`),
+            ...Buffer.from(`${entry.defaultValue}\0`),
+          ]),
+        ];
+        deliver(buildAerialKitFrame(0x8a, Uint8Array.from(payload)));
+      }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
     releaseLock: jest.fn(),
@@ -225,7 +258,7 @@ test("reads a bounded parameter inventory with PARAM_GET only", async () => {
     name: "Read parameter values",
   }));
 
-  expect(await screen.findByText("2 values read")).toBeInTheDocument();
+  expect(await screen.findByText(/2 values read.*metadata/i)).toBeInTheDocument();
   expect(screen.getByText("rate_kp_roll")).toBeInTheDocument();
   expect(screen.getByText("0.250")).toBeInTheDocument();
   expect(screen.getByText("rate_ki_roll")).toBeInTheDocument();
@@ -234,6 +267,33 @@ test("reads a bounded parameter inventory with PARAM_GET only", async () => {
   expect(commands.filter((command) => command === 0x02)).toHaveLength(2);
   expect(commands.every((command) => [0x01, 0x02, 0x05, 0x0d].includes(command)))
     .toBe(true);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads capability-gated parameter metadata without requesting help", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read ranges/defaults",
+  }));
+
+  expect(await screen.findByText("rate_kp_roll")).toBeInTheDocument();
+  expect(screen.getByText(/rates · float · 0\.000 to 3\.000 · default 0\.250/i))
+    .toBeInTheDocument();
+  const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
+  expect(commands).toContain(0x0a);
+  expect(commands).not.toContain(0x0b);
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

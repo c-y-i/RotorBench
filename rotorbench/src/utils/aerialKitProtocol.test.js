@@ -9,6 +9,7 @@ import {
   buildAerialKitFrame,
   createAerialKitStatusEvidence,
   parseAerialKitHello,
+  parseAerialKitParamInfoPage,
   parseAerialKitParamGet,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
@@ -153,6 +154,44 @@ test("parses a read-only PARAM_GET name and value", () => {
     .toThrow(/no parameter at index 99/i);
 });
 
+test("parses board-reported parameter metadata without guessing", () => {
+  const payload = Uint8Array.from([
+    0,
+    0,
+    1,
+    ...Buffer.from("rate_kp_roll\0"),
+    0,
+    1,
+    3,
+    0,
+    ...Buffer.from("0.000\0"),
+    ...Buffer.from("3.000\0"),
+    ...Buffer.from("0.250\0"),
+  ]);
+  expect(parseAerialKitParamInfoPage(payload, 0)).toEqual({
+    status: "ok",
+    first: 0,
+    entries: [{
+      name: "rate_kp_roll",
+      type: 0,
+      typeName: "float",
+      group: 1,
+      groupName: "rates",
+      decimals: 3,
+      flags: 0,
+      secret: false,
+      min: "0.000",
+      max: "3.000",
+      maxLength: null,
+      default: "0.250",
+    }],
+  });
+  expect(parseAerialKitParamInfoPage(Uint8Array.of(2, 7, 0), 7))
+    .toMatchObject({ status: "too-big", first: 7, entries: [] });
+  expect(() => parseAerialKitParamInfoPage(Uint8Array.of(0x7f), 0))
+    .toThrow(/predates PARAM_INFO/i);
+});
+
 test("carries RC frames through the frame decoder", () => {
   const decoder = new AerialKitFrameDecoder();
   const reply = frame(AERIAL_KIT_COMMANDS.rcChannels | 0x80, rcPayload());
@@ -224,6 +263,14 @@ test("creates a sanitized live-status evidence boundary", () => {
     targetName: "Aerial Kit F405",
     protocolStats: { framesDecoded: 3 },
     parameters: [{ index: 0, name: "rate_kp_roll", value: "0.250" }],
+    parameterMetadata: [{
+      index: 0,
+      name: "rate_kp_roll",
+      min: "0.000",
+      max: "3.000",
+      default: "0.250",
+      secret: true,
+    }],
     connectionActive: true,
     nowMs: 1500,
   });
@@ -234,14 +281,31 @@ test("creates a sanitized live-status evidence boundary", () => {
     transport: {
       kind: "web-serial",
       logicalBaud: 115200,
-      queries: ["HELLO", "STATUS", "RC_CHANNELS", "PARAM_GET"],
+      queries: [
+        "HELLO",
+        "STATUS",
+        "RC_CHANNELS",
+        "PARAM_GET",
+        "PARAM_INFO",
+      ],
     },
     status: {
       flightState: 0,
       observedAt: "1970-01-01T00:00:01.000Z",
     },
     armedState: { state: "disarmed", fresh: true },
-    parameters: [{ index: 0, name: "rate_kp_roll", value: "0.250" }],
+    parameters: [{
+      index: 0,
+      name: "rate_kp_roll",
+      value: "[SECRET REDACTED]",
+    }],
+    parameterMetadata: [{
+      index: 0,
+      name: "rate_kp_roll",
+      min: "0.000",
+      max: "3.000",
+      default: "0.250",
+    }],
     boundaries: {
       readOnlyQueriesOnly: true,
       hardwareVerifiedByRotorBench: false,
