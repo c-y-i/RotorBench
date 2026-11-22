@@ -267,6 +267,36 @@ test("TX12 Mark II exposes its compact internal ELRS transmitter", () => {
     .toEqual(["25", "50", "100-full", "150", "250", "500"]);
 });
 
+test("Nomad exposes the dual-band Xrossband module profile", () => {
+  const target = getRadioTarget("radiomaster-nomad-gemini-xrossband-tx");
+
+  expect(target).toMatchObject({
+    name: "RadioMaster Nomad Gemini Xrossband",
+    frequency: "2.4 GHz / Sub-G 900 MHz (Gemini Xrossband)",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    defaultHostTransport: "module-bay",
+    defaultHostBay: "jr-micro-5",
+    supportedHostBays: ["jr-micro-5", "nano-8"],
+    firmwareVersion: "ExpressLRS with Gemini Xrossband",
+    roles: ["tx"],
+    sourceUrl: "https://radiomasterrc.com/products/nomad-gemini-xrossband-expresslrs-module",
+    power: {
+      defaultDbm: null,
+      menuVerified: false,
+      regulatoryMaxima: [],
+    },
+  });
+  expect(target.serial).toMatchObject({
+    txBaud: null,
+    rxBaud: null,
+  });
+  expect(target.hostLink.moduleBay).toMatchObject({
+    bayType: "jr-micro-5",
+    voltage: "DC 6-16.8 V through XT30",
+  });
+  expect(target.hostLink.moduleBay.pins).toMatch(/Nano 8-pin adapter/i);
+});
+
 test("radio targets are grouped by transport and RF band", () => {
   const groups = groupRadioTargets(getRadioTargetsForRole("tx"));
 
@@ -274,6 +304,7 @@ test("radio targets are grouped by transport and RF band", () => {
     "Internal RF handset",
     "USB serial device",
     "2.4 GHz module bay",
+    "Dual-band module bay",
     "Sub-G 900 MHz module bay",
     "Generic / verify",
   ]);
@@ -284,6 +315,9 @@ test("radio targets are grouped by transport and RF band", () => {
     "radiomaster-tx16s-mkii-elrs-24-tx",
     "radiomaster-tx12-mkii-elrs-24-tx",
   ]));
+  expect(groups.find((group) => group.id === "xrossband").targets.map(
+    (target) => target.id,
+  )).toEqual(["radiomaster-nomad-gemini-xrossband-tx"]);
   expect(groups.find((group) => group.id === "subghz").targets).toHaveLength(3);
 });
 

@@ -498,6 +498,30 @@ test("generic ExpressLRS targets do not inherit the Rev A3 power table", () => {
   expect(screen.getByText(/finite TX power value/i)).toBeInTheDocument();
 });
 
+test("selects the dual-band Nomad module for a dual-band receiver", () => {
+  render(
+    <RadioLinkSetup
+      selectedReceiver={{
+        id: "rx-radiomaster-xr4-gemini",
+        name: "RadioMaster XR4 Gemini Xrossband",
+        protocol: "CRSF",
+        frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+      }}
+    />,
+  );
+
+  fireEvent.change(screen.getByRole("combobox", { name: "Device" }), {
+    target: { value: "radiomaster-nomad-gemini-xrossband-tx" },
+  });
+
+  expect(screen.getByRole("combobox", { name: "Device" }))
+    .toHaveValue("radiomaster-nomad-gemini-xrossband-tx");
+  expect(screen.getByText(/2\.4 GHz \/ Sub-G 900 MHz \(Gemini Xrossband\)/))
+    .toBeInTheDocument();
+  expect(screen.getByText(/Shared 2\.4 GHz \/ Sub-G 900 MHz/i))
+    .toBeInTheDocument();
+});
+
 test("Rev A3 discloses the source-backed GPIO4 and LED role legend", () => {
   render(<RadioLinkSetup />);
   expect(screen.getByRole("heading", { name: "GPIO4 selects the RF role" }))

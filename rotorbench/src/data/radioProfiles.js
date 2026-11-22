@@ -387,6 +387,44 @@ export const RADIO_TARGETS = [
     manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX12MKII_A2.0.pdf?v=1770617495",
   },
   {
+    id: "radiomaster-nomad-gemini-xrossband-tx",
+    name: "RadioMaster Nomad Gemini Xrossband",
+    description: "Dual LR1121 module for simultaneous 2.4 GHz and 868/900 MHz Gemini Xrossband transmission, with JR micro and Nano bay adapters.",
+    frequency: "2.4 GHz / Sub-G 900 MHz (Gemini Xrossband)",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    defaultHostTransport: "module-bay",
+    defaultHostBay: "jr-micro-5",
+    supportedHostBays: ["jr-micro-5", "nano-8"],
+    firmwareVersion: "ExpressLRS with Gemini Xrossband",
+    roles: ["tx"],
+    packetRateModes: ["25", "50", "100-full", "150", "250", "500"],
+    serial: {
+      txBaud: null,
+      rxBaud: null,
+      frame: "CRSF through the included Micro or Nano module-bay adapter; confirm handset pinout and rate",
+      note: "RadioMaster documents the bay adapters and XT30 supply but does not publish a host UART baud or default RF drive value.",
+    },
+    hostLink: {
+      nativeUsb: false,
+      uart: null,
+      moduleBay: {
+        bayType: "jr-micro-5",
+        pins: "Micro standard 5-pin socket plus included Nano 8-pin adapter; confirm CRSF direction",
+        voltage: "DC 6-16.8 V through XT30",
+        note: "Use the adapter appropriate to the handset. Verify CRSF direction, ground, supply, antenna fit, and fitted RF-domain variant before power.",
+      },
+    },
+    power: {
+      defaultDbm: null,
+      defaultMw: null,
+      regulatoryMaxima: [],
+      menuVerified: false,
+      note: "RadioMaster describes the module as high power but does not publish a default drive or maximum RF-power table on the product page. Use only the value documented for the fitted regulatory variant.",
+    },
+    source: "RadioMaster Nomad Gemini Xrossband product page",
+    sourceUrl: "https://radiomasterrc.com/products/nomad-gemini-xrossband-expresslrs-module",
+  },
+  {
     id: "generic-elrs-24-tx",
     name: "Generic ExpressLRS 2.4 GHz TX",
     description: "Planning profile for a handset or USB ExpressLRS transmitter.",
@@ -428,8 +466,9 @@ const RADIO_TARGET_GROUP_DEFINITIONS = {
   internal: { id: "internal", label: "Internal RF handset", order: 1 },
   usb: { id: "usb", label: "USB serial device", order: 2 },
   rf24: { id: "rf24", label: "2.4 GHz module bay", order: 3 },
-  subghz: { id: "subghz", label: "Sub-G 900 MHz module bay", order: 4 },
-  generic: { id: "generic", label: "Generic / verify", order: 5 },
+  xrossband: { id: "xrossband", label: "Dual-band module bay", order: 4 },
+  subghz: { id: "subghz", label: "Sub-G 900 MHz module bay", order: 5 },
+  generic: { id: "generic", label: "Generic / verify", order: 6 },
 };
 
 export function getRadioTargetGroup(target) {
@@ -441,6 +480,12 @@ export function getRadioTargetGroup(target) {
   }
   if (target?.defaultHostTransport === "native-usb") {
     return RADIO_TARGET_GROUP_DEFINITIONS.usb;
+  }
+  if (
+    target?.frequencyBands?.includes("2.4 GHz")
+    && target.frequencyBands.includes("Sub-G 900 MHz")
+  ) {
+    return RADIO_TARGET_GROUP_DEFINITIONS.xrossband;
   }
   if (target?.frequencyBands?.includes("Sub-G 900 MHz")) {
     return RADIO_TARGET_GROUP_DEFINITIONS.subghz;
