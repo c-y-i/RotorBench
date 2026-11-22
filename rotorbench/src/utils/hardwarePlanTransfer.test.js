@@ -205,6 +205,44 @@ test("combined hardware plans carry the documented receiver wiring checklist", (
   ]));
 });
 
+test("combined hardware plans carry ArduPilot receiver parameter requirements", () => {
+  const profile = getBoardProfile("matek-h743-wing-v3-ardupilot");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    firmwareFamily: "ardupilot",
+    profileId: profile.id,
+    receiverProtocol: "crsf",
+    receiverUart: "UART6",
+  };
+  const exported = createCombinedHardwarePlan({
+    build: null,
+    flightController: {
+      config,
+      profile,
+      issues: [],
+    },
+    radio: DEFAULT_RADIO_CONFIG,
+    generatedAt: "2026-05-01T00:00:00.000Z",
+  });
+
+  expect(exported.flightController.parameterRequirements).toEqual([
+    {
+      name: "BRD_ALT_CONFIG",
+      value: "1",
+      whenReceiverProtocol: "crsf",
+      description: "true UART RX on UART6",
+    },
+    {
+      name: "SERIAL7_PROTOCOL",
+      value: "23",
+      whenReceiverProtocol: "crsf",
+      description: "CRSF/ELRS on SERIAL7",
+    },
+  ]);
+  expect(exported.flightController.summary.join("\n"))
+    .toContain("BRD_ALT_CONFIG=1, SERIAL7_PROTOCOL=23");
+});
+
 test("combined hardware plans preserve servo output setup", () => {
   const exported = samplePlan();
   Object.assign(exported.flightController.config, {

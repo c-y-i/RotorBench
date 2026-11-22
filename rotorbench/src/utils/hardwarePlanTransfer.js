@@ -25,6 +25,7 @@ import {
   BETAFLIGHT_FAILSAFE_THROTTLE,
   buildFlightControllerSummary,
   createDefaultFlightControllerConfig,
+  getArdupilotParameterRequirements,
   getBoardProfile,
   MOTOR_DIRECTIONS,
 } from "../data/flightControllerProfiles";
@@ -66,6 +67,10 @@ export function createCombinedHardwarePlan({
     flightController: {
       config: flightController.config,
       profile: flightController.profile,
+      parameterRequirements: getArdupilotParameterRequirements(
+        flightController.config,
+        flightController.profile,
+      ),
       issues: flightController.issues,
       wiring: buildReceiverWiringPlan(
         flightController.config,
