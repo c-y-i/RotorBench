@@ -909,6 +909,7 @@ export default function BenchEvidenceReview({
             <FcParameterSnapshot
               values={evidence.fcEvidence.parameters.values}
               checks={evidence.checks}
+              format={evidence.fcEvidence.parameters.format}
             />
           )}
           {evidence.bundle?.txParameters?.entries && (

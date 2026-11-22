@@ -115,9 +115,19 @@ const STATUS_LABELS = {
   unverified: "Unverified",
 };
 
+const FORMAT_LABELS = {
+  "aerial-kit": "Aerial Kit",
+  "mission-planner": "Mission Planner",
+  qgroundcontrol: "QGroundControl",
+};
+
 const parameterCheckId = (name) => `fc-param-${name.replaceAll("_", "-")}`;
 
-export default function FcParameterSnapshot({ values = {}, checks = [] }) {
+export default function FcParameterSnapshot({
+  values = {},
+  checks = [],
+  format = null,
+}) {
   const [query, setQuery] = useState("");
   const [differencesOnly, setDifferencesOnly] = useState(false);
   const groups = useMemo(() => {
@@ -150,6 +160,7 @@ export default function FcParameterSnapshot({ values = {}, checks = [] }) {
     }),
   })).filter((group) => group.entries.length > 0);
   const parameterCount = Object.keys(values).length;
+  const formatLabel = FORMAT_LABELS[format] || null;
 
   if (!parameterCount) return null;
 
@@ -162,6 +173,7 @@ export default function FcParameterSnapshot({ values = {}, checks = [] }) {
           <small>
             {parameterCount} read-only value{parameterCount === 1 ? "" : "s"} from
             the imported file
+            {formatLabel ? ` · ${formatLabel}` : ""}
             {checks.length
               ? ` · ${matches} match${matches === 1 ? "" : "es"} · ${differences} differ${differences === 1 ? "s" : ""}`
               : ""}

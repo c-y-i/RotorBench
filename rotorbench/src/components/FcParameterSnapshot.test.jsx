@@ -117,3 +117,14 @@ test("identifies plan matches and differences inline", async () => {
   expect(screen.queryByRole("region", { name: "Modes and channels parameters" }))
     .not.toBeInTheDocument();
 });
+
+test("shows the accepted parameter snapshot format", async () => {
+  render(
+    <FcParameterSnapshot
+      values={{ brd_alt_config: "1" }}
+      format="mission-planner"
+    />,
+  );
+
+  expect(screen.getByText(/Mission Planner/)).toBeInTheDocument();
+});

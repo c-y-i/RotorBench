@@ -830,6 +830,9 @@ test("reviews Mission Planner parameters for the documented H743 receiver path",
     "FC parameters match the staged plan; hardware remains unverified",
   )).toBeInTheDocument();
   expect(screen.getByText("Observed parameter snapshot")).toBeInTheDocument();
+  expect(within(
+    screen.getByText("Observed parameter snapshot").closest("summary"),
+  ).getByText(/Mission Planner/)).toBeInTheDocument();
   expect(screen.getByText(/true UART RX on UART6/i)).toBeInTheDocument();
   expect(screen.getByText(/CRSF\/ELRS on SERIAL7/i)).toBeInTheDocument();
 });
