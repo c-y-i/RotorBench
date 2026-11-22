@@ -338,6 +338,10 @@
     padding: 16px 14px 0;
   }
 
+  .compare-table-wrap {
+    scroll-margin-top: 80px;
+  }
+
   .compare-table thead th {
     top: 64px;
   }
