@@ -430,6 +430,41 @@ test("the T1 Ranger starter loads a two-motor wing assembly", async () => {
     .toHaveTextContent("Servo map not saved");
 });
 
+test("a PWM-only receiver does not claim a serial receiver route", async () => {
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: "/build",
+      state: {
+        build: {
+          id: "t1-pwm-receiver",
+          name: "T1 PWM receiver",
+          componentIds: {
+            frameId: "frame-heewing-t1-ranger",
+            motorId: "motor-heewing-fx1406-3150kv",
+            propellerId: "prop-heewing-fx3830-2",
+            escId: "esc-heewing-fx20a-bls-twin",
+            flightControllerId: "fc-matek-f405-wmn",
+            batteryId: "battery-cnhl-black-4s-1500-100c",
+            receiverId: "rx-radiomaster-er3c-i-24-pwm",
+          },
+        },
+      },
+    }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(screen.getByText(/PWM outputs only · no serial route published/i))
+    .toBeInTheDocument();
+  expect(screen.queryByText(/UART2 \/ 420000 baud · PWM outputs only/i))
+    .not.toBeInTheDocument();
+});
+
 test("a saved Aerial Kit wing plan maps the T1 left and right outputs", async () => {
   const t1Build = {
     id: "t1-saved-plan",

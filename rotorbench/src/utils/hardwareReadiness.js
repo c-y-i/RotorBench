@@ -284,7 +284,9 @@ export function summarizeHardwareReadiness({
     receiverUart: fcPlan.receiverUart,
     receiverBaud: fcPlan.receiverBaud,
     receiverPins: wiring.pins,
-    wiringStatus: wiring.documented ? "documented" : "unverified",
+    wiringStatus: wiring.outputMode === "pwm-only"
+      ? "pwm-only"
+      : wiring.documented ? "documented" : "unverified",
     wiringScope: wiring.scope,
     radioTargetName: radioTarget.name,
     radioHostTransport: radioEndpoint.hostTransport,
@@ -513,6 +515,12 @@ export function describeNavigationSafety(readiness) {
     ? `GPS ${readiness.fcGpsMinSats} sats`
     : "GPS gate unverified";
   return `${fence} · ${floor} · ${gpsGate} · ${packReturn}`;
+}
+
+export function receiverWiringStatusLabel(status) {
+  if (status === "documented") return "Pins documented";
+  if (status === "pwm-only") return "PWM outputs only";
+  return "Verify pins";
 }
 
 export function describeMissionControls(readiness) {

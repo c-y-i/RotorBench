@@ -52,7 +52,7 @@ test("creates a concise human-readable briefing without binding material", () =>
   expect(briefing.text).toContain("Check props-off setup.");
   expect(briefing.text).toContain("Motor test");
   expect(briefing.text).toContain("XT60 match");
-  expect(briefing.text).toContain("Receiver wiring: pins documented");
+  expect(briefing.text).toContain("Receiver wiring: Pins documented");
   expect(briefing.text).toContain("Radio host: Native USB CDC / documented");
   expect(briefing.text).toContain("readiness are not verified");
   expect(briefing.text).not.toContain("must-not-export");

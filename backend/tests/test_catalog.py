@@ -242,6 +242,7 @@ class CatalogContractTests(unittest.TestCase):
         for receiver in receivers.values():
             self.assertEqual(receiver.protocol, "CRSF")
             self.assertEqual(receiver.frequency_bands, ["2.4 GHz"])
+            self.assertEqual(receiver.output_mode, "pwm")
             self.assertEqual(receiver.telemetry_power_mw, 10)
             self.assertEqual(receiver.working_voltage, "4.5-8.4 V")
             self.assertEqual(

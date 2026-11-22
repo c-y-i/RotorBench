@@ -70,6 +70,38 @@ test("keeps custom-board pin assignments explicitly unverified", () => {
   expect(plan.steps[0].detail).toMatch(/verify the pad mapping/i);
 });
 
+test("does not invent a serial route for a PWM-only receiver", () => {
+  const plan = buildReceiverWiringPlan(
+    {
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+    },
+    speedybee,
+    {
+      name: "RadioMaster ER3C-i",
+      pwmOutputs: 3,
+      outputMode: "pwm",
+    },
+  );
+
+  expect(plan).toMatchObject({
+    protocol: "pwm",
+    protocolLabel: "PWM servo outputs",
+    outputMode: "pwm-only",
+    documented: false,
+    uart: null,
+    pins: "3 PWM outputs · no serial route published",
+    baud: null,
+  });
+  expect(plan.steps[0]).toMatchObject({
+    id: "pwm-outputs",
+    label: "Use documented PWM receiver outputs",
+  });
+  expect(plan.copyText).toMatch(/no serial route published/i);
+  expect(plan.copyText).not.toMatch(/CRSF TX to FC RX/i);
+});
+
 test("does not inherit the primary receiver pads on an alternate UART", () => {
   const alternate = buildReceiverWiringPlan(
     {

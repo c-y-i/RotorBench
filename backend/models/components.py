@@ -284,6 +284,9 @@ class Receiver(ComponentCatalogMetadata):
     current_draw: float = Field(..., alias="currentDraw", description="Current draw in mA")
     channels: int
     pwm_outputs: Optional[int] = Field(None, alias="pwmOutputs", ge=0)
+    output_mode: Optional[Literal["serial", "pwm", "serial-pwm"]] = Field(
+        None, alias="outputMode"
+    )
     rf_chips: Optional[str] = Field(None, alias="rfChips")
     telemetry_power_mw: Optional[float] = Field(None, alias="telemetryPowerMw", ge=0)
     receiver_refresh_rate: Optional[str] = Field(None, alias="receiverRefreshRate")

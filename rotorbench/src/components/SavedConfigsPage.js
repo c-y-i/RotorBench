@@ -41,6 +41,7 @@ import { copyBenchEvidenceAttachment } from "../utils/benchEvidenceAttachment";
 import { summarizeBuild } from "../utils/buildComparison";
 import { parseBuildSheetJson } from "../utils/buildSheet";
 import { buildShareUrl } from "../utils/buildLink";
+import { receiverWiringStatusLabel } from "../utils/hardwareReadiness";
 import { readJsonStorage, writeJsonStorage } from "../utils/storage";
 
 const componentDefinitions = [
@@ -354,7 +355,7 @@ export default function SavedConfigsPage() {
             if (statusFilter === "hardware-review") {
                 return summary.hardwarePlanStatus !== "saved"
                     || summary.hardwareIssueCount > 0
-                    || summary.receiverWiringStatus === "unverified";
+                    || ["unverified", "pwm-only"].includes(summary.receiverWiringStatus);
             }
             if (statusFilter === "hardware-clear") {
                 return summary.hardwarePlanStatus === "saved"
@@ -608,9 +609,7 @@ export default function SavedConfigsPage() {
                                             )}
                                             {buildSummary.hasHardwareParts && (
                                                 <span className={`is-wiring-${buildSummary.receiverWiringStatus}`}>
-                                                    {buildSummary.receiverWiringStatus === "documented"
-                                                        ? "Pins documented"
-                                                        : "Verify pins"}
+                                                    {receiverWiringStatusLabel(buildSummary.receiverWiringStatus)}
                                                 </span>
                                             )}
                                             {buildSummary.hasHardwareParts

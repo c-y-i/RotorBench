@@ -14,6 +14,56 @@ function hasDocumentedPins(pins) {
 }
 
 export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = null) {
+  const pwmOutputs = Number(receiver?.pwmOutputs) || 0;
+  const pwmOnly = receiver?.outputMode === "pwm"
+    || (pwmOutputs > 0 && !receiver?.serialProtocols?.length);
+  if (pwmOnly) {
+    const steps = [
+      {
+        id: "pwm-outputs",
+        label: "Use documented PWM receiver outputs",
+        detail: `${pwmOutputs} PWM output${pwmOutputs === 1 ? "" : "s"} are documented. The manufacturer page does not publish a CRSF or SBUS serial route, so do not infer a flight-controller UART from the receiver's ELRS link. Use the PWM outputs for their documented devices or select a receiver with a documented serial output.`,
+      },
+      {
+        id: "ground",
+        label: "Connect signal ground",
+        detail: "Confirm a common signal ground between the receiver and every device receiving its PWM outputs.",
+      },
+      {
+        id: "supply",
+        label: "Verify receiver supply",
+        detail: "Check the documented receiver voltage and current requirements before applying power.",
+      },
+      {
+        id: "continuity",
+        label: "Continuity check before power",
+        detail: "Props off. Perform continuity and polarity checks before the first powered connection; RotorBench has not tested this wiring.",
+      },
+    ];
+    return {
+      protocol: "pwm",
+      protocolLabel: "PWM servo outputs",
+      outputMode: "pwm-only",
+      documented: false,
+      uart: null,
+      pins: `${pwmOutputs} PWM outputs · no serial route published`,
+      portDetail: null,
+      baud: null,
+      receiverName: receiver?.name || "Receiver not selected",
+      steps,
+      copyText: [
+        "# RotorBench receiver wiring checklist - planning only",
+        `# Receiver: ${receiver?.name || "Not selected"}`,
+        `# Output: ${pwmOutputs} PWM channels; no serial route published`,
+        ...steps.map((step, index) => `${index + 1}. ${step.label}: ${step.detail}`),
+        "",
+        "# Props off. Verify polarity, continuity, receiver supply voltage, and PWM output allocation.",
+        "# RotorBench did not test this wiring or establish hardware readiness.",
+      ].join("\n"),
+      wiringVerified: false,
+      scope: "planning continuity checklist; hardware not tested",
+    };
+  }
   const protocol = RECEIVER_PROTOCOLS.find(
     (item) => item.value === config.receiverProtocol,
   ) || RECEIVER_PROTOCOLS[0];
@@ -94,6 +144,9 @@ export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = nu
   return {
     protocol: protocol.value,
     protocolLabel: protocol.label,
+    outputMode: pwmOutputs > 0 && receiver?.serialProtocols?.length
+      ? "serial-pwm"
+      : "serial",
     documented,
     uart,
     pins,

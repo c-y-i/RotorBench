@@ -147,6 +147,27 @@ test("documented board profiles expose a documented wiring readiness state", () 
   });
 });
 
+test("PWM-only receivers report their output topology instead of serial pins", () => {
+  const pwmReceiver = {
+    ...receiver,
+    id: "rx-er3c-i",
+    name: "RadioMaster ER3C-i",
+    pwmOutputs: 3,
+    outputMode: "pwm",
+  };
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-pwm",
+    flightController: fc,
+    receiver: pwmReceiver,
+    storage: memoryStorage(),
+  });
+
+  expect(readiness).toMatchObject({
+    wiringStatus: "pwm-only",
+    receiverPins: "3 PWM outputs · no serial route published",
+  });
+});
+
 test("Aerial Kit battery telemetry remains available outside Setup", () => {
   const base = "rotorbench:hardware-plan:build-battery";
   const storage = memoryStorage({

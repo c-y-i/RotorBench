@@ -15,6 +15,7 @@ import { summarizeBuildPlanning } from "./planningSummary";
 import {
   describeMissionControls,
   describeNavigationSafety,
+  receiverWiringStatusLabel,
   summarizeHardwareReadiness,
 } from "./hardwareReadiness";
 import {
@@ -513,7 +514,7 @@ export function comparisonRows(left, right) {
       label: "Receiver wiring",
       left: left.receiverWiringStatus,
       right: right.receiverWiringStatus,
-      format: (value) => value === "documented" ? "Pins documented" : "Verify pins",
+      format: (value) => receiverWiringStatusLabel(value),
     },
     {
       id: "board-map",

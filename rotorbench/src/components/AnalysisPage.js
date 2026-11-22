@@ -29,6 +29,7 @@ import { getFrameServoHardware } from "../utils/frameHardware";
 import {
   describeMissionControls,
   describeNavigationSafety,
+  receiverWiringStatusLabel,
   summarizeHardwareReadiness,
 } from "../utils/hardwareReadiness";
 import {
@@ -569,9 +570,7 @@ export default function AnalysisPage() {
                 <dt>Receiver wiring</dt>
                 <dd>
                   {hasHardwareSelection
-                    ? hardwareReadiness.wiringStatus === "documented"
-                      ? "Pins documented"
-                      : "Verify pins"
+                    ? receiverWiringStatusLabel(hardwareReadiness.wiringStatus)
                     : "Not selected"}
                 </dd>
               </div>

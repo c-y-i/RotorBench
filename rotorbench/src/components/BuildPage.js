@@ -47,6 +47,7 @@ import {
 import {
   describeMissionControls,
   describeNavigationSafety,
+  receiverWiringStatusLabel,
   summarizeHardwareReadiness,
 } from "../utils/hardwareReadiness";
 import { getRadioReceiverBandCompatibility, getRadioTarget } from "../data/radioProfiles";
@@ -2216,10 +2217,9 @@ export default function BuildPage() {
                 <>
                   <small>
                     {hardwareReadiness.firmwareLabel} · {hardwareReadiness.protocolLabel} ·{" "}
-                    {hardwareReadiness.receiverUart} / {hardwareReadiness.receiverBaud} baud ·{" "}
-                    {hardwareReadiness.wiringStatus === "documented"
-                      ? "Pins documented"
-                      : "Verify pins"}
+                    {hardwareReadiness.wiringStatus === "pwm-only"
+                      ? "PWM outputs only · no serial route published"
+                      : `${hardwareReadiness.receiverUart} / ${hardwareReadiness.receiverBaud} baud · ${receiverWiringStatusLabel(hardwareReadiness.wiringStatus)}`}
                   </small>
                   <small>
                     Board map: {hardwareReadiness.fcBoardName || "Not mapped"} ·{" "}

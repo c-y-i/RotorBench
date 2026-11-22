@@ -156,11 +156,24 @@ export interface Battery extends ComponentCatalogMetadata {
 export interface Receiver extends ComponentCatalogMetadata {
   id: string;
   name: string;
+  manufacturer?: string;
   protocol: string; // e.g., "SBUS", "CRSF"
+  frequencyBands?: string[];
   weight: number; // grams
   mounting_point?: [number, number, number];
   currentDraw: number; // mA
   channels: number;
+  pwmOutputs?: number;
+  outputMode?: "serial" | "pwm" | "serial-pwm";
+  rfChips?: string;
+  telemetryPowerMw?: number;
+  receiverRefreshRate?: string;
+  workingVoltage?: string;
+  telemetryVoltageRange?: string;
+  firmwareVersion?: string;
+  antenna?: string;
+  serialProtocols?: string[];
+  wifiUpdates?: boolean;
   price: number;
 }
 

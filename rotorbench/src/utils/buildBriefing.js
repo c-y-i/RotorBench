@@ -4,6 +4,7 @@ import { summarizePowerPath } from "./physicalCompatibility";
 import {
   describeMissionControls,
   describeNavigationSafety,
+  receiverWiringStatusLabel,
 } from "./hardwareReadiness";
 
 const partDefinitions = [
@@ -86,7 +87,7 @@ export function createBuildBriefing({
   if (hardwareReadiness?.configured) {
     lines.push(
       `- Receiver route: ${hardwareReadiness.receiverUart || "unassigned"} / ${hardwareReadiness.receiverBaud || "rate not set"} baud`,
-      `- Receiver wiring: ${hardwareReadiness.wiringStatus === "documented" ? "pins documented" : "verify pins"}`,
+      `- Receiver wiring: ${receiverWiringStatusLabel(hardwareReadiness.wiringStatus)}`,
       `- Radio host: ${hardwareReadiness.radioHostTransportLabel || "verify target"} / ${hardwareReadiness.radioHostDocumented ? "documented" : "verify target"}`,
       ...(hardwareReadiness.radioHostTransport === "module-bay"
         ? [

@@ -429,6 +429,7 @@ test("compact ER PWM receivers preserve published outputs and power", () => {
       protocol: "CRSF",
       frequencyBands: ["2.4 GHz"],
       pwmOutputs,
+      outputMode: "pwm",
       weight,
       dimensionsMm,
       telemetryPowerMw: 10,
