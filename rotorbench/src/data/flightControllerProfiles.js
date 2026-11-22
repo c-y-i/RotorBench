@@ -1764,6 +1764,8 @@ export function createDefaultFlightControllerConfig(
     wingDescendBankDeg: 30,
     wingDescendPitchDeg: 8,
     wingDescendThrottle: 0.15,
+    fsRecoverMs: 700,
+    fsStickThreshold: 0.1,
     servo1Reverse: false,
     servo1TrimUs: 0,
     servo1TravelUs: AERIALKIT_SERVO_LIMITS.defaultTravelUs,
@@ -2244,6 +2246,28 @@ export function validateFlightControllerConfig(
           severity: "warning",
           code: "wing-pitch-clamp",
           message: `The requested ${config.wingDescendPitchDeg}° lost-link pitch exceeds the ${config.maxTiltDeg}° angle-mode tilt and will be clamped.`,
+        });
+      }
+      if (
+        !integer(config.fsRecoverMs)
+        || Number(config.fsRecoverMs) < 0
+        || Number(config.fsRecoverMs) > 20000
+      ) {
+        issues.push({
+          severity: "error",
+          code: "fs-recover-range",
+          message: "Lost-link recovery delay must be a whole number from 0 to 20000 milliseconds.",
+        });
+      }
+      if (
+        !finite(config.fsStickThreshold)
+        || Number(config.fsStickThreshold) < 0
+        || Number(config.fsStickThreshold) > 3
+      ) {
+        issues.push({
+          severity: "error",
+          code: "fs-stick-threshold-range",
+          message: "Lost-link stick-motion threshold must be between 0 and 3.",
         });
       }
     }
@@ -2770,6 +2794,11 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           ...(supportsAerialKitWingFailsafe(config.airframe)
             ? [
                 `Wing lost-link descent: bank ${config.wingDescendBankDeg}°, nose-down ${config.wingDescendPitchDeg}°, throttle ${Math.round(Number(config.wingDescendThrottle) * 100)}%`,
+                `Wing lost-link recovery: ${
+                  Number(config.fsRecoverMs) === 0
+                    ? "disabled (latched)"
+                    : `link good for ${config.fsRecoverMs} ms`
+                }, stick motion ≥${config.fsStickThreshold}; arm switch must remain high`,
               ]
             : []),
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell, critical-pack return ${config.batteryRthEnabled ? "enabled" : "disabled"}`,

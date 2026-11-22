@@ -163,6 +163,8 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
         wing_descend_bank_deg: "24",
         wing_descend_pitch_deg: "7",
         wing_descend_throttle: "0.2",
+        fs_recover_ms: "900",
+        fs_stick_threshold: "0.15",
       },
     },
     {
@@ -177,6 +179,8 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
       wingDescendBankDeg: 30,
       wingDescendPitchDeg: 8,
       wingDescendThrottle: 0.15,
+      fsRecoverMs: 700,
+      fsStickThreshold: 0.1,
     },
   );
 
@@ -193,6 +197,8 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
     expect.objectContaining({ key: "wingDescendBankDeg", observedValue: 24 }),
     expect.objectContaining({ key: "wingDescendPitchDeg", observedValue: 7 }),
     expect.objectContaining({ key: "wingDescendThrottle", observedValue: 0.2 }),
+    expect.objectContaining({ key: "fsRecoverMs", observedValue: 900 }),
+    expect.objectContaining({ key: "fsStickThreshold", observedValue: 0.15 }),
   ]));
 });
 

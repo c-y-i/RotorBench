@@ -1553,6 +1553,8 @@ const PARAMETER_PLAN_KEYS = {
   wing_descend_bank_deg: "wingDescendBankDeg",
   wing_descend_pitch_deg: "wingDescendPitchDeg",
   wing_descend_throttle: "wingDescendThrottle",
+  fs_recover_ms: "fsRecoverMs",
+  fs_stick_threshold: "fsStickThreshold",
   rth_enable: "rthEnabled",
 };
 

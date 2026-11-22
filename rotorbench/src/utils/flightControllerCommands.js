@@ -154,6 +154,8 @@ export function buildFlightControllerCommands(
         finite(config.wingDescendBankDeg)
         && finite(config.wingDescendPitchDeg)
         && finite(config.wingDescendThrottle)
+        && integer(config.fsRecoverMs)
+        && finite(config.fsStickThreshold)
       )) &&
     activeServoOutputs.every((servo) => (
       typeof config[servo.reverseKey] === "boolean" &&
@@ -239,6 +241,8 @@ export function buildFlightControllerCommands(
       `set wing_descend_bank_deg ${Number(config.wingDescendBankDeg)}`,
       `set wing_descend_pitch_deg ${Number(config.wingDescendPitchDeg)}`,
       `set wing_descend_throttle ${Number(config.wingDescendThrottle)}`,
+      `set fs_recover_ms ${Number(config.fsRecoverMs)}`,
+      `set fs_stick_threshold ${Number(config.fsStickThreshold)}`,
     );
   }
   lines.push(`set rth_enable ${config.rthEnabled ? 1 : 0}`);

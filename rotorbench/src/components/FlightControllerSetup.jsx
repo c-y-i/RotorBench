@@ -126,6 +126,11 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "wing-zero-throttle": { id: "fc-wing-throttle", label: "fixed-wing lost-link throttle" },
   "wing-bank-clamp": { id: "fc-wing-bank", label: "fixed-wing lost-link bank" },
   "wing-pitch-clamp": { id: "fc-wing-pitch", label: "fixed-wing lost-link pitch" },
+  "fs-recover-range": { id: "fc-fs-recover", label: "lost-link recovery delay" },
+  "fs-stick-threshold-range": {
+    id: "fc-fs-stick-threshold",
+    label: "lost-link stick threshold",
+  },
   "servo-reverse": { id: "fc-servo1-reverse", label: "servo reversal" },
   "servo-trim-range": { id: "fc-servo1-trim", label: "servo centre trim" },
   "servo-travel-range": { id: "fc-servo1-travel", label: "servo travel" },
@@ -2210,6 +2215,44 @@ export default function FlightControllerSetup({
                           )}
                         />
                       </Field>
+                      <Field
+                        label="Recovery delay"
+                        htmlFor="fc-fs-recover"
+                        hint="Link-good time before stick input can recover; 0 keeps the descent latched"
+                      >
+                        <input
+                          id="fc-fs-recover"
+                          type="number"
+                          min="0"
+                          max="20000"
+                          step="10"
+                          aria-invalid={integerInvalid(config.fsRecoverMs)}
+                          value={numericValue(config.fsRecoverMs)}
+                          onChange={(event) => update(
+                            "fsRecoverMs",
+                            numericInput(event.target.value),
+                          )}
+                        />
+                      </Field>
+                      <Field
+                        label="Stick threshold"
+                        htmlFor="fc-fs-stick-threshold"
+                        hint="Sum of absolute roll, pitch, and yaw after link recovery; 0 to 3"
+                      >
+                        <input
+                          id="fc-fs-stick-threshold"
+                          type="number"
+                          min="0"
+                          max="3"
+                          step="0.01"
+                          aria-invalid={numericInvalid(config.fsStickThreshold)}
+                          value={numericValue(config.fsStickThreshold)}
+                          onChange={(event) => update(
+                            "fsStickThreshold",
+                            numericInput(event.target.value),
+                          )}
+                        />
+                      </Field>
                     </>
                   )}
                 </>
@@ -2407,6 +2450,16 @@ export default function FlightControllerSetup({
                   A mission switch starts only on its high transition and ends
                   when switched low.
                 </p>
+              </div>
+            )}
+            {config.firmwareFamily === "aerialkit" && aerialKitFixedWing && (
+              <div className="fc-alignment-note" role="note">
+                Lost-link recovery hands a descending wing back only when the
+                arm switch remains high, the link has been good for the recovery
+                delay without another dropout, and the combined roll, pitch, and
+                yaw stick motion reaches the threshold. Centred sticks never
+                recover. These controls plan firmware behavior and do not test
+                a real receiver dropout.
               </div>
             )}
             {config.firmwareFamily === "aerialkit" && aerialKitLaunchAvailable && (

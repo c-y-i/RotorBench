@@ -432,6 +432,12 @@ export function summarizeHardwareReadiness({
     fcWingDescendThrottle: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.wingDescendThrottle
       : null,
+    fcFsRecoverMs: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.fsRecoverMs
+      : null,
+    fcFsStickThreshold: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.fsStickThreshold
+      : null,
     fcServoOutputs,
     fcServoOutputCount,
     servoOutputCoverageStatus,
@@ -543,6 +549,8 @@ export function sanitizeHardwareReadiness(readiness) {
     fcWingDescendBankDeg: readiness.fcWingDescendBankDeg ?? null,
     fcWingDescendPitchDeg: readiness.fcWingDescendPitchDeg ?? null,
     fcWingDescendThrottle: readiness.fcWingDescendThrottle ?? null,
+    fcFsRecoverMs: readiness.fcFsRecoverMs ?? null,
+    fcFsStickThreshold: readiness.fcFsStickThreshold ?? null,
     fcServoOutputs: Array.isArray(readiness.fcServoOutputs)
       ? readiness.fcServoOutputs.map((servo) => ({
           output: Number(servo.output),

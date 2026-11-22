@@ -104,6 +104,8 @@ test("plans Aerial Kit fixed-wing lost-link descent only for wing airframes", ()
   expect(screen.getByLabelText("Lost-link bank")).toHaveValue(30);
   expect(screen.getByLabelText("Lost-link nose-down")).toHaveValue(8);
   expect(screen.getByLabelText("Lost-link throttle")).toHaveValue(0.15);
+  expect(screen.getByLabelText("Recovery delay")).toHaveValue(700);
+  expect(screen.getByLabelText("Stick threshold")).toHaveValue(0.1);
 
   fireEvent.change(screen.getByLabelText("Lost-link bank"), {
     target: { value: "25" },
@@ -114,17 +116,27 @@ test("plans Aerial Kit fixed-wing lost-link descent only for wing airframes", ()
   fireEvent.change(screen.getByLabelText("Lost-link throttle"), {
     target: { value: "0.2" },
   });
+  fireEvent.change(screen.getByLabelText("Recovery delay"), {
+    target: { value: "900" },
+  });
+  fireEvent.change(screen.getByLabelText("Stick threshold"), {
+    target: { value: "0.15" },
+  });
 
   expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
     wingDescendBankDeg: 25,
     wingDescendPitchDeg: 6,
     wingDescendThrottle: 0.2,
+    fsRecoverMs: 900,
+    fsStickThreshold: 0.15,
   }));
+  expect(screen.getByText(/centred sticks never recover/i)).toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText("Airframe"), {
     target: { value: "quadx" },
   });
   expect(screen.queryByLabelText("Lost-link bank")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Recovery delay")).not.toBeInTheDocument();
 });
 
 test("jumps from the section strip to the plan summary", () => {

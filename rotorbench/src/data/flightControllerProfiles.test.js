@@ -468,6 +468,8 @@ test("Aerial Kit fixed wings plan a powered lost-link descent", () => {
     wingDescendBankDeg: 30,
     wingDescendPitchDeg: 8,
     wingDescendThrottle: 0.15,
+    fsRecoverMs: 700,
+    fsStickThreshold: 0.1,
   });
 
   const issues = validateFlightControllerConfig({
@@ -475,11 +477,15 @@ test("Aerial Kit fixed wings plan a powered lost-link descent", () => {
     wingDescendBankDeg: 61,
     wingDescendPitchDeg: 31,
     wingDescendThrottle: 0.61,
+    fsRecoverMs: 20001,
+    fsStickThreshold: 3.1,
   });
   expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
     "wing-bank-range",
     "wing-pitch-range",
     "wing-throttle-range",
+    "fs-recover-range",
+    "fs-stick-threshold-range",
   ]));
 
   const warnings = validateFlightControllerConfig({
@@ -493,6 +499,8 @@ test("Aerial Kit fixed wings plan a powered lost-link descent", () => {
   ]));
   expect(buildFlightControllerSummary(defaults).join("\n"))
     .toContain("Wing lost-link descent: bank 30°, nose-down 8°, throttle 15%");
+  expect(buildFlightControllerSummary(defaults).join("\n"))
+    .toContain("Wing lost-link recovery: link good for 700 ms, stick motion ≥0.1");
 });
 
 test("Betaflight summary fingerprints its own normal QUAD X motor order", () => {

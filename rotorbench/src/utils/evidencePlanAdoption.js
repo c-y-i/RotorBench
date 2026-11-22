@@ -639,6 +639,25 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => `${Math.round(value * 100)}%`,
     },
     {
+      key: "fsRecoverMs",
+      source: "fs_recover_ms",
+      snapshotKey: "fs_recover_ms",
+      label: "Wing lost-link recovery delay",
+      parse: (raw) => boundedInteger(raw, 0, 20000),
+      display: (value) => value === 0 ? "Latched" : `${value} ms`,
+    },
+    {
+      key: "fsStickThreshold",
+      source: "fs_stick_threshold",
+      snapshotKey: "fs_stick_threshold",
+      label: "Wing lost-link stick threshold",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 3 ? number : null;
+      },
+      display: (value) => `${value}`,
+    },
+    {
       key: "rthEnabled",
       source: "rth_enable",
       snapshotKey: "rth_enable",

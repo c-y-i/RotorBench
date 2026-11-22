@@ -55,6 +55,8 @@ const config = {
   wingDescendBankDeg: 30,
   wingDescendPitchDeg: 8,
   wingDescendThrottle: 0.15,
+  fsRecoverMs: 700,
+  fsStickThreshold: 0.1,
   rthEnabled: false,
 };
 
@@ -112,6 +114,8 @@ test("Aerial Kit preview uses current runtime parameter names and omits save", (
     "set wing_descend_bank_deg 30",
     "set wing_descend_pitch_deg 8",
     "set wing_descend_throttle 0.15",
+    "set fs_recover_ms 700",
+    "set fs_stick_threshold 0.1",
     "set rth_enable 0",
     "set velocity_channel 0",
   ]));
@@ -132,6 +136,8 @@ test("omits fixed-wing descent parameters for a quad plan", () => {
   expect(preview.text).not.toContain("set wing_descend_bank_deg");
   expect(preview.text).not.toContain("set wing_descend_pitch_deg");
   expect(preview.text).not.toContain("set wing_descend_throttle");
+  expect(preview.text).not.toContain("set fs_recover_ms");
+  expect(preview.text).not.toContain("set fs_stick_threshold");
 });
 
 test("Betaflight receives discovery commands but no invented setting names", () => {

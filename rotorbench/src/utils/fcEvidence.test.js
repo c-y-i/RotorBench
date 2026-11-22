@@ -878,6 +878,8 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "wing_descend_bank_deg=30 status=0",
     "wing_descend_pitch_deg=8 status=0",
     "wing_descend_throttle=0.15 status=0",
+    "fs_recover_ms=700 status=0",
+    "fs_stick_threshold=0.1 status=0",
     "rth_enable=0 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
@@ -918,6 +920,8 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     wingDescendBankDeg: 25,
     wingDescendPitchDeg: 8,
     wingDescendThrottle: 0.2,
+    fsRecoverMs: 900,
+    fsStickThreshold: 0.15,
     rthEnabled: false,
   });
 
@@ -976,6 +980,10 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
   expect(checks.find((check) => check.id === "fc-param-wing-descend-pitch-deg").status)
     .toBe("pass");
   expect(checks.find((check) => check.id === "fc-param-wing-descend-throttle").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-fs-recover-ms").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-fs-stick-threshold").status)
     .toBe("fail");
 });
 
