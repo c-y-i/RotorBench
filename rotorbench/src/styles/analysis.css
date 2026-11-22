@@ -95,7 +95,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.75fr);
   gap: 14px;
-  margin: 20px;
+  margin: 18px 0 0;
 }
 
 .route-stage > .app-container.analysis-page > .page-header.analysis-empty-header {
@@ -650,7 +650,7 @@
 @media (max-width: 640px) {
   .analysis-empty-state {
     grid-template-columns: 1fr;
-    margin: 16px;
+    margin: 16px 0 0;
   }
 
   .analysis-empty-main {
