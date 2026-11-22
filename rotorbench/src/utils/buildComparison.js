@@ -25,6 +25,7 @@ import {
   summarizeBenchEvidenceAttachment,
 } from "./benchEvidenceAttachment";
 import { summarizeModelSources } from "./modelAssets";
+import { estimateAssemblyCenterOfGravity } from "./assemblyCenterOfGravity";
 
 export { BUILD_WEIGHT_ALLOWANCE_G } from "./planningSummary";
 
@@ -110,6 +111,7 @@ export function summarizeBuild(build) {
       : "unverified";
   const evidence = summarizeBuildEvidence(assemblySpec);
   const modelSources = summarizeModelSources(assemblySpec);
+  const centerOfGravity = estimateAssemblyCenterOfGravity(assemblySpec);
   const hardwareReadiness = summarizeHardwareReadiness({
     buildId: build?.id,
     flightController: byCategory.flight_controllers,
@@ -164,6 +166,11 @@ export function summarizeBuild(build) {
     modelSourceSelectedCount: modelSources.selectedCount,
     catalogModelCount: modelSources.catalogModelCount,
     legacyNormalizationCount: modelSources.legacyNormalizationCount,
+    centerOfGravityStatus: centerOfGravity.status,
+    centerOfGravityLateralMm: centerOfGravity.planarOffsetMm?.lateral ?? null,
+    centerOfGravityLongitudinalMm:
+      centerOfGravity.planarOffsetMm?.longitudinal ?? null,
+    centerOfGravityMassG: centerOfGravity.massG || null,
     hardwarePlanStatus: readHardwarePlanStatus(build?.id),
     hardwareReadinessStatus: hardwareReadiness.status,
     hardwareReadinessLabel: hardwareReadiness.label,
@@ -704,6 +711,21 @@ export function comparisonRows(left, right) {
             }`
         }`
         : "Receiver bands unverified",
+      format: (value) => value,
+    },
+    {
+      id: "center-of-gravity",
+      label: "Estimated center of gravity",
+      left: left.centerOfGravityLateralMm != null
+        ? `X ${left.centerOfGravityLateralMm} / Z ${left.centerOfGravityLongitudinalMm} mm${
+          left.centerOfGravityStatus === "partial" ? " · partial" : ""
+        }`
+        : "Unavailable",
+      right: right.centerOfGravityLateralMm != null
+        ? `X ${right.centerOfGravityLateralMm} / Z ${right.centerOfGravityLongitudinalMm} mm${
+          right.centerOfGravityStatus === "partial" ? " · partial" : ""
+        }`
+        : "Unavailable",
       format: (value) => value,
     },
     {

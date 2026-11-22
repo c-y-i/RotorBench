@@ -7,6 +7,7 @@ import {
 import { summarizePowerPath } from "./physicalCompatibility";
 import { summarizeModelSources } from "./modelAssets";
 import { sanitizePlanComparisonMetadata } from "./benchEvidenceAttachment";
+import { estimateAssemblyCenterOfGravity } from "./assemblyCenterOfGravity";
 
 export const ANALYSIS_REPORT_SCHEMA = "rotorbench.analysis-report.v1";
 
@@ -97,6 +98,7 @@ export function createAnalysisReport(
       build.geometryOverrides,
     ),
     modelSources: summarizeModelSources(assemblySpec || {}),
+    centerOfGravity: estimateAssemblyCenterOfGravity(assemblySpec || {}),
     powerPath: summarizePowerPath(
       assemblySpec?.battery,
       assemblySpec?.esc,

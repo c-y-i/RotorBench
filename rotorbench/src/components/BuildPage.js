@@ -8,6 +8,7 @@ import ModelAssetAudit from "./ModelAssetAudit";
 import AssemblyNotes from "./AssemblyNotes";
 import AssemblyStackMap from "./AssemblyStackMap";
 import AssemblyInterfaceMap from "./AssemblyInterfaceMap";
+import AssemblyCenterOfGravity from "./AssemblyCenterOfGravity";
 import MeasuredGeometryPanel from "./MeasuredGeometryPanel";
 import PropRotationMap from "./PropRotationMap";
 import API_BASE from "../config/api";
@@ -1692,6 +1693,10 @@ export default function BuildPage() {
             propeller={assemblySpec.propeller}
             clearedComponents={clearedComponents}
             onToggleComponent={toggleComponentVisibility}
+          />
+          <AssemblyCenterOfGravity
+            parts={assemblySpec}
+            buildName={workingBuildName}
           />
           <MeasuredGeometryPanel
             parts={measuredGeometryParts}

@@ -19,6 +19,7 @@ import API_BASE from "../config/api";
 import { buildViewerPlacementAudit } from "../assembly/assemblyTransforms";
 import { applyMeasuredGeometry } from "../utils/buildGeometry";
 import { summarizePowerPath } from "../utils/physicalCompatibility";
+import { estimateAssemblyCenterOfGravity } from "../utils/assemblyCenterOfGravity";
 import {
   analysisReportFilename,
   createAnalysisReport,
@@ -356,6 +357,10 @@ export default function AnalysisPage() {
   const powerPath = useMemo(
     () => summarizePowerPath(assemblySpec.battery, assemblySpec.esc),
     [assemblySpec.battery, assemblySpec.esc],
+  );
+  const centerOfGravity = useMemo(
+    () => estimateAssemblyCenterOfGravity(assemblySpec),
+    [assemblySpec],
   );
 
   const downloadReport = () => {
@@ -759,6 +764,16 @@ export default function AnalysisPage() {
                     : "Not selected"}
                 </dd>
               </div>
+              {centerOfGravity.planarOffsetMm && (
+                <div>
+                  <dt>Estimated CG</dt>
+                  <dd>
+                    X {centerOfGravity.planarOffsetMm.lateral} / Z{" "}
+                    {centerOfGravity.planarOffsetMm.longitudinal} mm ·{" "}
+                    {centerOfGravity.status}
+                  </dd>
+                </div>
+              )}
               {benchEvidence.configured && (
                 <div className="analysis-hardware-evidence">
                   <dt>Imported evidence</dt>

@@ -7,6 +7,7 @@ import {
   describeNavigationSafety,
   receiverWiringStatusLabel,
 } from "./hardwareReadiness";
+import { estimateAssemblyCenterOfGravity } from "./assemblyCenterOfGravity";
 
 const partDefinitions = [
   ["frame", "Frame"],
@@ -31,6 +32,7 @@ export function createBuildBriefing({
     assemblySpec.battery,
     assemblySpec.esc,
   );
+  const centerOfGravity = estimateAssemblyCenterOfGravity(assemblySpec);
   const measured = summarizeMeasuredGeometry(
     assemblySpec,
     build.geometryOverrides,
@@ -58,6 +60,11 @@ export function createBuildBriefing({
       "## Planning",
       `- Planning weight: ${Math.round(planning.totalWeight * 10) / 10} g (${planning.catalogWeight} g catalog parts + ${planning.planningAllowanceG} g allowance; not measured)`,
       `- Catalog price: $${planning.totalPrice.toFixed(2)}`,
+      ...(centerOfGravity.planarOffsetMm
+        ? [
+            `- Center of gravity estimate: X ${centerOfGravity.planarOffsetMm.lateral} mm / Z ${centerOfGravity.planarOffsetMm.longitudinal} mm / ${centerOfGravity.massG} g placed / ${centerOfGravity.status} (not measured; 50 g allowance excluded)`,
+          ]
+        : []),
     );
     if (planning.takeoffEnvelopeStatus !== "unavailable") {
       lines.push(

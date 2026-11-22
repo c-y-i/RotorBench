@@ -20,6 +20,7 @@ import {
   parsePlanComparisonMetadata,
   sanitizePlanComparisonMetadata,
 } from "./benchEvidenceAttachment";
+import { estimateAssemblyCenterOfGravity } from "./assemblyCenterOfGravity";
 
 function selectedPhysicalChecks(assemblySpec) {
   return [
@@ -124,6 +125,7 @@ export function createBuildSheet({
       build.geometryOverrides,
     ),
     modelSources: summarizeModelSources(assemblySpec),
+    centerOfGravity: estimateAssemblyCenterOfGravity(assemblySpec),
     powerPath: summarizePowerPath(
       assemblySpec.battery,
       assemblySpec.esc,

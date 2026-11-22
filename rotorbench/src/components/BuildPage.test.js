@@ -487,6 +487,11 @@ test("a starter-platform deep link selects all seven components and consumes the
   })).toBeVisible();
   expect(screen.getByText(/Output numbers are omitted until a supported saved/i))
     .toBeVisible();
+  fireEvent.click(screen.getByText("Center of gravity"));
+  expect(screen.getByRole("img", {
+    name: /^Estimated center-of-gravity offset/,
+  })).toBeVisible();
+  expect(screen.getByText(/50 g build allowance is excluded/i)).toBeVisible();
   fireEvent.click(screen.getByText("Viewer placement"));
   expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
     "Propeller-to-shaft alignment",

@@ -811,6 +811,14 @@ export default function SavedConfigsPage() {
                                                     {buildSummary.powerPathLabel}
                                                 </span>
                                             )}
+                                            {buildSummary.centerOfGravityLateralMm != null && (
+                                                <span className="is-host-documented">
+                                                    CG X {buildSummary.centerOfGravityLateralMm} / Z {buildSummary.centerOfGravityLongitudinalMm} mm
+                                                    {buildSummary.centerOfGravityStatus === "partial"
+                                                        ? " · partial"
+                                                        : ""}
+                                                </span>
+                                            )}
                                             {buildSummary.benchEvidenceConfigured && (
                                                 <span className={`saved-evidence-state is-${buildSummary.benchEvidenceStatus}`}>
                                                     {buildSummary.benchEvidenceLabel}
