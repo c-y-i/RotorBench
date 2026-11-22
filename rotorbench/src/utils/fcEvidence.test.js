@@ -880,6 +880,10 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "wing_descend_throttle=0.15 status=0",
     "fs_recover_ms=700 status=0",
     "fs_stick_threshold=0.1 status=0",
+    "sysid_axis=2 status=0",
+    "sysid_pattern=1 status=0",
+    "sysid_amplitude=0.08 status=0",
+    "sysid_duration_ms=7500 status=0",
     "rth_enable=0 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
@@ -922,6 +926,10 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     wingDescendThrottle: 0.2,
     fsRecoverMs: 900,
     fsStickThreshold: 0.15,
+    sysidAxis: 2,
+    sysidPattern: 1,
+    sysidAmplitude: 0.08,
+    sysidDurationMs: 7500,
     rthEnabled: false,
   });
 
@@ -985,6 +993,14 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     .toBe("fail");
   expect(checks.find((check) => check.id === "fc-param-fs-stick-threshold").status)
     .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-sysid-axis").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-sysid-pattern").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-sysid-amplitude").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-sysid-duration-ms").status)
+    .toBe("pass");
 });
 
 test("marks planned parameters missing from a partial snapshot as unverified", () => {

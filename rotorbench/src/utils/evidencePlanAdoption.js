@@ -667,6 +667,41 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
         return number === 0 ? false : number === 1 ? true : null;
       },
     },
+    {
+      key: "sysidAxis",
+      source: "sysid_axis",
+      snapshotKey: "sysid_axis",
+      label: "System-ID excitation axis",
+      parse: (raw) => boundedInteger(raw, 0, 2),
+      display: (value) => ["Roll", "Pitch", "Yaw"][value] || String(value),
+    },
+    {
+      key: "sysidPattern",
+      source: "sysid_pattern",
+      snapshotKey: "sysid_pattern",
+      label: "System-ID excitation pattern",
+      parse: (raw) => boundedInteger(raw, 0, 1),
+      display: (value) => value === 1 ? "PRBS" : "Chirp",
+    },
+    {
+      key: "sysidAmplitude",
+      source: "sysid_amplitude",
+      snapshotKey: "sysid_amplitude",
+      label: "System-ID torque amplitude",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 0.25 ? number : null;
+      },
+      display: (value) => `${value}`,
+    },
+    {
+      key: "sysidDurationMs",
+      source: "sysid_duration_ms",
+      snapshotKey: "sysid_duration_ms",
+      label: "System-ID duration",
+      parse: (raw) => boundedInteger(raw, 100, 30000),
+      display: (value) => `${value} ms`,
+    },
   ];
   return buildPatch(
     snapshot.values,

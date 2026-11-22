@@ -2,6 +2,7 @@ import {
   AERIALKIT_AIRFRAME_IDS,
   buildFlightControllerCommands,
 } from "./flightControllerCommands";
+import { getBoardProfile } from "../data/flightControllerProfiles";
 
 const config = {
   firmwareFamily: "aerialkit",
@@ -138,6 +139,32 @@ test("omits fixed-wing descent parameters for a quad plan", () => {
   expect(preview.text).not.toContain("set wing_descend_throttle");
   expect(preview.text).not.toContain("set fs_recover_ms");
   expect(preview.text).not.toContain("set fs_stick_threshold");
+});
+
+test("workspace controller preview includes system-ID excitation settings", () => {
+  const workspaceConfig = {
+    ...config,
+    sysidAxis: 2,
+    sysidPattern: 1,
+    sysidAmplitude: 0.08,
+    sysidDurationMs: 7500,
+  };
+  const preview = buildFlightControllerCommands(workspaceConfig, {
+    profile: getBoardProfile("weact-f405"),
+  });
+
+  expect(preview.supported).toBe(true);
+  expect(preview.lines).toEqual(expect.arrayContaining([
+    "set sysid_axis 2",
+    "set sysid_pattern 1",
+    "set sysid_amplitude 0.08",
+    "set sysid_duration_ms 7500",
+  ]));
+
+  const publicPreview = buildFlightControllerCommands(config, {
+    profile: getBoardProfile("feather-f405"),
+  });
+  expect(publicPreview.text).not.toContain("set sysid_axis");
 });
 
 test("Betaflight receives discovery commands but no invented setting names", () => {

@@ -1182,6 +1182,40 @@ test("Aerial Kit exposes its velocity switch and omits unsupported control roles
   expect(screen.queryByLabelText("System-ID channel")).not.toBeInTheDocument();
 });
 
+test("workspace controller profiles expose bounded system-ID excitation", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+  fireEvent.change(screen.getByLabelText("Board profile"), {
+    target: { value: "weact-f405" },
+  });
+
+  expect(screen.getByLabelText("Excitation axis")).toHaveValue("0");
+  expect(screen.getByLabelText("Pattern")).toHaveValue("0");
+  expect(screen.getByLabelText("Torque amplitude")).toHaveValue(0.1);
+  expect(screen.getByLabelText("Duration")).toHaveValue(5000);
+  expect(screen.getByText(/angle and manual modes refuse it/i))
+    .toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Excitation axis"), {
+    target: { value: "2" },
+  });
+  fireEvent.change(screen.getByLabelText("Pattern"), {
+    target: { value: "1" },
+  });
+  fireEvent.change(screen.getByLabelText("Torque amplitude"), {
+    target: { value: "0.08" },
+  });
+  fireEvent.change(screen.getByLabelText("Duration"), {
+    target: { value: "7500" },
+  });
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    sysidAxis: 2,
+    sysidPattern: 1,
+    sysidAmplitude: 0.08,
+    sysidDurationMs: 7500,
+  }));
+});
+
 test("blank numeric safety fields remain invalid instead of becoming zero", () => {
   render(<FlightControllerSetup />);
   const armHold = screen.getByLabelText("Arm hold");

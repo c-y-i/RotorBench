@@ -166,6 +166,45 @@ test("saved radio plans retain simultaneous versus selectable band mode", () => 
   });
 });
 
+test("workspace system-ID parameters survive sanitized readiness", () => {
+  const base = "rotorbench:hardware-plan:build-sysid";
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-sysid",
+    flightController: fc,
+    receiver,
+    storage: memoryStorage({
+      [`${base}:fc`]: JSON.stringify({
+        planVersion: 3,
+        selectedFlightControllerId: fc.id,
+        selectedReceiverId: receiver.id,
+        firmwareFamily: "aerialkit",
+        profileId: "weact-f405",
+        receiverProtocol: "crsf",
+        sysidChannel: 8,
+        sysidAxis: 2,
+        sysidPattern: 1,
+        sysidAmplitude: 0.08,
+        sysidDurationMs: 7500,
+      }),
+    }),
+  });
+
+  expect(readiness).toMatchObject({
+    fcSysidChannel: 8,
+    fcSysidAxis: 2,
+    fcSysidPattern: 1,
+    fcSysidAmplitude: 0.08,
+    fcSysidDurationMs: 7500,
+  });
+  expect(sanitizeHardwareReadiness(readiness)).toMatchObject({
+    fcSysidChannel: 8,
+    fcSysidAxis: 2,
+    fcSysidPattern: 1,
+    fcSysidAmplitude: 0.08,
+    fcSysidDurationMs: 7500,
+  });
+});
+
 test("H743 readiness retains source-backed ArduPilot receiver parameters", () => {
   const selectedController = {
     id: "fc-matek-h743-wing-v3",

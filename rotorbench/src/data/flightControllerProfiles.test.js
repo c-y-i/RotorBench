@@ -459,6 +459,40 @@ test("Aerial Kit flight limits use documented firmware defaults and ranges", () 
     .toContain("Rate feel: centre slope linear, expo 0%, TPA 0% above 50% throttle");
 });
 
+test("workspace system-ID planning uses firmware defaults and ranges", () => {
+  const profile = getBoardProfile("weact-f405");
+  const defaults = {
+    ...createDefaultFlightControllerConfig(),
+    profileId: profile.id,
+  };
+  expect(defaults).toMatchObject({
+    sysidAxis: 0,
+    sysidPattern: 0,
+    sysidAmplitude: 0.1,
+    sysidDurationMs: 5000,
+  });
+  const issues = validateFlightControllerConfig({
+    ...defaults,
+    sysidAxis: 3,
+    sysidPattern: 2,
+    sysidAmplitude: 0.3,
+    sysidDurationMs: 99,
+  }, profile);
+  expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+    "sysid-axis-range",
+    "sysid-pattern-range",
+    "sysid-amplitude-range",
+    "sysid-duration-range",
+  ]));
+  const summary = buildFlightControllerSummary({
+    ...defaults,
+    sysidChannel: 8,
+  }, profile).join("\n");
+  expect(summary).toContain(
+    "System ID: roll axis, chirp, amplitude 0.1, duration 5000 ms; armed rate mode only",
+  );
+});
+
 test("Aerial Kit fixed wings plan a powered lost-link descent", () => {
   const defaults = {
     ...createDefaultFlightControllerConfig(),

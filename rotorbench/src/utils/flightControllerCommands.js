@@ -103,6 +103,10 @@ export function buildFlightControllerCommands(
   );
   const integer = (value) => finite(value) && Number.isInteger(Number(value));
   const optionalInteger = (value) => value == null || integer(value);
+  const sysidAxis = config.sysidAxis ?? 0;
+  const sysidPattern = config.sysidPattern ?? 0;
+  const sysidAmplitude = config.sysidAmplitude ?? 0.1;
+  const sysidDurationMs = config.sysidDurationMs ?? 5000;
   const validPlan =
     Number.isInteger(airframe) &&
     integer(config.dshotKhz) &&
@@ -119,6 +123,13 @@ export function buildFlightControllerCommands(
     optionalInteger(config.manualChannel) &&
     optionalInteger(config.ctrlChannel) &&
     optionalInteger(config.sysidChannel) &&
+    (profile?.buildScope !== "workspace"
+      || (
+        integer(sysidAxis)
+        && integer(sysidPattern)
+        && finite(sysidAmplitude)
+        && integer(sysidDurationMs)
+      )) &&
     integer(config.armHoldMs) &&
     finite(config.armMaxTiltDeg) &&
     finite(config.throttleLow) &&
@@ -194,6 +205,10 @@ export function buildFlightControllerCommands(
       `set manual_channel ${Number(config.manualChannel ?? 0)}`,
       `set ctrl_channel ${Number(config.ctrlChannel ?? 0)}`,
       `set sysid_channel ${Number(config.sysidChannel ?? 0)}`,
+      `set sysid_axis ${Number(sysidAxis)}`,
+      `set sysid_pattern ${Number(sysidPattern)}`,
+      `set sysid_amplitude ${Number(sysidAmplitude)}`,
+      `set sysid_duration_ms ${Number(sysidDurationMs)}`,
     );
   } else {
     lines.push(`set velocity_channel ${Number(config.velocityChannel ?? 0)}`);

@@ -120,6 +120,10 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
+  "sysid-axis-range": { id: "fc-sysid-axis", label: "system-ID axis" },
+  "sysid-pattern-range": { id: "fc-sysid-pattern", label: "system-ID pattern" },
+  "sysid-amplitude-range": { id: "fc-sysid-amplitude", label: "system-ID amplitude" },
+  "sysid-duration-range": { id: "fc-sysid-duration", label: "system-ID duration" },
   "wing-bank-range": { id: "fc-wing-bank", label: "fixed-wing lost-link bank" },
   "wing-pitch-range": { id: "fc-wing-pitch", label: "fixed-wing lost-link pitch" },
   "wing-throttle-range": { id: "fc-wing-throttle", label: "fixed-wing lost-link throttle" },
@@ -1407,6 +1411,76 @@ export default function FlightControllerSetup({
                   </div>
                 </div>
               </div>
+              {profile.buildScope === "workspace" && (
+                <fieldset className="fc-sysid-plan">
+                  <legend>System identification</legend>
+                  <p>
+                    The existing System-ID switch starts a bounded armed
+                    excitation in rate mode. Stick input aborts the run; angle
+                    and manual modes refuse it.
+                  </p>
+                  <div className="fc-field-grid">
+                    <Field label="Excitation axis" htmlFor="fc-sysid-axis">
+                      <select
+                        id="fc-sysid-axis"
+                        value={config.sysidAxis}
+                        onChange={(event) => update("sysidAxis", Number(event.target.value))}
+                      >
+                        <option value="0">Roll</option>
+                        <option value="1">Pitch</option>
+                        <option value="2">Yaw</option>
+                      </select>
+                    </Field>
+                    <Field label="Pattern" htmlFor="fc-sysid-pattern">
+                      <select
+                        id="fc-sysid-pattern"
+                        value={config.sysidPattern}
+                        onChange={(event) => update("sysidPattern", Number(event.target.value))}
+                      >
+                        <option value="0">Chirp</option>
+                        <option value="1">PRBS</option>
+                      </select>
+                    </Field>
+                    <Field
+                      label="Torque amplitude"
+                      htmlFor="fc-sysid-amplitude"
+                      hint="0 to 0.25 of full torque"
+                    >
+                      <input
+                        id="fc-sysid-amplitude"
+                        type="number"
+                        min="0"
+                        max="0.25"
+                        step="0.01"
+                        aria-invalid={numericInvalid(config.sysidAmplitude)}
+                        value={numericValue(config.sysidAmplitude)}
+                        onChange={(event) => update("sysidAmplitude", numericInput(event.target.value))}
+                      />
+                    </Field>
+                    <Field
+                      label="Duration"
+                      htmlFor="fc-sysid-duration"
+                      hint="100 to 30000 ms"
+                    >
+                      <input
+                        id="fc-sysid-duration"
+                        type="number"
+                        min="100"
+                        max="30000"
+                        step="100"
+                        aria-invalid={integerInvalid(config.sysidDurationMs)}
+                        value={numericValue(config.sysidDurationMs)}
+                        onChange={(event) => update("sysidDurationMs", numericInput(event.target.value))}
+                      />
+                    </Field>
+                  </div>
+                  <span className="fc-sysid-channel">
+                    {config.sysidChannel == null
+                      ? "System-ID channel is not mapped. These values remain staged firmware parameters."
+                      : `Tuning switch: CH ${config.sysidChannel}. Confirm the switch low at arm, then cycle it high only for the bounded run.`}
+                  </span>
+                </fieldset>
+              )}
             </section>
           )}
 

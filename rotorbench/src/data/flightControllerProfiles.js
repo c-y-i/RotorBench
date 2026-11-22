@@ -1789,6 +1789,10 @@ export function createDefaultFlightControllerConfig(
     manualChannel: null,
     ctrlChannel: null,
     sysidChannel: null,
+    sysidAxis: 0,
+    sysidPattern: 0,
+    sysidAmplitude: 0.1,
+    sysidDurationMs: 5000,
     armHoldMs: 500,
     armMaxTiltDeg: 25,
     throttleLow: 0.05,
@@ -2268,6 +2272,44 @@ export function validateFlightControllerConfig(
           severity: "error",
           code: "fs-stick-threshold-range",
           message: "Lost-link stick-motion threshold must be between 0 and 3.",
+        });
+      }
+    }
+    if (profile.buildScope === "workspace") {
+      if (!integer(config.sysidAxis) || Number(config.sysidAxis) < 0 || Number(config.sysidAxis) > 2) {
+        issues.push({
+          severity: "error",
+          code: "sysid-axis-range",
+          message: "System-ID excitation axis must be 0 roll, 1 pitch, or 2 yaw.",
+        });
+      }
+      if (!integer(config.sysidPattern) || ![0, 1].includes(Number(config.sysidPattern))) {
+        issues.push({
+          severity: "error",
+          code: "sysid-pattern-range",
+          message: "System-ID excitation pattern must be chirp or PRBS.",
+        });
+      }
+      if (
+        !finite(config.sysidAmplitude)
+        || Number(config.sysidAmplitude) < 0
+        || Number(config.sysidAmplitude) > 0.25
+      ) {
+        issues.push({
+          severity: "error",
+          code: "sysid-amplitude-range",
+          message: "System-ID torque amplitude must be between 0 and 0.25.",
+        });
+      }
+      if (
+        !integer(config.sysidDurationMs)
+        || Number(config.sysidDurationMs) < 100
+        || Number(config.sysidDurationMs) > 30000
+      ) {
+        issues.push({
+          severity: "error",
+          code: "sysid-duration-range",
+          message: "System-ID duration must be a whole number from 100 to 30000 milliseconds.",
         });
       }
     }
@@ -2838,6 +2880,13 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
     config.firmwareFamily === "aerialkit"
       ? `Aerial Kit control roles: ${aerialKitRoles.map((role) => role.label).join(", ")} only`
       : `Optional channels: manual ${config.manualChannel ?? "off"}, control ${config.ctrlChannel ?? "off"}, system ID ${config.sysidChannel ?? "off"}`,
+    ...(config.firmwareFamily === "aerialkit"
+      && profile.buildScope === "workspace"
+      && config.sysidChannel != null
+      ? [
+          `System ID: ${["roll", "pitch", "yaw"][Number(config.sysidAxis)] || "roll"} axis, ${Number(config.sysidPattern) === 1 ? "PRBS" : "chirp"}, amplitude ${config.sysidAmplitude}, duration ${config.sysidDurationMs} ms; armed rate mode only`,
+        ]
+      : []),
     `Arm gate: ${config.armHoldMs} ms hold, ${config.armMaxTiltDeg} degree maximum tilt`,
     `Failsafe: ${FAILSAFE_ACTIONS.find((item) => item.value === config.failsafeAction)?.label || config.failsafeAction}`,
     ...(config.firmwareFamily === "betaflight"

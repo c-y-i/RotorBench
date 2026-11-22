@@ -165,6 +165,10 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
         wing_descend_throttle: "0.2",
         fs_recover_ms: "900",
         fs_stick_threshold: "0.15",
+        sysid_axis: "2",
+        sysid_pattern: "1",
+        sysid_amplitude: "0.08",
+        sysid_duration_ms: "7500",
       },
     },
     {
@@ -181,6 +185,10 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
       wingDescendThrottle: 0.15,
       fsRecoverMs: 700,
       fsStickThreshold: 0.1,
+      sysidAxis: 0,
+      sysidPattern: 0,
+      sysidAmplitude: 0.1,
+      sysidDurationMs: 5000,
     },
   );
 
@@ -199,6 +207,10 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
     expect.objectContaining({ key: "wingDescendThrottle", observedValue: 0.2 }),
     expect.objectContaining({ key: "fsRecoverMs", observedValue: 900 }),
     expect.objectContaining({ key: "fsStickThreshold", observedValue: 0.15 }),
+    expect.objectContaining({ key: "sysidAxis", observedValue: 2 }),
+    expect.objectContaining({ key: "sysidPattern", observedValue: 1 }),
+    expect.objectContaining({ key: "sysidAmplitude", observedValue: 0.08 }),
+    expect.objectContaining({ key: "sysidDurationMs", observedValue: 7500 }),
   ]));
 });
 

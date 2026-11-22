@@ -441,6 +441,21 @@ export function summarizeHardwareReadiness({
     fcFsStickThreshold: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.fsStickThreshold
       : null,
+    fcSysidChannel: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.sysidChannel ?? null
+      : null,
+    fcSysidAxis: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.sysidAxis
+      : null,
+    fcSysidPattern: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.sysidPattern
+      : null,
+    fcSysidAmplitude: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.sysidAmplitude
+      : null,
+    fcSysidDurationMs: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.sysidDurationMs
+      : null,
     fcServoOutputs,
     fcServoOutputCount,
     servoOutputCoverageStatus,
@@ -557,6 +572,11 @@ export function sanitizeHardwareReadiness(readiness) {
     fcWingDescendThrottle: readiness.fcWingDescendThrottle ?? null,
     fcFsRecoverMs: readiness.fcFsRecoverMs ?? null,
     fcFsStickThreshold: readiness.fcFsStickThreshold ?? null,
+    fcSysidChannel: readiness.fcSysidChannel ?? null,
+    fcSysidAxis: readiness.fcSysidAxis ?? null,
+    fcSysidPattern: readiness.fcSysidPattern ?? null,
+    fcSysidAmplitude: readiness.fcSysidAmplitude ?? null,
+    fcSysidDurationMs: readiness.fcSysidDurationMs ?? null,
     fcServoOutputs: Array.isArray(readiness.fcServoOutputs)
       ? readiness.fcServoOutputs.map((servo) => ({
           output: Number(servo.output),
