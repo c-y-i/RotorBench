@@ -5477,6 +5477,106 @@
   opacity: 0.72;
 }
 
+.starter-platform-search {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: 9px;
+  padding: 0 7px 0 10px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.starter-platform-search:focus-within {
+  border-color: var(--brand);
+  outline: 3px solid color-mix(in srgb, var(--brand) 24%, transparent);
+  outline-offset: 1px;
+}
+
+.starter-platform-search > svg {
+  color: var(--ink-faint);
+}
+
+.starter-platform-search input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 12px;
+}
+
+.starter-platform-search input::placeholder {
+  color: var(--ink-soft);
+  opacity: 1;
+}
+
+.starter-platform-search button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.starter-platform-search button:hover {
+  color: var(--ink);
+  background: var(--surface-raised);
+}
+
+.starter-platform-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  padding: 18px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px dashed var(--line-strong);
+  border-radius: 7px;
+}
+
+.starter-platform-empty strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.starter-platform-empty span {
+  font-size: 12px;
+}
+
+.starter-platform-empty button {
+  min-height: 44px;
+  margin-top: 5px;
+  padding: 0 11px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.starter-platform-empty button:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
 .starter-platform-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

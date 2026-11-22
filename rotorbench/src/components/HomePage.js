@@ -24,7 +24,9 @@ import {
   Fan,
   Radio,
   Scale,
+  Search,
   Settings2,
+  X,
   Zap,
 } from "lucide-react";
 import { PLATFORM_PRESETS } from "../data/platformPresets";
@@ -46,6 +48,20 @@ const PLATFORM_COMPONENT_CATEGORIES = {
   batteryId: "batteries",
   receiverId: "receivers",
 };
+
+function starterPlatformSearchText(preset) {
+  const componentNames = Object.entries(PLATFORM_COMPONENT_CATEGORIES).flatMap(
+    ([key, category]) => {
+      const id = preset.componentIds?.[key];
+      return componentsData[category]?.find((part) => part.id === id)?.name || [];
+    },
+  );
+  return [
+    preset.name,
+    preset.description,
+    ...componentNames,
+  ].filter(Boolean).join(" ").toLowerCase();
+}
 
 function platformGeometryCoverage(preset) {
   const parts = Object.entries(preset.componentIds || {})
@@ -90,6 +106,7 @@ export default function HomePage() {
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
   const [platformSize, setPlatformSize] = useState("all");
   const [verifiedPlatformsOnly, setVerifiedPlatformsOnly] = useState(false);
+  const [starterQuery, setStarterQuery] = useState("");
   // Get component details from current build
   const getComponent = (type, id) => {
     if (!id) return null;
@@ -122,8 +139,9 @@ export default function HomePage() {
       - (Number.parseFloat(right) || Number.POSITIVE_INFINITY)
     ))
   ), []);
-  const visiblePlatforms = useMemo(() => (
-    PLATFORM_PRESETS
+  const visiblePlatforms = useMemo(() => {
+    const query = starterQuery.trim().toLowerCase();
+    return PLATFORM_PRESETS
       .filter((preset) => (
         platformSize === "all"
         || preset.name.match(/^[\d.]+/)?.[0] === platformSize
@@ -134,12 +152,15 @@ export default function HomePage() {
           platformSummaries[preset.id]?.physicalFitStatus,
         )
       ))
+      .filter((preset) => (
+        !query || starterPlatformSearchText(preset).includes(query)
+      ))
       .sort((left, right) => (
         (Number.parseFloat(left.name.match(/^[\d.]+/)?.[0]) || 0)
         - (Number.parseFloat(right.name.match(/^[\d.]+/)?.[0]) || 0)
         || left.name.localeCompare(right.name)
-      ))
-  ), [platformSize, platformSummaries, verifiedPlatformsOnly]);
+      ));
+  }, [platformSize, starterQuery, platformSummaries, verifiedPlatformsOnly]);
   const verifiedPlatformCount = useMemo(() => (
     PLATFORM_PRESETS.filter((preset) => (
       ["verified", "measured"].includes(
@@ -320,12 +341,33 @@ export default function HomePage() {
               <p>Load seven source-backed parts, already aligned in the assembly preview.</p>
             </div>
             <span>
-              {platformSize === "all"
+              {starterQuery.trim()
+                ? `${visiblePlatforms.length} of ${PLATFORM_PRESETS.length} source builds`
+                : platformSize === "all"
                 ? verifiedPlatformsOnly
                   ? `${visiblePlatforms.length} fit-verified source builds`
                   : `${PLATFORM_PRESETS.length} source builds`
                 : `${visiblePlatforms.length} of ${PLATFORM_PRESETS.length} source builds`}
             </span>
+          </div>
+          <div className="starter-platform-search">
+            <Search size={17} aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Search starter builds"
+              value={starterQuery}
+              onChange={(event) => setStarterQuery(event.target.value)}
+              placeholder="Search platform, controller, receiver, or frame"
+            />
+            {starterQuery && (
+              <button
+                type="button"
+                aria-label="Clear starter search"
+                onClick={() => setStarterQuery("")}
+              >
+                <X size={15} aria-hidden="true" />
+              </button>
+            )}
           </div>
           <div
             className="starter-platform-filters"
@@ -374,6 +416,22 @@ export default function HomePage() {
             </button>
           </div>
           <div className="starter-platform-list">
+            {visiblePlatforms.length === 0 && (
+              <div className="starter-platform-empty" role="status">
+                <strong>No starter builds match</strong>
+                <span>Try a platform, controller, receiver, or frame name.</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStarterQuery("");
+                    setPlatformSize("all");
+                    setVerifiedPlatformsOnly(false);
+                  }}
+                >
+                  Reset starter filters
+                </button>
+              </div>
+            )}
             {visiblePlatforms.map((preset) => {
               const size = preset.name.match(/^[\d.]+/)?.[0] || "—";
               const propeller = componentsData.propellers.find(

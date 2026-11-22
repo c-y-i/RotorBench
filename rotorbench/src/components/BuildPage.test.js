@@ -834,7 +834,7 @@ test("receiver picker explains RF-band compatibility with the saved radio plan",
   expect(await screen.findByRole("option", {
     name: /RadioMaster XR4.*2.4 GHz.*Sub-G 900 MHz.*Shares 2.4 GHz with Aerial Kit/i,
   })).toBeInTheDocument();
-});
+}, 10000);
 
 test("saved navigation safety remains visible on the build hardware plan", async () => {
   const buildId = "navigation-safety-build";

@@ -154,6 +154,28 @@ test("starter platforms filter by frame size while preserving direct launch acti
   expect(await getA11yViolations(container)).toEqual([]);
 });
 
+test("starter platform search matches components and resets cleanly", async () => {
+  const { container } = renderHome();
+  await screen.findByTestId("home-assembly-viewer");
+  const search = screen.getByLabelText("Search starter builds");
+
+  fireEvent.change(search, { target: { value: "bandit" } });
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(1);
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch AOS F722 900MHz build",
+  })).toBeInTheDocument();
+  expect(screen.getByText("1 of 16 source builds")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Clear starter search" }));
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(16);
+
+  fireEvent.change(search, { target: { value: "not-a-real-platform" } });
+  expect(screen.getByText("No starter builds match")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Reset starter filters" }));
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(16);
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
 test("new build actions request a fresh draft even when one is saved", async () => {
   renderHome();
   await screen.findByTestId("home-assembly-viewer");
