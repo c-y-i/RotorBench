@@ -9,6 +9,7 @@ import {
   RADIO_TELEMETRY_RATIOS,
   getRadioChannelRoles,
   getRadioHostBay,
+  getRadioPacketIntervalMs,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioReceiverBandCompatibility,
@@ -31,6 +32,7 @@ export function createHardwarePlanBriefing({
   controlRoles = null,
   radioWarnings = [],
   mappingWarnings = [],
+  timingWarnings = [],
 }) {
   const radioTarget = getRadioTarget(radioPlan?.targetId);
   const fcSummary = buildFlightControllerSummary(fcPlan, fcProfile);
@@ -53,10 +55,12 @@ export function createHardwarePlanBriefing({
     radioTarget.id,
     receiver,
   );
+  const controlIntervalMs = getRadioPacketIntervalMs(radioPlan?.packetRateMode);
   const reviewItems = [
     ...fcIssues.map((issue) => `- FC ${issue.severity || "review"}: ${issue.message}`),
     ...radioWarnings.map((warning) => `- Radio: ${warning}`),
     ...mappingWarnings.map((warning) => `- Mapping: ${warning}`),
+    ...timingWarnings.map((warning) => `- Timing: ${warning}`),
   ];
   const lines = [
     "# RotorBench hardware plan briefing",
@@ -103,6 +107,11 @@ export function createHardwarePlanBriefing({
     `- Packet rate: ${
       selectedLabel(RADIO_PACKET_RATES, radioPlan?.packetRateMode)
     }`,
+    `- Control cadence: ${
+      controlIntervalMs == null
+        ? "Not estimated"
+        : `${controlIntervalMs.toFixed(controlIntervalMs < 10 ? 1 : 0)} ms nominal`
+    }`,
     `- RF setting: ${
       targetPower?.label || `${radioPlan?.powerDbm ?? "Not set"} dBm (target-local)`
     }`,
@@ -137,6 +146,7 @@ export function createHardwarePlanBriefing({
     schema: "rotorbench.hardware-plan-briefing.v1",
     text: lines.join("\n"),
     fcIssueCount: fcIssues.length,
-    radioIssueCount: radioWarnings.length + mappingWarnings.length,
+    radioIssueCount:
+      radioWarnings.length + mappingWarnings.length + timingWarnings.length,
   };
 }

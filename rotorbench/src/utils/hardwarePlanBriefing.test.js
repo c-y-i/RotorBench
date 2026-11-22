@@ -25,11 +25,12 @@ test("creates a concise hardware briefing without binding material", () => {
     controlRoles: ["arm", "flightMode", "velocity"],
     radioWarnings: ["Review the radio target."],
     mappingWarnings: ["Arm channels differ."],
+    timingWarnings: ["FC timeout spans fewer than two frames."],
   });
 
   expect(briefing.schema).toBe("rotorbench.hardware-plan-briefing.v1");
   expect(briefing.fcIssueCount).toBe(1);
-  expect(briefing.radioIssueCount).toBe(2);
+  expect(briefing.radioIssueCount).toBe(3);
   expect(briefing.text).toContain("RotorBench hardware plan briefing");
   expect(briefing.text).toContain("Build: Bench quad");
   expect(briefing.text).toContain("Aerial Kit ELRS USB TX Rev A3");
@@ -40,6 +41,8 @@ test("creates a concise hardware briefing without binding material", () => {
   );
   expect(briefing.text).toContain("-18 dBm / 10 mW menu");
   expect(briefing.text).toContain("FC warning: Custom-board mapping requires review.");
+  expect(briefing.text).toContain("Timing: FC timeout spans fewer than two frames.");
+  expect(briefing.text).toContain("- Control cadence: 4.0 ms nominal");
   expect(briefing.text).toContain("Nothing was connected, written, flashed, calibrated, or armed.");
   expect(briefing.text).not.toContain("do-not-export");
   expect(briefing.text).not.toContain("aa:bb:cc:dd:ee:ff");

@@ -39,6 +39,7 @@ import {
   getRadioHandset,
   getRadioHandsetBayCompatibility,
   getRadioBindingValidationMessage,
+  getRadioPacketIntervalMs,
   getRadioPowerLevels,
   getRadioPowerSpec,
   getRadioReceiverBandCompatibility,
@@ -150,6 +151,7 @@ export default function RadioLinkSetup({
   const selectedPacketRate = packetRates.find(
     (rate) => rate.value === config.packetRateMode,
   ) || null;
+  const controlIntervalMs = getRadioPacketIntervalMs(config.packetRateMode);
   const suggestedTelemetryRatio = getSuggestedTelemetryRatio(config.packetRateMode);
   const allowedSwitchModes = getAvailableSwitchModes(
     config.packetRateMode,
@@ -1073,6 +1075,14 @@ export default function RadioLinkSetup({
             <div>
               <dt>Rate</dt>
               <dd>{selectedPacketRate?.label || "Unsupported rate"}</dd>
+            </div>
+            <div>
+              <dt>Control cadence</dt>
+              <dd>
+                {controlIntervalMs == null
+                  ? "Not estimated"
+                  : `${controlIntervalMs.toFixed(controlIntervalMs < 10 ? 1 : 0)} ms nominal`}
+              </dd>
             </div>
             <div>
               <dt>Power</dt>

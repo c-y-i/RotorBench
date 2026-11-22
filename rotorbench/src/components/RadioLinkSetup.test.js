@@ -13,6 +13,7 @@ test("renders the radio plan without claiming a hardware connection", () => {
   expect(screen.getByText("ELRS 2.4G RX")).toBeInTheDocument();
   expect(screen.getByText(/Radio · .*checks? before deployment/i)).toBeInTheDocument();
   expect(screen.getByText("Std (1:64)")).toBeInTheDocument();
+  expect(screen.getByText("4.0 ms nominal")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Summary" })).toBeInTheDocument();
 });
 

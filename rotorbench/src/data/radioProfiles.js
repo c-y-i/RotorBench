@@ -973,6 +973,46 @@ export function getPacketRatesForTarget(targetId) {
     : RADIO_PACKET_RATES;
 }
 
+export function getRadioPacketIntervalMs(packetRateMode) {
+  const rate = RADIO_PACKET_RATES.find(
+    (candidate) => candidate.value === packetRateMode,
+  );
+  return rate?.hz > 0 ? 1000 / rate.hz : null;
+}
+
+export function buildFcRadioTimingWarning(fcPlan, radioPlan) {
+  if (
+    !fcPlan
+    || !radioPlan
+    || fcPlan.receiverProtocol !== "crsf"
+  ) {
+    return null;
+  }
+  const intervalMs = getRadioPacketIntervalMs(radioPlan.packetRateMode);
+  const timeoutMs = Number(fcPlan.rcTimeoutMs);
+  if (
+    intervalMs == null
+    || !Number.isFinite(timeoutMs)
+    || timeoutMs <= 0
+    || timeoutMs >= intervalMs * 2
+  ) {
+    return null;
+  }
+  const rate = RADIO_PACKET_RATES.find(
+    (candidate) => candidate.value === radioPlan.packetRateMode,
+  );
+  return {
+    code: "fc-radio-timeout",
+    message:
+      `The ${rate?.label || radioPlan.packetRateMode} profile sends nominal control frames about ${intervalMs.toFixed(1)} ms apart. `
+      + `The planned receiver timeout is ${timeoutMs} ms, spanning ${(timeoutMs / intervalMs).toFixed(2)} intervals. `
+      + "Review the intended loss handling before deployment; RF behavior remains untested.",
+    intervalMs,
+    timeoutMs,
+    intervalCount: timeoutMs / intervalMs,
+  };
+}
+
 function normalizeChannel(channel) {
   if (channel === "" || channel == null) return null;
   const numeric = Number(channel);

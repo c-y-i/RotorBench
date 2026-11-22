@@ -4,6 +4,7 @@ import {
   applyFlightControllerChannelMap,
   bindingPhraseByteLength,
   buildChannelMappingWarnings,
+  buildFcRadioTimingWarning,
   buildRadioSummary,
   buildRadioWarnings,
   getAvailableSwitchModes,
@@ -12,6 +13,7 @@ import {
   getDefaultPowerDbm,
   getDefaultRegulatoryRegion,
   getPacketRatesForTarget,
+  getRadioPacketIntervalMs,
   getRadioHostTransports,
   getRadioHostBay,
   getRadioHandset,
@@ -55,6 +57,31 @@ test("packet rates expose the source-backed Standard telemetry mapping", () => {
   expect(getSuggestedTelemetryRatio("250")).toBe("1:64");
   expect(getSuggestedTelemetryRatio("333-full")).toBe("1:128");
   expect(getSuggestedTelemetryRatio("f1000")).toBe("1:128");
+});
+
+test("packet rates expose nominal control cadence for FC timeout review", () => {
+  expect(getRadioPacketIntervalMs("25")).toBe(40);
+  expect(getRadioPacketIntervalMs("250")).toBe(4);
+  expect(getRadioPacketIntervalMs("f1000")).toBe(1);
+  expect(getRadioPacketIntervalMs("unknown")).toBeNull();
+
+  expect(buildFcRadioTimingWarning(
+    { receiverProtocol: "crsf", rcTimeoutMs: 50 },
+    { packetRateMode: "25" },
+  )).toMatchObject({
+    code: "fc-radio-timeout",
+    intervalMs: 40,
+    timeoutMs: 50,
+    intervalCount: 1.25,
+  });
+  expect(buildFcRadioTimingWarning(
+    { receiverProtocol: "crsf", rcTimeoutMs: 250 },
+    { packetRateMode: "250" },
+  )).toBeNull();
+  expect(buildFcRadioTimingWarning(
+    { receiverProtocol: "sbus", rcTimeoutMs: 50 },
+    { packetRateMode: "25" },
+  )).toBeNull();
 });
 
 test("switch modes follow the packet family and MAVLink override", () => {

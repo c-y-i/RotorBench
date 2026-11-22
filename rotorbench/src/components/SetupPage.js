@@ -40,6 +40,7 @@ import {
   DEFAULT_RADIO_CONFIG,
   applyFlightControllerChannelMap,
   buildChannelMappingWarnings,
+  buildFcRadioTimingWarning,
   buildRadioWarnings,
   getRadioBindingValidationMessage,
   getRadioChannelRoles,
@@ -394,6 +395,10 @@ export default function SetupPage() {
     () => buildChannelMappingWarnings(fcPlan, radioPlan, radioRoleOptions),
     [fcPlan, radioPlan, radioRoleOptions],
   );
+  const radioTimingWarning = useMemo(
+    () => buildFcRadioTimingWarning(fcPlan, radioPlan),
+    [fcPlan, radioPlan],
+  );
   const benchRunbook = useMemo(
     () => buildBenchRunbook(fcPlan, radioPlan),
     [fcPlan, radioPlan],
@@ -460,7 +465,9 @@ export default function SetupPage() {
     [build, expectedBenchUid, fcPlan, radioPlan],
   );
   const fcErrors = fcIssues.filter((issue) => issue.severity === "error").length;
-  const radioIssueCount = radioWarnings.length + mappingWarnings.length;
+  const radioIssueCount = radioWarnings.length
+    + mappingWarnings.length
+    + (radioTimingWarning ? 1 : 0);
   const issueCount = fcIssues.length + radioIssueCount;
   const setupReady = issueCount === 0;
   const reviewedFcIdentity = reviewedEvidence?.fcEvidence?.identity || null;
@@ -756,6 +763,7 @@ export default function SetupPage() {
       controlRoles: radioControlRoles,
       radioWarnings,
       mappingWarnings,
+      timingWarnings: radioTimingWarning ? [radioTimingWarning.message] : [],
     });
     if (!navigator.clipboard?.writeText) {
       setMessage("Clipboard access is unavailable in this browser.");
@@ -1148,6 +1156,17 @@ export default function SetupPage() {
                 Use radio mapping
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {radioTimingWarning && (
+        <div className="setup-mapping-warning" role="status">
+          <ShieldAlert size={17} aria-hidden="true" />
+          <div>
+            <strong>Radio timing needs review</strong>
+            <ul>
+              <li>{radioTimingWarning.message}</li>
+            </ul>
           </div>
         </div>
       )}
