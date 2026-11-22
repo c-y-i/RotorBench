@@ -125,6 +125,63 @@ export function sanitizePlanComparisonMetadata(value) {
   };
 }
 
+export function parsePlanComparisonMetadata(value) {
+  if (value == null) return null;
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("The imported plan-comparison metadata is not an object.");
+  }
+  if (value.hardwareVerified === true) {
+    throw new Error("The imported plan-comparison metadata claims hardware verification.");
+  }
+  if (value.firmwareFamily && value.firmwareFamily !== "aerialkit") {
+    throw new Error("The imported plan comparison is not for Aerial Kit firmware.");
+  }
+  const counts = {
+    compared: value.compared,
+    matched: value.matched,
+    differing: value.differing,
+    notObserved: value.notObserved,
+  };
+  Object.entries(counts).forEach(([key, count]) => {
+    if (!Number.isInteger(count) || count < 0 || count > 256) {
+      throw new Error(`The imported plan-comparison ${key} count is invalid.`);
+    }
+  });
+  if (counts.matched + counts.differing + counts.notObserved !== counts.compared) {
+    throw new Error("The imported plan-comparison counts do not add up.");
+  }
+  if (
+    value.currentPlanMatches != null
+    && typeof value.currentPlanMatches !== "boolean"
+  ) {
+    throw new Error("The imported plan-comparison current-plan state is invalid.");
+  }
+  if (
+    value.planFingerprint != null
+    && !/^fnv1a-[0-9a-f]{8}$/.test(String(value.planFingerprint))
+  ) {
+    throw new Error("The imported plan-comparison fingerprint is invalid.");
+  }
+  if (
+    value.generatedAt != null
+    && !Number.isFinite(Date.parse(value.generatedAt))
+  ) {
+    throw new Error("The imported plan-comparison timestamp is invalid.");
+  }
+  for (const key of ["parameterValuesRead", "parameterMetadataRead"]) {
+    if (value[key] != null && typeof value[key] !== "boolean") {
+      throw new Error(`The imported plan-comparison ${key} flag is invalid.`);
+    }
+  }
+  return sanitizePlanComparisonMetadata({
+    ...value,
+    ...counts,
+    currentPlanMatches: value.currentPlanMatches ?? null,
+    parameterValuesRead: value.parameterValuesRead === true,
+    parameterMetadataRead: value.parameterMetadataRead === true,
+  });
+}
+
 function checkSetFingerprint(checks) {
   const identifiers = (Array.isArray(checks) ? checks : [])
     .map((check) => check.id || check.label || "")

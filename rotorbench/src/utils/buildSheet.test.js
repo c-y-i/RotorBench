@@ -350,3 +350,75 @@ test("invalid or unknown build sheets fail closed", () => {
     },
   }))).toThrow(/Unknown catalog component/i);
 });
+
+test("validates sanitized plan-comparison metadata when importing a build sheet", () => {
+  const sheet = {
+    schema: "rotorbench.build-sheet.v1",
+    build: {
+      name: "Imported plan review",
+      componentIds: {
+        frameId: "frame-aos-55-v2",
+        motorId: "motor-emax-eco-ii-2207-1900kv",
+      },
+    },
+    importedEvidence: {
+      status: "plan-comparison",
+      label: "FC plan comparison matched",
+      attachedAt: "2026-11-22T12:01:00.000Z",
+      scopeStatus: "matched",
+      identityStatus: "not-recorded",
+      checkCounts: { pass: 5, fail: 0, unverified: 0 },
+      planComparison: {
+        targetName: "SpeedyBee F405 V5",
+        firmwareFamily: "aerialkit",
+        profileId: "speedybee-f405-v5",
+        generatedAt: "2026-11-22T12:00:00.000Z",
+        currentPlanMatches: true,
+        planFingerprint: "fnv1a-12345678",
+        compared: 38,
+        matched: 1,
+        differing: 1,
+        notObserved: 36,
+        parameterValuesRead: true,
+        parameterMetadataRead: true,
+        parameters: [{ parameter: "arm_channel", expected: "6" }],
+        observedValue: "5",
+      },
+      hardwareVerified: false,
+      authenticityVerified: false,
+    },
+  };
+
+  const imported = parseBuildSheetJson(JSON.stringify(sheet), {
+    now: "2026-11-22T12:02:00.000Z",
+  });
+  expect(imported.importedEvidence).toMatchObject({
+    configured: true,
+    status: "plan-comparison",
+    planComparison: {
+      targetName: "SpeedyBee F405 V5",
+      planFingerprint: "fnv1a-12345678",
+      compared: 38,
+      matched: 1,
+      differing: 1,
+      notObserved: 36,
+      hardwareVerified: false,
+    },
+    hardwareVerified: false,
+    authenticityVerified: false,
+  });
+  expect(imported.importedEvidence.planComparison)
+    .not.toHaveProperty("parameters");
+  expect(imported.importedEvidence.planComparison)
+    .not.toHaveProperty("observedValue");
+
+  const badCounts = JSON.parse(JSON.stringify(sheet));
+  badCounts.importedEvidence.planComparison.notObserved = 35;
+  expect(() => parseBuildSheetJson(JSON.stringify(badCounts)))
+    .toThrow(/counts do not add up/i);
+
+  const badBoundary = JSON.parse(JSON.stringify(sheet));
+  badBoundary.importedEvidence.planComparison.hardwareVerified = true;
+  expect(() => parseBuildSheetJson(JSON.stringify(badBoundary)))
+    .toThrow(/claims hardware verification/i);
+});

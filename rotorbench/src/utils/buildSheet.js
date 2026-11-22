@@ -15,7 +15,10 @@ import {
 } from "./buildGeometry";
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
 import { summarizeBuildPlanning } from "./planningSummary";
-import { sanitizePlanComparisonMetadata } from "./benchEvidenceAttachment";
+import {
+  parsePlanComparisonMetadata,
+  sanitizePlanComparisonMetadata,
+} from "./benchEvidenceAttachment";
 
 function selectedPhysicalChecks(assemblySpec) {
   return [
@@ -194,6 +197,46 @@ const componentIdCategories = {
   receiverId: "receivers",
 };
 
+function parseImportedEvidenceMetadata(value) {
+  if (value == null) return null;
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("The build sheet imported-evidence field is not an object.");
+  }
+  if (value.hardwareVerified === true || value.authenticityVerified === true) {
+    throw new Error("The build sheet imported evidence claims hardware or authenticity verification.");
+  }
+  const checkCounts = value.checkCounts == null ? {} : value.checkCounts;
+  if (typeof checkCounts !== "object" || Array.isArray(checkCounts)) {
+    throw new Error("The build sheet imported-evidence counts are invalid.");
+  }
+  const normalizedCounts = {};
+  for (const key of ["pass", "fail", "unverified"]) {
+    const count = checkCounts[key] ?? 0;
+    if (!Number.isInteger(count) || count < 0 || count > 1000) {
+      throw new Error(`The build sheet imported-evidence ${key} count is invalid.`);
+    }
+    normalizedCounts[key] = count;
+  }
+  if (
+    value.attachedAt != null
+    && !Number.isFinite(Date.parse(value.attachedAt))
+  ) {
+    throw new Error("The build sheet imported-evidence timestamp is invalid.");
+  }
+  return {
+    configured: true,
+    status: String(value.status || "observation").slice(0, 80),
+    label: String(value.label || "Imported evidence").slice(0, 160),
+    attachedAt: value.attachedAt || null,
+    scopeStatus: String(value.scopeStatus || "unchecked").slice(0, 80),
+    identityStatus: String(value.identityStatus || "not-recorded").slice(0, 80),
+    checkCounts: normalizedCounts,
+    planComparison: parsePlanComparisonMetadata(value.planComparison),
+    hardwareVerified: false,
+    authenticityVerified: false,
+  };
+}
+
 export function parseBuildSheetJson(text, {
   now = new Date().toISOString(),
   catalog = componentsData,
@@ -236,6 +279,9 @@ export function parseBuildSheetJson(text, {
   const geometryOverrides = normalizeGeometryOverrides(
     sheet.build.geometryOverrides,
   );
+  const importedEvidence = parseImportedEvidenceMetadata(
+    sheet.importedEvidence,
+  );
   const planning = summarizeBuildPlanning({
     componentIds,
     geometryOverrides,
@@ -248,5 +294,6 @@ export function parseBuildSheetJson(text, {
     createdAt: now,
     updatedAt: now,
     totalWeight: planning.totalWeight,
+    importedEvidence,
   };
 }
