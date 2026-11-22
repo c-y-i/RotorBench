@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
 import componentsData from "../data/components.json";
@@ -83,6 +83,7 @@ function platformGeometryCoverage(preset) {
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentBuild, analysisResults } = useBuild();
 
   // Model URLs state
@@ -104,9 +105,24 @@ export default function HomePage() {
   const [receiverMountingPoint, setReceiverMountingPoint] = useState([0, 0, 0]);
   const [clearedComponents, setClearedComponents] = useState([]);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
-  const [platformSize, setPlatformSize] = useState("all");
-  const [verifiedPlatformsOnly, setVerifiedPlatformsOnly] = useState(false);
-  const [starterQuery, setStarterQuery] = useState("");
+  const requestedPlatformSize = searchParams.get("size") || "all";
+  const platformSize = requestedPlatformSize === "all"
+    || /^[\d.]+$/.test(requestedPlatformSize)
+    ? requestedPlatformSize
+    : "all";
+  const verifiedPlatformsOnly = searchParams.get("fit") === "verified";
+  const starterQuery = searchParams.get("q") || "";
+  const updateStarterFilters = (changes) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(changes).forEach(([key, value]) => {
+      if (value == null || value === "" || value === "all" || value === false) {
+        next.delete(key);
+      } else {
+        next.set(key, value === true ? "verified" : value);
+      }
+    });
+    setSearchParams(next, { replace: true });
+  };
   // Get component details from current build
   const getComponent = (type, id) => {
     if (!id) return null;
@@ -357,14 +373,16 @@ export default function HomePage() {
               type="search"
               aria-label="Search starter builds"
               value={starterQuery}
-              onChange={(event) => setStarterQuery(event.target.value)}
+              onChange={(event) => updateStarterFilters({
+                q: event.target.value,
+              })}
               placeholder="Search platform, controller, receiver, or frame"
             />
             {starterQuery && (
               <button
                 type="button"
                 aria-label="Clear starter search"
-                onClick={() => setStarterQuery("")}
+                onClick={() => updateStarterFilters({ q: null })}
               >
                 <X size={15} aria-hidden="true" />
               </button>
@@ -390,7 +408,7 @@ export default function HomePage() {
                     platformSize === size ? "is-active" : ""
                   }`}
                   aria-pressed={platformSize === size}
-                  onClick={() => setPlatformSize(size)}
+                  onClick={() => updateStarterFilters({ size })}
                 >
                   {size === "all" ? "All builds" : `${size}-inch builds`}
                   <small>{count}</small>
@@ -410,7 +428,9 @@ export default function HomePage() {
                 verifiedPlatformsOnly ? "is-active" : ""
               }`}
               aria-pressed={verifiedPlatformsOnly}
-              onClick={() => setVerifiedPlatformsOnly((current) => !current)}
+              onClick={() => updateStarterFilters({
+                fit: verifiedPlatformsOnly ? null : true,
+              })}
             >
               Verified only
               <small>{verifiedPlatformCount}</small>
@@ -423,11 +443,7 @@ export default function HomePage() {
                 <span>Try a platform, controller, receiver, or frame name.</span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setStarterQuery("");
-                    setPlatformSize("all");
-                    setVerifiedPlatformsOnly(false);
-                  }}
+                  onClick={() => setSearchParams({}, { replace: true })}
                 >
                   Reset starter filters
                 </button>

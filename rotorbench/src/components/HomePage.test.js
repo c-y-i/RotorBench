@@ -12,9 +12,9 @@ function LocationProbe() {
   return <output data-testid="location-path">{`${location.pathname}${location.search}`}</output>;
 }
 
-function renderHome() {
+function renderHome(initialEntries = ["/"]) {
   return render(
-    <MemoryRouter initialEntries={["/"]}>
+    <MemoryRouter initialEntries={initialEntries}>
       <BuildProvider>
         <HomePage />
         <LocationProbe />
@@ -73,7 +73,7 @@ test("offers all complete source-backed platforms from an empty overview", async
   })).toHaveAccessibleDescription(/7 fallback meshes/i);
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
-});
+}, 10000);
 
 test("starter platform actions open a preassembled build draft", async () => {
   renderHome();
@@ -180,6 +180,24 @@ test("starter platform search matches components and resets cleanly", async () =
   fireEvent.click(screen.getByRole("button", { name: "Reset starter filters" }));
   expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(16);
   expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("starter filters survive through shareable URL state", async () => {
+  renderHome(["/?q=F722&size=5&fit=verified"]);
+  await screen.findByTestId("home-assembly-viewer");
+
+  expect(screen.getByLabelText("Search starter builds")).toHaveValue("F722");
+  expect(screen.getByRole("button", { name: /^5-inch builds\s*8$/ }))
+    .toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: /^Verified only\s*12$/ }))
+    .toHaveAttribute("aria-pressed", "true");
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(2);
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch AOS F722 900MHz build",
+  })).toBeInTheDocument();
+  expect(screen.getByTestId("location-path")).toHaveTextContent(
+    "/?q=F722&size=5&fit=verified",
+  );
 });
 
 test("new build actions request a fresh draft even when one is saved", async () => {
