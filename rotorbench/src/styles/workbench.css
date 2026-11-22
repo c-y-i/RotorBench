@@ -3795,6 +3795,77 @@
   font-size: 17px;
 }
 
+.build-planning-ledger {
+  padding: 12px 18px;
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.build-planning-ledger dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+
+.build-planning-ledger dl > div {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+}
+
+.build-planning-ledger dt {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.build-planning-ledger dd {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+}
+
+.build-planning-ledger dd strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.build-planning-ledger dd small {
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.build-planning-ledger .is-envelope-above dd strong,
+.build-planning-ledger .is-envelope-below dd strong {
+  color: var(--warn);
+}
+
+.build-planning-ledger .is-envelope-within dd strong {
+  color: var(--brand-strong);
+}
+
+.build-planning-ledger .is-envelope-above,
+.build-planning-ledger .is-envelope-below,
+.build-planning-ledger .is-envelope-within {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .build-planning-ledger dl {
+    gap: 12px;
+  }
+}
+
 .ready-chip {
   border-radius: 4px;
   color: var(--signal-ink);

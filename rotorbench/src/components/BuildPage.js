@@ -35,6 +35,7 @@ import {
   matchesPlatformPreset,
 } from "../data/platformPresets";
 import { summarizeBuildEvidence } from "../utils/buildEvidence";
+import { summarizeBuild } from "../utils/buildComparison";
 import { createBuildBriefing } from "../utils/buildBriefing";
 import {
   applyMeasuredGeometryToAssemblySpec,
@@ -219,8 +220,6 @@ export default function BuildPage() {
   const userId = localStorage.getItem("userId");
   const [message, setMessage] = useState({ type: "", text: "" });
 
-  const totalWeight = 0;
-
   // Component selections - initialize from context if available
   const [selectedFrame, setSelectedFrame] = useState(initialComponentIds.frameId || "");
   const [selectedMotor, setSelectedMotor] = useState(initialComponentIds.motorId || "");
@@ -229,6 +228,30 @@ export default function BuildPage() {
   const [selectedFC, setSelectedFC] = useState(initialComponentIds.flightControllerId || "");
   const [selectedBattery, setSelectedBattery] = useState(initialComponentIds.batteryId || "");
   const [selectedReceiver, setSelectedReceiver] = useState(initialComponentIds.receiverId || "");
+  const planningSummary = useMemo(() => summarizeBuild({
+    id: workingBuildId,
+    componentIds: {
+      frameId: selectedFrame || null,
+      motorId: selectedMotor || null,
+      propellerId: selectedPropeller || null,
+      escId: selectedESC || null,
+      flightControllerId: selectedFC || null,
+      batteryId: selectedBattery || null,
+      receiverId: selectedReceiver || null,
+    },
+    geometryOverrides,
+  }), [
+    geometryOverrides,
+    selectedBattery,
+    selectedESC,
+    selectedFC,
+    selectedFrame,
+    selectedMotor,
+    selectedPropeller,
+    selectedReceiver,
+    workingBuildId,
+  ]);
+  const totalWeight = planningSummary.totalWeight;
 
   // Load from context on mount
   useEffect(() => {
@@ -1604,6 +1627,45 @@ export default function BuildPage() {
               </span>
             )}
           </div>
+
+          {planningSummary.selectedCount > 0 && (
+            <section
+              className="build-planning-ledger"
+              aria-label="Planning totals"
+            >
+              <dl>
+                <div>
+                  <dt>Planning weight</dt>
+                  <dd>
+                    <strong>{Math.round(totalWeight * 10) / 10} g</strong>
+                    <small>
+                      {planningSummary.selectedCount}/7 parts · includes{" "}
+                      {planningSummary.planningAllowanceG} g allowance
+                    </small>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Catalog price</dt>
+                  <dd>
+                    <strong>${planningSummary.totalPrice.toFixed(2)}</strong>
+                    <small>Selected catalog quantities</small>
+                  </dd>
+                </div>
+                {planningSummary.takeoffEnvelopeStatus !== "unavailable" && (
+                  <div className={`is-envelope-${planningSummary.takeoffEnvelopeStatus}`}>
+                    <dt>Takeoff envelope</dt>
+                    <dd>
+                      <strong>{planningSummary.takeoffEnvelopeShortLabel}</strong>
+                      <small>
+                        {planningSummary.publishedTakeoffRangeG.join("–")} g
+                        {" published · verify with a scale"}
+                      </small>
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
 
           <div className={`physical-fit-summary is-${physicalFitState}`}>
             {physicalFitState === "conflict"

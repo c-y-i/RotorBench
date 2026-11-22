@@ -403,6 +403,11 @@ test("the T1 Ranger starter loads a two-motor wing assembly", async () => {
   expect(viewer).toHaveAttribute("data-propeller", "prop-heewing-fx3830-2");
   expect(viewer).toHaveAttribute("data-esc", "esc-heewing-fx20a-bls-twin");
   expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+  const planningTotals = screen.getByRole("region", { name: "Planning totals" });
+  expect(within(planningTotals).getByText("506 g")).toBeInTheDocument();
+  expect(within(planningTotals).getByText("$297.89")).toBeInTheDocument();
+  expect(within(planningTotals).getByText("+6 g over 500 g envelope"))
+    .toBeInTheDocument();
   fireEvent.click(screen.getByText("Prop rotation map"));
   expect(screen.getByRole("img", {
     name: "Propeller rotation for twin motors",

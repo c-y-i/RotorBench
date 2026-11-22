@@ -134,8 +134,8 @@ class CatalogContractTests(unittest.TestCase):
             " ".join(analysis.warnings),
         )
         self.assertEqual(analysis.performance.power_draw, 0)
-        self.assertGreater(analysis.performance.total_weight, 0)
-        self.assertGreater(analysis.total_cost, 0)
+        self.assertEqual(analysis.performance.total_weight, 506)
+        self.assertEqual(analysis.total_cost, 297.89)
 
     def test_adafruit_feather_f405_keeps_public_product_provenance(self):
         record = next(

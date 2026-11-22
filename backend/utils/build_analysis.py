@@ -647,8 +647,8 @@ def calculate_total_cost(build: DroneBuild) -> float:
         total += build.components.motors.price * motor_count
     
     if build.components.propellers:
-        # Usually buy in sets of 4 (or 8 for spares)
-        total += build.components.propellers.price * 4
+        motor_count = build.components.frame.motor_count if build.components.frame else 4
+        total += build.components.propellers.price * motor_count
     
     if build.components.esc:
         total += build.components.esc.price
