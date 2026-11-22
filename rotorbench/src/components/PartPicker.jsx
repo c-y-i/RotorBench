@@ -294,6 +294,13 @@ export default function PartPicker({
           return comparable(a.part.weight) - comparable(b.part.weight)
             || a.part.name.localeCompare(b.part.name);
         }
+        if (sortMode === "model") {
+          const modelRank = (result) => (
+            hasCatalogModel(result.part, category) ? 0 : 1
+          );
+          return modelRank(a) - modelRank(b)
+            || a.part.name.localeCompare(b.part.name);
+        }
         if (sortMode !== "name") {
           const rank = (result) => (
             !result.ok ? 2 : result.verified ? 0 : 1
@@ -497,6 +504,7 @@ export default function PartPicker({
                 <option value="evidence">Evidence: strongest</option>
                 <option value="price">Price: low</option>
                 <option value="weight">Weight: low</option>
+                <option value="model">3D model first</option>
                 <option value="name">Name</option>
               </select>
             </label>

@@ -68,6 +68,30 @@ test("filters catalog results by compatibility and model availability", () => {
   expect(within(results).getByText("Frame A")).toBeInTheDocument();
 });
 
+test("sorts catalog results with available 3D models first", () => {
+  render(
+    <PartPicker
+      category="frames"
+      parts={[parts[1], parts[0]]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "" })}
+      placeholder="Choose a frame"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a frame/i }));
+  fireEvent.change(screen.getByLabelText("Sort catalog results"), {
+    target: { value: "model" },
+  });
+
+  const options = within(screen.getByRole("listbox", {
+    name: "Frame options",
+  })).getAllByRole("option");
+  expect(options[0]).toHaveTextContent("Frame A");
+  expect(options[1]).toHaveTextContent("Frame B");
+});
+
 test("wing frames expose wingspan and motor count instead of wheelbase copy", () => {
   render(
     <PartPicker
