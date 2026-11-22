@@ -3726,6 +3726,45 @@
   line-height: 1.45;
 }
 
+.aerial-kit-mission-briefing {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+}
+
+.aerial-kit-mission-briefing button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.aerial-kit-mission-briefing button:hover {
+  border-color: var(--ink);
+  background: var(--surface-soft);
+}
+
+.aerial-kit-mission-briefing span {
+  flex: 1 1 150px;
+  min-height: 15px;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
 .aerial-kit-log-frames {
   display: grid;
   gap: 5px;

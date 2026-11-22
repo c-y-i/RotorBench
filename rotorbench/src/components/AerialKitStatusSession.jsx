@@ -76,6 +76,7 @@ import AerialKitWaypointRouteSummary from "./AerialKitWaypointRouteSummary";
 import AerialKitRouteSketch from "./AerialKitRouteSketch";
 import AerialKitMissionProximity from "./AerialKitMissionProximity";
 import AerialKitMissionRouteProgress from "./AerialKitMissionRouteProgress";
+import AerialKitMissionBriefingButton from "./AerialKitMissionBriefingButton";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -2365,6 +2366,11 @@ export default function AerialKitStatusSession({
                     )}
                     <AerialKitMissionProximity proximity={missionProximity} />
                     <AerialKitMissionRouteProgress
+                      proximity={missionProximity}
+                      inventory={waypointInventory}
+                    />
+                    <AerialKitMissionBriefingButton
+                      mission={mission}
                       proximity={missionProximity}
                       inventory={waypointInventory}
                     />

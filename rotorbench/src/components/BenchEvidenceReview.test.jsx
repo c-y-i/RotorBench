@@ -635,6 +635,8 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getAllByText("1.234 km").length).toBeGreaterThanOrEqual(2);
   expect(screen.getByText("Mission progress")).toBeInTheDocument();
   expect(screen.getByText("Active target WP 1")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Copy mission briefing" }))
+    .toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();
