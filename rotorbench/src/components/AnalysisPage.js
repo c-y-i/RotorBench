@@ -751,7 +751,9 @@ export default function AnalysisPage() {
               <div className="metric-content">
                 <div className="metric-label">Total Weight</div>
                 <div className="metric-value">{analysis.performance.totalWeight}g</div>
-                <div className="metric-subtitle">Including all components</div>
+                <div className="metric-subtitle">
+                  Catalog parts + 50 g planning allowance
+                </div>
               </div>
             </div>
 

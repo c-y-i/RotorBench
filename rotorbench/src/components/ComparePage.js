@@ -289,9 +289,11 @@ export default function ComparePage() {
       </div>
 
       <p className="compare-footnote">
-        Weight and price use catalog values. Motor and propeller quantities follow the
-        selected frame's motor count. Fit status reports only catalogued checks, and saved
-        hardware plans remain local drafts. This comparison does not replace a full analysis.
+        Weight uses catalog parts plus a 50 g planning allowance for wiring, fasteners,
+        and camera hardware; this is not a measured takeoff weight. Motor and propeller
+        quantities follow the selected frame's motor count. Price uses catalog values.
+        Fit status reports only catalogued checks, and saved hardware plans remain local
+        drafts. This comparison does not replace a full analysis.
       </p>
     </div>
   );

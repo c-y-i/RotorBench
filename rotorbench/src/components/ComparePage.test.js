@@ -55,6 +55,45 @@ test("comparison surfaces fit, evidence, and hardware-plan state", async () => {
   expect(await getA11yViolations(container)).toEqual([]);
 });
 
+test("comparison surfaces published takeoff-envelope fit", async () => {
+  const t1Build = {
+    ...build,
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-f405-wmn",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  const { container } = render(
+    <MemoryRouter
+      initialEntries={[
+        {
+          pathname: "/compare",
+          state: {
+            builds: [
+              { ...t1Build, id: "t1-left", name: "T1 left" },
+              { ...t1Build, id: "t1-right", name: "T1 right" },
+            ],
+          },
+        },
+      ]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByRole("rowheader", { name: "Takeoff envelope fit" }))
+    .toBeInTheDocument();
+  expect(screen.getAllByText(
+    /506 g planning estimate · 6 g over the 500 g published maximum/i,
+  )).toHaveLength(2);
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
 test("marks changed rows and can show only differences", () => {
   const changed = {
     ...build,

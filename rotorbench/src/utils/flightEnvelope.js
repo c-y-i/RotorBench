@@ -50,6 +50,6 @@ export function summarizeTakeoffWeight(weightG, flightEnvelope) {
     weightG: weight,
     minimumG: minimum,
     maximumG: maximum,
-    label: `${formatGrams(weight)} catalog estimate · ${difference} · verify with a scale`,
+    label: `${formatGrams(weight)} planning estimate · ${difference} · verify with a scale`,
   };
 }

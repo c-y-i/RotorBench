@@ -16,6 +16,8 @@ from models.components import (
     ThrottleProfilePoint
 )
 
+BUILD_WEIGHT_ALLOWANCE_G = 50.0
+
 
 def calculate_thrust_for_motor_prop_combo(motor, propeller) -> Optional[float]:
     """
@@ -91,8 +93,8 @@ def calculate_total_weight(build: DroneBuild) -> float:
     if build.components.receiver:
         total += build.components.receiver.weight
     
-    # Add estimated weight for wiring, screws, camera, etc. (~50g)
-    total += 50
+    # Disclosed planning allowance for wiring, fasteners, and camera hardware.
+    total += BUILD_WEIGHT_ALLOWANCE_G
     
     return round(total, 1)
 

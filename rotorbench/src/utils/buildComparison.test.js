@@ -20,10 +20,12 @@ const build = {
   },
 };
 
-test("summarizes catalog weight and price using frame motor count", () => {
+test("summarizes planning weight and price using frame motor count", () => {
   const summary = summarizeBuild(build);
   expect(summary.selectedCount).toBe(7);
   expect(summary.motorCount).toBe(4);
+  expect(summary.catalogWeight).toBeGreaterThan(0);
+  expect(summary.planningAllowanceG).toBe(50);
   expect(summary.totalWeight).toBeGreaterThan(0);
   expect(summary.totalPrice).toBeGreaterThan(0);
 });
@@ -64,9 +66,45 @@ test("comparison rows include all seven component categories", () => {
       "receiver-protocol",
       "receiver-channels",
       "total-weight",
+      "takeoff-envelope",
       "total-price",
     ]),
   );
+});
+
+test("comparison rows compare planning weight with a published takeoff envelope", () => {
+  const t1Build = {
+    id: "t1-compare",
+    name: "T1 Ranger",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-f405-wmn",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  const summary = summarizeBuild(t1Build);
+  const row = comparisonRows(summary, summary)
+    .find((item) => item.id === "takeoff-envelope");
+
+  expect(summary).toMatchObject({
+    publishedTakeoffRangeG: [350, 500],
+    takeoffEnvelopeStatus: "above",
+    catalogWeight: 456,
+    planningAllowanceG: 50,
+    totalWeight: 506,
+  });
+  expect(summary.takeoffEnvelopeLabel).toMatch(
+    /506 g planning estimate · 6 g over the 500 g published maximum/i,
+  );
+  expect(row).toMatchObject({
+    changed: false,
+    left: summary.takeoffEnvelopeLabel,
+    right: summary.takeoffEnvelopeLabel,
+  });
 });
 
 test("comparison rows distinguish estimated and unavailable thrust data", () => {

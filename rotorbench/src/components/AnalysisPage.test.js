@@ -309,7 +309,7 @@ test("fixed-wing builds do not inherit multirotor performance claims", async () 
     .toBeInTheDocument();
   expect(screen.getByText(/PNP 1\.71:1 T\/W reference/i)).toBeInTheDocument();
   expect(screen.getByText(
-    /548 g catalog estimate · 48 g over the 500 g published maximum/i,
+    /548 g planning estimate · 48 g over the 500 g published maximum/i,
   )).toBeInTheDocument();
   const body = JSON.parse(global.fetch.mock.calls[0][1].body);
   expect(body.components.frame).toMatchObject({

@@ -10,6 +10,7 @@ import {
   summarizeElectricalChecks,
 } from "./electricalCompatibility";
 import { applyMeasuredGeometry } from "./buildGeometry";
+import { summarizeTakeoffWeight } from "./flightEnvelope";
 import { getFrameServoHardware } from "./frameHardware";
 import {
   describeMissionControls,
@@ -21,6 +22,8 @@ import {
   readCurrentBenchEvidenceScope,
   summarizeBenchEvidenceAttachment,
 } from "./benchEvidenceAttachment";
+
+export const BUILD_WEIGHT_ALLOWANCE_G = 50;
 
 const partDefinitions = [
   { key: "frameId", category: "frames", label: "Frame" },
@@ -62,16 +65,21 @@ export function summarizeBuild(build) {
     receivers: 1,
   };
 
-  const totalWeight = parts.reduce(
+  const catalogWeight = parts.reduce(
     (total, { category, part }) =>
       total + (Number(part?.weight) || 0) * (quantity[category] || 1),
     0,
   ) + (Number(frameServoHardware?.weight) || 0);
+  const totalWeight = catalogWeight + BUILD_WEIGHT_ALLOWANCE_G;
   const totalPrice = parts.reduce(
     (total, { category, part }) =>
       total + (Number(part?.price) || 0) * (quantity[category] || 1),
     0,
   ) + (Number(frameServoHardware?.price) || 0);
+  const takeoffEnvelope = summarizeTakeoffWeight(
+    totalWeight,
+    byCategory.frames?.flightEnvelope,
+  );
   const assemblySpec = {
     frame: byCategory.frames,
     motor: byCategory.motors,
@@ -152,8 +160,15 @@ export function summarizeBuild(build) {
     selectedCount: parts.filter(({ part }) => part).length,
     motorCount,
     frameServoHardware,
+    catalogWeight,
+    planningAllowanceG: BUILD_WEIGHT_ALLOWANCE_G,
     totalWeight,
     totalPrice,
+    publishedTakeoffRangeG:
+      byCategory.frames?.flightEnvelope?.takeoffWeightG || null,
+    takeoffEnvelopeStatus: takeoffEnvelope?.status || "unavailable",
+    takeoffEnvelopeLabel:
+      takeoffEnvelope?.label || "No published takeoff envelope",
     physicalFitStatus,
     physicalFitSummary: physicalFit.reason,
     powerPathStatus: powerPath.displayState,
@@ -308,8 +323,13 @@ export function createComparisonReport(
       estimatedFieldCount: build.estimatedFieldCount,
       measuredFieldCount: build.measuredFieldCount,
       geometryFallbackCount: build.geometryFallbackCount,
+      catalogWeight: build.catalogWeight,
+      planningAllowanceG: build.planningAllowanceG,
       totalWeight: build.totalWeight,
       totalPrice: build.totalPrice,
+      publishedTakeoffRangeG: build.publishedTakeoffRangeG,
+      takeoffEnvelopeStatus: build.takeoffEnvelopeStatus,
+      takeoffEnvelopeLabel: build.takeoffEnvelopeLabel,
     })),
     differenceCount: rows.filter((row) => row.changed).length,
     rows: rows.map((row) => ({
@@ -640,11 +660,18 @@ export function comparisonRows(left, right) {
     },
     {
       id: "total-weight",
-      label: "Catalog weight",
+      label: "Planned weight",
       left: left.totalWeight,
       right: right.totalWeight,
       format: (value) => `${value.toFixed(1)} g`,
       lowerIsBetter: true,
+    },
+    {
+      id: "takeoff-envelope",
+      label: "Takeoff envelope fit",
+      left: left.takeoffEnvelopeLabel,
+      right: right.takeoffEnvelopeLabel,
+      format: (value) => value,
     },
     {
       id: "total-price",
