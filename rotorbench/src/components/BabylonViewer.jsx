@@ -189,12 +189,17 @@ const createFrameFallback = (scene, frame = {}) => {
   const edge = createMaterial(scene, "frame_edge", "#53d7c8", true);
 
   if (frame.airframeShape === "wing") {
-    const wing = MeshBuilder.CreateBox("frame_fallback_wing", {
-      width: Math.max(width * 0.9, 0.1),
+    const wing = MeshBuilder.CreateCylinder("frame_fallback_wing", {
       height: Math.max(height * 0.1, 0.008),
-      depth: Math.max(depth * 0.34, 0.12),
+      diameter: 1,
+      tessellation: 64,
     }, scene);
     wing.parent = root;
+    wing.scaling = new Vector3(
+      Math.max(width * 0.9, 0.1),
+      1,
+      Math.max(depth * 0.34, 0.12),
+    );
     wing.position.y = height * 0.55;
     wing.material = carbon;
 
