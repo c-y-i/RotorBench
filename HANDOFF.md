@@ -545,6 +545,8 @@ The intended assembly contract is:
 9. Available GLB files are preferred over STEP files. STEP remains a fallback path.
 10. Components without matching assets use parametric geometry based on catalog dimensions.
 
+The viewer status overlay no longer stays on `Waiting...` after fallback assembly renders. When the assembly pass completes it reports the visible mesh count and generated-fallback count, for example `41 meshes · 41 generated fallback`, alongside the camera and scene-bound diagnostics. Individual source URL load states remain listed separately. The 3.5-inch preset rendered the final success state with no horizontal overflow.
+
 The camera rotates around the whole assembly. It must not rotate individual component meshes, because that separates a build that is already placed in world space.
 
 The Build page exposes Orbit, 3/4, Top, Side, and Front inspection views. Fixed views stop automatic rotation, and Orbit resumes it. Auto-rotation is read through a ref so changing modes does not rebuild the Babylon scene or reload models.

@@ -1613,6 +1613,19 @@ const BabylonViewer = ({
       } finally {
         if (scene.__currentLoadSession === loadSession) {
           scene.__assemblyInProgress = false;
+          const assemblyMeshes = scene.meshes.filter(
+            (mesh) => isRenderableMesh(mesh) && mesh.isVisible,
+          );
+          const fallbackMeshes = assemblyMeshes.filter(
+            (mesh) => mesh.metadata?.assemblyFallback,
+          );
+          markStatus(
+            "assembly",
+            assemblyMeshes.length ? "success" : "warn",
+            assemblyMeshes.length
+              ? `${assemblyMeshes.length} meshes · ${fallbackMeshes.length} generated fallback`
+              : "no renderable assembly meshes",
+          );
           scheduleNormalization(loadSession);
         }
       }
