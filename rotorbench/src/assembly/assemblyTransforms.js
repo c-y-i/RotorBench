@@ -188,17 +188,45 @@ export function getMotorMountOutlineMm(motor = {}) {
 }
 
 export function getFrameMountPointsMm(frame = {}) {
+  const motorCount = Number(frame.motorCount);
+  const explicitPositions = Array.isArray(frame.motorPositionsMm)
+    && frame.motorPositionsMm.every((position) => numericVector(position))
+    && (!Number.isInteger(motorCount) || frame.motorPositionsMm.length === motorCount)
+      ? frame.motorPositionsMm.map((position) => position.map(Number))
+      : null;
+  if (explicitPositions?.length) return explicitPositions;
+
   const named = [
     numericVector(frame.upper_left_motor_position),
     numericVector(frame.upper_right_motor_position),
     numericVector(frame.lower_right_motor_position),
     numericVector(frame.lower_left_motor_position),
   ];
-  if (named.every(Boolean)) return named;
+  if ((!Number.isInteger(motorCount) || motorCount === 4) && named.every(Boolean)) {
+    return named;
+  }
 
   const wheelbase = Number(frame.size) || COMPONENT_FALLBACK_DIMENSIONS_MM.frame[0];
-  const motorOffset = wheelbase / (2 * Math.sqrt(2));
   const y = Number(frame.deckOffsetMm) || 4.75;
+  if (Number.isInteger(motorCount) && motorCount > 0 && motorCount !== 4) {
+    if (motorCount === 2) {
+      const motorOffset = wheelbase * 0.315;
+      return [
+        [-motorOffset, y, 0],
+        [motorOffset, y, 0],
+      ];
+    }
+    const radius = wheelbase * 0.36;
+    return Array.from({ length: motorCount }, (_, index) => {
+      const angle = (Math.PI * 2 * index) / motorCount;
+      return [
+        Math.sin(angle) * radius,
+        y,
+        -Math.cos(angle) * radius,
+      ];
+    });
+  }
+  const motorOffset = wheelbase / (2 * Math.sqrt(2));
   return [
     [-motorOffset, y, -motorOffset],
     [motorOffset, y, -motorOffset],
@@ -293,12 +321,23 @@ export function getExplodedOffsetMm(componentType, exploded = false) {
 export function buildViewerPlacementAudit(frame = null, parts = {}) {
   const hasFrame = Boolean(frame?.id);
   const mounts = hasFrame ? getFrameMountPointsMm(frame) : [];
-  const namedMounts = hasFrame && [
-    frame.upper_left_motor_position,
-    frame.upper_right_motor_position,
-    frame.lower_right_motor_position,
-    frame.lower_left_motor_position,
-  ].every((position) => numericVector(position));
+  const explicitMounts = hasFrame
+    && Array.isArray(frame.motorPositionsMm)
+    && frame.motorPositionsMm.length > 0
+    && frame.motorPositionsMm.every((position) => numericVector(position));
+  const namedMounts = hasFrame && (
+    explicitMounts
+    || [
+      frame.upper_left_motor_position,
+      frame.upper_right_motor_position,
+      frame.lower_right_motor_position,
+      frame.lower_left_motor_position,
+    ].every((position) => numericVector(position))
+  );
+  const mountCount = mounts.length;
+  const mountCountLabel = mountCount === 1
+    ? "one"
+    : mountCount === 2 ? "two" : String(mountCount);
   const frameMountStatus = !hasFrame
     ? "awaiting"
     : namedMounts
@@ -309,9 +348,9 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
     label: "Frame motor mounts",
     status: frameMountStatus,
     detail: !hasFrame
-      ? "Select a frame to resolve four mounting centers."
+      ? "Select a frame to resolve its motor mounting centers."
       : frameMountStatus === "verified"
-        ? "Four named, source-backed frame coordinates resolve to motor mounting centers."
+        ? `${mountCount} named, source-backed frame coordinates resolve to motor mounting centers.`
         : frameMountStatus === "estimated"
           ? "Explicit mount coordinates are present, but the catalog marks their source as estimated."
           : "Mounting centers are generated from wheelbase because explicit coordinates are unavailable.",
@@ -320,19 +359,21 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
   const motorOrigins = hasFrame && parts.motor
     ? getMotorOriginsMm(frame, parts.motor)
     : [];
-  const motorsAligned = motorOrigins.length === 4 && motorOrigins.every((origin, index) => (
-    origin.every((value, axis) => (
-      Math.abs(value - mounts[index][axis]) < 1e-9
-    ))
-  ));
+  const motorsAligned = motorOrigins.length === mountCount
+    && motorOrigins.length > 0
+    && motorOrigins.every((origin, index) => (
+      origin.every((value, axis) => (
+        Math.abs(value - mounts[index][axis]) < 1e-9
+      ))
+    ));
   checks.push({
     id: "motor-roots",
-    label: "Four motor roots",
+    label: `${mountCount || 0} motor roots`,
     status: motorsAligned ? frameMountStatus : "awaiting",
     detail: motorsAligned
       ? frameMountStatus === "verified"
-        ? "All four source-backed motor root origins use the frame mount coordinates."
-        : "All four motor roots use the available frame coordinates, whose source is estimated or fallback geometry."
+        ? `All ${mountCountLabel} source-backed motor root origins use the frame mount coordinates.`
+        : `All ${mountCountLabel} motor roots use the available frame coordinates, whose source is estimated or fallback geometry.`
       : !parts.motor
         ? "Select motors to place motor roots."
         : "Select a frame to resolve motor mount coordinates.",
@@ -342,7 +383,8 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
     ? getPropellerOriginsMm(frame, parts.motor, parts.propeller)
     : [];
   const motorHeight = getFallbackDimensionsMm("motor", parts.motor || {})[1];
-  const propellersAligned = propellerOrigins.length === 4
+  const propellersAligned = propellerOrigins.length === mountCount
+    && propellerOrigins.length > 0
     && propellerOrigins.every((origin, index) => (
       Math.abs(origin[0] - motorOrigins[index][0]) < 1e-9
       && Math.abs(origin[2] - motorOrigins[index][2]) < 1e-9
@@ -359,7 +401,7 @@ export function buildViewerPlacementAudit(frame = null, parts = {}) {
         )
       : "awaiting",
     detail: propellersAligned
-      ? "Four propeller origins share each motor's X/Z axis and sit above the motor top at the available source confidence."
+      ? `${mountCount} propeller origins share each motor's X/Z axis and sit above the motor top at the available source confidence.`
       : !parts.propeller
         ? "Select propellers to check hub placement above the motor shafts."
         : !parts.motor

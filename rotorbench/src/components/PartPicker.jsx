@@ -114,7 +114,12 @@ function footprintLabel(part) {
 function getMeta(category, part) {
   switch (category) {
     case "frames":
-      return [`${part.size} mm wheelbase`, `${part.weight} g`, `up to ${part.maxPropSize}" props`];
+      return [
+        `${part.size} mm ${part.airframeShape === "wing" ? "wingspan" : "wheelbase"}`,
+        `${part.motorCount || 4} motor${Number(part.motorCount) === 1 ? "" : "s"}`,
+        `${part.weight} g`,
+        `up to ${part.maxPropSize}" props`,
+      ];
     case "motors":
       return [
         `${part.kv} KV`,

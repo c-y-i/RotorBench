@@ -25,7 +25,10 @@ import {
   summarizeElectricalChecks,
 } from "../utils/electricalCompatibility";
 import { CAMERA_VIEWS } from "../assembly/cameraViews";
-import { buildViewerPlacementAudit } from "../assembly/assemblyTransforms";
+import {
+  buildViewerPlacementAudit,
+  getFrameMountPointsMm,
+} from "../assembly/assemblyTransforms";
 import {
   PLATFORM_PRESETS,
   getPlatformPreset,
@@ -593,13 +596,7 @@ export default function BuildPage() {
         // Extract frame corner positions
         const frameObj = componentsData.frames.find(f => f.id === selectedFrame);
         if (frameObj) {
-          const corners = [
-            frameObj.upper_left_motor_position,
-            frameObj.upper_right_motor_position,
-            frameObj.lower_right_motor_position,
-            frameObj.lower_left_motor_position
-          ];
-          setFrameCornerPositions(corners);
+          setFrameCornerPositions(getFrameMountPointsMm(frameObj));
         } else {
           setFrameCornerPositions([]);
         }
@@ -1533,6 +1530,7 @@ export default function BuildPage() {
             motor={assemblySpec.motor}
             propeller={assemblySpec.propeller}
             direction={assemblyPropellerDirection}
+            motorCount={selectedFramePart?.motorCount || 4}
             motorOutputByCorner={
               hardwareReadiness.configured
                 ? hardwareReadiness.fcMotorOutputByCorner
@@ -1851,7 +1849,9 @@ export default function BuildPage() {
           value={selectedMotor}
           onChange={setSelectedMotor}
           compatibility={compatibility.motors}
-          placeholder="Choose four matching motors"
+          placeholder={selectedFramePart?.motorCount
+            ? `Choose ${selectedFramePart.motorCount} matching motors`
+            : "Choose matching motors"}
         />
       </div>
 

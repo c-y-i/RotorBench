@@ -7,6 +7,7 @@ import TwoDViewer from "./TwoDViewer";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
 import { summarizeBuild } from "../utils/buildComparison";
 import { summarizeAssemblyInterfaces } from "../utils/physicalCompatibility";
+import { getFrameMountPointsMm } from "../assembly/assemblyTransforms";
 import {
   hasCatalogModel,
   resolveModelForComponent,
@@ -295,13 +296,7 @@ export default function HomePage() {
 
         // Extract frame corner positions
         if (frame) {
-          const corners = [
-            frame.upper_left_motor_position,
-            frame.upper_right_motor_position,
-            frame.lower_right_motor_position,
-            frame.lower_left_motor_position
-          ];
-          setFrameCornerPositions(corners);
+          setFrameCornerPositions(getFrameMountPointsMm(frame));
         } else {
           setFrameCornerPositions([]);
         }
@@ -442,6 +437,11 @@ export default function HomePage() {
                 : PLATFORM_PRESETS.filter(
                   (preset) => preset.name.match(/^[\d.]+/)?.[0] === size,
                 ).length;
+              const representative = size === "all"
+                ? null
+                : PLATFORM_PRESETS.find(
+                  (preset) => preset.name.match(/^[\d.]+/)?.[0] === size,
+                );
               return (
                 <button
                   key={size}
@@ -452,7 +452,11 @@ export default function HomePage() {
                   aria-pressed={platformSize === size}
                   onClick={() => updateStarterFilters({ size })}
                 >
-                  {size === "all" ? "All builds" : `${size}-inch builds`}
+                  {size === "all"
+                    ? "All builds"
+                    : representative?.airframeShape === "wing"
+                      ? `${size} mm wing`
+                      : `${size}-inch builds`}
                   <small>{count}</small>
                 </button>
               );
@@ -509,6 +513,7 @@ export default function HomePage() {
             )}
             {visiblePlatforms.map((preset) => {
               const size = preset.name.match(/^[\d.]+/)?.[0] || "—";
+              const isWing = preset.airframeShape === "wing";
               const platformSummary = platformSummaries[preset.id] || {};
               const propeller = componentsData.propellers.find(
                 (part) => part.id === preset.componentIds.propellerId,
@@ -556,7 +561,7 @@ export default function HomePage() {
                 >
                   <span className="starter-platform-size" aria-hidden="true">
                     <strong>{size}</strong>
-                    <small>IN</small>
+                    <small>{isWing ? "MM" : "IN"}</small>
                   </span>
                   <span className="starter-platform-copy">
                     <strong>{preset.name}</strong>

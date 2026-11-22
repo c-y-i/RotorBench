@@ -68,6 +68,33 @@ test("filters catalog results by compatibility and model availability", () => {
   expect(within(results).getByText("Frame A")).toBeInTheDocument();
 });
 
+test("wing frames expose wingspan and motor count instead of wheelbase copy", () => {
+  render(
+    <PartPicker
+      category="frames"
+      parts={[{
+        id: "frame-heewing-t1-ranger",
+        name: "HeeWing T1 Ranger 730mm Wing",
+        size: 730,
+        weight: 205,
+        motorCount: 2,
+        airframeShape: "wing",
+        maxPropSize: 3.8,
+        price: 87.9,
+        sourceUrl: "https://www.heewing.com/products/t1-ranger-kit",
+      }]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
+      placeholder="Choose a frame"
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /choose a frame/i }));
+  expect(screen.getByText(
+    "730 mm wingspan · 2 motors · 205 g · up to 3.8\" props",
+  )).toBeInTheDocument();
+});
+
 test("verified physical checks are distinct from missing fit data", () => {
   render(
     <PartPicker

@@ -93,7 +93,9 @@ export interface Frame extends ComponentCatalogMetadata {
   size: number; // wheelbase in mm
   weight: number; // grams
   material: string; // e.g., "Carbon Fiber"
-  motorCount: number; // typically 4
+  motorCount: number; // quad or non-quad motor count
+  airframeShape?: "quad" | "wing";
+  motorPositionsMm?: [number, number, number][];
   maxPropSize: number; // inches
   stackHeight: number; // mm (mounting hole spacing)
   price: number;
@@ -161,7 +163,7 @@ export interface DroneBuild {
   description?: string;
   components: {
     frame: Frame | null;
-    motors: Motor | null; // Assumes all 4 motors are the same
+    motors: Motor | null; // Assumes all installed motors are the same
     propellers: Propeller | null;
     esc: ESC | null;
     flightController: FlightController | null;

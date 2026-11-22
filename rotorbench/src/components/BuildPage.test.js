@@ -15,6 +15,7 @@ jest.mock("./BabylonViewer.jsx", () => ({
   cameraView,
   autoRotate,
   exploded,
+  frameCornerPositions,
   assemblySpec,
   propellerDirection,
   showFitOverlay,
@@ -26,6 +27,7 @@ jest.mock("./BabylonViewer.jsx", () => ({
     data-auto-rotate={String(autoRotate)}
     data-exploded={String(exploded)}
     data-frame={assemblySpec?.frame?.id || ""}
+    data-motor-mount-count={frameCornerPositions?.length || 0}
     data-motor={assemblySpec?.motor?.id || ""}
     data-motor-shaft={assemblySpec?.motor?.propShaftMm ?? ""}
     data-motor-measured={assemblySpec?.motor?.measuredFields?.join(",") || ""}
@@ -379,6 +381,34 @@ test("a starter-platform deep link selects all seven components and consumes the
   fireEvent.click(fitOverlay);
   expect(viewer).toHaveAttribute("data-fit-overlay", "true");
   expect(screen.getByText(/Verified interface/)).toBeInTheDocument();
+});
+
+test("the T1 Ranger starter loads a two-motor wing assembly", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=source-t1-ranger"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-frame", "frame-heewing-t1-ranger");
+  expect(viewer).toHaveAttribute("data-motor", "motor-heewing-fx1406-3150kv");
+  expect(viewer).toHaveAttribute("data-motor-mount-count", "2");
+  expect(viewer).toHaveAttribute("data-propeller", "prop-heewing-fx3830-2");
+  expect(viewer).toHaveAttribute("data-esc", "esc-heewing-fx20a-bls-twin");
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+  fireEvent.click(screen.getByText("Prop rotation map"));
+  expect(screen.getByRole("img", {
+    name: "Propeller rotation for twin motors",
+  })).toBeVisible();
+  expect(screen.getByText("LEFT")).toBeVisible();
+  expect(screen.getByText("RIGHT")).toBeVisible();
 });
 
 test("the 5.5-inch XING2 6S preset exposes estimated geometry honestly", async () => {

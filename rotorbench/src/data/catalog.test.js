@@ -766,6 +766,69 @@ test("AOS 5 V5 adds a current 5-inch frame with published interfaces", () => {
   expect(frame.estimatedFields).not.toContain("weight");
 });
 
+test("HeeWing T1 Ranger adds a two-motor wing platform with explicit estimates", () => {
+  const frame = componentsData.frames.find(
+    (item) => item.id === "frame-heewing-t1-ranger",
+  );
+  const motor = componentsData.motors.find(
+    (item) => item.id === "motor-heewing-fx1406-3150kv",
+  );
+  const propeller = componentsData.propellers.find(
+    (item) => item.id === "prop-heewing-fx3830-2",
+  );
+  const esc = componentsData.escs.find(
+    (item) => item.id === "esc-heewing-fx20a-bls-twin",
+  );
+
+  expect(frame).toMatchObject({
+    name: "HeeWing T1 Ranger 730mm Wing",
+    size: 730,
+    weight: 205,
+    material: "EPP",
+    airframeShape: "wing",
+    motorCount: 2,
+    maxPropSize: 3.8,
+    price: 87.9,
+    motorPositionsMm: [[-230, 4.75, -240], [230, 4.75, -240]],
+    dimensionsMm: [730, 140, 645],
+    sourceUrl: "https://www.heewing.com/products/t1-ranger-kit",
+  });
+  expect(frame.estimatedFields).toEqual([
+    "motor positions",
+    "stackHeight",
+  ]);
+  expect(motor).toMatchObject({
+    name: "HeeWing FX1406 3150KV",
+    kv: 3150,
+    size: "1406",
+    weight: 11.3,
+    voltage: { min: 7.4, max: 14.8 },
+    price: 15,
+    propShaftMm: 1.5,
+    sourceUrl: expect.stringContaining("heewing.com"),
+    thrustData: [],
+  });
+  expect(propeller).toMatchObject({
+    name: "HeeWing FX-3830 2-Blade",
+    size: 3.8,
+    pitch: 3,
+    bladeCount: 2,
+    price: 0.26,
+    shaftMm: 1.5,
+    sourceUrl: expect.stringContaining("3-8x3e"),
+    thrustData: [],
+  });
+  expect(esc).toMatchObject({
+    name: "HeeWing FX-20A BLS Twin ESC Set",
+    currentRating: 20,
+    voltage: { min: 7.4, max: 14.8 },
+    protocol: ["PWM"],
+    powerConnection: "solder-pads",
+    price: 29,
+    sourceUrl: expect.stringContaining("fx-20a-bls-esc"),
+  });
+});
+
 test("Volador II VX5 keeps published interfaces separate from estimated geometry", () => {
   const frame = componentsData.frames.find(
     (item) => item.id === "frame-volador-ii-vx5-o4",

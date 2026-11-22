@@ -2,6 +2,8 @@
 Pydantic models for drone components.
 These models provide validation and serialization for the API.
 """
+import math
+
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Literal, Optional, Dict
 from datetime import datetime
@@ -139,6 +141,15 @@ class Frame(ComponentCatalogMetadata):
     weight: float = Field(..., description="Weight in grams")
     material: str = Field(..., description="Frame material")
     motor_count: int = Field(default=4, alias="motorCount", description="Number of motors")
+    airframe_shape: Optional[Literal["quad", "wing"]] = Field(
+        None,
+        alias="airframeShape",
+    )
+    motor_positions_mm: Optional[List[List[float]]] = Field(
+        None,
+        alias="motorPositionsMm",
+        description="Motor mount centers in the viewer coordinate system",
+    )
     max_prop_size: float = Field(..., alias="maxPropSize", description="Maximum propeller size in inches")
     stack_height: float = Field(..., alias="stackHeight", description="Stack mounting height in mm")
     price: float
@@ -157,6 +168,23 @@ class Frame(ComponentCatalogMetadata):
     @classmethod
     def validate_battery_deck_dimensions(cls, value):
         return _positive_vector(value, 2)
+
+    @field_validator("motor_positions_mm")
+    @classmethod
+    def validate_motor_positions(cls, value):
+        if value is None:
+            return None
+        if not value:
+            raise ValueError("motorPositionsMm must not be empty")
+        for position in value:
+            if not isinstance(position, list) or len(position) != 3:
+                raise ValueError("each motor position must have three coordinates")
+            if any(
+                not isinstance(entry, (int, float)) or not math.isfinite(entry)
+                for entry in position
+            ):
+                raise ValueError("motor position coordinates must be finite numbers")
+        return value
 
 
 class DischargePoint(BaseModel):

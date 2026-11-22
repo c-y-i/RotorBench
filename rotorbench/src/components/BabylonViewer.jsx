@@ -187,6 +187,50 @@ const createFrameFallback = (scene, frame = {}) => {
   const carbon = createMaterial(scene, "frame_carbon", "#17201e");
   const edge = createMaterial(scene, "frame_edge", "#53d7c8", true);
 
+  if (frame.airframeShape === "wing") {
+    const wing = MeshBuilder.CreateBox("frame_fallback_wing", {
+      width: Math.max(width * 0.9, 0.1),
+      height: Math.max(height * 0.1, 0.008),
+      depth: Math.max(depth * 0.34, 0.12),
+    }, scene);
+    wing.parent = root;
+    wing.position.y = height * 0.55;
+    wing.material = carbon;
+
+    const fuselage = MeshBuilder.CreateBox("frame_fallback_fuselage", {
+      width: Math.max(width * 0.08, 0.03),
+      height: Math.max(height * 0.55, 0.025),
+      depth: Math.max(depth * 0.78, 0.2),
+    }, scene);
+    fuselage.parent = root;
+    fuselage.position.y = height * 0.3;
+    fuselage.material = carbon;
+
+    const nacelleWidth = Math.max(width * 0.025, 0.014);
+    mounts.forEach((mount, index) => {
+      const nacelle = MeshBuilder.CreateBox(`frame_fallback_nacelle_${index}`, {
+        width: nacelleWidth,
+        height: Math.max(height * 0.14, 0.007),
+        depth: Math.max(depth * 0.28, 0.08),
+      }, scene);
+      nacelle.parent = root;
+      nacelle.position = new Vector3(
+        mount.x,
+        Math.max(mount.y, height * 0.16),
+        mount.z,
+      );
+      nacelle.material = edge;
+    });
+
+    tagFallbackMeshes(root.getChildMeshes(), "frame");
+    root.metadata = {
+      componentType: "frame",
+      assemblyFallback: true,
+      airframeShape: "wing",
+    };
+    return root;
+  }
+
   const deck = MeshBuilder.CreateBox("frame_fallback_deck", {
     width: Math.min(width * 0.34, 0.08),
     height: Math.max(height * 0.22, 0.004),
@@ -351,7 +395,7 @@ const createBatteryFallback = (scene, battery = {}, placement) => {
  *  - modelUrls: string[] (multiple models to load)
  *  - autoRotate: boolean (auto spin models)
  *  - onLoaded: (count: number) => void callback after models loaded
- *  - frameCornerPositions: array of 4 Vector3-like objects [{x,y,z},...] for motor placement
+ *  - frameCornerPositions: array of Vector3-like objects [{x,y,z},...] for motor placement
  *  - motorUrl: string (source model for a single motor; cloned to 4 corners)
  *  - motorMountingPoint: [x,y,z] offset from motor model origin to mounting point
  *  - batteryUrl, fcUrl, escUrl, receiverUrl: optional individual component URLs (center stacked)
@@ -364,7 +408,7 @@ const BabylonViewer = ({
   autoRotate = true,
   cameraView = "orbit",
   onLoaded,
-  frameCornerPositions = [], // array of 4 corner positions from frame data
+  frameCornerPositions = [], // motor mount positions from frame data
   motorUrl,
   motorMountingPoint = [0, 0, 0], // [x,y,z] offset from motor origin to mounting point
   batteryUrl,
@@ -700,7 +744,7 @@ const BabylonViewer = ({
 
   // Convert frame corner positions to Vector3 and apply motor mounting point offset
   const computeMotorPositions = (cornerPositions, mountingPoint) => {
-    if (!cornerPositions || cornerPositions.length !== 4) return [];
+    if (!cornerPositions || cornerPositions.length === 0) return [];
 
     // mountingPoint is the offset from motor origin to its mounting hole
     // We need to subtract this offset so the mounting hole aligns with frame corner
@@ -1239,7 +1283,7 @@ const BabylonViewer = ({
     // Load non-motor components first (centered) - skip if in clearedComponents
     const frameUrlToLoad = dynamicUrlsToLoad.find(url => url === currentUrls.frameUrl && url);
     const handleFrameLoaded = async (loadedMeshes) => {
-      if (frameCornerPositions.length !== 4) return;
+      if (frameCornerPositions.length === 0) return;
       unitScaleRef.current = FIXED_UNIT_SCALE;
       const normalizedRoot = createNormalizedInstance({
         scene,
@@ -1392,7 +1436,7 @@ const BabylonViewer = ({
       const motorOriginsMm = frameSpec?.size || assemblySpec.frame
         ? getMotorOriginsMm(frameSpec, motorSpec)
         : computeMotorPositions(frameCornerPositions, motorMountingPoint).map((p) => [p.x, p.y, p.z]);
-      if (motorOriginsMm.length !== 4) return;
+      if (motorOriginsMm.length === 0) return;
       disposeComponentType("motor");
 
       const positions = motorOriginsMm.map((origin) =>

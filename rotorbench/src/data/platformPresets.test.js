@@ -7,7 +7,7 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(16);
+  expect(PLATFORM_PRESETS).toHaveLength(17);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
@@ -19,6 +19,7 @@ test("every starter platform references a complete catalog build", () => {
         "source-5-aos-supernova",
         "source-5-aos-supernova-51499",
         "source-5-volador-51499",
+        "source-t1-ranger",
       ].includes(preset.id)
         ? "unverified"
         : "verified",
@@ -161,6 +162,17 @@ test("every starter platform references a complete catalog build", () => {
       propellerId: "prop-gemfan-hurricane-2520-3",
       escId: "esc-speedybee-bls-35a-mini-v2",
       batteryId: "battery-tattu-rline-4s-850-95c",
+    },
+  });
+  expect(getPlatformPreset("source-t1-ranger")).toMatchObject({
+    name: "730mm HeeWing T1 Ranger wing",
+    airframeShape: "wing",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      escId: "esc-heewing-fx20a-bls-twin",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
     },
   });
 });

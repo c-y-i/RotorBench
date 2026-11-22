@@ -38,16 +38,16 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(
             counts,
             {
-                "frames": 11,
-                "motors": 16,
-                "propellers": 11,
+                "frames": 12,
+                "motors": 17,
+                "propellers": 12,
                 "batteries": 11,
-                "escs": 8,
+                "escs": 9,
                 "flight_controllers": 11,
                 "receivers": 14,
             },
         )
-        self.assertEqual(sum(counts.values()), 82)
+        self.assertEqual(sum(counts.values()), 86)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,8 +68,23 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 82)
+        self.assertEqual(len(records), 86)
         self.assertTrue(all(record.id for record in records))
+
+    def test_heewing_t1_ranger_preserves_non_quad_motor_positions(self):
+        frame = next(
+            item
+            for item in self.database.frames
+            if item.id == "frame-heewing-t1-ranger"
+        )
+        self.assertEqual(frame.airframe_shape, "wing")
+        self.assertEqual(frame.motor_count, 2)
+        self.assertEqual(frame.dimensions_mm, [730, 140, 645])
+        self.assertEqual(
+            frame.motor_positions_mm,
+            [[-230, 4.75, -240], [230, 4.75, -240]],
+        )
+        self.assertEqual(frame.source_url, "https://www.heewing.com/products/t1-ranger-kit")
 
     def test_adafruit_feather_f405_keeps_public_product_provenance(self):
         record = next(

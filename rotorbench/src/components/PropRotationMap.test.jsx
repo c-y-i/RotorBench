@@ -51,6 +51,25 @@ test("props-in reverses the visible corner directions", () => {
   );
 });
 
+test("twin-motor layouts show left and right prop directions", () => {
+  render(
+    <PropRotationMap
+      motor={{ id: "motor-test", name: "Twin motor" }}
+      propeller={{ id: "prop-test", name: "Twin propeller" }}
+      motorCount={2}
+      direction="props-out"
+    />,
+  );
+  expect(screen.getByRole("img", {
+    name: "Propeller rotation for twin motors",
+  })).toHaveAccessibleDescription(
+    /left propeller rotates counter-clockwise and the right propeller rotates clockwise/i,
+  );
+  expect(screen.getByText("LEFT")).toBeInTheDocument();
+  expect(screen.getByText("RIGHT")).toBeInTheDocument();
+  expect(screen.queryByText("UL")).not.toBeInTheDocument();
+});
+
 test("saved flight-controller outputs label the corresponding corners", () => {
   render(
     <PropRotationMap

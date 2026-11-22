@@ -57,6 +57,44 @@ test("motor roots use the frame mount centers after model normalization", () => 
   expect(getMotorOriginsMm(frame, motor)).toEqual(getFrameMountPointsMm(frame));
 });
 
+test("explicit motor positions support a two-motor wing layout", () => {
+  const wingFrame = {
+    id: "wing-frame",
+    size: 730,
+    motorCount: 2,
+    airframeShape: "wing",
+    motorPositionsMm: [[-230, 4.75, -240], [230, 4.75, -240]],
+    dimensionsMm: [730, 140, 645],
+    estimatedFields: ["motor positions"],
+    sourceUrl: "https://example.com/wing",
+    dataStatus: "estimated",
+  };
+  const wingMotor = {
+    ...motor,
+    dimensionsMm: [18, 15.5, 18],
+    propShaftMm: 1.5,
+  };
+  const wingPropeller = {
+    ...propeller,
+    size: 3.8,
+    shaftMm: 1.5,
+    dimensionsMm: [96.52, 4, 96.52],
+  };
+
+  expect(getFrameMountPointsMm(wingFrame)).toEqual(wingFrame.motorPositionsMm);
+  expect(getMotorOriginsMm(wingFrame, wingMotor)).toHaveLength(2);
+  expect(getPropellerOriginsMm(wingFrame, wingMotor, wingPropeller))
+    .toHaveLength(2);
+  const audit = buildViewerPlacementAudit(wingFrame, {
+    motor: wingMotor,
+    propeller: wingPropeller,
+  });
+  expect(audit.checks.find((check) => check.id === "motor-roots"))
+    .toMatchObject({ label: "2 motor roots", status: "estimated" });
+  expect(audit.checks.find((check) => check.id === "propeller-shafts").detail)
+    .toMatch(/2 propeller origins/i);
+});
+
 test("published planforms drive fallback footprints without inventing thickness", () => {
   expect(getFallbackDimensionsMm("flight_controller", {
     planformMm: [34, 27],

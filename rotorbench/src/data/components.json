@@ -370,6 +370,31 @@
       "priceSourceUrl": "https://shop.iflight.com/race-quads-cat28/2RAW-Series-cat380/cinelifter-quads-cat342/motors-cat88/xing-x2806-5-fpv-nextgen-motor-pro1001",
       "dataStatus": "verified_specs_estimated_mounting_and_voltage_range",
       "estimatedFields": ["mounting_point", "voltage"]
+    },
+    {
+      "id": "motor-heewing-fx1406-3150kv",
+      "name": "HeeWing FX1406 3150KV",
+      "manufacturer": "HeeWing",
+      "kv": 3150,
+      "weight": 11.3,
+      "maxCurrent": 20,
+      "voltage": {
+        "min": 7.4,
+        "max": 14.8
+      },
+      "size": "1406",
+      "price": 15,
+      "mounting_point": [0, 0, 0],
+      "dimensionsMm": [18, 15.5, 18],
+      "propShaftMm": 1.5,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://www.heewing.com/products/hee-wing-rc-t1-ranger-fx1406-3150kv-brushless-motor",
+      "priceSourceUrl": "https://www.heewing.com/products/hee-wing-rc-t1-ranger-fx1406-3150kv-brushless-motor",
+      "dataStatus": "verified_product_kv_and_price_estimated_mechanics_current_weight_and_thrust",
+      "performanceDataStatus": "not_published_in_normalized_form",
+      "estimatedFields": ["weight", "maxCurrent", "mounting_point", "dimensionsMm", "propShaftMm"],
+      "thrustData": []
     }
   ],
   "propellers": [
@@ -663,6 +688,30 @@
       "performanceDataStatus": "not_published",
       "estimatedFields": ["mounting_point"],
       "thrustData": []
+    },
+    {
+      "id": "prop-heewing-fx3830-2",
+      "name": "HeeWing FX-3830 2-Blade",
+      "manufacturer": "HeeWing",
+      "size": 3.8,
+      "pitch": 3.0,
+      "bladeCount": 2,
+      "weight": 0.7,
+      "material": "Plastic",
+      "price": 0.26,
+      "mounting_point": [0, 0, 0],
+      "hubThicknessMm": 4,
+      "shaftMm": 1.5,
+      "dimensionsMm": [96.52, 4, 96.52],
+      "modelCW": null,
+      "modelCCW": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://www.heewing.com/products/heewing-rc-t1-3-8x3e-propellers-green-cw-5pcs-ccw-5pcs",
+      "priceSourceUrl": "https://www.heewing.com/products/heewing-rc-t1-3-8x3e-propellers-green-cw-5pcs-ccw-5pcs",
+      "dataStatus": "verified_size_and_pack_price_estimated_single_prop_mechanics_and_thrust",
+      "performanceDataStatus": "not_published",
+      "estimatedFields": ["bladeCount", "weight", "price allocation", "mounting_point", "hubThicknessMm", "shaftMm", "dimensionsMm"],
+      "thrustData": []
     }
   ],
   "escs": [
@@ -861,6 +910,29 @@
       "priceSourceUrl": "https://www.racedayquads.com/products/speedybee-55a-3-6s-ox32-4-in-1-esc-30-5x30-5",
       "dataStatus": "verified_specs_estimated_mounting",
       "estimatedFields": ["mounting_point"]
+    },
+    {
+      "id": "esc-heewing-fx20a-bls-twin",
+      "name": "HeeWing FX-20A BLS Twin ESC Set",
+      "manufacturer": "HeeWing",
+      "currentRating": 20,
+      "burstCurrent": 20,
+      "weight": 12,
+      "mounting_point": [0, 0, 0],
+      "dimensionsMm": [30, 8, 20],
+      "voltage": {
+        "min": 7.4,
+        "max": 14.8
+      },
+      "protocol": ["PWM"],
+      "powerConnection": "solder-pads",
+      "price": 29,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://www.heewing.com/products/t1-pnp-pro-fx-20a-bls-esc",
+      "priceSourceUrl": "https://www.heewing.com/products/t1-pnp-pro-fx-20a-bls-esc",
+      "dataStatus": "verified_voltage_current_protocol_and_single_esc_price_estimated_pair_weight_dimensions_and_mounting",
+      "estimatedFields": ["burstCurrent", "weight", "mounting_point", "dimensionsMm", "price allocation"]
     }
   ],
   "flight_controllers": [
@@ -1321,6 +1393,26 @@
       "priceSourceUrl": "https://shop.iflight.com/AOS-Cine25-V5-Frame-Kit-Pro2296",
       "dataStatus": "verified_specs_estimated_stack_and_motor_positions",
       "estimatedFields": ["stackHeight", "motor positions"]
+    },
+    {
+      "id": "frame-heewing-t1-ranger",
+      "name": "HeeWing T1 Ranger 730mm Wing",
+      "size": 730,
+      "weight": 205,
+      "material": "EPP",
+      "airframeShape": "wing",
+      "motorCount": 2,
+      "maxPropSize": 3.8,
+      "stackHeight": 24,
+      "price": 87.9,
+      "motorPositionsMm": [[-230, 4.75, -240], [230, 4.75, -240]],
+      "dimensionsMm": [730, 140, 645],
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://www.heewing.com/products/t1-ranger-kit",
+      "priceSourceUrl": "https://www.heewing.com/products/t1-ranger-kit",
+      "dataStatus": "verified_envelope_weight_material_and_motor_count_estimated_motor_positions_and_stack_height",
+      "estimatedFields": ["motor positions", "stackHeight"]
     }
   ],
   "batteries": [
