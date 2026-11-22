@@ -1,7 +1,9 @@
 import { RADIO_POWER_LEVELS } from "../data/radioProfiles";
 import {
   fcEvidenceChecks,
+  fcIdentityChecks,
   fcParameterChecks,
+  parseFcIdentityJson,
   parseFcPreflightJson,
   parseFcPreflightText,
   parseFcParameterSnapshotText,
@@ -1019,6 +1021,7 @@ export function parseBenchEvidenceBundle(
   }
 
   let singleReport = null;
+  let fcIdentity = null;
   let fcStatus = null;
   let fcRc = null;
   let fcPreflight = null;
@@ -1054,6 +1057,15 @@ export function parseBenchEvidenceBundle(
           throw new Error(`More than one ${diag.role.toUpperCase()} boot diagnostic was selected.`);
         }
         diagnosticsByRole[diag.role] = diag;
+      } else if (
+        payload?.protocol === "akp"
+        && Object.hasOwn(payload, "features")
+        && Object.hasOwn(payload, "parameter_count")
+      ) {
+        if (fcIdentity) {
+          throw new Error("More than one Aerial Kit identity report was selected.");
+        }
+        fcIdentity = parseFcIdentityJson(payload);
       } else if (payload?.identity && payload?.state) {
         if (fcStatus) {
           throw new Error("More than one ak fc status snapshot was selected.");
@@ -1223,6 +1235,10 @@ export function parseBenchEvidenceBundle(
     rc: fcRc,
   });
   checks.push(...importedFcChecks);
+  const importedFcIdentityChecks = fcIdentityChecks(fcIdentity, {
+    firmwareFamily: expectedFc?.firmwareFamily || null,
+  });
+  checks.push(...importedFcIdentityChecks);
   const importedFcRcChecks = importedFcChecks.filter(
     (check) => check.id.startsWith("fc-rc-"),
   );
@@ -1280,6 +1296,7 @@ export function parseBenchEvidenceBundle(
     && importedFcParameterChecks.every((check) => check.status === "pass")
   );
   const fcEvidence = {
+    identity: fcIdentity,
     status: fcStatus,
     rc: fcRc,
     preflight: fcPreflight,
@@ -1329,7 +1346,8 @@ export function parseBenchEvidenceBundle(
         parameterCount: Object.keys(parameterSnapshotsByRole).length,
         fcEvidenceCount: Number(Boolean(fcStatus))
           + Number(Boolean(fcRc))
-          + Number(Boolean(fcPreflight)),
+          + Number(Boolean(fcPreflight))
+          + Number(Boolean(fcIdentity)),
         radioStatusCount: radioStatusReports.length,
         txDiag,
         rxDiag,
@@ -1345,28 +1363,34 @@ export function parseBenchEvidenceBundle(
     schema: "rotorbench.bench-evidence-review.v1",
     kind: fcStatus || fcPreflight
       ? "fc-evidence"
-      : fcRc
-        ? "fc-rc"
-      : fcParameters
-        ? "fc-parameters"
-        : radioStatusReports.length ? "radio-status-evidence" : "diagnostics",
+      : fcIdentity
+        ? "fc-identity"
+        : fcRc
+          ? "fc-rc"
+          : fcParameters
+            ? "fc-parameters"
+            : radioStatusReports.length ? "radio-status-evidence" : "diagnostics",
     fileOverall: fcStatus || fcPreflight
       ? fcEvidenceComplete
         ? fcRc
           ? "FC status, RC, and preflight reviewed"
           : "FC status and preflight reviewed"
         : "FC evidence incomplete"
-      : fcRc
-        ? rcEvidenceComplete
-          ? "FC RC observation reviewed"
-          : "FC RC evidence incomplete"
-      : fcParameters
-        ? fcParameterCoverageComplete
-          ? "FC parameter snapshot reviewed"
-          : "FC parameter evidence incomplete"
-      : radioStatusReports.length
-        ? "Radio device identity reviewed"
-        : "Diagnostics only",
+      : fcIdentity
+        ? fcIdentity.features == null
+          ? "FC identity reviewed; capability word absent"
+          : "FC identity and capability word reviewed"
+        : fcRc
+          ? rcEvidenceComplete
+            ? "FC RC observation reviewed"
+            : "FC RC evidence incomplete"
+          : fcParameters
+            ? fcParameterCoverageComplete
+              ? "FC parameter snapshot reviewed"
+              : "FC parameter evidence incomplete"
+            : radioStatusReports.length
+              ? "Radio device identity reviewed"
+              : "Diagnostics only",
     importTrust: "locally selected files; authenticity not independently verified",
     hardwareVerifiedByRotorBench: false,
     rfReportedPass: false,
@@ -1377,13 +1401,14 @@ export function parseBenchEvidenceBundle(
     checks,
     bundle: {
       reportCount: 0,
-        observationCount,
+      observationCount,
       diagnosticCount: Number(Boolean(txDiag)) + Number(Boolean(rxDiag)),
       parameterCount: Number(Boolean(fcParameters))
         + Object.keys(parameterSnapshotsByRole).length,
       fcEvidenceCount: Number(Boolean(fcStatus))
         + Number(Boolean(fcRc))
-        + Number(Boolean(fcPreflight)),
+        + Number(Boolean(fcPreflight))
+        + Number(Boolean(fcIdentity)),
       radioStatusCount: radioStatusReports.length,
       txDiag,
       rxDiag,

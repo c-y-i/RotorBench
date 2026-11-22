@@ -965,6 +965,45 @@ test("standalone FC parameter snapshots are recognized as read-only evidence", (
     .toBe("pass");
 });
 
+test("standalone Aerial Kit identity preserves an absent capability word", () => {
+  const bundle = parseBenchEvidenceBundle([
+    {
+      name: "fc-identity.json",
+      text: JSON.stringify({
+        protocol: "akp",
+        version: 48,
+        product: "aerialkit-f405",
+        parameter_count: 46,
+        changed: "0",
+        features: null,
+        config_hash: null,
+        feature_names: [],
+      }),
+    },
+  ], {
+    expectedFc: { firmwareFamily: "aerialkit" },
+  });
+
+  expect(bundle).toMatchObject({
+    kind: "fc-identity",
+    fileOverall: "FC identity reviewed; capability word absent",
+    fcEvidence: {
+      identity: {
+        capabilityState: "absent",
+        features: null,
+        hardwareVerifiedByRotorBench: false,
+      },
+    },
+  });
+  expect(bundle.checks.find((check) => check.id === "fc-identity-protocol").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "fc-identity-capability-word"))
+    .toMatchObject({
+      status: "unverified",
+      detail: expect.stringMatching(/unknown rather than empty/i),
+    });
+});
+
 test("radio status evidence correlates identity without retaining device paths", () => {
   const bundle = parseBenchEvidenceBundle([
     { name: "tx-status.json", text: JSON.stringify(radioStatusEvidence) },

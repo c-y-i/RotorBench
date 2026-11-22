@@ -37,6 +37,7 @@ const evidenceKindLabels = {
   "observation-pair": "TX + RX native observations",
   diagnostics: "Endpoint boot diagnostics",
   "fc-evidence": "Flight-controller status + preflight",
+  "fc-identity": "Aerial Kit identity + capabilities",
   "fc-rc": "Flight-controller RC observation",
   "fc-parameters": "Flight-controller parameter snapshot",
   "radio-status-evidence": "Radio device status",
@@ -368,7 +369,8 @@ export default function BenchEvidenceReview({
     expectedFc?.boardName || fcBoardProfile?.board,
   ].filter(Boolean).join(" · ");
   const fcEvidencePresent = Boolean(
-    evidence?.fcEvidence?.status
+    evidence?.fcEvidence?.identity
+    || evidence?.fcEvidence?.status
     || evidence?.fcEvidence?.rc
     || evidence?.fcEvidence?.preflight
     || evidence?.fcEvidence?.parameters
@@ -534,15 +536,41 @@ export default function BenchEvidenceReview({
     },
     {
       label: "FC protocol",
-      value: evidence.fcEvidence?.status?.protocol?.toUpperCase() || null,
+      value: evidence.fcEvidence?.status?.protocol?.toUpperCase()
+        || evidence.fcEvidence?.identity?.protocol?.toUpperCase()
+        || null,
     },
     {
       label: "FC product",
-      value: evidence.fcEvidence?.status?.product || null,
+      value: evidence.fcEvidence?.status?.product
+        || evidence.fcEvidence?.identity?.product
+        || null,
     },
     {
       label: "FC firmware",
       value: evidence.fcEvidence?.status?.firmware || null,
+    },
+    {
+      label: "HELLO protocol",
+      value: evidence.fcEvidence?.identity?.protocolVersion ?? null,
+    },
+    {
+      label: "FC capability word",
+      value: evidence.fcEvidence?.identity
+        ? evidence.fcEvidence.identity.features == null
+          ? "Absent — predates the field"
+          : `0x${evidence.fcEvidence.identity.features.toString(16).padStart(8, "0")}`
+        : null,
+    },
+    {
+      label: "FC capabilities",
+      value: evidence.fcEvidence?.identity
+        ? evidence.fcEvidence.identity.features == null
+          ? "Unknown"
+          : evidence.fcEvidence.identity.featureNames.length
+            ? evidence.fcEvidence.identity.featureNames.join(" · ")
+            : "None reported"
+        : null,
     },
     {
       label: "FC armed state",
@@ -641,6 +669,7 @@ export default function BenchEvidenceReview({
   const fcEvidenceComplete = evidence?.fcEvidence?.evidenceComplete === true;
   const fcEvidenceIncomplete = evidence?.kind === "fc-evidence"
     && !fcEvidenceComplete;
+  const fcIdentityEvidence = evidence?.kind === "fc-identity";
   const fcRcEvidence = evidence?.kind === "fc-rc";
   const fcRcComplete = evidence?.fcEvidence?.rcEvidenceComplete === true;
   const receiverLinkNotEstablished = evidence?.fcEvidence?.status?.protocol
@@ -865,7 +894,7 @@ export default function BenchEvidenceReview({
                   ? "is-correlated"
                   : radioEvidenceComplete
                     ? "is-radio-evidence"
-                  : fcEvidenceComplete || fcRcComplete
+                  : fcEvidenceComplete || fcRcComplete || fcIdentityEvidence
                     ? "is-fc-evidence"
                 : evidence.rfReportedPass ? "is-claimed" : "is-incomplete"
             }`}
@@ -874,6 +903,7 @@ export default function BenchEvidenceReview({
               || observationPairComplete
               || fcEvidenceComplete
               || fcRcComplete
+              || fcIdentityEvidence
               || radioEvidenceComplete
               ? <FileCheck2 size={19} aria-hidden="true" />
               : <ShieldAlert size={19} aria-hidden="true" />}
@@ -893,16 +923,18 @@ export default function BenchEvidenceReview({
                       ? receiverLinkNotEstablished
                         ? "FC status and preflight imported; receiver link not established"
                         : "FC evidence does not yet satisfy the selected plan"
-                    : fcRcEvidence
-                      ? fcRcComplete
-                        ? "Fresh FC RC channels observed; RF remains unverified"
-                        : "FC RC observation is inconclusive"
-                  : fcParametersComplete
-                    ? "FC parameters match the staged plan; hardware remains unverified"
-                    : fcParametersMismatch
-                      ? "FC parameters differ from the staged plan"
-                      : fcParameterEvidence
-                        ? "FC parameter snapshot is incomplete"
+                      : fcIdentityEvidence
+                        ? "FC identity and capability word reviewed; hardware remains unverified"
+                        : fcRcEvidence
+                          ? fcRcComplete
+                            ? "Fresh FC RC channels observed; RF remains unverified"
+                            : "FC RC observation is inconclusive"
+                          : fcParametersComplete
+                            ? "FC parameters match the staged plan; hardware remains unverified"
+                            : fcParametersMismatch
+                              ? "FC parameters differ from the staged plan"
+                              : fcParameterEvidence
+                                ? "FC parameter snapshot is incomplete"
                 : evidence.rfEvidenceComplete && settingsMismatch
                   ? "RF gates and diagnostics match, but module settings differ"
                   : evidence.rfEvidenceComplete
@@ -925,6 +957,9 @@ export default function BenchEvidenceReview({
                   : ""}
                 {evidence.kind === "fc-evidence"
                   ? " Imported FC status and preflight lines are read-only observations, not flight-ready authorization."
+                  : ""}
+                {evidence.kind === "fc-identity"
+                  ? " The capability word is a compiled-firmware claim from HELLO, not proof that RotorBench exercised any capability."
                   : ""}
                 {evidence.kind === "fc-rc"
                   ? " Fresh FC RC channels are read-only evidence; they do not prove RF range, authenticity, or flight readiness."
@@ -960,6 +995,81 @@ export default function BenchEvidenceReview({
               </div>
             ))}
           </dl>
+
+          {evidence.fcEvidence?.identity && (
+            <section
+              className="bench-fc-identity"
+              aria-label="Aerial Kit identity and capabilities"
+            >
+              <div className="bench-fc-identity-heading">
+                <span>
+                  <strong>{evidence.fcEvidence.identity.product}</strong>
+                  <small>
+                    Protocol {evidence.fcEvidence.identity.protocolVersion} ·{" "}
+                    {evidence.fcEvidence.identity.parameterCount} parameters ·{" "}
+                    {evidence.fcEvidence.identity.changed || "changed count not reported"}
+                  </small>
+                </span>
+                <em
+                  className={`is-${evidence.fcEvidence.identity.capabilityState}`}
+                >
+                  {evidence.fcEvidence.identity.capabilityState === "absent"
+                    ? "Word absent"
+                    : "Word reported"}
+                </em>
+              </div>
+              <dl>
+                <div>
+                  <dt>Capability word</dt>
+                  <dd>
+                    {evidence.fcEvidence.identity.features == null
+                      ? "Absent — this firmware predates the field"
+                      : `0x${evidence.fcEvidence.identity.features.toString(16).padStart(8, "0")}`}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Configuration hash</dt>
+                  <dd>
+                    {evidence.fcEvidence.identity.configHash == null
+                      ? "Absent"
+                      : `0x${evidence.fcEvidence.identity.configHash.toString(16).padStart(8, "0")}`}
+                  </dd>
+                </div>
+              </dl>
+              {evidence.fcEvidence.identity.features == null ? (
+                <p>
+                  HELLO ended before the capability word. RotorBench cannot
+                  determine which optional commands this firmware answers; that
+                  is different from a board reporting no capabilities.
+                </p>
+              ) : evidence.fcEvidence.identity.featureDetails.length ? (
+                <ul aria-label="Reported firmware capabilities">
+                  {evidence.fcEvidence.identity.featureDetails.map((feature) => (
+                    <li key={feature.name}>
+                      <strong>{feature.label}</strong>
+                      <code>{feature.name}</code>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>The firmware reports a capability word with no known bits set.</p>
+              )}
+              {evidence.fcEvidence.identity.unrecognizedFeatureMask > 0 && (
+                <p>
+                  Unrecognized feature bits:{" "}
+                  <code>
+                    0x{evidence.fcEvidence.identity.unrecognizedFeatureMask
+                      .toString(16)
+                      .padStart(8, "0")}
+                  </code>
+                </p>
+              )}
+              <p>
+                Capability bits describe the compiled firmware. They do not show
+                that a command was sent, accepted, applied, or persisted.
+              </p>
+            </section>
+          )}
 
           {evidence.fcEvidence?.parameters?.values && (
             <FcParameterSnapshot

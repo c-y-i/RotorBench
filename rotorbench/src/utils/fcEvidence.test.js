@@ -1,13 +1,88 @@
 import {
   fcEvidenceChecks,
+  fcIdentityChecks,
   fcParameterChecks,
   fcRcChecks,
+  parseFcIdentityJson,
   parseFcPreflightJson,
   parseFcPreflightText,
   parseFcParameterSnapshotText,
   parseFcRcJson,
   parseFcStatusJson,
 } from "./fcEvidence";
+
+test("keeps an absent Aerial Kit capability word distinct from zero", () => {
+  const absent = parseFcIdentityJson({
+    protocol: "akp",
+    version: 48,
+    product: "aerialkit-f405",
+    parameter_count: 46,
+    changed: "0",
+    features: null,
+    config_hash: null,
+  });
+  const empty = parseFcIdentityJson({
+    protocol: "akp",
+    version: 48,
+    product: "aerialkit-empty",
+    parameter_count: 46,
+    changed: "0",
+    features: 0,
+    config_hash: 0,
+  });
+
+  expect(absent).toMatchObject({
+    kind: "fc-identity",
+    protocolVersion: 48,
+    capabilityState: "absent",
+    features: null,
+    featureNames: [],
+  });
+  expect(absent).not.toHaveProperty("firmwareVersion");
+  expect(empty).toMatchObject({
+    capabilityState: "reported",
+    features: 0,
+    featureNames: [],
+  });
+  expect(fcIdentityChecks(absent, { firmwareFamily: "aerialkit" })
+    .find((check) => check.id === "fc-identity-capability-word"))
+    .toMatchObject({
+      status: "unverified",
+      detail: expect.stringMatching(/predates the field/i),
+    });
+  expect(fcIdentityChecks(empty, { firmwareFamily: "aerialkit" })
+    .find((check) => check.id === "fc-identity-capability-word"))
+    .toMatchObject({
+      status: "pass",
+      detail: expect.stringMatching(/0x00000000/i),
+    });
+});
+
+test("decodes capability bits without trusting a supplied feature-name list", () => {
+  const identity = parseFcIdentityJson({
+    protocol: "akp",
+    version: 49,
+    product: "aerialkit-f405",
+    parameter_count: 46,
+    changed: "2",
+    features: (1 << 0) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 16),
+    feature_names: ["APPLIES_ON_WRITE"],
+    config_hash: 0x12345678,
+  });
+  const checks = fcIdentityChecks(identity, { firmwareFamily: "aerialkit" });
+
+  expect(identity.featureNames).toEqual([
+    "PARAM_INFO",
+    "APPLIES_ON_WRITE",
+    "GATES_ON_ARMED",
+    "RC_CHANNELS",
+  ]);
+  expect(identity.unrecognizedFeatureMask).toBe(1 << 16);
+  expect(checks.find((check) => check.id === "fc-capability-param-info").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-capability-preflight").status)
+    .toBe("unverified");
+});
 
 const statusJson = {
   identity: "protocol=akp product=aerialkit-f405 firmware=46 parameters=46 changed=2",

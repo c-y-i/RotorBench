@@ -41,6 +41,26 @@ const BETAFLIGHT_ARMING_DISABLE_FLAGS = [
 const BETAFLIGHT_FAILSAFE_MASK = (1 << 1) | (1 << 2);
 const RC_PROTOCOLS = new Set(["akp", "betaflight"]);
 const RC_FRESHNESS_LIMIT_MS = 10 * 60 * 1000;
+export const AK_FEATURE_NAMES = Object.freeze([
+  { bit: 1 << 0, name: "PARAM_INFO", label: "Parameter metadata" },
+  { bit: 1 << 1, name: "PARAM_DEFAULT", label: "Parameter defaults" },
+  { bit: 1 << 2, name: "APPLIES_ON_WRITE", label: "Apply on write" },
+  { bit: 1 << 3, name: "GATES_ON_ARMED", label: "Armed write gate" },
+  { bit: 1 << 4, name: "RC_CHANNELS", label: "RC channel readback" },
+  { bit: 1 << 5, name: "SENSOR_INFO", label: "Sensor metadata" },
+  { bit: 1 << 6, name: "OUTPUT_INFO", label: "Output metadata" },
+  { bit: 1 << 7, name: "OUTPUT_TEST", label: "Output test" },
+  { bit: 1 << 8, name: "LOG_STREAM", label: "Log stream" },
+  { bit: 1 << 9, name: "PREFLIGHT", label: "Preflight report" },
+  { bit: 1 << 10, name: "CALIBRATE", label: "Calibration" },
+  { bit: 1 << 11, name: "MISSION", label: "Mission protocol" },
+  { bit: 1 << 12, name: "PERF", label: "Performance profile" },
+  { bit: 1 << 13, name: "MOTOR_TELEMETRY", label: "Motor telemetry" },
+]);
+const AK_KNOWN_FEATURE_MASK = AK_FEATURE_NAMES.reduce(
+  (mask, feature) => mask | feature.bit,
+  0,
+);
 
 function finiteNumber(value, fallback = null) {
   if (value == null || value === "") return fallback;
@@ -59,6 +79,111 @@ function sanitizedIdentity(identity) {
   return String(identity)
     .replace(/(?:^|\s)(?:--port\s+)?\/dev\/\S+/g, "")
     .trim();
+}
+
+function uint32(value, label) {
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 0 || number > 0xffffffff) {
+    throw new Error(`${label} is not an unsigned 32-bit value.`);
+  }
+  return number;
+}
+
+export function parseFcIdentityJson(payload) {
+  if (
+    !payload
+    || typeof payload !== "object"
+    || payload.protocol !== "akp"
+    || typeof payload.product !== "string"
+    || !payload.product.trim()
+    || !Object.hasOwn(payload, "features")
+  ) {
+    throw new Error("The selected JSON is not an Aerial Kit identity report.");
+  }
+  const protocolVersion = finiteNumber(payload.version, null);
+  const parameterCount = finiteNumber(payload.parameter_count, null);
+  if (
+    !Number.isInteger(protocolVersion)
+    || protocolVersion < 0
+    || !Number.isInteger(parameterCount)
+    || parameterCount < 0
+  ) {
+    throw new Error("The Aerial Kit identity report has invalid protocol metadata.");
+  }
+  const features = payload.features == null
+    ? null
+    : uint32(payload.features, "The capability word");
+  const configHash = payload.config_hash == null
+    ? null
+    : uint32(payload.config_hash, "The configuration hash");
+  const featureDetails = features == null
+    ? []
+    : AK_FEATURE_NAMES.filter((feature) => (features & feature.bit) !== 0);
+  return {
+    kind: "fc-identity",
+    protocol: "akp",
+    product: payload.product.trim(),
+    protocolVersion,
+    parameterCount,
+    changed: typeof payload.changed === "string" ? payload.changed.trim() : "",
+    features,
+    featureNames: featureDetails.map((feature) => feature.name),
+    featureDetails,
+    unrecognizedFeatureMask: features == null
+      ? 0
+      : (features & ~AK_KNOWN_FEATURE_MASK) >>> 0,
+    configHash,
+    capabilityState: features == null ? "absent" : "reported",
+    hardwareVerifiedByRotorBench: false,
+  };
+}
+
+export function fcIdentityChecks(identity, { firmwareFamily = null } = {}) {
+  if (!identity) return [];
+  const expected = expectedProtocol(firmwareFamily);
+  const checks = [
+    makeCheck(
+      "fc-identity-protocol",
+      "FC identity protocol",
+      expected === null || identity.protocol === expected ? "pass" : "fail",
+      expected === null
+        ? "Aerial Kit identity JSON identifies the AKP protocol."
+        : identity.protocol === expected
+          ? `Identity protocol matches the planned ${expected} firmware family.`
+          : `Identity protocol ${identity.protocol} does not match planned firmware ${expected}.`,
+    ),
+    makeCheck(
+      "fc-identity-capability-word",
+      "Capability word",
+      identity.features == null ? "unverified" : "pass",
+      identity.features == null
+        ? "HELLO ended before the capability word, so this firmware predates the field; the capabilities are unknown rather than empty."
+        : `HELLO reports capability word 0x${identity.features.toString(16).padStart(8, "0")}.`,
+    ),
+  ];
+  const importantFeatures = [
+    "PARAM_INFO",
+    "APPLIES_ON_WRITE",
+    "GATES_ON_ARMED",
+    "RC_CHANNELS",
+    "PREFLIGHT",
+  ];
+  for (const featureName of importantFeatures) {
+    const feature = AK_FEATURE_NAMES.find((entry) => entry.name === featureName);
+    const claimed = identity.features != null
+      && (identity.features & feature.bit) !== 0;
+    checks.push(makeCheck(
+      `fc-capability-${featureName.toLowerCase().replaceAll("_", "-")}`,
+      feature.label,
+      claimed ? "pass" : "unverified",
+      identity.features == null
+        ? `${feature.label} cannot be determined because the capability word is absent.`
+        : claimed
+          ? `The firmware capability word claims ${feature.name}. This is a build capability, not proof that it was exercised.`
+          : `The firmware capability word does not claim ${feature.name}.`,
+    ));
+  }
+  return checks;
 }
 
 function betaflightArmingDisableFlags(value) {

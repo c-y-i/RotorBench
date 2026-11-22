@@ -198,6 +198,43 @@ test("reviews a complete pair file without claiming RotorBench observed hardware
   expect(screen.getByText(/Only a sanitized summary is saved/i)).toBeInTheDocument();
 });
 
+test("shows Aerial Kit firmware capabilities as compiled claims, not hardware proof", async () => {
+  render(
+    <BenchEvidenceReview
+      expectedFc={{ firmwareFamily: "aerialkit" }}
+    />,
+  );
+
+  userEvent.upload(
+    screen.getByLabelText("Choose hardware evidence files"),
+    evidenceFile({
+      protocol: "akp",
+      version: 49,
+      product: "aerialkit-f405",
+      parameter_count: 46,
+      changed: "2",
+      features: (1 << 0) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 9),
+      feature_names: ["APPLIES_ON_WRITE"],
+      config_hash: 0x12345678,
+    }, "fc-identity.json"),
+  );
+
+  expect(await screen.findByText(
+    "FC identity and capability word reviewed; hardware remains unverified",
+  )).toBeInTheDocument();
+  const identity = screen.getByRole("region", {
+    name: "Aerial Kit identity and capabilities",
+  });
+  expect(within(identity).getByText("aerialkit-f405")).toBeInTheDocument();
+  expect(within(identity).getByText(/Protocol 49/)).toBeInTheDocument();
+  expect(within(identity).getByText("Word reported")).toBeInTheDocument();
+  expect(within(identity).getByText("0x0000021d")).toBeInTheDocument();
+  expect(within(identity).getByText("Parameter metadata")).toBeInTheDocument();
+  expect(within(identity).getByText("Armed write gate")).toBeInTheDocument();
+  expect(within(identity).getByText(/do not show that a command was sent/i))
+    .toBeInTheDocument();
+});
+
 test("a plan UID mismatch is shown as a failed check", async () => {
   render(<BenchEvidenceReview expectedUid="aa:bb:cc:dd:ee:ff" />);
 
