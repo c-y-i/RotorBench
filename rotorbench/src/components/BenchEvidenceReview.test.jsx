@@ -277,6 +277,28 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
         { index: 0, name: "arm_channel", value: "5" },
         { index: 1, name: "dshot_khz", value: "300" },
       ],
+      parameterMetadata: [
+        {
+          index: 0,
+          name: "arm_channel",
+          groupName: "arming",
+          typeName: "u8",
+          min: "0",
+          max: "16",
+          default: "5",
+          help: "Selects the channel used for arm detection.",
+        },
+        {
+          index: 1,
+          name: "dshot_khz",
+          groupName: "outputs",
+          typeName: "u16",
+          min: "150",
+          max: "600",
+          default: "300",
+          help: "Sets the DShot output rate.",
+        },
+      ],
     }, "live-status.json"),
   );
 
@@ -290,6 +312,9 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("172")).toBeInTheDocument();
   expect(screen.getByText("arm_channel")).toBeInTheDocument();
   expect(screen.getByText("dshot_khz")).toBeInTheDocument();
+  expect(screen.getByText(/Selects the channel used for arm detection/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/Sets the DShot output rate/i)).toBeInTheDocument();
 });
 
 test("reviews an RX ExpressLRS menu inventory without calling it TX", async () => {

@@ -298,6 +298,15 @@ export function parseAerialKitLiveStatusJson(payload) {
           ]),
       )
     : null;
+  const parameterMetadata = Array.isArray(payload.parameterMetadata)
+    ? payload.parameterMetadata
+        .filter((parameter) => (
+          parameter
+          && Number.isInteger(parameter.index)
+          && typeof parameter.name === "string"
+        ))
+        .map((parameter) => ({ ...parameter }))
+    : null;
   return {
     kind: "fc-live-status",
     identity,
@@ -307,8 +316,10 @@ export function parseAerialKitLiveStatusJson(payload) {
       ? {
           values: parameterValues,
           format: "aerial-kit",
+          metadata: parameterMetadata,
         }
       : null,
+    parameterMetadata,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

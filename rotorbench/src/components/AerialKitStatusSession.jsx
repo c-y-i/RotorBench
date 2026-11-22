@@ -24,7 +24,9 @@ import {
   AerialKitReadOnlySession,
   aerialKitArmedState,
   createAerialKitStatusEvidence,
+  decodeAerialKitText,
   parseAerialKitHello,
+  parseAerialKitParamHelpSlice,
   parseAerialKitParamGet,
   parseAerialKitParamInfoPage,
   parseAerialKitRcChannels,
@@ -115,6 +117,12 @@ export default function AerialKitStatusSession({
     total: 0,
   });
   const [metadataError, setMetadataError] = useState("");
+  const [helpState, setHelpState] = useState("idle");
+  const [helpProgress, setHelpProgress] = useState({
+    done: 0,
+    total: 0,
+  });
+  const [helpError, setHelpError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -168,6 +176,9 @@ export default function AerialKitStatusSession({
     setMetadataState("idle");
     setMetadataProgress({ read: 0, total: 0 });
     setMetadataError("");
+    setHelpState("idle");
+    setHelpProgress({ done: 0, total: 0 });
+    setHelpError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -420,6 +431,98 @@ export default function AerialKitStatusSession({
       setMetadataState("error");
       setMetadataError(
         `${readError.message} ${read.length} metadata row${read.length === 1 ? "" : "s"} were read before the stop.`,
+      );
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
+  const readParameterHelp = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session || !parameterMetadata) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) === 0
+    ) {
+      setHelpError(
+        "The HELLO capability word does not claim PARAM_INFO, so descriptions cannot be requested.",
+      );
+      setHelpState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setHelpError(
+        "Wait for the current STATUS/RC poll to finish before reading descriptions.",
+      );
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setHelpError("");
+    setHelpState("reading");
+    const rows = parameterMetadata.map((parameter) => ({ ...parameter }));
+    const total = rows.filter((parameter) => parameter.name).length;
+    setHelpProgress({ done: 0, total });
+    let done = 0;
+    try {
+      for (const parameter of rows) {
+        if (!activeRef.current) break;
+        if (!parameter.name) continue;
+        let offset = 0;
+        let expectedTotal = null;
+        const chunks = [];
+        for (let chunk = 0; ; chunk += 1) {
+          if (chunk > 32) {
+            throw new Error(
+              `Description for ${parameter.name} exceeded 32 chunks.`,
+            );
+          }
+          const payload = await session.request(
+            AERIAL_KIT_COMMANDS.paramHelp,
+            Uint8Array.of(
+              parameter.index,
+              offset & 0xff,
+              (offset >> 8) & 0xff,
+            ),
+          );
+          const slice = parseAerialKitParamHelpSlice(
+            payload,
+            parameter.index,
+            offset,
+          );
+          if (expectedTotal == null) expectedTotal = slice.total;
+          if (slice.total !== expectedTotal) {
+            throw new Error(
+              `Description for ${parameter.name} changed total length while walking.`,
+            );
+          }
+          chunks.push(...slice.bytes);
+          offset += slice.bytes.length;
+          if (offset >= expectedTotal) break;
+          if (slice.bytes.length === 0) {
+            throw new Error(
+              `Description for ${parameter.name} stopped before its declared end.`,
+            );
+          }
+        }
+        parameter.help = decodeAerialKitText(Uint8Array.from(chunks));
+        done += 1;
+        setHelpProgress({ done, total });
+        setParameterMetadata([...rows]);
+      }
+      if (!mountedRef.current) return;
+      setHelpState("ready");
+      setMessage(
+        `Read descriptions for ${done} parameter${done === 1 ? "" : "s"} without writing or saving settings.`,
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setParameterMetadata([...rows]);
+      setHelpState("error");
+      setHelpError(
+        `${readError.message} ${done} description${done === 1 ? "" : "s"} were read before the stop.`,
       );
     } finally {
       pollBusyRef.current = false;
@@ -903,6 +1006,23 @@ export default function AerialKitStatusSession({
                     <SlidersHorizontal size={15} aria-hidden="true" />
                     Read ranges/defaults
                   </button>
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || metadataState !== "ready"
+                      || helpState === "reading"
+                      || !metadataClaimed
+                    }
+                    title={metadataState !== "ready"
+                      ? "Read parameter metadata before requesting descriptions."
+                      : undefined}
+                    onClick={readParameterHelp}
+                  >
+                    <SlidersHorizontal size={15} aria-hidden="true" />
+                    Read descriptions
+                  </button>
                   <span>
                     {parameterState === "reading"
                       ? `Reading ${parameterProgress.read}/${parameterProgress.total}`
@@ -921,12 +1041,20 @@ export default function AerialKitStatusSession({
                           : !metadataClaimed
                             ? "PARAM_INFO not claimed"
                             : "metadata not read"}
+                    {" · "}
+                    {helpState === "reading"
+                      ? `help ${helpProgress.done}/${helpProgress.total}`
+                      : helpState === "ready"
+                        ? `${parameterMetadata?.filter((parameter) => parameter.help != null).length || 0} descriptions`
+                        : helpState === "error"
+                          ? "descriptions stopped"
+                          : "descriptions not read"}
                   </span>
                 </div>
                 <p>
                   Values come from `PARAM_GET`; type, group, range, and default
                   come from capability-gated `PARAM_INFO` pages. Descriptions
-                  from `PARAM_HELP` are not read in this pass. Nothing is
+                  are walked separately through `PARAM_HELP`; nothing is
                   inferred from a local table.
                 </p>
                 {parameterError && (
@@ -944,6 +1072,15 @@ export default function AerialKitStatusSession({
                     <span>
                       <strong>Parameter metadata incomplete</strong>
                       <small>{metadataError}</small>
+                    </span>
+                  </div>
+                )}
+                {helpError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Parameter descriptions incomplete</strong>
+                      <small>{helpError}</small>
                     </span>
                   </div>
                 )}
@@ -993,6 +1130,11 @@ export default function AerialKitStatusSession({
                                     ? `default ${parameter.default}`
                                     : null,
                                 ].filter(Boolean).join(" · ")}
+                              </small>
+                            )}
+                            {parameter.help != null && (
+                              <small className="aerial-kit-parameter-help">
+                                {parameter.help || "The board supplied an empty description."}
                               </small>
                             )}
                           </li>

@@ -118,6 +118,27 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC) {
         ];
         deliver(buildAerialKitFrame(0x8a, Uint8Array.from(payload)));
       }
+      else if (command === 0x0b) {
+        const field = frame[5];
+        const offset = frame[6] | (frame[7] << 8);
+        const text = Buffer.from(
+          field === 0
+            ? "Rate-loop proportional gain."
+            : "Rate-loop integral gain.",
+        );
+        const chunk = text.slice(offset);
+        const payload = Uint8Array.from([
+          0,
+          field,
+          offset & 0xff,
+          (offset >> 8) & 0xff,
+          text.length & 0xff,
+          (text.length >> 8) & 0xff,
+          chunk.length,
+          ...chunk,
+        ]);
+        deliver(buildAerialKitFrame(0x8b, payload));
+      }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
     releaseLock: jest.fn(),
@@ -291,9 +312,17 @@ test("reads capability-gated parameter metadata without requesting help", async 
   expect(await screen.findByText("rate_kp_roll")).toBeInTheDocument();
   expect(screen.getByText(/rates · float · 0\.000 to 3\.000 · default 0\.250/i))
     .toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read descriptions",
+  }));
+  expect(await screen.findByText("Rate-loop proportional gain."))
+    .toBeInTheDocument();
+  expect(screen.getByText("Rate-loop integral gain.")).toBeInTheDocument();
   const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
   expect(commands).toContain(0x0a);
-  expect(commands).not.toContain(0x0b);
+  expect(commands).toContain(0x0b);
+  expect(commands).not.toContain(0x2d);
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

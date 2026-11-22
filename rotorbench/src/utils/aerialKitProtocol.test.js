@@ -9,6 +9,7 @@ import {
   buildAerialKitFrame,
   createAerialKitStatusEvidence,
   parseAerialKitHello,
+  parseAerialKitParamHelpSlice,
   parseAerialKitParamInfoPage,
   parseAerialKitParamGet,
   parseAerialKitRcChannels,
@@ -192,6 +193,28 @@ test("parses board-reported parameter metadata without guessing", () => {
     .toThrow(/predates PARAM_INFO/i);
 });
 
+test("parses an offset-checked PARAM_HELP slice", () => {
+  const text = Buffer.from("Maximum loop rate");
+  const payload = Uint8Array.from([
+    0,
+    4,
+    0,
+    0,
+    text.length,
+    0,
+    text.length,
+    ...text,
+  ]);
+  expect(parseAerialKitParamHelpSlice(payload, 4, 0)).toEqual({
+    index: 4,
+    offset: 0,
+    total: text.length,
+    bytes: Uint8Array.from(text),
+  });
+  expect(() => parseAerialKitParamHelpSlice(payload, 4, 1))
+    .toThrow(/asked from offset 1/i);
+});
+
 test("carries RC frames through the frame decoder", () => {
   const decoder = new AerialKitFrameDecoder();
   const reply = frame(AERIAL_KIT_COMMANDS.rcChannels | 0x80, rcPayload());
@@ -269,6 +292,7 @@ test("creates a sanitized live-status evidence boundary", () => {
       min: "0.000",
       max: "3.000",
       default: "0.250",
+      help: "Rate-loop proportional gain.",
       secret: true,
     }],
     connectionActive: true,
@@ -287,6 +311,7 @@ test("creates a sanitized live-status evidence boundary", () => {
         "RC_CHANNELS",
         "PARAM_GET",
         "PARAM_INFO",
+        "PARAM_HELP",
       ],
     },
     status: {
@@ -305,6 +330,7 @@ test("creates a sanitized live-status evidence boundary", () => {
       min: "0.000",
       max: "3.000",
       default: "0.250",
+      help: "Rate-loop proportional gain.",
     }],
     boundaries: {
       readOnlyQueriesOnly: true,

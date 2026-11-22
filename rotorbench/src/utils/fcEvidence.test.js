@@ -118,6 +118,16 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       { index: 0, name: "rate_kp_roll", value: "0.250" },
       { index: 1, name: "dshot_khz", value: "600" },
     ],
+    parameterMetadata: [{
+      index: 0,
+      name: "rate_kp_roll",
+      groupName: "rates",
+      typeName: "float",
+      min: "0.000",
+      max: "3.000",
+      default: "0.250",
+      help: "Rate-loop proportional gain.",
+    }],
   });
 
   expect(parsed).toMatchObject({
@@ -142,7 +152,15 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
         rate_kp_roll: "0.250",
         dshot_khz: "600",
       },
+      metadata: [{
+        name: "rate_kp_roll",
+        help: "Rate-loop proportional gain.",
+      }],
     },
+    parameterMetadata: [{
+      name: "rate_kp_roll",
+      help: "Rate-loop proportional gain.",
+    }],
   });
 });
 

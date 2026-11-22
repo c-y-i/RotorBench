@@ -17,6 +17,7 @@ export const AERIAL_KIT_COMMANDS = Object.freeze({
   paramGet: 0x02,
   status: 0x05,
   paramInfo: 0x0a,
+  paramHelp: 0x0b,
   rcChannels: 0x0d,
 });
 
@@ -77,6 +78,18 @@ function decodeAscii(bytes) {
   return Array.from(bytes)
     .map((byte) => byte < 0x80 ? String.fromCharCode(byte) : "\ufffd")
     .join("");
+}
+
+export function decodeAerialKitText(bytes) {
+  const value = asBytes(bytes);
+  if (typeof TextDecoder === "function") {
+    try {
+      return new TextDecoder().decode(value);
+    } catch {
+      // Fall through to the ASCII-preserving decoder below.
+    }
+  }
+  return decodeAscii(value);
 }
 
 function readCString(bytes, offset, label) {
@@ -454,6 +467,43 @@ export function parseAerialKitParamInfoPage(payload, askedFrom) {
   };
 }
 
+export function parseAerialKitParamHelpSlice(payload, askedIndex, askedOffset) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) throw new Error("Aerial Kit PARAM_HELP payload is empty.");
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates PARAM_HELP and answered with the unknown-command status.",
+    );
+  }
+  if (bytes[0] !== 0) {
+    throw new Error(`PARAM_HELP for index ${askedIndex} returned status ${bytes[0]}.`);
+  }
+  if (bytes.length < 7) throw new Error("PARAM_HELP slice header is incomplete.");
+  const index = bytes[1];
+  const offset = u16le(bytes, 2, "PARAM_HELP offset");
+  const total = u16le(bytes, 4, "PARAM_HELP total");
+  const length = bytes[6];
+  if (index !== (askedIndex & 0xff)) {
+    throw new Error(`PARAM_HELP asked about ${askedIndex} but answered for ${index}.`);
+  }
+  if (offset !== askedOffset) {
+    throw new Error(
+      `PARAM_HELP asked from offset ${askedOffset} but answered from ${offset}.`,
+    );
+  }
+  if (bytes.length !== 7 + length) {
+    throw new Error(
+      `PARAM_HELP declares ${length} text bytes but carries ${bytes.length - 7}.`,
+    );
+  }
+  return {
+    index,
+    offset,
+    total,
+    bytes: bytes.slice(7),
+  };
+}
+
 export function parseAerialKitRcChannels(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) throw new Error("Aerial Kit RC_CHANNELS payload is empty.");
@@ -624,6 +674,9 @@ export function createAerialKitStatusEvidence({
         "RC_CHANNELS",
         ...(parameters ? ["PARAM_GET"] : []),
         ...(parameterMetadata ? ["PARAM_INFO"] : []),
+        ...(parameterMetadata?.some((parameter) => parameter.help != null)
+          ? ["PARAM_HELP"]
+          : []),
       ],
     },
     hello,

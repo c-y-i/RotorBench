@@ -1940,12 +1940,21 @@
 }
 
 .fc-parameter-groups dd {
+  display: grid;
+  gap: 2px;
   margin: 2px 0 0;
   overflow-wrap: anywhere;
   color: var(--ink);
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
   font-weight: 600;
+}
+
+.fc-parameter-groups dd small {
+  color: var(--ink-soft);
+  font-size: 8px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .fc-parameter-empty {

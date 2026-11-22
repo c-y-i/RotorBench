@@ -1099,6 +1099,7 @@ export default function BenchEvidenceReview({
               values={evidence.fcEvidence.parameters.values}
               checks={evidence.checks}
               format={evidence.fcEvidence.parameters.format}
+              metadata={evidence.fcEvidence.parameters.metadata || []}
             />
           )}
           {evidence.bundle?.txParameters?.entries && (

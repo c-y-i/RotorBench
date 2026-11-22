@@ -142,10 +142,16 @@ export default function FcParameterSnapshot({
   values = {},
   checks = [],
   format = null,
+  metadata = [],
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
+  const metadataByName = useMemo(() => new Map(
+    metadata
+      .filter((entry) => entry?.name)
+      .map((entry) => [entry.name, entry]),
+  ), [metadata]);
   const groups = useMemo(() => {
     const statusByCheckId = new Map(checks.map((check) => [check.id, check.status]));
     const grouped = groupFcParameters(values);
@@ -177,12 +183,13 @@ export default function FcParameterSnapshot({
         const status = statusByCheckId.get(parameterCheckId(entry.name)) || "observed";
         return {
           ...entry,
+          metadata: metadataByName.get(entry.name) || null,
           status,
           statusLabel: STATUS_LABELS[status] || "Observed",
         };
       }),
     }));
-  }, [checks, values]);
+  }, [checks, metadataByName, values]);
   const matches = groups.flatMap((group) => group.entries)
     .filter((entry) => entry.status === "pass").length;
   const differences = groups.flatMap((group) => group.entries)
@@ -296,13 +303,43 @@ export default function FcParameterSnapshot({
               <section key={group.id} aria-label={`${group.label} parameters`}>
                 <h5>{group.label}</h5>
                 <dl>
-                  {group.entries.map(({ name, value, status, statusLabel }) => (
+                {group.entries.map(({
+                  name,
+                  value,
+                  status,
+                  statusLabel,
+                  metadata: parameterMetadata,
+                }) => (
                     <div key={name}>
                       <dt>
                         <span>{name}</span>
                         <em className={`is-${status}`}>{statusLabel}</em>
                       </dt>
-                      <dd>{value}</dd>
+                      <dd>
+                        <span>{value}</span>
+                        {parameterMetadata && (
+                          <small>
+                            {[
+                              parameterMetadata.groupName
+                                ? `group ${parameterMetadata.groupName}`
+                                : null,
+                              parameterMetadata.typeName
+                                ? `type ${parameterMetadata.typeName}`
+                                : null,
+                              parameterMetadata.min != null
+                                && parameterMetadata.max != null
+                                ? `${parameterMetadata.min}..${parameterMetadata.max}`
+                                : null,
+                              parameterMetadata.default != null
+                                ? `default ${parameterMetadata.default}`
+                                : null,
+                            ].filter(Boolean).join(" · ")}
+                            {parameterMetadata.help
+                              ? ` — ${parameterMetadata.help}`
+                              : ""}
+                          </small>
+                        )}
+                      </dd>
                     </div>
                   ))}
                 </dl>
