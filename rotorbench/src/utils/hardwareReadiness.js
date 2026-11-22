@@ -116,8 +116,16 @@ export function summarizeHardwareReadiness({
   const mappingWarnings = fcPlanConfigured && radioPlanConfigured
     ? buildChannelMappingWarnings(fcPlan, radioPlan)
     : [];
+  const receiverWiringWarnings = wiring.outputMode === "pwm-only"
+    ? [
+        "The selected receiver publishes PWM outputs but no serial flight-controller route. Use a direct PWM topology or choose a receiver with documented CRSF/SBUS output.",
+      ]
+    : [];
   const blockerCount = fcIssues.filter((issue) => issue.severity === "error").length;
-  const issueCount = fcIssues.length + radioWarnings.length + mappingWarnings.length;
+  const issueCount = fcIssues.length
+    + radioWarnings.length
+    + mappingWarnings.length
+    + receiverWiringWarnings.length;
   const configured = Boolean(storedFc || storedRadio);
   const complete = Boolean(storedFc && storedRadio);
   const status = !configured
@@ -276,6 +284,7 @@ export function summarizeHardwareReadiness({
     fcIssues,
     radioWarnings,
     mappingWarnings,
+    receiverWiringWarnings,
     firmwareLabel: firmware?.label || fcPlan.firmwareFamily,
     fcBoardProfile: profile.id || null,
     fcBoardName: profile.board || null,

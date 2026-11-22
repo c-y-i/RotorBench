@@ -168,6 +168,52 @@ test("PWM-only receivers report their output topology instead of serial pins", (
   });
 });
 
+test("a saved PWM-only receiver plan keeps an explicit topology review item", () => {
+  const pwmReceiver = {
+    ...receiver,
+    id: "rx-er3c-i",
+    name: "RadioMaster ER3C-i",
+    pwmOutputs: 3,
+    outputMode: "pwm",
+  };
+  const base = "rotorbench:hardware-plan:build-pwm";
+  const storage = memoryStorage({
+    [`${base}:fc`]: JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: fc.id,
+      selectedReceiverId: pwmReceiver.id,
+      firmwareFamily: "betaflight",
+      profileId: "custom-board",
+      receiverProtocol: "crsf",
+      receiverUart: "UART1",
+      receiverBaud: 420000,
+    }),
+    [`${base}:radio`]: JSON.stringify({
+      planVersion: 3,
+      selectedReceiverId: pwmReceiver.id,
+      channelMap: {
+        arm: 5,
+        flightMode: 6,
+      },
+    }),
+  });
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-pwm",
+    flightController: fc,
+    receiver: pwmReceiver,
+    storage,
+  });
+
+  expect(readiness).toMatchObject({
+    status: "review",
+    wiringStatus: "pwm-only",
+    receiverWiringWarnings: [
+      expect.stringMatching(/direct PWM topology.*documented CRSF\/SBUS output/i),
+    ],
+  });
+  expect(readiness.issueCount).toBeGreaterThan(0);
+});
+
 test("Aerial Kit battery telemetry remains available outside Setup", () => {
   const base = "rotorbench:hardware-plan:build-battery";
   const storage = memoryStorage({
