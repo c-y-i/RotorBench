@@ -98,6 +98,12 @@
   margin: 20px;
 }
 
+.route-stage > .app-container.analysis-page > .page-header.analysis-empty-header {
+  padding: 0 0 18px;
+  background: transparent;
+  border-bottom: 0;
+}
+
 .analysis-empty-main,
 .analysis-empty-guide {
   min-width: 0;

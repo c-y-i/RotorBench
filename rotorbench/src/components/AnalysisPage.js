@@ -351,7 +351,7 @@ export default function AnalysisPage() {
   if (!build) {
     return (
       <div className="app-container analysis-page">
-        <div className="page-header">
+        <div className="page-header analysis-empty-header">
           <h1 className="page-title">Analysis</h1>
         </div>
         <section
