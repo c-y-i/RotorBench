@@ -454,6 +454,10 @@ test("adopts reviewed values into local plans and preserves a safe draft", async
   expect(screen.getByText(/arm 5/)).toBeInTheDocument();
   expect(screen.getByText(/Adopted 2 observed flight-controller values/i))
     .toBeInTheDocument();
+  expect(screen.getByRole("tab", { name: "Flight controller" }))
+    .toHaveClass("has-unsaved");
+  expect(screen.getByRole("tab", { name: "Radio link" }))
+    .not.toHaveClass("has-unsaved");
 
   fireEvent.click(screen.getByRole("tab", { name: "Radio link" }));
   expect(screen.getByText(/packet 250/)).toBeInTheDocument();
@@ -461,6 +465,9 @@ test("adopts reviewed values into local plans and preserves a safe draft", async
   expect(screen.getByText(/packet 100-full/)).toBeInTheDocument();
   expect(screen.getByText(/Adopted 2 observed radio values/i))
     .toBeInTheDocument();
+  expect(screen.getByRole("tab", { name: "Radio link" }))
+    .toHaveClass("has-unsaved");
+  expect(screen.getByText("Unsaved local changes")).toBeInTheDocument();
   expect(localStorage.getItem("rotorbench:hardware-plan:standalone:fc")).toBeNull();
   expect(localStorage.getItem("rotorbench:hardware-plan:standalone:radio")).toBeNull();
   await waitFor(() => {
@@ -498,6 +505,8 @@ test("restores an unsaved local setup draft after remounting", async () => {
     .toBeInTheDocument();
   expect(screen.getByText(/Binding phrase and direct UID are not retained/i))
     .toBeInTheDocument();
+  expect(screen.getByRole("tab", { name: "Flight controller" }))
+    .toHaveClass("has-unsaved");
 });
 
 test("uses the selected build controller and receiver", () => {

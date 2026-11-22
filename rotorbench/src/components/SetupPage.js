@@ -275,6 +275,24 @@ export default function SetupPage() {
     channelLimit: radioChannelLimit,
     controlRoles: radioControlRoles,
   }), [radioChannelLimit, radioControlRoles]);
+  const fcHasUnsavedChanges = Boolean(
+    plansLoaded
+    && fcBaselineRef.current != null
+    && JSON.stringify(fcPlan) !== fcBaselineRef.current,
+  );
+  const radioHasUnsavedChanges = Boolean(
+    plansLoaded
+    && radioBaselineRef.current != null
+    && JSON.stringify(createRadioDraft(
+      radioPlan,
+      radioChannelLimit,
+      radioControlRoles,
+    )) !== radioBaselineRef.current,
+  );
+  const unsavedPlanLabels = [
+    fcHasUnsavedChanges ? "flight-controller plan" : null,
+    radioHasUnsavedChanges ? "radio plan" : null,
+  ].filter(Boolean);
   const radioRoleKeys = new Set(
     getRadioChannelRoles(radioChannelLimit, radioControlRoles)
       .map((role) => role.key),
@@ -715,7 +733,11 @@ export default function SetupPage() {
             id="setup-tab-flight-controller"
             aria-selected={activeTab === "flight-controller"}
             aria-controls="setup-panel-flight-controller"
-            className={activeTab === "flight-controller" ? "is-active" : ""}
+            aria-describedby={fcHasUnsavedChanges ? "setup-unsaved-status" : undefined}
+            className={[
+              activeTab === "flight-controller" ? "is-active" : "",
+              fcHasUnsavedChanges ? "has-unsaved" : "",
+            ].filter(Boolean).join(" ")}
             tabIndex={activeTab === "flight-controller" ? 0 : -1}
             onClick={() => switchTab("flight-controller")}
           >
@@ -728,7 +750,11 @@ export default function SetupPage() {
             id="setup-tab-radio"
             aria-selected={activeTab === "radio"}
             aria-controls="setup-panel-radio"
-            className={activeTab === "radio" ? "is-active" : ""}
+            aria-describedby={radioHasUnsavedChanges ? "setup-unsaved-status" : undefined}
+            className={[
+              activeTab === "radio" ? "is-active" : "",
+              radioHasUnsavedChanges ? "has-unsaved" : "",
+            ].filter(Boolean).join(" ")}
             tabIndex={activeTab === "radio" ? 0 : -1}
             onClick={() => switchTab("radio")}
           >
@@ -820,9 +846,29 @@ export default function SetupPage() {
 
       {message && <div className="setup-message" role="status">{message}</div>}
       {(recoveredDraft.fc || recoveredDraft.radio) && !message && (
-        <div className="setup-message" role="status">
+        <div
+          id="setup-unsaved-status"
+          className="setup-message"
+          role="status"
+        >
           Recovered an unsaved local setup draft. Binding phrase and direct UID
           are not retained in drafts.
+        </div>
+      )}
+      {unsavedPlanLabels.length > 0
+        && (message || (!recoveredDraft.fc && !recoveredDraft.radio)) && (
+        <div
+          id="setup-unsaved-status"
+          className="setup-message setup-unsaved-message"
+          role="status"
+        >
+          <strong>Unsaved local changes</strong>
+          <span>
+            {unsavedPlanLabels.join(" and ")} differ
+            {unsavedPlanLabels.length === 1 ? "s" : ""} from the saved plan.
+            The working values stay in this browser as a draft; use each
+            section's save action to confirm them.
+          </span>
         </div>
       )}
       {mappingWarnings.length > 0 && (

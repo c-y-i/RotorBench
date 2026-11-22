@@ -157,6 +157,26 @@
   border-color: var(--signal);
 }
 
+.setup-tabs button.has-unsaved {
+  position: relative;
+  padding-inline-end: 27px;
+}
+
+.setup-tabs button.has-unsaved::after {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 6px;
+  height: 6px;
+  background: var(--warn);
+  border-radius: 50%;
+  content: "";
+}
+
+.setup-tabs button[aria-selected="true"].has-unsaved::after {
+  background: var(--signal-ink);
+}
+
 .setup-tabs .setup-export {
   margin-inline-start: auto;
   color: var(--ink);
@@ -338,6 +358,23 @@
   border: 1px solid #a9d8ca;
   border-radius: 5px;
   font-size: 12px;
+}
+
+.setup-unsaved-message {
+  display: grid;
+  gap: 3px;
+  color: #5b3607;
+  background: #fff5d9;
+  border-color: #e6ca89;
+}
+
+.setup-unsaved-message strong {
+  font-size: 12px;
+}
+
+.setup-unsaved-message span {
+  color: #6a4a20;
+  line-height: 1.45;
 }
 
 .setup-mapping-warning {
