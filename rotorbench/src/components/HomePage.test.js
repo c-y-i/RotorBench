@@ -102,7 +102,7 @@ test("starter platforms filter by frame size while preserving direct launch acti
     name: "Filter starter platforms by frame size",
   });
   expect(within(filters).getAllByRole("button")).toHaveLength(7);
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(17);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(18);
 
   const fiveInch = within(filters).getByRole("button", {
     name: /^5-inch builds\s*8$/,
@@ -132,20 +132,20 @@ test("starter platforms filter by frame size while preserving direct launch acti
   })).toBeInTheDocument();
 
   fireEvent.click(within(filters).getByRole("button", {
-    name: /^All builds\s*17$/,
+    name: /^All builds\s*18$/,
   }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(17);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(18);
 
   fireEvent.click(within(filters).getByRole("button", {
-    name: /^730 mm wing\s*1$/,
+    name: /^730 mm wing\s*2$/,
   }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(1);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(2);
   expect(screen.getByRole("button", {
     name: "Open 730mm HeeWing T1 Ranger wing",
   })).toBeInTheDocument();
 
   fireEvent.click(within(filters).getByRole("button", {
-    name: /^All builds\s*17$/,
+    name: /^All builds\s*18$/,
   }));
 
   const evidenceFilters = screen.getByRole("group", {
@@ -184,10 +184,10 @@ test("starter platform search matches components and resets cleanly", async () =
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS F722 900MHz build",
   })).toBeInTheDocument();
-  expect(screen.getByText("1 of 17 source builds")).toBeInTheDocument();
+  expect(screen.getByText("1 of 18 source builds")).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: "Clear starter search" }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(17);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(18);
 
   fireEvent.change(search, { target: { value: "F722 900" } });
   expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(1);
@@ -198,7 +198,7 @@ test("starter platform search matches components and resets cleanly", async () =
   fireEvent.change(search, { target: { value: "not-a-real-platform" } });
   expect(screen.getByText("No starter builds match")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Reset starter filters" }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(17);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(18);
   expect(await getA11yViolations(container)).toEqual([]);
 });
 

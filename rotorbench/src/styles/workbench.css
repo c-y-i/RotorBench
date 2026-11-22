@@ -3273,6 +3273,18 @@
     flex: 0 0 auto;
   }
 
+  .build-preview-panel .camera-preset-row,
+  .build-preview-panel .visibility-chip-row {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .build-preview-panel .camera-preset-button,
+  .build-preview-panel .visibility-chip {
+    flex: 0 1 auto;
+  }
+
   .components-section,
   .metrics-section {
     grid-template-columns: 1fr;

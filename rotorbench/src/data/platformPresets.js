@@ -240,6 +240,21 @@ export const PLATFORM_PRESETS = [
       receiverId: "rx-radiomaster-rp4td-m",
     },
   },
+  {
+    id: "source-t1-ranger-h743",
+    name: "730mm HeeWing T1 Ranger H743 wing",
+    description: "T1 Ranger EPP airframe, twin FX1406 motors, FX-3830 props, FX-20A twin ESC set, Matek H743-WING V3, CNHL 4S, RP4TD-M",
+    airframeShape: "wing",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-h743-wing-v3",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  },
 ];
 
 const idCategory = {

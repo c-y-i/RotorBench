@@ -851,13 +851,11 @@ const BabylonViewer = ({
     // Safety check for "ghost" meshes or empty scenes
     if (desiredRadius < 0.01) desiredRadius = 5;
 
-    camera.radius = desiredRadius;
-
-    // 4. adjust limit dynamically
-    // Allow zooming much closer than the object size
+    // 4. adjust limit dynamically before assigning the fitted radius so the
+    // previous scene's limit cannot clamp a tighter fit.
     camera.lowerRadiusLimit = desiredRadius * 0.1;
-    // Don't allow zooming out to infinity
     camera.upperRadiusLimit = desiredRadius * 10;
+    camera.radius = desiredRadius;
 
     // 5. Fix clipping so it doesn't disappear
     camera.minZ = desiredRadius * 0.01;

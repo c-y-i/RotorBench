@@ -430,6 +430,25 @@ test("the T1 Ranger starter loads a two-motor wing assembly", async () => {
     .toHaveTextContent("Servo map not saved");
 });
 
+test("the T1 H743 starter loads the documented ArduPilot wing controller", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=source-t1-ranger-h743"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-frame", "frame-heewing-t1-ranger");
+  expect(viewer).toHaveAttribute("data-flight-controller", "fc-matek-h743-wing-v3");
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+  expect(screen.getAllByText(/Matek H743-WING V3/).length).toBeGreaterThan(0);
+});
+
 test("a PWM-only receiver does not claim a serial receiver route", async () => {
   render(
     <MemoryRouter initialEntries={[{
