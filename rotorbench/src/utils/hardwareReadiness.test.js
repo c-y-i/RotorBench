@@ -462,6 +462,17 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
     fcPidResponseStatus: "off",
     fcStaticFeedForwardEnabled: false,
     fcItermRelaxEnabled: false,
+    fcRateKdRoll: 0.0025,
+    fcRateKdPitch: 0.0025,
+    fcRateKdYaw: 0,
+    fcRateKdMaxRoll: 0,
+    fcRateKdMaxPitch: 0,
+    fcRateKdMaxYaw: 0,
+    fcDMaxGain: 0,
+    fcDMaxAdvance: 35,
+    fcDResponseStatus: "off",
+    fcDResponseEnabled: false,
+    fcDResponseActiveAxes: [],
   });
   expect(describeNavigationSafety(readiness)).toBe(
     "Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",

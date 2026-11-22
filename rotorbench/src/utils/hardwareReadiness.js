@@ -52,6 +52,10 @@ import {
   AERIALKIT_PID_RESPONSE_FIELDS,
   buildAerialKitPidResponsePlan,
 } from "./aerialKitPidResponse";
+import {
+  AERIALKIT_D_RESPONSE_FIELDS,
+  buildAerialKitDResponsePlan,
+} from "./aerialKitDResponse";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -159,6 +163,9 @@ export function summarizeHardwareReadiness({
     : null;
   const fcPidResponsePlan = fcPlan.firmwareFamily === "aerialkit"
     ? buildAerialKitPidResponsePlan(fcPlan)
+    : null;
+  const fcDResponsePlan = fcPlan.firmwareFamily === "aerialkit"
+    ? buildAerialKitDResponsePlan(fcPlan)
     : null;
   const radioWarnings = radioPlanConfigured
     ? buildRadioWarnings(radioPlan, {
@@ -495,6 +502,15 @@ export function summarizeHardwareReadiness({
     fcStaticFeedForwardEnabled:
       fcPidResponsePlan?.staticFeedForwardEnabled ?? null,
     fcItermRelaxEnabled: fcPidResponsePlan?.itermRelaxEnabled ?? null,
+    ...Object.fromEntries(AERIALKIT_D_RESPONSE_FIELDS.map(({ key }) => [
+      `fc${key[0].toUpperCase()}${key.slice(1)}`,
+      fcPlan.firmwareFamily === "aerialkit" ? fcPlan[key] : null,
+    ])),
+    fcDResponseStatus: fcDResponsePlan?.status ?? null,
+    fcDResponseEnabled: fcDResponsePlan?.enabled ?? null,
+    fcDResponseActiveAxes: fcDResponsePlan
+      ? fcDResponsePlan.enabledAxes.map((axis) => axis.id)
+      : null,
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
@@ -698,6 +714,15 @@ export function sanitizeHardwareReadiness(readiness) {
     fcStaticFeedForwardEnabled:
       readiness.fcStaticFeedForwardEnabled ?? null,
     fcItermRelaxEnabled: readiness.fcItermRelaxEnabled ?? null,
+    ...Object.fromEntries(AERIALKIT_D_RESPONSE_FIELDS.map(({ key }) => {
+      const readinessKey = `fc${key[0].toUpperCase()}${key.slice(1)}`;
+      return [readinessKey, readiness[readinessKey] ?? null];
+    })),
+    fcDResponseStatus: readiness.fcDResponseStatus || null,
+    fcDResponseEnabled: readiness.fcDResponseEnabled ?? null,
+    fcDResponseActiveAxes: Array.isArray(readiness.fcDResponseActiveAxes)
+      ? readiness.fcDResponseActiveAxes
+      : [],
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
     fcRateCenterDps: readiness.fcRateCenterDps ?? null,
     fcRateExpo: readiness.fcRateExpo ?? null,

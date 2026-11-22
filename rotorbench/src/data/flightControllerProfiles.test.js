@@ -264,6 +264,14 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     rateFfPitch: 0,
     rateFfYaw: 0,
     itermRelaxHz: 0,
+    rateKdRoll: 0.0025,
+    rateKdPitch: 0.0025,
+    rateKdYaw: 0,
+    rateKdMaxRoll: 0,
+    rateKdMaxPitch: 0,
+    rateKdMaxYaw: 0,
+    dMaxGain: 0,
+    dMaxAdvance: 35,
   });
   const issues = validateFlightControllerConfig({
     ...config,
@@ -346,6 +354,29 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
       code: "iterm-relax-range",
     }),
   ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    rateKdMaxRoll: 0.06,
+    dMaxGain: 101,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "rateKdMaxRoll-range",
+    }),
+    expect.objectContaining({
+      severity: "error",
+      code: "d-max-gain-range",
+    }),
+  ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    rateKdMaxRoll: 0.002,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "warning",
+      code: "rateKdMaxRoll-no-headroom",
+    }),
+  ]));
   expect(buildFlightControllerSummary(
     {
       ...config,
@@ -376,6 +407,16 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     getBoardProfile(config.profileId),
   ).join("\n")).toContain(
     "PID response: static feed-forward Roll 0.125, Pitch 0.125; I-term relax setpoint low-pass 15 Hz",
+  );
+  expect(buildFlightControllerSummary(
+    {
+      ...config,
+      rateKdMaxRoll: 0.005,
+      dMaxGain: 35,
+    },
+    getBoardProfile(config.profileId),
+  ).join("\n")).toContain(
+    "D response: D_MAX active Roll 0.0025->0.005; gyro boost 35, stick advance 35",
   );
 });
 

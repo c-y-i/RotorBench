@@ -1045,6 +1045,14 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     "rate_ff_pitch=0 status=0",
     "rate_ff_yaw=0 status=0",
     "iterm_relax_hz=15 status=0",
+    "rate_kd_roll=0.003 status=0",
+    "rate_kd_pitch=0.0025 status=0",
+    "rate_kd_yaw=0 status=0",
+    "rate_kd_max_roll=0.005 status=0",
+    "rate_kd_max_pitch=0 status=0",
+    "rate_kd_max_yaw=0 status=0",
+    "d_max_gain=35 status=0",
+    "d_max_advance=40 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
     gyroLpf1StaticHz: 250,
@@ -1070,6 +1078,14 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     rateFfPitch: 0,
     rateFfYaw: 0,
     itermRelaxHz: 0,
+    rateKdRoll: 0.0025,
+    rateKdPitch: 0.0025,
+    rateKdYaw: 0,
+    rateKdMaxRoll: 0,
+    rateKdMaxPitch: 0,
+    rateKdMaxYaw: 0,
+    dMaxGain: 0,
+    dMaxAdvance: 35,
   });
 
   expect(checks.find((check) => check.id === "fc-param-gyro-lpf1-static-hz").status)
@@ -1117,6 +1133,21 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
       detail: expect.stringMatching(/plan expects 0/i),
     });
   expect(checks.find((check) => check.id === "fc-param-iterm-relax-hz"))
+    .toMatchObject({
+      status: "fail",
+      detail: expect.stringMatching(/plan expects 0/i),
+    });
+  expect(checks.find((check) => check.id === "fc-param-rate-kd-roll"))
+    .toMatchObject({
+      status: "fail",
+      detail: expect.stringMatching(/plan expects 0.0025/i),
+    });
+  expect(checks.find((check) => check.id === "fc-param-rate-kd-max-roll"))
+    .toMatchObject({
+      status: "fail",
+      detail: expect.stringMatching(/plan expects 0/i),
+    });
+  expect(checks.find((check) => check.id === "fc-param-d-max-gain"))
     .toMatchObject({
       status: "fail",
       detail: expect.stringMatching(/plan expects 0/i),

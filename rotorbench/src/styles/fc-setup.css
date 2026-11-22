@@ -1104,13 +1104,20 @@
 .fc-feed-forward.is-planned > summary em,
 .fc-feed-forward.is-feed-forward > summary em,
 .fc-feed-forward.is-relax > summary em,
-.fc-feed-forward.is-combined > summary em {
+.fc-feed-forward.is-combined > summary em,
+.fc-feed-forward.is-configured > summary em {
   color: var(--brand-strong);
   background: var(--brand-soft);
   border-color: transparent;
 }
 
 .fc-feed-forward.is-unverified > summary em {
+  color: var(--warn);
+  background: var(--accent-soft);
+  border-color: #e2bd9e;
+}
+
+.fc-feed-forward.is-no-headroom > summary em {
   color: var(--warn);
   background: var(--accent-soft);
   border-color: #e2bd9e;
@@ -1157,11 +1164,16 @@
 .fc-feed-forward.is-planned .fc-feed-forward-status strong,
 .fc-feed-forward.is-feed-forward .fc-feed-forward-status strong,
 .fc-feed-forward.is-relax .fc-feed-forward-status strong,
-.fc-feed-forward.is-combined .fc-feed-forward-status strong {
+.fc-feed-forward.is-combined .fc-feed-forward-status strong,
+.fc-feed-forward.is-configured .fc-feed-forward-status strong {
   color: var(--brand-strong);
 }
 
 .fc-feed-forward.is-unverified .fc-feed-forward-status strong {
+  color: var(--warn);
+}
+
+.fc-feed-forward.is-no-headroom .fc-feed-forward-status strong {
   color: var(--warn);
 }
 
@@ -1238,6 +1250,33 @@
   margin: 0;
   color: var(--ink-soft);
   font-size: 10px;
+  line-height: 1.45;
+}
+
+.fc-d-response-warning {
+  display: grid;
+  gap: 3px;
+  padding: 10px 11px;
+  color: var(--warn);
+  background: var(--accent-soft);
+  border: 1px solid #e2bd9e;
+  border-radius: 5px;
+}
+
+.fc-d-response-warning strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.fc-d-response-warning span {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.fc-d-response-warning small {
+  color: var(--ink-soft);
+  font-size: 9px;
   line-height: 1.45;
 }
 

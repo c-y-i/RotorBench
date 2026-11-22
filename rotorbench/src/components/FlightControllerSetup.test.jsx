@@ -71,6 +71,14 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Pitch static FF")).toHaveValue(0);
   expect(screen.getByLabelText("Yaw static FF")).toHaveValue(0);
   expect(screen.getByLabelText("I-term relax cutoff")).toHaveValue(0);
+  expect(screen.getByLabelText("Roll D")).toHaveValue(0.0025);
+  expect(screen.getByLabelText("Pitch D")).toHaveValue(0.0025);
+  expect(screen.getByLabelText("Yaw D")).toHaveValue(0);
+  expect(screen.getByLabelText("Roll D_MAX")).toHaveValue(0);
+  expect(screen.getByLabelText("Pitch D_MAX")).toHaveValue(0);
+  expect(screen.getByLabelText("Yaw D_MAX")).toHaveValue(0);
+  expect(screen.getByLabelText("Gyro boost")).toHaveValue(0);
+  expect(screen.getByLabelText("Stick advance")).toHaveValue(35);
   expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
   expect(screen.getByLabelText("Centre slope")).toHaveValue(0);
   expect(screen.getByLabelText("Rate expo")).toHaveValue(0);
@@ -296,6 +304,36 @@ test("plans Aerial Kit static feed-forward and I-term relax independently", asyn
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
     rateFfRoll: 0.125,
     itermRelaxHz: 15,
+  }));
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("plans Aerial Kit D_MAX only above the axis D at rest", async () => {
+  const onChange = jest.fn();
+  const { container } = render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.getByText("D response")).toBeInTheDocument();
+  expect(screen.getAllByText("D_MAX off").length).toBeGreaterThan(0);
+
+  fireEvent.change(screen.getByLabelText("Roll D_MAX"), {
+    target: { value: "0.005" },
+  });
+  expect(screen.getAllByText("1 D_MAX axis").length).toBeGreaterThan(0);
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    rateKdRoll: 0.0025,
+    rateKdMaxRoll: 0.005,
+    dMaxAdvance: 35,
+  }));
+
+  fireEvent.change(screen.getByLabelText("Roll D"), {
+    target: { value: "0.006" },
+  });
+  expect(screen.getAllByText("No D headroom").length).toBeGreaterThan(0);
+  expect(screen.getByText(/Roll: D_MAX 0.005 ≤ D 0.006/i))
+    .toBeInTheDocument();
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+    rateKdRoll: 0.006,
+    rateKdMaxRoll: 0.005,
   }));
   expect(await getA11yViolations(container)).toEqual([]);
 });

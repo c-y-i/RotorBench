@@ -60,6 +60,7 @@ import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
 import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
 import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
 import { buildAerialKitPidResponsePlan } from "../utils/aerialKitPidResponse";
+import { buildAerialKitDResponsePlan } from "../utils/aerialKitDResponse";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -148,6 +149,17 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "rateFfPitch-range": { id: "fc-rate-ff-pitch", label: "pitch static feed-forward" },
   "rateFfYaw-range": { id: "fc-rate-ff-yaw", label: "yaw static feed-forward" },
   "iterm-relax-range": { id: "fc-iterm-relax", label: "I-term relax cutoff" },
+  "rateKdRoll-range": { id: "fc-rate-kd-roll", label: "roll D at rest" },
+  "rateKdPitch-range": { id: "fc-rate-kd-pitch", label: "pitch D at rest" },
+  "rateKdYaw-range": { id: "fc-rate-kd-yaw", label: "yaw D at rest" },
+  "rateKdMaxRoll-range": { id: "fc-rate-kd-max-roll", label: "roll D_MAX" },
+  "rateKdMaxPitch-range": { id: "fc-rate-kd-max-pitch", label: "pitch D_MAX" },
+  "rateKdMaxYaw-range": { id: "fc-rate-kd-max-yaw", label: "yaw D_MAX" },
+  "d-max-gain-range": { id: "fc-d-max-gain", label: "D_MAX gyro boost" },
+  "d-max-advance-range": { id: "fc-d-max-advance", label: "D_MAX stick advance" },
+  "rateKdMaxRoll-no-headroom": { id: "fc-rate-kd-max-roll", label: "roll D_MAX headroom" },
+  "rateKdMaxPitch-no-headroom": { id: "fc-rate-kd-max-pitch", label: "pitch D_MAX headroom" },
+  "rateKdMaxYaw-no-headroom": { id: "fc-rate-kd-max-yaw", label: "yaw D_MAX headroom" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -1020,6 +1032,192 @@ function PidResponsePanel({
   );
 }
 
+function DResponsePanel({
+  config,
+  plan,
+  onUpdate,
+}) {
+  const statusLabel = {
+    off: "D_MAX off",
+    "no-headroom": "No D headroom",
+    configured: `${plan.enabledAxes.length} D_MAX axis${plan.enabledAxes.length === 1 ? "" : "es"}`,
+  }[plan.status];
+  const axisByLabel = (label) => plan.axes.find((axis) => axis.label === label);
+
+  return (
+    <details className={`fc-feed-forward fc-d-response is-${plan.status}`}>
+      <summary>
+        <span>
+          <strong>D response</strong>
+          <small>
+            D at rest and D_MAX · high D activates only above the baseline
+          </small>
+        </span>
+        <em>{statusLabel}</em>
+      </summary>
+      <div className="fc-feed-forward-body">
+        <div className="fc-feed-forward-status" role="note">
+          <span>
+            <small>Burst D plan</small>
+            <strong>{statusLabel}</strong>
+          </span>
+          <dl>
+            {["Roll", "Pitch", "Yaw"].map((label) => {
+              const axis = axisByLabel(label);
+              return (
+                <div key={label}>
+                  <dt>{label} D</dt>
+                  <dd>{axis.base}</dd>
+                </div>
+              );
+            })}
+            <div>
+              <dt>D_MAX active</dt>
+              <dd>
+                {plan.enabledAxes.length
+                  ? plan.enabledAxes.map((axis) => axis.label).join(", ")
+                  : "None"}
+              </dd>
+            </div>
+          </dl>
+        </div>
+        {plan.noHeadroomAxes.length > 0 && (
+          <div className="fc-d-response-warning" role="note">
+            <strong>D_MAX has no headroom</strong>
+            <span>
+              {plan.noHeadroomAxes.map((axis) => (
+                `${axis.label}: D_MAX ${axis.maximum} ≤ D ${axis.base}`
+              )).join(" · ")}
+            </span>
+            <small>
+              Raise D_MAX above D-at-rest or leave it off. The firmware keeps
+              these axes at the baseline D.
+            </small>
+          </div>
+        )}
+        <fieldset className="fc-feed-forward-gains">
+          <legend>D at rest</legend>
+          <div className="fc-field-grid fc-field-grid-three">
+            {[
+              ["rateKdRoll", "Roll D", "fc-rate-kd-roll"],
+              ["rateKdPitch", "Pitch D", "fc-rate-kd-pitch"],
+              ["rateKdYaw", "Yaw D", "fc-rate-kd-yaw"],
+            ].map(([key, label, id]) => (
+              <Field
+                key={key}
+                label={label}
+                htmlFor={id}
+                hint="0 to 0.05"
+                hintId={`${id}-hint`}
+              >
+                <input
+                  id={id}
+                  type="number"
+                  min="0"
+                  max="0.05"
+                  step="0.0001"
+                  aria-invalid={filterInputInvalid(config[key])}
+                  aria-describedby={`${id}-hint`}
+                  value={filterInputValue(config[key])}
+                  onChange={(event) => onUpdate(
+                    key,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="fc-feed-forward-gains">
+          <legend>D_MAX</legend>
+          <div className="fc-field-grid fc-field-grid-three">
+            {[
+              ["rateKdMaxRoll", "Roll D_MAX", "fc-rate-kd-max-roll"],
+              ["rateKdMaxPitch", "Pitch D_MAX", "fc-rate-kd-max-pitch"],
+              ["rateKdMaxYaw", "Yaw D_MAX", "fc-rate-kd-max-yaw"],
+            ].map(([key, label, id]) => (
+              <Field
+                key={key}
+                label={label}
+                htmlFor={id}
+                hint="0 disables; must exceed D at rest"
+                hintId={`${id}-hint`}
+              >
+                <input
+                  id={id}
+                  type="number"
+                  min="0"
+                  max="0.05"
+                  step="0.0001"
+                  aria-invalid={filterInputInvalid(config[key])}
+                  aria-describedby={`${id}-hint`}
+                  value={filterInputValue(config[key])}
+                  onChange={(event) => onUpdate(
+                    key,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="fc-feed-forward-shaping">
+          <legend>Boost sources</legend>
+          <div className="fc-field-grid">
+            <Field
+              label="Gyro boost"
+              htmlFor="fc-d-max-gain"
+              hint="0 to 100; firmware default 0"
+              hintId="fc-d-max-gain-hint"
+            >
+              <input
+                id="fc-d-max-gain"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                aria-invalid={filterInputInvalid(config.dMaxGain)}
+                aria-describedby="fc-d-max-gain-hint"
+                value={filterInputValue(config.dMaxGain)}
+                onChange={(event) => onUpdate(
+                  "dMaxGain",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Stick advance"
+              htmlFor="fc-d-max-advance"
+              hint="0 to 200; firmware default 35"
+              hintId="fc-d-max-advance-hint"
+            >
+              <input
+                id="fc-d-max-advance"
+                type="number"
+                min="0"
+                max="200"
+                step="1"
+                aria-invalid={filterInputInvalid(config.dMaxAdvance)}
+                aria-describedby="fc-d-max-advance-hint"
+                value={filterInputValue(config.dMaxAdvance)}
+                onChange={(event) => onUpdate(
+                  "dMaxAdvance",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+          </div>
+        </fieldset>
+        <p className="fc-feed-forward-note">
+          D_MAX only raises D during fast gyro or stick motion. These values do
+          not prove propwash rejection or tune an airframe; verify them with
+          controlled, disarmed-first bench evidence and qualified flight logs.
+        </p>
+      </div>
+    </details>
+  );
+}
+
 function FeedForwardPanel({
   config,
   plan,
@@ -1340,6 +1538,10 @@ export default function FlightControllerSetup({
   );
   const pidResponsePlan = useMemo(
     () => buildAerialKitPidResponsePlan(config),
+    [config],
+  );
+  const dResponsePlan = useMemo(
+    () => buildAerialKitDResponsePlan(config),
     [config],
   );
   const aerialKitRoleKeys = new Set(
@@ -2319,6 +2521,11 @@ export default function FlightControllerSetup({
               <PidResponsePanel
                 config={config}
                 plan={pidResponsePlan}
+                onUpdate={(key, nextValue) => update(key, nextValue)}
+              />
+              <DResponsePanel
+                config={config}
+                plan={dResponsePlan}
                 onUpdate={(key, nextValue) => update(key, nextValue)}
               />
               <FeedForwardPanel

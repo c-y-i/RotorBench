@@ -12,6 +12,8 @@ test("creates a concise hardware briefing without binding material", () => {
     rateFfdRoll: 0.012,
     rateFfRoll: 0.125,
     itermRelaxHz: 15,
+    rateKdMaxRoll: 0.005,
+    dMaxGain: 35,
   };
   const fcProfile = getBoardProfile(fcPlan.profileId);
   const briefing = createHardwarePlanBriefing({
@@ -59,6 +61,9 @@ test("creates a concise hardware briefing without binding material", () => {
   );
   expect(briefing.text).toContain(
     "- PID response: static feed-forward Roll 0.125; I-term relax setpoint low-pass 15 Hz",
+  );
+  expect(briefing.text).toContain(
+    "- D response: D_MAX active Roll 0.0025->0.005; gyro boost 35, stick advance 35",
   );
   expect(briefing.text).toContain("Nothing was connected, written, flashed, calibrated, or armed.");
   expect(briefing.text).not.toContain("do-not-export");

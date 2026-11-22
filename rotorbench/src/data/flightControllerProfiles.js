@@ -6,6 +6,7 @@ import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
 import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
 import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
 import { buildAerialKitPidResponsePlan } from "../utils/aerialKitPidResponse";
+import { buildAerialKitDResponsePlan } from "../utils/aerialKitDResponse";
 
 export const FIRMWARE_FAMILIES = [
   {
@@ -1788,6 +1789,14 @@ export function createDefaultFlightControllerConfig(
     rateFfPitch: 0,
     rateFfYaw: 0,
     itermRelaxHz: 0,
+    rateKdRoll: 0.0025,
+    rateKdPitch: 0.0025,
+    rateKdYaw: 0,
+    rateKdMaxRoll: 0,
+    rateKdMaxPitch: 0,
+    rateKdMaxYaw: 0,
+    dMaxGain: 0,
+    dMaxAdvance: 35,
     maxRateDps: 700,
     rateCenterDps: 0,
     rateExpo: 0,
@@ -2320,6 +2329,55 @@ export function validateFlightControllerConfig(
         message: "I-term relax cutoff must be between 0 and 100 Hz; 0 disables relax.",
       });
     }
+    [
+      ["rateKdRoll", "Roll D at rest"],
+      ["rateKdPitch", "Pitch D at rest"],
+      ["rateKdYaw", "Yaw D at rest"],
+      ["rateKdMaxRoll", "Roll D_MAX"],
+      ["rateKdMaxPitch", "Pitch D_MAX"],
+      ["rateKdMaxYaw", "Yaw D_MAX"],
+    ].forEach(([key, label]) => {
+      if (
+        !finite(config[key])
+        || Number(config[key]) < 0
+        || Number(config[key]) > 0.05
+      ) {
+        issues.push({
+          severity: "error",
+          code: `${key}-range`,
+          message: `${label} must be between 0 and 0.05.`,
+        });
+      }
+    });
+    if (
+      !finite(config.dMaxGain)
+      || Number(config.dMaxGain) < 0
+      || Number(config.dMaxGain) > 100
+    ) {
+      issues.push({
+        severity: "error",
+        code: "d-max-gain-range",
+        message: "D_MAX gyro boost must be between 0 and 100.",
+      });
+    }
+    if (
+      !finite(config.dMaxAdvance)
+      || Number(config.dMaxAdvance) < 0
+      || Number(config.dMaxAdvance) > 200
+    ) {
+      issues.push({
+        severity: "error",
+        code: "d-max-advance-range",
+        message: "D_MAX stick advance must be between 0 and 200.",
+      });
+    }
+    buildAerialKitDResponsePlan(config).noHeadroomAxes.forEach((axis) => {
+      issues.push({
+        severity: "warning",
+        code: `${axis.maxKey}-no-headroom`,
+        message: `${axis.label} D_MAX is not above D-at-rest, so the firmware leaves that axis at its low D.`,
+      });
+    });
     if (
       !finite(config.maxRateDps)
       || Number(config.maxRateDps) < 10
@@ -3071,6 +3129,9 @@ export function buildFlightControllerSummary(
   const pidResponsePlan = config.firmwareFamily === "aerialkit"
     ? buildAerialKitPidResponsePlan(config)
     : null;
+  const dResponsePlan = config.firmwareFamily === "aerialkit"
+    ? buildAerialKitDResponsePlan(config)
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -3128,6 +3189,13 @@ export function buildFlightControllerSummary(
                 : "static feed-forward off"}${pidResponsePlan.itermRelaxEnabled
                 ? `; I-term relax setpoint low-pass ${pidResponsePlan.itermRelaxHz} Hz`
                 : "; I-term relax off"}`
+          }`,
+          `D response: ${
+            dResponsePlan.status === "off"
+              ? "D_MAX is off on every axis"
+              : dResponsePlan.status === "no-headroom"
+                ? `D_MAX has no active headroom above D-at-rest${dResponsePlan.noHeadroomAxes.length ? ` (${dResponsePlan.noHeadroomAxes.map((axis) => axis.label).join(", ")})` : ""}`
+                : `D_MAX active ${dResponsePlan.enabledAxes.map((axis) => `${axis.label} ${axis.base}->${axis.maximum}`).join(", ")}; gyro boost ${dResponsePlan.dMaxGain}, stick advance ${dResponsePlan.dMaxAdvance}`
           }`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,

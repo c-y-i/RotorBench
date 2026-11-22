@@ -14,6 +14,7 @@ import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
 import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
 import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
 import { AERIALKIT_PID_RESPONSE_FIELDS } from "./aerialKitPidResponse";
+import { AERIALKIT_D_RESPONSE_FIELDS } from "./aerialKitDResponse";
 
 const INFERRED_AIRFRAMES = Object.fromEntries(
   Object.entries(AERIALKIT_AIRFRAME_IDS).map(([name, id]) => [id, name]),
@@ -637,6 +638,26 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
         }
         return value === 0 ? "Off" : String(value);
       },
+    })),
+    ...AERIALKIT_D_RESPONSE_FIELDS.map(({ key, runtimeName, label }) => ({
+      key,
+      source: runtimeName,
+      snapshotKey: runtimeName,
+      label,
+      parse: (raw) => {
+        const number = finite(raw);
+        const maximum = key === "dMaxGain"
+          ? 100
+          : key === "dMaxAdvance"
+            ? 200
+            : 0.05;
+        return number != null && number >= 0 && number <= maximum
+          ? number
+          : null;
+      },
+      display: (value) => key.includes("KdMax") && value === 0
+        ? "Off"
+        : String(value),
     })),
     {
       key: "maxRateDps",
