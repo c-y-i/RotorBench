@@ -993,6 +993,7 @@ export default function FlightControllerSetup({
                       <li
                         key={port.id}
                         className={port.assignments.length ? "is-planned" : ""}
+                        aria-label={`${port.id}: ${port.role}. ${port.detail}. ${port.assignments.join(" + ") || "Documented"}`}
                       >
                         <strong>{port.id}</strong>
                         <span>

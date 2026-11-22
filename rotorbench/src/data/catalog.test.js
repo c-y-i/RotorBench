@@ -408,12 +408,41 @@ test("Adafruit Feather F405 binds a public product to the Aerial Kit wing profil
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
-  expect(componentsData.receivers).toHaveLength(17);
+  expect(componentsData.receivers).toHaveLength(18);
   for (const receiver of componentsData.receivers) {
     expect(receiver.protocol).toBeTruthy();
     expect(receiver.frequencyBands?.length).toBeGreaterThan(0);
     expect(receiver.sourceUrl).toMatch(/^https:\/\//);
   }
+});
+
+test("ER5A keeps published PWM specs separate from inferred fields", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-radiomaster-er5a-24-pwm",
+  );
+
+  expect(receiver).toMatchObject({
+    name: "RadioMaster ER5A 2.4GHz ELRS PWM Receiver",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz"],
+    pwmOutputs: 5,
+    outputMode: "pwm",
+    weight: 6.6,
+    dimensionsMm: [37, 19, 13],
+    workingVoltage: "4.5-8.4 V",
+    firmwareVersion: "ExpressLRS 2.0 pre-installed; ExpressLRS 3.x supports five proportional channels",
+    antenna: "High-sensitivity T antenna; spare long antenna included",
+    price: 19.99,
+    modelStatus: "not_available",
+    sourceUrl: "https://radiomasterrc.com/products/er5a-elrs-pwm-receiver",
+  });
+  expect(receiver.estimatedFields).toEqual([
+    "currentDraw",
+    "channels",
+    "mounting_point",
+  ]);
+  expect(receiver).not.toHaveProperty("telemetryPowerMw");
+  expect(receiver).not.toHaveProperty("serialProtocols");
 });
 
 test("compact ER PWM receivers preserve published outputs and power", () => {

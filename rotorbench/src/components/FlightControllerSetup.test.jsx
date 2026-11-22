@@ -269,10 +269,12 @@ test("selecting Kakute H7 V2 exposes its documented Betaflight mapping", () => {
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText("ESC telemetry").closest("li"))
-    .toHaveTextContent("R7 only");
-  expect(within(ports).getByText(/R4 \/ T4/).closest("li"))
-    .toHaveTextContent("GPS");
+  expect(within(ports).getByRole("listitem", {
+    name: /ESC telemetry.*R7 only/,
+  })).toBeInTheDocument();
+  expect(within(ports).getByRole("listitem", {
+    name: /GPS.*R4 \/ T4/,
+  })).toBeInTheDocument();
   expect(screen.getByText(/128 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
@@ -300,10 +302,12 @@ test("selecting Kakute F7 AIO exposes its documented mapping", () => {
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText("T3 / R3").closest("li"))
-    .toHaveTextContent("GPS");
-  expect(within(ports).getByText("ESC telemetry").closest("li"))
-    .toHaveTextContent("R7 on each AIO corner");
+  expect(within(ports).getByRole("listitem", {
+    name: /GPS.*T3 \/ R3/,
+  })).toBeInTheDocument();
+  expect(within(ports).getByRole("listitem", {
+    name: /ESC telemetry.*R7 on each AIO corner/,
+  })).toBeInTheDocument();
   expect(screen.getByText(/MicroSD blackbox · card required/i))
     .toBeInTheDocument();
 });
@@ -336,10 +340,12 @@ test("selecting MAMBA F722 MK2 exposes its target map as a planning choice", () 
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText(/PC12 TX \/ PD2 RX/).closest("li"))
-    .toHaveTextContent(/dedicated FPort\/receiver pad/i);
-  expect(within(ports).getByText("GPS-capable user serial").closest("li"))
-    .toHaveTextContent("GPS");
+  expect(within(ports).getByRole("listitem", {
+    name: /Receiver.*PC12 TX \/ PD2 RX.*dedicated FPort\/receiver pad/i,
+  })).toBeInTheDocument();
+  expect(within(ports).getByRole("listitem", {
+    name: /GPS-capable user serial.*GPS/,
+  })).toBeInTheDocument();
   expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
@@ -369,10 +375,12 @@ test("selecting Borg 5S RX exposes its integrated receiver mapping", () => {
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText("ESC telemetry").closest("li"))
-    .toHaveTextContent("Dedicated ESC telemetry route");
-  expect(within(ports).getByText("GPS-capable user serial").closest("li"))
-    .toHaveTextContent("GPS");
+  expect(within(ports).getByRole("listitem", {
+    name: /ESC telemetry.*Dedicated ESC telemetry route/,
+  })).toBeInTheDocument();
+  expect(within(ports).getByRole("listitem", {
+    name: /GPS-capable user serial.*GPS/,
+  })).toBeInTheDocument();
   expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
@@ -401,10 +409,12 @@ test("selecting SpeedyBee F405 Mini exposes its documented BT stack", () => {
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText("ESC telemetry").closest("li"))
-    .toHaveTextContent("PD2 RX / PC12 TX");
-  expect(within(ports).getByText(/PC7 RX \/ PC6 TX/).closest("li"))
-    .toHaveTextContent("GPS");
+  expect(within(ports).getByRole("listitem", {
+    name: /ESC telemetry.*PD2 RX \/ PC12 TX/,
+  })).toBeInTheDocument();
+  expect(within(ports).getByRole("listitem", {
+    name: /GPS.*PC7 RX \/ PC6 TX/,
+  })).toBeInTheDocument();
   expect(screen.getByText(/8 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
@@ -432,10 +442,12 @@ test("selecting SpeedyBee F405 V3 exposes its documented target", () => {
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText("ESC telemetry").closest("li"))
-    .toHaveTextContent("PD2 RX / PC12 TX");
-  expect(within(ports).getByText(/PC7 RX \/ PC6 TX/).closest("li"))
-    .toHaveTextContent("GPS");
+  expect(within(ports).getByRole("listitem", {
+    name: /ESC telemetry.*PD2 RX \/ PC12 TX/,
+  })).toBeInTheDocument();
+  expect(within(ports).getByRole("listitem", {
+    name: /GPS.*PC7 RX \/ PC6 TX/,
+  })).toBeInTheDocument();
   expect(screen.getByText(/MicroSD blackbox · 4 GB recognized/i))
     .toBeInTheDocument();
 });
@@ -464,10 +476,12 @@ test("selecting SpeedyBee F405 V4 exposes its documented 30x30 mapping", () => {
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText("ESC telemetry").closest("li"))
-    .toHaveTextContent("R5 / TEL only");
-  expect(within(ports).getByText(/T6 \/ R6/).closest("li"))
-    .toHaveTextContent("GPS");
+  expect(within(ports).getByRole("listitem", {
+    name: /ESC telemetry.*R5 \/ TEL only/,
+  })).toBeInTheDocument();
+  expect(within(ports).getByRole("listitem", {
+    name: /GPS.*T6 \/ R6/,
+  })).toBeInTheDocument();
   expect(screen.getByText(/MicroSD blackbox · card required/i))
     .toBeInTheDocument();
 });
@@ -544,8 +558,9 @@ test("selecting Matek F405-WMN exposes its documented INAV wing mapping", () => 
     name: "Documented serial port allocation",
   });
   expect(within(ports).getAllByText("GPS-capable user serial")).toHaveLength(2);
-  expect(within(ports).getByText("TX5 / RX5").closest("li"))
-    .toHaveTextContent("Documented");
+  expect(within(ports).getByRole("listitem", {
+    name: /GPS-capable user serial.*TX5 \/ RX5.*Documented/,
+  })).toBeInTheDocument();
 });
 
 test("selecting Matek H743-WING exposes the ArduPilot UART and servo map", () => {
@@ -572,9 +587,9 @@ test("selecting Matek H743-WING exposes the ArduPilot UART and servo map", () =>
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText("UART6").closest("li")).toHaveTextContent(
-    "BRD_ALT_CONFIG=1",
-  );
+  expect(within(ports).getByRole("listitem", {
+    name: /UART6: Receiver.*BRD_ALT_CONFIG=1/,
+  })).toBeInTheDocument();
   const parameterPlan = screen.getByRole("region", {
     name: "ArduPilot parameter plan",
   });
@@ -672,10 +687,12 @@ test("Matek keeps its documented mapping when switching to ArduPilot", () => {
   const ports = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  expect(within(ports).getByText("ArduPilot GPS1").closest("li"))
-    .toHaveTextContent("GPS");
-  expect(within(ports).getByText("ArduPilot GPS2").closest("li"))
-    .toHaveTextContent("Documented");
+  expect(within(ports).getByRole("listitem", {
+    name: /ArduPilot GPS1.*GPS/,
+  })).toBeInTheDocument();
+  expect(within(ports).getByRole("listitem", {
+    name: /ArduPilot GPS2.*Documented/,
+  })).toBeInTheDocument();
   expect(within(screen.getByRole("region", {
     name: "ArduPilot parameter plan",
   })).getByText("SERIAL6_PROTOCOL=23")).toBeInTheDocument();
@@ -699,18 +716,20 @@ test("shows the documented serial map and marks active plan routes", async () =>
   const portList = screen.getByRole("list", {
     name: "Documented serial port allocation",
   });
-  const getPort = (port) => within(portList).getByText(port).closest("li");
+  const getPort = (port) => within(portList).getByRole("listitem", {
+    name: new RegExp(`^${port}:`),
+  });
   expect(getPort("UART3")).toHaveTextContent("DJI VTX");
-  expect(getPort("UART4").querySelector("em")).toHaveTextContent("GPS");
+  expect(getPort("UART4")).toHaveTextContent("GPS");
   expect(getPort("UART5")).toHaveTextContent("ESC telemetry");
-  expect(getPort("UART2").querySelector("em")).toHaveTextContent("Receiver");
+  expect(getPort("UART2")).toHaveTextContent("Receiver");
 
   fireEvent.change(screen.getByLabelText("Receiver UART"), {
     target: { value: "UART6" },
   });
 
-  expect(getPort("UART2").querySelector("em")).toHaveTextContent("Documented");
-  expect(getPort("UART6").querySelector("em")).toHaveTextContent("Receiver");
+  expect(getPort("UART2")).toHaveTextContent("Documented");
+  expect(getPort("UART6")).toHaveTextContent("Receiver");
   expect(screen.getAllByText(/Pins not mapped for UART6/).length)
     .toBeGreaterThan(0);
   expect(screen.getByText("Mapping incomplete")).toBeInTheDocument();

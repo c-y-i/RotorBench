@@ -44,10 +44,10 @@ class CatalogContractTests(unittest.TestCase):
                 "batteries": 11,
                 "escs": 9,
                 "flight_controllers": 12,
-                "receivers": 17,
+                "receivers": 18,
             },
         )
-        self.assertEqual(sum(counts.values()), 90)
+        self.assertEqual(sum(counts.values()), 91)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,8 +68,33 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 90)
+        self.assertEqual(len(records), 91)
         self.assertTrue(all(record.id for record in records))
+
+    def test_er5a_keeps_published_pwm_specs_separate_from_estimates(self):
+        receiver = next(
+            item
+            for item in self.database.receivers
+            if item.id == "rx-radiomaster-er5a-24-pwm"
+        )
+        self.assertEqual(receiver.protocol, "CRSF")
+        self.assertEqual(receiver.frequency_bands, ["2.4 GHz"])
+        self.assertEqual(receiver.pwm_outputs, 5)
+        self.assertEqual(receiver.output_mode, "pwm")
+        self.assertEqual(receiver.weight, 6.6)
+        self.assertEqual(receiver.dimensions_mm, [37, 19, 13])
+        self.assertEqual(receiver.working_voltage, "4.5-8.4 V")
+        self.assertEqual(
+            receiver.firmware_version,
+            "ExpressLRS 2.0 pre-installed; ExpressLRS 3.x supports five proportional channels",
+        )
+        self.assertEqual(receiver.price, 19.99)
+        self.assertIn("currentDraw", receiver.estimated_fields)
+        self.assertIn("channels", receiver.estimated_fields)
+        self.assertIn("mounting_point", receiver.estimated_fields)
+        self.assertNotIn("pwmOutputs", receiver.estimated_fields)
+        self.assertIsNone(receiver.telemetry_power_mw)
+        self.assertIsNone(receiver.serial_protocols)
 
     def test_heewing_t1_ranger_preserves_non_quad_motor_positions(self):
         frame = next(
