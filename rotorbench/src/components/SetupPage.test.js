@@ -485,6 +485,27 @@ test("adopts reviewed values into local plans and preserves a safe draft", async
   expect(radioDraft.packetRateMode).toBe("100-full");
   expect(radioDraft.bindingPhrase).toBe("");
   expect(radioDraft.uid).toBe("");
+
+  fireEvent.click(screen.getByRole("button", { name: "Save changed plans" }));
+  expect(screen.getByRole("tab", { name: "Flight controller" }))
+    .not.toHaveClass("has-unsaved");
+  expect(screen.getByRole("tab", { name: "Radio link" }))
+    .not.toHaveClass("has-unsaved");
+  expect(localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:fc:draft",
+  )).toBeNull();
+  expect(localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:radio:draft",
+  )).toBeNull();
+  expect(JSON.parse(localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:fc",
+  )).armChannel).toBe(5);
+  expect(JSON.parse(localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:radio",
+  )).packetRateMode).toBe("100-full");
+  expect(screen.getByText(
+    /Saved flight-controller plan and radio plan locally/i,
+  )).toBeInTheDocument();
 });
 
 test("restores an unsaved local setup draft after remounting", async () => {

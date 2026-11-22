@@ -196,6 +196,17 @@
   margin-inline-start: 0;
 }
 
+.setup-plan-transfer .setup-save-changed {
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-color: var(--signal-lime-deep);
+}
+
+.setup-plan-transfer .setup-save-changed:hover {
+  background: color-mix(in srgb, var(--signal) 84%, #fff);
+  border-color: var(--signal-ink);
+}
+
 .setup-import-input {
   position: absolute;
   width: 1px;

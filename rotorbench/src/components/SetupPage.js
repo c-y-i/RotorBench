@@ -15,6 +15,7 @@ import {
   Download,
   Play,
   RadioTower,
+  Save,
   ShieldAlert,
   Upload,
   Wrench,
@@ -31,10 +32,12 @@ import {
 import {
   DEFAULT_RADIO_CONFIG,
   applyFlightControllerChannelMap,
+  bindingPhraseByteLength,
   buildChannelMappingWarnings,
   buildRadioWarnings,
   getRadioChannelRoles,
   getRadioTarget,
+  isValidUidFormat,
   normalizeRadioConfig,
   sanitizeRadioChannelMap,
 } from "../data/radioProfiles";
@@ -510,27 +513,94 @@ export default function SetupPage() {
     });
   };
 
-  const saveFcPlan = () => {
+  const radioBindingValidationMessage = () => {
+    const bindingConflict = Boolean(
+      String(radioPlan.bindingPhrase || "").trim() && radioPlan.uid,
+    );
+    const phraseTooLong = bindingPhraseByteLength(radioPlan.bindingPhrase) > 48;
+    const uidInvalid = Boolean(radioPlan.uid) && !isValidUidFormat(radioPlan.uid);
+    if (bindingConflict) {
+      return "Choose either a binding phrase or a direct UID before saving.";
+    }
+    if (phraseTooLong) {
+      return "Shorten the binding phrase to 48 UTF-8 bytes or less before saving.";
+    }
+    if (uidInvalid) {
+      return "Correct the UID format before saving.";
+    }
+    return "";
+  };
+
+  const persistFcPlan = () => {
     try {
       localStorage.setItem(fcStorageKey, JSON.stringify(fcPlan));
       localStorage.removeItem(fcDraftKey);
       fcBaselineRef.current = JSON.stringify(fcPlan);
       setRecoveredDraft((current) => ({ ...current, fc: false }));
-      setMessage("Flight-controller plan saved locally.");
+      return true;
     } catch {
       setMessage("The browser could not save the flight-controller plan.");
+      return false;
+    }
+  };
+
+  const persistRadioPlan = () => {
+    const validationMessage = radioBindingValidationMessage();
+    if (validationMessage) {
+      setMessage(validationMessage);
+      return false;
+    }
+    const safePlan = createRadioDraft(
+      radioPlan,
+      radioChannelLimit,
+      radioControlRoles,
+    );
+    try {
+      localStorage.setItem(radioStorageKey, JSON.stringify(safePlan));
+      localStorage.removeItem(radioDraftKey);
+      radioBaselineRef.current = JSON.stringify(safePlan);
+      setRecoveredDraft((current) => ({ ...current, radio: false }));
+      return true;
+    } catch {
+      setMessage("The browser could not save this radio plan locally.");
+      return false;
+    }
+  };
+
+  const saveFcPlan = () => {
+    if (persistFcPlan()) {
+      setMessage("Flight-controller plan saved locally.");
     }
   };
 
   const saveRadioPlan = () => {
-    localStorage.removeItem(radioDraftKey);
-    radioBaselineRef.current = JSON.stringify(createRadioDraft(
-      radioPlan,
-      radioChannelLimit,
-      radioControlRoles,
-    ));
-    setRecoveredDraft((current) => ({ ...current, radio: false }));
-    setMessage("Radio plan saved locally. Binding material was not persisted.");
+    if (persistRadioPlan()) {
+      setMessage("Radio plan saved locally. Binding material was not persisted.");
+    }
+  };
+
+  const saveChangedPlans = () => {
+    if (!fcHasUnsavedChanges && !radioHasUnsavedChanges) {
+      setMessage("Both local plans already match their saved versions.");
+      return;
+    }
+    const radioValidationMessage = radioBindingValidationMessage();
+    if (radioHasUnsavedChanges && radioValidationMessage) {
+      setMessage(radioValidationMessage);
+      return;
+    }
+    const savedLabels = [];
+    if (fcHasUnsavedChanges && persistFcPlan()) {
+      savedLabels.push("flight-controller plan");
+    }
+    if (radioHasUnsavedChanges && persistRadioPlan()) {
+      savedLabels.push("radio plan");
+    }
+    if (savedLabels.length) {
+      setMessage(
+        `Saved ${savedLabels.join(" and ")} locally. Binding material was not persisted. No hardware settings were changed.`,
+      );
+    }
   };
 
   const copyFcChannelsToRadio = () => {
@@ -763,6 +833,16 @@ export default function SetupPage() {
           </button>
         </div>
         <div className="setup-plan-transfer">
+          {unsavedPlanLabels.length > 0 && (
+            <button
+              type="button"
+              className="setup-export setup-save-changed"
+              onClick={saveChangedPlans}
+            >
+              <Save size={17} aria-hidden="true" />
+              Save changed plans
+            </button>
+          )}
           <button
             type="button"
             className="setup-export"
