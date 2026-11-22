@@ -184,9 +184,33 @@ def get_thrust_rating(ratio: float) -> ThrustRating:
         return ThrustRating.EXCELLENT
 
 
+def is_fixed_wing(build: DroneBuild) -> bool:
+    return (
+        build.components.frame is not None
+        and build.components.frame.airframe_shape == "wing"
+    )
+
+
 def calculate_performance_metrics(build: DroneBuild) -> PerformanceMetrics:
     """Calculate all performance metrics"""
     total_weight = calculate_total_weight(build)
+    if is_fixed_wing(build):
+        return PerformanceMetrics(
+            total_weight=total_weight,
+            max_thrust=0.0,
+            thrust_to_weight_ratio=0.0,
+            power_draw=0.0,
+            rating=PerformanceRating(
+                weight=get_weight_rating(total_weight),
+                thrust_to_weight=ThrustRating.POOR,
+            ),
+            data_available=False,
+            data_note=(
+                "Fixed-wing performance is not implemented in the multirotor "
+                "analysis model. Thrust-to-weight, hover, speed, and endurance "
+                "figures are intentionally unavailable."
+            ),
+        )
     max_thrust = calculate_max_thrust(build)
     performance_available = max_thrust is not None
     effective_thrust = max_thrust or 0.0
@@ -453,6 +477,25 @@ def calculate_flight_simulation(build: DroneBuild) -> FlightSimulation:
             discharge_data=[],
             throttle_profile=[]
         )
+
+    if is_fixed_wing(build):
+        return FlightSimulation(
+            battery_capacity=build.components.battery.capacity,
+            avg_current_draw=0,
+            estimated_flight_time=0,
+            estimated_range=0,
+            avg_speed=0,
+            hover_time=0,
+            max_speed=0,
+            efficiency=0,
+            discharge_data=[],
+            throttle_profile=[],
+            data_available=False,
+            data_note=(
+                "Fixed-wing endurance, range, hover, and speed are not "
+                "implemented in the multirotor flight model."
+            ),
+        )
     
     # Calculate flight metrics
     flight_time, avg_current = calculate_flight_time(build, avg_throttle=0.5)
@@ -526,6 +569,11 @@ def validate_build(build: DroneBuild) -> Tuple[bool, List[str], List[str]]:
         warnings.append("ESC not selected - some calculations may be limited")
     if not build.components.flight_controller:
         warnings.append("Flight controller not selected - weight calculation excludes FC")
+    if is_fixed_wing(build):
+        warnings.append(
+            "Fixed-wing builds are supported for catalog, assembly, and hardware "
+            "planning, but the current performance engine is multirotor-only."
+        )
     
     # Check compatibility
     if build.components.motors and build.components.battery:

@@ -91,6 +91,40 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(frame.servo_hardware.price, 30)
         self.assertEqual(frame.servo_hardware.cable_lengths_mm, [180, 400])
 
+    def test_fixed_wing_analysis_fails_closed_on_multirotor_performance(self):
+        config = DroneBuildConfig(
+            id="t1-analysis",
+            name="T1 analysis",
+            componentIds={
+                "frameId": "frame-heewing-t1-ranger",
+                "motorId": "motor-heewing-fx1406-3150kv",
+                "propellerId": "prop-heewing-fx3830-2",
+                "escId": "esc-heewing-fx20a-bls-twin",
+                "flightControllerId": "fc-matek-f405-wmn",
+                "batteryId": "battery-cnhl-black-4s-1500-100c",
+                "receiverId": "rx-radiomaster-rp4td-m",
+            },
+        )
+        analysis = analyze_build(hydrate_build(config))
+
+        self.assertFalse(analysis.performance.data_available)
+        self.assertFalse(analysis.flight_simulation.data_available)
+        self.assertIn(
+            "Fixed-wing performance is not implemented",
+            analysis.performance.data_note,
+        )
+        self.assertIn(
+            "Fixed-wing endurance",
+            analysis.flight_simulation.data_note,
+        )
+        self.assertIn(
+            "current performance engine is multirotor-only",
+            " ".join(analysis.warnings),
+        )
+        self.assertEqual(analysis.performance.power_draw, 0)
+        self.assertGreater(analysis.performance.total_weight, 0)
+        self.assertGreater(analysis.total_cost, 0)
+
     def test_adafruit_feather_f405_keeps_public_product_provenance(self):
         record = next(
             item

@@ -239,6 +239,74 @@ test("keeps missing thrust and flight data visibly unavailable", async () => {
     .getByText("Unavailable")).toBeInTheDocument();
 });
 
+test("fixed-wing builds do not inherit multirotor performance claims", async () => {
+  const t1Build = {
+    id: "t1-analysis",
+    name: "T1 Ranger analysis",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-f405-wmn",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+    createdAt: "2026-11-21T00:00:00.000Z",
+    updatedAt: "2026-11-21T00:00:00.000Z",
+  };
+  const fixedWingNote =
+    "Fixed-wing performance is not implemented in the multirotor analysis model.";
+  global.fetch.mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      ...analysis,
+      performance: {
+        ...analysis.performance,
+        maxThrust: 0,
+        thrustToWeightRatio: 0,
+        powerDraw: 0,
+        dataAvailable: false,
+        dataNote: fixedWingNote,
+      },
+      flightSimulation: {
+        ...analysis.flightSimulation,
+        estimatedFlightTime: 0,
+        estimatedRange: 0,
+        hoverTime: 0,
+        maxSpeed: 0,
+        efficiency: 0,
+        dischargeData: [],
+        dataAvailable: false,
+        dataNote: fixedWingNote,
+      },
+      warnings: ["Fixed-wing builds use the multirotor-only performance engine."],
+    }),
+  });
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: "/analysis",
+      state: { build: t1Build },
+    }]}>
+      <BuildProvider>
+        <Routes>
+          <Route path="/analysis" element={<AnalysisPage />} />
+        </Routes>
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText("Flight performance unavailable"))
+    .toBeInTheDocument();
+  expect(screen.getAllByText(fixedWingNote).length).toBeGreaterThan(0);
+  expect(screen.queryByText("11.2:1")).not.toBeInTheDocument();
+  const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+  expect(body.components.frame).toMatchObject({
+    id: "frame-heewing-t1-ranger",
+    airframeShape: "wing",
+  });
+});
+
 test("shows saved hardware-plan review state in the analysis report", async () => {
   localStorage.setItem(
     "rotorbench:hardware-plan:analysis-build:fc",
