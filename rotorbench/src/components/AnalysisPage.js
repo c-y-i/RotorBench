@@ -740,7 +740,14 @@ export default function AnalysisPage() {
                       {hardwareReadiness.radioReceiverBands.join(" / ")} ·{" "}
                       {hardwareReadiness.radioReceiverBandStatus === "unconfigured"
                         ? "save a radio plan to compare TX band"
-                        : hardwareReadiness.radioReceiverBandStatus}
+                        : hardwareReadiness.radioReceiverBandStatus === "compatible"
+                          && hardwareReadiness.radioReceiverBands.length > 1
+                          ? hardwareReadiness.radioReceiverBandsSimultaneous
+                            ? `shared simultaneously: ${hardwareReadiness.radioSharedBands.join(" / ")}`
+                            : hardwareReadiness.radioReceiverBandMode === "selectable"
+                              ? `shared, one selected band: ${hardwareReadiness.radioSharedBands.join(" / ")}`
+                              : hardwareReadiness.radioReceiverBandStatus
+                          : hardwareReadiness.radioReceiverBandStatus}
                     </dd>
                   </div>
                 )}

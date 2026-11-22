@@ -116,6 +116,56 @@ test("saved plans report review items and local completion independently", () =>
   expect(readiness.hardwareVerified).toBe(false);
 });
 
+test("saved radio plans retain simultaneous versus selectable band mode", () => {
+  const selectedReceiver = {
+    id: "rx-dual-audit",
+    name: "Dual-band receiver",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+  };
+  const readMode = (targetId) => {
+    const buildId = `build-${targetId}`;
+    const base = `rotorbench:hardware-plan:${buildId}`;
+    return summarizeHardwareReadiness({
+      buildId,
+      flightController: fc,
+      receiver: selectedReceiver,
+      storage: memoryStorage({
+        [`${base}:fc`]: JSON.stringify({
+          planVersion: 3,
+          selectedFlightControllerId: fc.id,
+          selectedReceiverId: selectedReceiver.id,
+          receiverProtocol: "crsf",
+        }),
+        [`${base}:radio`]: JSON.stringify({
+          planVersion: 3,
+          selectedReceiverId: selectedReceiver.id,
+          targetId,
+        }),
+      }),
+    });
+  };
+
+  const simultaneous = readMode("radiomaster-gx12-gemini-xrossband-tx");
+  expect(simultaneous).toMatchObject({
+    radioReceiverBandStatus: "compatible",
+    radioReceiverBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    radioReceiverBandMode: "simultaneous",
+    radioReceiverBandsSimultaneous: true,
+  });
+  expect(sanitizeHardwareReadiness(simultaneous)).toMatchObject({
+    radioReceiverBandMode: "simultaneous",
+    radioReceiverBandsSimultaneous: true,
+  });
+
+  const selectable = readMode("radiomaster-tx15-max-elrs-xrossband-tx");
+  expect(selectable).toMatchObject({
+    radioReceiverBandStatus: "compatible",
+    radioReceiverBandMode: "selectable",
+    radioReceiverBandsSimultaneous: false,
+  });
+});
+
 test("H743 readiness retains source-backed ArduPilot receiver parameters", () => {
   const selectedController = {
     id: "fc-matek-h743-wing-v3",

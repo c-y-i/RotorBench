@@ -277,6 +277,28 @@ test("comparison rows mark only the values that differ", () => {
     .toBe(true);
 });
 
+test("radio band rows distinguish simultaneous from selectable coverage", () => {
+  const rows = comparisonRows({
+    parts: [],
+    radioReceiverBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    radioReceiverBandStatus: "compatible",
+    radioReceiverBandMode: "simultaneous",
+    radioReceiverBandsSimultaneous: true,
+  }, {
+    parts: [],
+    radioReceiverBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    radioReceiverBandStatus: "compatible",
+    radioReceiverBandMode: "selectable",
+    radioReceiverBandsSimultaneous: false,
+  });
+  expect(rows.find((row) => row.id === "radio-receiver-bands"))
+    .toMatchObject({
+      changed: true,
+      left: "2.4 GHz / Sub-G 900 MHz · compatible · simultaneous",
+      right: "2.4 GHz / Sub-G 900 MHz · compatible · selectable",
+    });
+});
+
 test("comparison reports contain portable specimen rows and explicit boundaries", () => {
   const left = summarizeBuild(build);
   const right = summarizeBuild({

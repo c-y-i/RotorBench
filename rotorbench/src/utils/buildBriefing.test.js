@@ -122,7 +122,9 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       radioPowerCapStatus: "over",
       radioReceiverBands: ["2.4 GHz", "Sub-G 900 MHz"],
       radioReceiverBandStatus: "compatible",
-      radioSharedBands: ["2.4 GHz"],
+      radioSharedBands: ["2.4 GHz", "Sub-G 900 MHz"],
+      radioReceiverBandMode: "simultaneous",
+      radioReceiverBandsSimultaneous: true,
     },
   });
 
@@ -145,7 +147,7 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
     "RF limit: CE / 25 planned / 20 dBm max / OVER CAP",
   );
   expect(briefing.text).toContain(
-    "Receiver RF bands: 2.4 GHz / Sub-G 900 MHz / compatible / shared with TX: 2.4 GHz",
+    "Receiver RF bands: 2.4 GHz / Sub-G 900 MHz / compatible / simultaneously shared / shared with TX: 2.4 GHz / Sub-G 900 MHz",
   );
   expect(briefing.text).toContain("readiness are not verified");
 });
@@ -220,5 +222,26 @@ test("briefs planning weight and a published takeoff-envelope fit", () => {
   expect(briefing.text).toContain("Catalog price: $297.89");
   expect(briefing.text).toContain(
     "Published takeoff envelope: 350–500 g / +6 g over 500 g envelope / verify with a scale",
+  );
+});
+
+test("briefs selectable dual-band radio coverage without implying simultaneous RF", () => {
+  const briefing = createBuildBriefing({
+    build: { name: "TX15 radio plan" },
+    assemblySpec: {},
+    hardwareReadiness: {
+      configured: true,
+      label: "Plan checks clear",
+      radioReceiverBands: ["2.4 GHz", "Sub-G 900 MHz"],
+      radioReceiverBandStatus: "compatible",
+      radioSharedBands: ["2.4 GHz", "Sub-G 900 MHz"],
+      radioReceiverBandMode: "selectable",
+      radioReceiverBandsSimultaneous: false,
+    },
+    generatedAt: "2026-11-22T00:00:00.000Z",
+  });
+
+  expect(briefing.text).toContain(
+    "Receiver RF bands: 2.4 GHz / Sub-G 900 MHz / compatible / one selected band / shared with TX: 2.4 GHz / Sub-G 900 MHz",
   );
 });

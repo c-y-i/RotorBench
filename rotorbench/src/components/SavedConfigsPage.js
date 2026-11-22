@@ -795,6 +795,17 @@ export default function SavedConfigsPage() {
                                                     RF band conflict
                                                 </span>
                                             )}
+                                            {buildSummary.hasHardwareParts
+                                                && buildSummary.radioReceiverBandStatus === "compatible"
+                                                && buildSummary.radioReceiverBands?.length > 1
+                                                && buildSummary.radioReceiverBandMode
+                                                && (
+                                                <span className="is-host-documented">
+                                                    {buildSummary.radioReceiverBandMode === "simultaneous"
+                                                        ? "Simultaneous RF"
+                                                        : "Selectable RF"}
+                                                </span>
+                                            )}
                                             {hasPowerPath && (
                                                 <span className={`is-power-${buildSummary.powerPathStatus}`}>
                                                     {buildSummary.powerPathLabel}

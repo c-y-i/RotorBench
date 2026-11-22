@@ -190,6 +190,9 @@ export function summarizeBuild(build) {
     radioReceiverBandStatus: hardwareReadiness.radioReceiverBandStatus,
     radioReceiverBands: hardwareReadiness.radioReceiverBands,
     radioSharedBands: hardwareReadiness.radioSharedBands,
+    radioReceiverBandMode: hardwareReadiness.radioReceiverBandMode,
+    radioReceiverBandsSimultaneous:
+      hardwareReadiness.radioReceiverBandsSimultaneous,
     fcMotorDirection: hardwareReadiness.fcMotorDirection,
     fcMotorDirectionLabel: hardwareReadiness.fcMotorDirectionLabel,
     fcMotorOrder: hardwareReadiness.fcMotorOrder,
@@ -314,6 +317,9 @@ export function createComparisonReport(
       radioReceiverBandStatus: build.radioReceiverBandStatus,
       radioReceiverBands: build.radioReceiverBands,
       radioSharedBands: build.radioSharedBands,
+      radioReceiverBandMode: build.radioReceiverBandMode,
+      radioReceiverBandsSimultaneous:
+        build.radioReceiverBandsSimultaneous,
       fcMotorDirection: build.fcMotorDirection,
       fcMotorDirectionLabel: build.fcMotorDirectionLabel,
       fcMotorOrder: build.fcMotorOrder,
@@ -668,14 +674,34 @@ export function comparisonRows(left, right) {
         ? `${left.radioReceiverBands.join(" / ")} · ${
           left.radioReceiverBandStatus === "unconfigured"
             ? "no radio plan"
-            : left.radioReceiverBandStatus
+            : `${left.radioReceiverBandStatus}${
+              left.radioReceiverBandStatus === "compatible"
+                ? left.radioReceiverBandMode === "simultaneous"
+                  && left.radioReceiverBands.length > 1
+                  ? " · simultaneous"
+                  : left.radioReceiverBandMode === "selectable"
+                    && left.radioReceiverBands.length > 1
+                    ? " · selectable"
+                    : ""
+                : ""
+            }`
         }`
         : "Receiver bands unverified",
       right: right.radioReceiverBands?.length
         ? `${right.radioReceiverBands.join(" / ")} · ${
           right.radioReceiverBandStatus === "unconfigured"
             ? "no radio plan"
-            : right.radioReceiverBandStatus
+            : `${right.radioReceiverBandStatus}${
+              right.radioReceiverBandStatus === "compatible"
+                ? right.radioReceiverBandMode === "simultaneous"
+                  && right.radioReceiverBands.length > 1
+                  ? " · simultaneous"
+                  : right.radioReceiverBandMode === "selectable"
+                    && right.radioReceiverBands.length > 1
+                    ? " · selectable"
+                    : ""
+                : ""
+            }`
         }`
         : "Receiver bands unverified",
       format: (value) => value,

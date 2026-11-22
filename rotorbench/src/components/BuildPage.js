@@ -2396,7 +2396,15 @@ export default function BuildPage() {
                     <small>
                       Receiver RF: {hardwareReadiness.radioReceiverBands.join(" / ")} ·{" "}
                       {hardwareReadiness.radioReceiverBandStatus === "compatible"
-                        ? `shared with TX: ${hardwareReadiness.radioSharedBands.join(" / ")}`
+                        ? `${
+                          hardwareReadiness.radioReceiverBands.length > 1
+                            ? hardwareReadiness.radioReceiverBandsSimultaneous
+                              ? "shared simultaneously:"
+                              : hardwareReadiness.radioReceiverBandMode === "selectable"
+                                ? "shared, one selected band:"
+                                : "shared with TX:"
+                            : "shared with TX:"
+                        } ${hardwareReadiness.radioSharedBands.join(" / ")}`
                         : hardwareReadiness.radioReceiverBandStatus === "conflict"
                           ? "no shared documented band"
                           : hardwareReadiness.radioReceiverBandStatus === "unconfigured"

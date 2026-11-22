@@ -152,7 +152,16 @@ export function createBuildBriefing({
             `- Receiver RF bands: ${hardwareReadiness.radioReceiverBands.join(" / ")} / ${
               hardwareReadiness.radioReceiverBandStatus === "unconfigured"
                 ? "no radio plan"
-                : hardwareReadiness.radioReceiverBandStatus
+                : `${hardwareReadiness.radioReceiverBandStatus}${
+                  hardwareReadiness.radioReceiverBandStatus === "compatible"
+                    && hardwareReadiness.radioReceiverBands.length > 1
+                    ? hardwareReadiness.radioReceiverBandsSimultaneous
+                      ? " / simultaneously shared"
+                      : hardwareReadiness.radioReceiverBandMode === "selectable"
+                        ? " / one selected band"
+                        : ""
+                    : ""
+                }`
             }${
               hardwareReadiness.radioSharedBands?.length
                 ? ` / shared with TX: ${hardwareReadiness.radioSharedBands.join(" / ")}`

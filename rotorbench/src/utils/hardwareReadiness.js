@@ -327,6 +327,9 @@ export function summarizeHardwareReadiness({
     radioReceiverBandStatus: effectiveRadioReceiverBands.status,
     radioReceiverBands: effectiveRadioReceiverBands.receiverBandLabels,
     radioSharedBands: effectiveRadioReceiverBands.sharedBandLabels,
+    radioReceiverBandMode: effectiveRadioReceiverBands.targetBandMode,
+    radioReceiverBandsSimultaneous:
+      effectiveRadioReceiverBands.simultaneousCoverage,
     fcAirframe: fcPlan.airframe,
     fcAirframeLabel: fcAirframeSpec?.label
       || fcPlan.airframe,
@@ -502,6 +505,9 @@ export function sanitizeHardwareReadiness(readiness) {
     radioSharedBands: Array.isArray(readiness.radioSharedBands)
       ? readiness.radioSharedBands
       : [],
+    radioReceiverBandMode: readiness.radioReceiverBandMode || null,
+    radioReceiverBandsSimultaneous:
+      Boolean(readiness.radioReceiverBandsSimultaneous),
     fcAirframe: readiness.fcAirframe || null,
     fcAirframeLabel: readiness.fcAirframeLabel || null,
     fcMotorDirection: readiness.fcMotorDirection || null,

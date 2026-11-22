@@ -218,6 +218,48 @@ test("saved hardware builds expose their documented board target", async () => {
     .toBeInTheDocument();
 });
 
+test("saved radio plans distinguish simultaneous and selectable dual-band RF", async () => {
+  const baseBuild = {
+    ...offlineBuild,
+    componentIds: {
+      ...offlineBuild.componentIds,
+      flightControllerId: "fc-speedybee-f405-v5",
+      receiverId: "rx-radiomaster-er16-dual-band-pwm",
+    },
+  };
+  const builds = [
+    { ...baseBuild, id: "gx12-saved", name: "GX12 saved plan" },
+    { ...baseBuild, id: "tx15-saved", name: "TX15 saved plan" },
+  ];
+  localStorage.setItem("offlineBuilds", JSON.stringify(builds));
+  for (const [id, targetId] of [
+    ["gx12-saved", "radiomaster-gx12-gemini-xrossband-tx"],
+    ["tx15-saved", "radiomaster-tx15-max-elrs-xrossband-tx"],
+  ]) {
+    localStorage.setItem(`rotorbench:hardware-plan:${id}:fc`, JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-speedybee-f405-v5",
+      selectedReceiverId: "rx-radiomaster-er16-dual-band-pwm",
+      receiverProtocol: "crsf",
+    }));
+    localStorage.setItem(`rotorbench:hardware-plan:${id}:radio`, JSON.stringify({
+      planVersion: 3,
+      selectedReceiverId: "rx-radiomaster-er16-dual-band-pwm",
+      targetId,
+    }));
+  }
+
+  const { container } = render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText("Simultaneous RF")).toBeInTheDocument();
+  expect(screen.getByText("Selectable RF")).toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
 test("saved T1 builds expose incomplete servo output coverage", async () => {
   const t1Build = {
     ...offlineBuild,
