@@ -11,9 +11,11 @@ import {
   parseAerialKitHello,
   parseAerialKitParamHelpSlice,
   parseAerialKitParamInfoPage,
+  parseAerialKitOutputInfo,
   parseAerialKitParamGet,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
+  parseAerialKitSensorInfo,
 } from "./aerialKitProtocol";
 
 const HELLO_REQUEST = "aa550101009dc8";
@@ -213,6 +215,62 @@ test("parses an offset-checked PARAM_HELP slice", () => {
   });
   expect(() => parseAerialKitParamHelpSlice(payload, 4, 1))
     .toThrow(/asked from offset 1/i);
+});
+
+test("parses sensor presence without inventing a body for an absent sensor", () => {
+  const body = new Uint8Array(46);
+  body.set(Buffer.from("BMI270"), 0);
+  expect(parseAerialKitSensorInfo(Uint8Array.from([0, 0, 1, ...body])))
+    .toMatchObject({
+      status: "present",
+      topicName: "IMU",
+      driver: "BMI270",
+      present: true,
+    });
+  expect(parseAerialKitSensorInfo(Uint8Array.of(0, 1, 0))).toMatchObject({
+    status: "absent",
+    topicName: "Barometer",
+    present: false,
+  });
+  expect(parseAerialKitSensorInfo(Uint8Array.of(1, 2, 0))).toMatchObject({
+    status: "no-such-topic",
+    topicName: "Rangefinder",
+  });
+});
+
+test("parses output descriptors and preserves servo linkage only for servos", () => {
+  const bytes = new Uint8Array(5 + 2 * 7);
+  const view = new DataView(bytes.buffer);
+  bytes.set([0, 2, 1, 1, 15], 0);
+  bytes.set([0, 0, 0, 0, 0, 0, 0], 5);
+  bytes.set([1, 0, 1, 0, 0, 0, 0], 12);
+  view.setInt16(15, 12, true);
+  view.setUint16(17, 500, true);
+  expect(parseAerialKitOutputInfo(bytes)).toEqual({
+    status: "ok",
+    count: 2,
+    motors: 1,
+    servos: 1,
+    capPercent: 15,
+    outputs: [
+      {
+        kind: 0,
+        kindName: "motor",
+        index: 0,
+        reversed: false,
+        trimUs: null,
+        travelUs: null,
+      },
+      {
+        kind: 1,
+        kindName: "servo",
+        index: 0,
+        reversed: true,
+        trimUs: 12,
+        travelUs: 500,
+      },
+    ],
+  });
 });
 
 test("carries RC frames through the frame decoder", () => {

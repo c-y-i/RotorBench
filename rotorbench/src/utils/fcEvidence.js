@@ -307,6 +307,42 @@ export function parseAerialKitLiveStatusJson(payload) {
         ))
         .map((parameter) => ({ ...parameter }))
     : null;
+  const sensorMetadata = Array.isArray(payload.sensorMetadata)
+    ? payload.sensorMetadata
+        .filter((sensor) => sensor && Number.isInteger(sensor.topic))
+        .map((sensor) => ({
+          topic: sensor.topic,
+          topicName: typeof sensor.topicName === "string" ? sensor.topicName : null,
+          status: ["present", "absent", "no-such-topic"].includes(sensor.status)
+            ? sensor.status
+            : "unknown",
+          present: sensor.present === true,
+          driver: typeof sensor.driver === "string" ? sensor.driver : null,
+        }))
+    : null;
+  const outputMetadata = payload.outputMetadata
+    && typeof payload.outputMetadata === "object"
+    && Array.isArray(payload.outputMetadata.outputs)
+    ? {
+        status: ["ok", "none", "too-many"].includes(payload.outputMetadata.status)
+          ? payload.outputMetadata.status
+          : "unknown",
+        count: finiteNumber(payload.outputMetadata.count, 0),
+        motors: finiteNumber(payload.outputMetadata.motors, 0),
+        servos: finiteNumber(payload.outputMetadata.servos, 0),
+        capPercent: finiteNumber(payload.outputMetadata.capPercent, null),
+        outputs: payload.outputMetadata.outputs
+          .filter((output) => output && Number.isInteger(output.kind))
+          .map((output) => ({
+            kind: output.kind,
+            kindName: typeof output.kindName === "string" ? output.kindName : null,
+            index: finiteNumber(output.index, null),
+            reversed: output.reversed === true,
+            trimUs: finiteNumber(output.trimUs, null),
+            travelUs: finiteNumber(output.travelUs, null),
+          })),
+      }
+    : null;
   return {
     kind: "fc-live-status",
     identity,
@@ -320,6 +356,8 @@ export function parseAerialKitLiveStatusJson(payload) {
         }
       : null,
     parameterMetadata,
+    sensorMetadata,
+    outputMetadata,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

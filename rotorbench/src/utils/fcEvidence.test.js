@@ -128,6 +128,21 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       default: "0.250",
       help: "Rate-loop proportional gain.",
     }],
+    sensorMetadata: [{
+      topic: 0,
+      topicName: "IMU",
+      status: "present",
+      present: true,
+      driver: "BMI270",
+    }],
+    outputMetadata: {
+      status: "ok",
+      count: 4,
+      motors: 4,
+      servos: 0,
+      capPercent: 15,
+      outputs: [],
+    },
   });
 
   expect(parsed).toMatchObject({
@@ -161,6 +176,15 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       name: "rate_kp_roll",
       help: "Rate-loop proportional gain.",
     }],
+    sensorMetadata: [{
+      topicName: "IMU",
+      driver: "BMI270",
+    }],
+    outputMetadata: {
+      motors: 4,
+      servos: 0,
+      capPercent: 15,
+    },
   });
 });
 

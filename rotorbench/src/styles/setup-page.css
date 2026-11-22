@@ -2794,13 +2794,131 @@
 .aerial-kit-identity,
 .aerial-kit-live,
 .aerial-kit-rc,
-.aerial-kit-parameters {
+.aerial-kit-parameters,
+.aerial-kit-hardware {
   display: grid;
   gap: 9px;
   padding: 11px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 4px;
+}
+
+.aerial-kit-hardware > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.aerial-kit-hardware-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.aerial-kit-hardware-list > div {
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-hardware-list > div.is-present {
+  border-color: #b8ddc8;
+  background: #e8f5ee;
+}
+
+.aerial-kit-hardware-list dt {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aerial-kit-hardware-list dt span {
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.aerial-kit-hardware-list em {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.aerial-kit-hardware-list > div.is-present em {
+  color: var(--ok);
+}
+
+.aerial-kit-hardware-list dd {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.aerial-kit-outputs {
+  display: grid;
+  gap: 7px;
+}
+
+.aerial-kit-outputs > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border-radius: 3px;
+}
+
+.aerial-kit-outputs > div span {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.aerial-kit-outputs > div strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.aerial-kit-outputs ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aerial-kit-outputs li {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-outputs li strong {
+  color: var(--ink);
+  font-size: 9px;
+  text-transform: capitalize;
+}
+
+.aerial-kit-outputs li span {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  line-height: 1.4;
 }
 
 .aerial-kit-section-heading {
@@ -4207,6 +4325,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .aerial-kit-hardware-list,
+  .aerial-kit-outputs ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .elrs-menu-identity dl,
   .elrs-menu-inventory dl,
   .elrs-link-stats dl,
@@ -4381,6 +4504,17 @@
 
   .aerial-kit-parameter-list {
     grid-template-columns: 1fr;
+  }
+
+  .aerial-kit-hardware-list,
+  .aerial-kit-outputs ol {
+    grid-template-columns: 1fr;
+  }
+
+  .aerial-kit-outputs > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .elrs-menu-identity dl,

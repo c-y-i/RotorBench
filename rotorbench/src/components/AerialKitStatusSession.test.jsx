@@ -14,7 +14,7 @@ import { buildAerialKitFrame } from "../utils/aerialKitProtocol";
 const originalSerial = navigator.serial;
 const HELLO_PAYLOAD_NO_RC = "0161657269616c6b69742d66343035002e003000c1010000920638cf";
 const HELLO_PAYLOAD_WITH_RC = "0161657269616c6b69742d66343035002e003000d1010000920638cf";
-const HELLO_PAYLOAD_TWO_PARAMETERS = "0161657269616c6b69742d663430350002003000d1010000920638cf";
+const HELLO_PAYLOAD_TWO_PARAMETERS = "0161657269616c6b69742d663430350002003000f1010000920638cf";
 const STATUS_REPLY = "aa550185160101030b7d00d8ff84038768111f3f0ef90228283c3c8598";
 
 function setSerial(value) {
@@ -138,6 +138,33 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC) {
           ...chunk,
         ]);
         deliver(buildAerialKitFrame(0x8b, payload));
+      }
+      else if (command === 0x0e) {
+        const topic = frame[5];
+        if (topic === 0) {
+          const body = new Uint8Array(46);
+          body.set(Buffer.from("BMI270"), 0);
+          deliver(buildAerialKitFrame(
+            0x8e,
+            Uint8Array.from([0, 0, 1, ...body]),
+          ));
+        } else if (topic === 2) {
+          deliver(buildAerialKitFrame(0x8e, Uint8Array.of(1, 2, 0)));
+        } else {
+          deliver(buildAerialKitFrame(0x8e, Uint8Array.of(0, topic, 0)));
+        }
+      }
+      else if (command === 0x0f) {
+        const payload = [
+          0,
+          2,
+          1,
+          1,
+          15,
+          0, 0, 0, 0, 0, 0, 0,
+          1, 0, 1, 12, 0, 0xf4, 0x01,
+        ];
+        deliver(buildAerialKitFrame(0x8f, Uint8Array.from(payload)));
       }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
@@ -323,6 +350,43 @@ test("reads capability-gated parameter metadata without requesting help", async 
   expect(commands).toContain(0x0a);
   expect(commands).toContain(0x0b);
   expect(commands).not.toContain(0x2d);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads sensor presence and output descriptors without testing outputs", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read sensor presence",
+  }));
+  expect(await screen.findByText("Present")).toBeInTheDocument();
+  expect(screen.getByText("BMI270")).toBeInTheDocument();
+  expect(screen.getByText("No such topic")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read output map",
+  }));
+  expect(await screen.findByText("1 motor · 1 servo · 15% test cap"))
+    .toBeInTheDocument();
+  expect(screen.getByText("motor 0")).toBeInTheDocument();
+  expect(screen.getByText(/reversed · trim 12 µs · travel 500 µs/))
+    .toBeInTheDocument();
+
+  const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
+  expect(commands).toContain(0x0e);
+  expect(commands).toContain(0x0f);
+  expect(commands).not.toContain(0x10);
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

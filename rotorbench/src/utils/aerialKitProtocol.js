@@ -11,6 +11,8 @@ export const AERIAL_KIT_MAX_PAYLOAD = 96;
 export const AERIAL_KIT_UNKNOWN_COMMAND = 0x7f;
 export const AERIAL_KIT_FEATURE_PARAM_INFO = 1 << 0;
 export const AERIAL_KIT_FEATURE_RC_CHANNELS = 1 << 4;
+export const AERIAL_KIT_FEATURE_SENSOR_INFO = 1 << 5;
+export const AERIAL_KIT_FEATURE_OUTPUT_INFO = 1 << 6;
 export const AERIAL_KIT_PARAMETER_READ_LIMIT = 255;
 export const AERIAL_KIT_COMMANDS = Object.freeze({
   hello: 0x01,
@@ -19,6 +21,21 @@ export const AERIAL_KIT_COMMANDS = Object.freeze({
   paramInfo: 0x0a,
   paramHelp: 0x0b,
   rcChannels: 0x0d,
+  sensorInfo: 0x0e,
+  outputInfo: 0x0f,
+});
+
+export const AERIAL_KIT_SENSOR_TOPICS = Object.freeze([
+  { id: 0, name: "IMU", bodyLength: 12 + 1 + 1 + 6 + 6 + 6 + 6 + 4 + 4 },
+  { id: 1, name: "Barometer", bodyLength: 12 + 4 + 2 + 1 + 4 + 4 + 1 + 4 + 4 + 4 + 4 + 4 + 4 },
+  { id: 2, name: "Rangefinder", bodyLength: 12 + 1 + 2 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 2 },
+  { id: 3, name: "Battery", bodyLength: 1 + 1 + 1 + 1 + 2 + 2 + 2 + 2 + 1 + 2 + 2 + 4 + 4 + 4 },
+  { id: 4, name: "GPS", bodyLength: 1 + 1 + 1 + 1 + 1 + 4 + 4 + 4 + 4 + 4 + 1 + 4 + 4 + 4 + 4 + 1 + 1 + 4 + 4 + 4 },
+]);
+
+const OUTPUT_KIND_NAMES = Object.freeze({
+  0: "motor",
+  1: "servo",
 });
 
 export const AERIAL_KIT_PARAMETER_TYPES = Object.freeze({
@@ -504,6 +521,118 @@ export function parseAerialKitParamHelpSlice(payload, askedIndex, askedOffset) {
   };
 }
 
+export function parseAerialKitSensorInfo(payload) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) throw new Error("Aerial Kit SENSOR_INFO payload is empty.");
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates SENSOR_INFO and answered with the unknown-command status.",
+    );
+  }
+  if (![0, 1].includes(bytes[0])) {
+    throw new Error(`SENSOR_INFO returned status ${bytes[0]}.`);
+  }
+  if (bytes.length < 3) throw new Error("SENSOR_INFO header is incomplete.");
+  const topic = bytes[1];
+  const present = bytes[2] !== 0;
+  const definition = AERIAL_KIT_SENSOR_TOPICS.find((entry) => entry.id === topic);
+  if (bytes[0] === 1) {
+    if (bytes.length !== 3) {
+      throw new Error("A no-such-sensor SENSOR_INFO reply must contain three bytes.");
+    }
+    return {
+      status: "no-such-topic",
+      topic,
+      topicName: definition?.name || `Topic ${topic}`,
+      present: false,
+      driver: null,
+    };
+  }
+  if (!present) {
+    if (bytes.length !== 3) {
+      throw new Error("An absent sensor must not carry a reading body.");
+    }
+    return {
+      status: "absent",
+      topic,
+      topicName: definition?.name || `Topic ${topic}`,
+      present: false,
+      driver: null,
+    };
+  }
+  if (!definition) throw new Error(`SENSOR_INFO returned unknown topic ${topic}.`);
+  if (bytes.length !== 3 + definition.bodyLength) {
+    throw new Error(
+      `${definition.name} must carry a ${definition.bodyLength}-byte body.`,
+    );
+  }
+  const driverBytes = bytes.slice(3, 15);
+  return {
+    status: "present",
+    topic,
+    topicName: definition.name,
+    present: true,
+    driver: decodeAscii(driverBytes).replace(/\0+$/, "") || null,
+  };
+}
+
+export function parseAerialKitOutputInfo(payload) {
+  const bytes = asBytes(payload);
+  if (bytes.length < 5) throw new Error("Aerial Kit OUTPUT_INFO payload is incomplete.");
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates OUTPUT_INFO and answered with the unknown-command status.",
+    );
+  }
+  if (![0, 1, 2].includes(bytes[0])) {
+    throw new Error(`OUTPUT_INFO returned status ${bytes[0]}.`);
+  }
+  const count = bytes[1];
+  const motors = bytes[2];
+  const servos = bytes[3];
+  const capPercent = bytes[4];
+  if (bytes[0] !== 0) {
+    if (bytes.length !== 5 || count || motors || servos) {
+      throw new Error("An unavailable OUTPUT_INFO reply must carry no descriptors.");
+    }
+    return {
+      status: bytes[0] === 1 ? "none" : "too-many",
+      count: 0,
+      motors: 0,
+      servos: 0,
+      capPercent,
+      outputs: [],
+    };
+  }
+  if (motors + servos !== count) {
+    throw new Error("OUTPUT_INFO motor and servo counts do not match the descriptor count.");
+  }
+  if (bytes.length !== 5 + count * 7) {
+    throw new Error(`OUTPUT_INFO with ${count} descriptors is the wrong length.`);
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const outputs = Array.from({ length: count }, (_, entryIndex) => {
+    const offset = 5 + entryIndex * 7;
+    const kind = bytes[offset];
+    return {
+      kind,
+      kindName: OUTPUT_KIND_NAMES[kind] || null,
+      index: bytes[offset + 1],
+      reversed: bytes[offset + 2] !== 0,
+      trimUs: kind === 1 ? view.getInt16(offset + 3, true) : null,
+      travelUs: kind === 1 ? view.getUint16(offset + 5, true) : null,
+    };
+  });
+  return {
+    status: "ok",
+    count,
+    motors,
+    servos,
+    capPercent,
+    outputs,
+  };
+}
+
 export function parseAerialKitRcChannels(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) throw new Error("Aerial Kit RC_CHANNELS payload is empty.");
@@ -641,6 +770,8 @@ export function createAerialKitStatusEvidence({
   rcError = null,
   parameters = null,
   parameterMetadata = null,
+  sensorMetadata = null,
+  outputMetadata = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -677,6 +808,8 @@ export function createAerialKitStatusEvidence({
         ...(parameterMetadata?.some((parameter) => parameter.help != null)
           ? ["PARAM_HELP"]
           : []),
+        ...(sensorMetadata ? ["SENSOR_INFO"] : []),
+        ...(outputMetadata ? ["OUTPUT_INFO"] : []),
       ],
     },
     hello,
@@ -704,6 +837,8 @@ export function createAerialKitStatusEvidence({
     rcError: rcError || null,
     parameters: safeParameters,
     parameterMetadata,
+    sensorMetadata,
+    outputMetadata,
     parser: protocolStats,
     boundaries: {
       readOnlyQueriesOnly: true,

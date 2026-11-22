@@ -299,6 +299,30 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
           help: "Sets the DShot output rate.",
         },
       ],
+      sensorMetadata: [
+        {
+          topic: 0,
+          topicName: "IMU",
+          status: "present",
+          present: true,
+          driver: "BMI270",
+        },
+        {
+          topic: 1,
+          topicName: "Barometer",
+          status: "absent",
+          present: false,
+          driver: null,
+        },
+      ],
+      outputMetadata: {
+        status: "ok",
+        count: 4,
+        motors: 4,
+        servos: 0,
+        capPercent: 15,
+        outputs: [],
+      },
     }, "live-status.json"),
   );
 
@@ -315,6 +339,9 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText(/Selects the channel used for arm detection/i))
     .toBeInTheDocument();
   expect(screen.getByText(/Sets the DShot output rate/i)).toBeInTheDocument();
+  expect(screen.getByText("BMI270")).toBeInTheDocument();
+  expect(screen.getByText(/4 motors, 0 servos, 15% test cap/i))
+    .toBeInTheDocument();
 });
 
 test("reviews an RX ExpressLRS menu inventory without calling it TX", async () => {

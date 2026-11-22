@@ -1094,6 +1094,51 @@ export default function BenchEvidenceReview({
             </section>
           )}
 
+          {(evidence.fcEvidence?.liveStatus?.sensorMetadata?.length > 0
+            || evidence.fcEvidence?.liveStatus?.outputMetadata) && (
+            <section
+              className="bench-fc-identity bench-live-hardware"
+              aria-label="Imported Aerial Kit hardware metadata"
+            >
+              <div className="bench-fc-identity-heading">
+                <span>
+                  <strong>Board-reported hardware metadata</strong>
+                  <small>Presence and descriptors from the imported live snapshot</small>
+                </span>
+                <em>Read-only</em>
+              </div>
+              {evidence.fcEvidence.liveStatus.sensorMetadata?.length > 0 && (
+                <dl className="aerial-kit-hardware-list">
+                  {evidence.fcEvidence.liveStatus.sensorMetadata.map((sensor) => (
+                    <div key={sensor.topic} className={`is-${sensor.status}`}>
+                      <dt>
+                        <span>{sensor.topicName || `Topic ${sensor.topic}`}</span>
+                        <em>
+                          {sensor.status === "present"
+                            ? "Present"
+                            : sensor.status === "absent"
+                              ? "Absent"
+                              : "No such topic"}
+                        </em>
+                      </dt>
+                      <dd>{sensor.driver || "No driver reported"}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {evidence.fcEvidence.liveStatus.outputMetadata && (
+                <p>
+                  Outputs: {evidence.fcEvidence.liveStatus.outputMetadata.motors} motor
+                  {evidence.fcEvidence.liveStatus.outputMetadata.motors === 1 ? "" : "s"},{" "}
+                  {evidence.fcEvidence.liveStatus.outputMetadata.servos} servo
+                  {evidence.fcEvidence.liveStatus.outputMetadata.servos === 1 ? "" : "s"},{" "}
+                  {evidence.fcEvidence.liveStatus.outputMetadata.capPercent}% test cap.
+                  No output was driven.
+                </p>
+              )}
+            </section>
+          )}
+
           {evidence.fcEvidence?.parameters?.values && (
             <FcParameterSnapshot
               values={evidence.fcEvidence.parameters.values}

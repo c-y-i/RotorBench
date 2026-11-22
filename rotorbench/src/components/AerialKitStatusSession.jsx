@@ -20,7 +20,10 @@ import {
   AERIAL_KIT_COMMANDS,
   AERIAL_KIT_FEATURE_RC_CHANNELS,
   AERIAL_KIT_FEATURE_PARAM_INFO,
+  AERIAL_KIT_FEATURE_SENSOR_INFO,
+  AERIAL_KIT_FEATURE_OUTPUT_INFO,
   AERIAL_KIT_PARAMETER_READ_LIMIT,
+  AERIAL_KIT_SENSOR_TOPICS,
   AerialKitReadOnlySession,
   aerialKitArmedState,
   createAerialKitStatusEvidence,
@@ -29,6 +32,8 @@ import {
   parseAerialKitParamHelpSlice,
   parseAerialKitParamGet,
   parseAerialKitParamInfoPage,
+  parseAerialKitSensorInfo,
+  parseAerialKitOutputInfo,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
 } from "../utils/aerialKitProtocol";
@@ -123,6 +128,13 @@ export default function AerialKitStatusSession({
     total: 0,
   });
   const [helpError, setHelpError] = useState("");
+  const [sensors, setSensors] = useState(null);
+  const [sensorState, setSensorState] = useState("idle");
+  const [sensorProgress, setSensorProgress] = useState({ done: 0, total: 5 });
+  const [sensorError, setSensorError] = useState("");
+  const [outputInfo, setOutputInfo] = useState(null);
+  const [outputState, setOutputState] = useState("idle");
+  const [outputError, setOutputError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -179,6 +191,13 @@ export default function AerialKitStatusSession({
     setHelpState("idle");
     setHelpProgress({ done: 0, total: 0 });
     setHelpError("");
+    setSensors(null);
+    setSensorState("idle");
+    setSensorProgress({ done: 0, total: AERIAL_KIT_SENSOR_TOPICS.length });
+    setSensorError("");
+    setOutputInfo(null);
+    setOutputState("idle");
+    setOutputError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -530,6 +549,97 @@ export default function AerialKitStatusSession({
     }
   };
 
+  const readSensorMetadata = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_SENSOR_INFO) === 0
+    ) {
+      setSensorError(
+        "The HELLO capability word does not claim SENSOR_INFO, so RotorBench did not ask for sensor presence.",
+      );
+      setSensorState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setSensorError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setSensorError("");
+    setSensorState("reading");
+    const answers = [];
+    try {
+      for (let index = 0; index < AERIAL_KIT_SENSOR_TOPICS.length; index += 1) {
+        const topic = AERIAL_KIT_SENSOR_TOPICS[index];
+        const payload = await session.request(
+          AERIAL_KIT_COMMANDS.sensorInfo,
+          Uint8Array.of(topic.id),
+        );
+        answers.push(parseAerialKitSensorInfo(payload));
+        setSensorProgress({
+          done: index + 1,
+          total: AERIAL_KIT_SENSOR_TOPICS.length,
+        });
+      }
+      if (!mountedRef.current) return;
+      setSensors(answers);
+      setSensorState("ready");
+      setMessage("Read sensor presence metadata without changing calibration or readings.");
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setSensors(answers);
+      setSensorState("error");
+      setSensorError(
+        `${readError.message} ${answers.length} sensor topic${answers.length === 1 ? "" : "s"} were read before the stop.`,
+      );
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
+  const readOutputMetadata = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_OUTPUT_INFO) === 0
+    ) {
+      setOutputError(
+        "The HELLO capability word does not claim OUTPUT_INFO, so RotorBench did not ask for the output map.",
+      );
+      setOutputState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setOutputError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setOutputError("");
+    setOutputState("reading");
+    try {
+      const payload = await session.request(AERIAL_KIT_COMMANDS.outputInfo);
+      if (!mountedRef.current) return;
+      setOutputInfo(parseAerialKitOutputInfo(payload));
+      setOutputState("ready");
+      setMessage("Read output descriptors without driving or testing any output.");
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setOutputState("error");
+      setOutputError(readError.message);
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -619,6 +729,8 @@ export default function AerialKitStatusSession({
       protocolStats,
       parameters,
       parameterMetadata,
+      sensorMetadata: sensors,
+      outputMetadata: outputInfo,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -682,6 +794,10 @@ export default function AerialKitStatusSession({
   const canDownload = Boolean(hello || liveStatus || rc);
   const metadataClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) !== 0;
+  const sensorClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_SENSOR_INFO) !== 0;
+  const outputClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_OUTPUT_INFO) !== 0;
   const busy = ["selecting", "connecting", "stopping"].includes(sessionState);
   const active = ["connecting", "monitoring"].includes(sessionState);
 
@@ -903,6 +1019,136 @@ export default function AerialKitStatusSession({
                     </dd>
                   </div>
                 </dl>
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-hardware"
+                aria-label="Board-reported hardware capabilities"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Sensor and output metadata</strong>
+                  <span>Read-only descriptors</span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || sensorState === "reading"
+                      || !sensorClaimed
+                    }
+                    onClick={readSensorMetadata}
+                  >
+                    <Activity size={15} aria-hidden="true" />
+                    Read sensor presence
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || outputState === "reading"
+                      || !outputClaimed
+                    }
+                    onClick={readOutputMetadata}
+                  >
+                    <SlidersHorizontal size={15} aria-hidden="true" />
+                    Read output map
+                  </button>
+                  <span>
+                    Sensors:{" "}
+                    {sensorState === "reading"
+                      ? `${sensorProgress.done}/${sensorProgress.total}`
+                      : sensorState === "ready"
+                        ? `${sensors?.filter((sensor) => sensor.present).length || 0} present`
+                        : sensorState === "error"
+                          ? "read stopped"
+                          : !sensorClaimed
+                            ? "not claimed"
+                            : "not read"}
+                    {" · "}
+                    Outputs:{" "}
+                    {outputState === "reading"
+                      ? "reading"
+                      : outputState === "ready"
+                        ? `${outputInfo?.count || 0} listed`
+                        : outputState === "error"
+                          ? "read stopped"
+                          : !outputClaimed
+                            ? "not claimed"
+                            : "not read"}
+                  </span>
+                </div>
+                <p>
+                  Sensor rows report only whether the firmware says a topic exists,
+                  whether the board has it fitted, and the fixed-width driver name.
+                  Output rows report the board&apos;s descriptor list and servo linkage.
+                  No reading, calibration, output test, or safe-state claim is made.
+                </p>
+                {sensorError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Sensor metadata incomplete</strong>
+                      <small>{sensorError}</small>
+                    </span>
+                  </div>
+                )}
+                {sensors && (
+                  <dl className="aerial-kit-hardware-list" aria-label="Reported sensor topics">
+                    {sensors.map((sensor) => (
+                      <div key={sensor.topic} className={`is-${sensor.status}`}>
+                        <dt>
+                          <span>{sensor.topicName}</span>
+                          <em>{sensor.status === "present"
+                            ? "Present"
+                            : sensor.status === "absent"
+                              ? "Absent"
+                              : "No such topic"}</em>
+                        </dt>
+                        <dd>{sensor.driver || "No driver reported"}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                {outputError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Output metadata unavailable</strong>
+                      <small>{outputError}</small>
+                    </span>
+                  </div>
+                )}
+                {outputInfo && (
+                  <div className="aerial-kit-outputs">
+                    <div>
+                      <span>{outputInfo.status === "ok" ? "Output list" : outputInfo.status === "none" ? "No output list" : "Output list too large"}</span>
+                      <strong>
+                        {outputInfo.motors} motor{outputInfo.motors === 1 ? "" : "s"} ·{" "}
+                        {outputInfo.servos} servo{outputInfo.servos === 1 ? "" : "s"} ·{" "}
+                        {outputInfo.capPercent}% test cap
+                      </strong>
+                    </div>
+                    {outputInfo.outputs.length > 0 && (
+                      <ol aria-label="Reported output descriptors">
+                        {outputInfo.outputs.map((output) => (
+                          <li key={`${output.kind}-${output.index}`}>
+                            <strong>{output.kindName || `Type ${output.kind}`} {output.index}</strong>
+                            <span>
+                              {output.kindName === "servo"
+                                ? `${output.reversed ? "reversed" : "normal"} · trim ${output.trimUs} µs · travel ${output.travelUs} µs`
+                                : "motor output"}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                )}
               </section>
             )}
 
