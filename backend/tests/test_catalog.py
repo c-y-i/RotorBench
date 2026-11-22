@@ -44,10 +44,10 @@ class CatalogContractTests(unittest.TestCase):
                 "batteries": 11,
                 "escs": 9,
                 "flight_controllers": 12,
-                "receivers": 18,
+                "receivers": 19,
             },
         )
-        self.assertEqual(sum(counts.values()), 91)
+        self.assertEqual(sum(counts.values()), 92)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,8 +68,38 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 91)
+        self.assertEqual(len(records), 92)
         self.assertTrue(all(record.id for record in records))
+
+    def test_dbr4_completes_the_dual_band_gemini_endpoint(self):
+        receiver = next(
+            item
+            for item in self.database.receivers
+            if item.id == "rx-radiomaster-dbr4-gemini-xrossband"
+        )
+        self.assertEqual(receiver.protocol, "CRSF")
+        self.assertEqual(
+            receiver.frequency_bands,
+            ["2.4 GHz", "Sub-G 900 MHz"],
+        )
+        self.assertEqual(receiver.weight, 2.7)
+        self.assertEqual(receiver.mounting_pattern_mm, [20, 20])
+        self.assertEqual(receiver.planform_mm, [27.2, 27.2])
+        self.assertEqual(receiver.rf_chips, "Semtech LR1121 ×2")
+        self.assertEqual(receiver.receiver_refresh_rate, "50–500 Hz")
+        self.assertEqual(receiver.telemetry_power_mw, 100)
+        self.assertEqual(receiver.working_voltage, "4.5-8.4 V")
+        self.assertEqual(
+            receiver.firmware_version,
+            "ExpressLRS 3.3.2 pre-installed",
+        )
+        self.assertEqual(receiver.serial_protocols, ["CRSF"])
+        self.assertEqual(receiver.price, 29.99)
+        self.assertIsNone(receiver.dimensions_mm)
+        self.assertEqual(
+            receiver.estimated_fields,
+            ["currentDraw", "channels", "mounting_point"],
+        )
 
     def test_er5a_keeps_published_pwm_specs_separate_from_estimates(self):
         receiver = next(

@@ -2257,6 +2257,37 @@
       "dataStatus": "verified_specs_estimated_current_channels_and_mounting",
       "estimatedFields": ["currentDraw", "channels", "mounting_point"],
       "price": 19.99
+    },
+    {
+      "id": "rx-radiomaster-dbr4-gemini-xrossband",
+      "name": "RadioMaster DBR4 Gemini Xrossband Receiver",
+      "manufacturer": "RadioMaster",
+      "protocol": "CRSF",
+      "frequencyBands": ["2.4 GHz", "Sub-G 900 MHz"],
+      "weight": 2.7,
+      "mountingPatternMm": [20, 20],
+      "mounting_point": [0, 0, 0],
+      "currentDraw": 50,
+      "channels": 16,
+      "planformMm": [27.2, 27.2],
+      "rfChips": "Semtech LR1121 ×2",
+      "receiverRefreshRate": "50–500 Hz",
+      "telemetryPowerMw": 100,
+      "workingVoltage": "4.5-8.4 V",
+      "firmwareVersion": "ExpressLRS 3.3.2 pre-installed",
+      "antenna": "2 × 2.4 GHz wire antenna + 2 × 900 MHz wire antenna",
+      "serialProtocols": ["CRSF"],
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://radiomasterrc.com/products/dbr4-dual-band-xross-gemini-expresslrs-receiver",
+      "priceSourceUrl": "https://radiomasterrc.com/products/dbr4-dual-band-xross-gemini-expresslrs-receiver",
+      "dataStatus": "verified_planform_estimated_current_channels_thickness_and_mounting",
+      "estimatedFields": [
+        "currentDraw",
+        "channels",
+        "mounting_point"
+      ],
+      "price": 29.99
     }
   ]
 }

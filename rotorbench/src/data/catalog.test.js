@@ -408,12 +408,43 @@ test("Adafruit Feather F405 binds a public product to the Aerial Kit wing profil
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
-  expect(componentsData.receivers).toHaveLength(18);
+  expect(componentsData.receivers).toHaveLength(19);
   for (const receiver of componentsData.receivers) {
     expect(receiver.protocol).toBeTruthy();
     expect(receiver.frequencyBands?.length).toBeGreaterThan(0);
     expect(receiver.sourceUrl).toMatch(/^https:\/\//);
   }
+});
+
+test("DBR4 completes the dual-band Gemini endpoint with a sourced planform", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-radiomaster-dbr4-gemini-xrossband",
+  );
+
+  expect(receiver).toMatchObject({
+    name: "RadioMaster DBR4 Gemini Xrossband Receiver",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    weight: 2.7,
+    mountingPatternMm: [20, 20],
+    planformMm: [27.2, 27.2],
+    rfChips: "Semtech LR1121 ×2",
+    receiverRefreshRate: "50–500 Hz",
+    telemetryPowerMw: 100,
+    workingVoltage: "4.5-8.4 V",
+    firmwareVersion: "ExpressLRS 3.3.2 pre-installed",
+    antenna: "2 × 2.4 GHz wire antenna + 2 × 900 MHz wire antenna",
+    serialProtocols: ["CRSF"],
+    price: 29.99,
+    modelStatus: "not_available",
+    sourceUrl: "https://radiomasterrc.com/products/dbr4-dual-band-xross-gemini-expresslrs-receiver",
+  });
+  expect(receiver).not.toHaveProperty("dimensionsMm");
+  expect(receiver.estimatedFields).toEqual([
+    "currentDraw",
+    "channels",
+    "mounting_point",
+  ]);
 });
 
 test("ER5A keeps published PWM specs separate from inferred fields", () => {
