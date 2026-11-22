@@ -85,6 +85,11 @@ function mountCoordinateSource(frame) {
   return "derived from catalogued frame layout";
 }
 
+function formatMillimeters(value) {
+  const rounded = Math.round(Number(value) * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
 export function buildSchematicModel({
   assemblySpec = {},
   propellerDirection = "props-out",
@@ -173,6 +178,22 @@ export function buildSchematicModel({
   const motorRadius = Math.max(motorDims[0] / 2, 4);
   const labelSize = Math.max(viewSize * 0.021, 5.5);
   const stackLabelY = maxZ + labelSize * 1.5;
+  const mountXValues = mounts.map((point) => point[0]);
+  const mountZValues = mounts.map((point) => point[2]);
+  const mountMinX = mountXValues.length ? Math.min(...mountXValues) : 0;
+  const mountMaxX = mountXValues.length ? Math.max(...mountXValues) : 0;
+  const mountMinZ = mountZValues.length ? Math.min(...mountZValues) : 0;
+  const mountMaxZ = mountZValues.length ? Math.max(...mountZValues) : 0;
+  const motorSpanXMm = mounts.length > 1 ? mountMaxX - mountMinX : 0;
+  const motorSpanZMm = mounts.length > 1 ? mountMaxZ - mountMinZ : 0;
+  const dimensionSummary = [
+    motorSpanXMm > 0.05
+      ? `left-to-right motor span ${formatMillimeters(motorSpanXMm)} millimetres`
+      : null,
+    motorSpanZMm > 0.05
+      ? `front-to-rear motor span ${formatMillimeters(motorSpanZMm)} millimetres`
+      : null,
+  ].filter(Boolean).join("; ");
   const labelParts = [
     frame?.name || "frame",
     motor?.name || "motors",
@@ -184,7 +205,9 @@ export function buildSchematicModel({
     hasSelectedAssembly ? "Top view of selected assembly" : "Top view of sample assembly"
   }. ${mounts.length} motor${mounts.length === 1 ? "" : "s"}, ${
     propellersVisible ? `${bladeCount}-blade propellers, ` : "no propellers visible, "
-  }${propellerDirection}. ${labelParts.join("; ")}.`;
+  }${propellerDirection}. ${dimensionSummary}${
+    dimensionSummary ? ". " : ""
+  }${labelParts.join("; ")}.`;
 
   return {
     battery,
@@ -206,7 +229,13 @@ export function buildSchematicModel({
     motor,
     motorDims,
     motorRadius,
+    motorSpanXMm,
+    motorSpanZMm,
     mounts,
+    mountMaxX,
+    mountMaxZ,
+    mountMinX,
+    mountMinZ,
     padding,
     propeller,
     propellerDiameter,
@@ -263,6 +292,10 @@ export function buildSchematicExportMetadata(
     },
     propellerDirection: model.propellerDirection,
     motorStationSource: mountCoordinateSource(model.frame),
+    motorStationSpansMm: {
+      leftToRight: Number(model.motorSpanXMm.toFixed(1)),
+      frontToRear: Number(model.motorSpanZMm.toFixed(1)),
+    },
     motorStations: model.mounts.map((point, index) => ({
       label: `M${index + 1}`,
       positionMm: {
@@ -341,6 +374,14 @@ const STANDALONE_SCHEMATIC_STYLES = `
   .assembly-plan-hub { fill: #d5ff4f; }
   .assembly-plan-hub.is-hidden { fill-opacity: 0.18; }
   .assembly-plan-motor.is-hidden text { fill-opacity: 0.35; }
+  .assembly-plan-dimensions line {
+    fill: none; stroke: #67d8cb; stroke-width: 0.65; stroke-linecap: round;
+  }
+  .assembly-plan-dimensions text {
+    fill: #dce7df; stroke: #202826; stroke-width: 0.75px;
+    paint-order: stroke fill; font-family: "IBM Plex Mono", monospace;
+    font-weight: 600; letter-spacing: 0.04em;
+  }
   .assembly-plan-export-title {
     fill: #d5ff4f; font-family: "IBM Plex Mono", monospace; font-weight: 700;
     letter-spacing: 0.08em;
@@ -451,9 +492,16 @@ export default function TwoDViewer({
     label,
     labelSize,
     maxX,
+    maxZ,
     minX,
     motorRadius,
+    motorSpanXMm,
+    motorSpanZMm,
     mounts,
+    mountMaxX,
+    mountMaxZ,
+    mountMinX,
+    mountMinZ,
     padding,
     propellerDiameter,
     propellerOrigins,
@@ -463,6 +511,12 @@ export default function TwoDViewer({
     viewSize,
   } = model;
   const frameDims = model.frameDims;
+  const dimensionTick = Math.max(labelSize * 0.62, 2);
+  const xDimensionY = maxZ + padding * 0.52;
+  const zDimensionX = minX - padding * 0.48;
+  const batteryLabel = batteryPlacement?.size[0] >= labelSize * 5
+    ? "BATTERY"
+    : "BATT";
 
   const downloadSchematic = () => {
     try {
@@ -597,7 +651,7 @@ export default function TwoDViewer({
               textAnchor="middle"
               fontSize={labelSize * 0.9}
             >
-              BATTERY
+              {batteryLabel}
             </text>
           </>
         )}
@@ -667,6 +721,74 @@ export default function TwoDViewer({
             )}
           </g>
         ))}
+
+        {!hidden.has("motor") && mounts.length > 1 && (
+          <g className="assembly-plan-dimensions" aria-hidden="true">
+            {motorSpanXMm > 0.05 && (
+              <>
+                <line
+                  x1={mountMinX}
+                  y1={xDimensionY}
+                  x2={mountMaxX}
+                  y2={xDimensionY}
+                />
+                <line
+                  x1={mountMinX}
+                  y1={xDimensionY - dimensionTick}
+                  x2={mountMinX}
+                  y2={xDimensionY + dimensionTick}
+                />
+                <line
+                  x1={mountMaxX}
+                  y1={xDimensionY - dimensionTick}
+                  x2={mountMaxX}
+                  y2={xDimensionY + dimensionTick}
+                />
+                <text
+                  x={(mountMinX + mountMaxX) / 2}
+                  y={xDimensionY + labelSize * 1.25}
+                  textAnchor="middle"
+                  fontSize={labelSize * 0.92}
+                >
+                  {`X ${formatMillimeters(motorSpanXMm)} mm`}
+                </text>
+              </>
+            )}
+            {motorSpanZMm > 0.05 && (
+              <>
+                <line
+                  x1={zDimensionX}
+                  y1={mountMinZ}
+                  x2={zDimensionX}
+                  y2={mountMaxZ}
+                />
+                <line
+                  x1={zDimensionX - dimensionTick}
+                  y1={mountMinZ}
+                  x2={zDimensionX + dimensionTick}
+                  y2={mountMinZ}
+                />
+                <line
+                  x1={zDimensionX - dimensionTick}
+                  y1={mountMaxZ}
+                  x2={zDimensionX + dimensionTick}
+                  y2={mountMaxZ}
+                />
+                <text
+                  x={zDimensionX - labelSize * 0.42}
+                  y={(mountMinZ + mountMaxZ) / 2}
+                  textAnchor="middle"
+                  fontSize={labelSize * 0.92}
+                  transform={`rotate(-90 ${zDimensionX - labelSize * 0.42} ${
+                    (mountMinZ + mountMaxZ) / 2
+                  })`}
+                >
+                  {`Z ${formatMillimeters(motorSpanZMm)} mm`}
+                </text>
+              </>
+            )}
+          </g>
+        )}
       </svg>
     </div>
   );

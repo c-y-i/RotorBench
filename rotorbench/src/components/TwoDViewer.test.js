@@ -39,6 +39,8 @@ test("renders the sample top view with four motors and three-blade propellers", 
     name: /Top view of sample assembly.*4 motors.*3-blade propellers.*props-out/i,
   })).toBeInTheDocument();
   expect(screen.getAllByText(/^M[1-4]/)).toHaveLength(4);
+  expect(screen.getByText("X 155.6 mm")).toBeInTheDocument();
+  expect(screen.getByText("Z 155.6 mm")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Download SVG" })).toBeInTheDocument();
   await expect(getA11yViolations(container)).resolves.toEqual([]);
 });
@@ -56,6 +58,9 @@ test("uses selected frame mounts and respects hidden component groups", () => {
   })).toBeInTheDocument();
   expect(screen.getByText("M1 CW")).toBeInTheDocument();
   expect(screen.getByText("M2 CCW")).toBeInTheDocument();
+  expect(screen.getByText("X 460 mm")).toBeInTheDocument();
+  expect(screen.getByText("BATT")).toBeInTheDocument();
+  expect(screen.queryByText(/^Z /)).not.toBeInTheDocument();
   expect(container.querySelectorAll(".assembly-plan-propeller")).toHaveLength(2);
   expect(container.querySelector(".assembly-plan-frame")).toBeInTheDocument();
   expect(container.querySelector(".assembly-plan-battery")).toBeInTheDocument();
@@ -68,6 +73,7 @@ test("uses selected frame mounts and respects hidden component groups", () => {
     />,
   );
   expect(screen.queryByText("M1 CW")).not.toBeInTheDocument();
+  expect(screen.queryByText(/^X /)).not.toBeInTheDocument();
   expect(container.querySelector(".assembly-plan-frame")).not.toBeInTheDocument();
   expect(container.querySelector(".assembly-plan-battery")).not.toBeInTheDocument();
   expect(container.querySelectorAll(".assembly-plan-propeller")).toHaveLength(0);
@@ -94,7 +100,7 @@ test("exports a self-contained standalone SVG with source mount coordinates", ()
     "2026-11-22T08:00:00.000Z",
   );
   const exported = createStandaloneSchematicSvg(
-    container.querySelector("svg"),
+    container.querySelector(".assembly-plan-view > svg"),
     metadata,
   );
 
@@ -107,6 +113,9 @@ test("exports a self-contained standalone SVG with source mount coordinates", ()
   expect(exported).toContain('"units": "mm"');
   expect(exported).toContain('"front": "-Z"');
   expect(exported).toContain('"motorStationSource": "frame.motorPositionsMm"');
+  expect(exported).toContain('"leftToRight": 460');
+  expect(exported).toContain('"frontToRear": 0');
+  expect(exported).toContain("X 460 mm");
   expect(exported).toContain('"x": -230');
   expect(exported).toContain('"y": 4.75');
   expect(exported).toContain('"z": -240');
