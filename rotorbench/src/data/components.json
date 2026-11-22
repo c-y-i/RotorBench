@@ -1955,6 +1955,33 @@
       "dataStatus": "verified_specs_estimated_current_channels_and_mounting",
       "estimatedFields": ["currentDraw", "channels", "mounting_point"],
       "price": 24.99
+    },
+    {
+      "id": "rx-radiomaster-er8-24-pwm",
+      "name": "RadioMaster ER8 2.4GHz ELRS PWM Receiver",
+      "manufacturer": "RadioMaster",
+      "protocol": "CRSF",
+      "frequencyBands": ["2.4 GHz"],
+      "weight": 16.5,
+      "mounting_point": [0, 0, 0],
+      "currentDraw": 50,
+      "channels": 16,
+      "pwmOutputs": 8,
+      "dimensionsMm": [43, 15, 30],
+      "telemetryPowerMw": 100,
+      "workingVoltage": "4.5-8.4 V",
+      "telemetryVoltageRange": "4.0-35 V",
+      "firmwareVersion": "ExpressLRS 3.3.0 pre-installed",
+      "antenna": "Dual 20 cm high-sensitivity antenna",
+      "serialProtocols": ["CRSF", "SBUS"],
+      "wifiUpdates": true,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://radiomasterrc.com/products/er8-2-4ghz-elrs-pwm-receiver",
+      "priceSourceUrl": "https://radiomasterrc.com/products/er8-2-4ghz-elrs-pwm-receiver",
+      "dataStatus": "verified_specs_estimated_current_channels_and_mounting",
+      "estimatedFields": ["currentDraw", "channels", "mounting_point"],
+      "price": 34.99
     }
   ]
 }

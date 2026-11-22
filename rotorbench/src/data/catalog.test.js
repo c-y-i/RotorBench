@@ -380,7 +380,7 @@ test("Kakute F722 keeps official specs and price with only mounting estimated", 
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
-  expect(componentsData.receivers).toHaveLength(13);
+  expect(componentsData.receivers).toHaveLength(14);
   for (const receiver of componentsData.receivers) {
     expect(receiver.protocol).toBeTruthy();
     expect(receiver.frequencyBands?.length).toBeGreaterThan(0);
@@ -463,6 +463,28 @@ test("ER6 adds a source-backed six-output PWM receiver", () => {
     "channels",
     "mounting_point",
   ]);
+});
+
+test("ER8 adds a source-backed eight-output PWM receiver", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-radiomaster-er8-24-pwm",
+  );
+
+  expect(receiver).toMatchObject({
+    name: "RadioMaster ER8 2.4GHz ELRS PWM Receiver",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz"],
+    weight: 16.5,
+    pwmOutputs: 8,
+    dimensionsMm: [43, 15, 30],
+    telemetryPowerMw: 100,
+    workingVoltage: "4.5-8.4 V",
+    telemetryVoltageRange: "4.0-35 V",
+    price: 34.99,
+    modelStatus: "not_available",
+    sourceUrl: "https://radiomasterrc.com/products/er8-2-4ghz-elrs-pwm-receiver",
+  });
+  expect(receiver.serialProtocols).toEqual(["CRSF", "SBUS"]);
 });
 
 test("legacy receiver asset is identified as the JHEMCU EP24S", () => {
