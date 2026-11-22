@@ -237,7 +237,8 @@
 .compare-table {
   width: 100%;
   min-width: 680px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .compare-table th,
@@ -248,6 +249,9 @@
 }
 
 .compare-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   color: var(--ink-soft);
   background: var(--surface-soft);
   font-family: "IBM Plex Mono", monospace;
@@ -257,10 +261,20 @@
 }
 
 .compare-table tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 2;
   width: 26%;
   color: var(--ink-soft);
+  background: var(--surface-raised);
   font-size: 11px;
   font-weight: 600;
+  box-shadow: 8px 0 12px -12px rgba(18, 28, 24, 0.42);
+}
+
+.compare-table thead th:first-child {
+  left: 0;
+  z-index: 4;
 }
 
 .compare-table tbody th > span {
@@ -284,6 +298,10 @@
 }
 
 .compare-table tbody tr.is-changed {
+  background: #fffaf0;
+}
+
+.compare-table tbody tr.is-changed th {
   background: #fffaf0;
 }
 
@@ -318,6 +336,10 @@
 @media (max-width: 900px) {
   .compare-page {
     padding: 16px 14px 0;
+  }
+
+  .compare-table thead th {
+    top: 64px;
   }
 }
 
