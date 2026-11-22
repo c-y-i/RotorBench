@@ -699,37 +699,47 @@ export default function HomePage() {
             </div>
           </div>
 
-          {activeView === "3D" && hasBuild && (
+          {hasBuild && (
             <div className="preview-controls">
               <div className="preview-controls-heading">
                 <span>Visible components</span>
-                <label>
-                  Background
-                  <select
-                    value={backgroundColor}
-                    onChange={(e) => setBackgroundColor(e.target.value)}
-                  >
-                    <option value="#2d2d44">Dark gray</option>
-                    <option value="#111111">Black</option>
-                    <option value="#1a1a2e">Dark blue</option>
-                    <option value="#2c3e50">Slate blue</option>
-                    <option value="#34495e">Charcoal</option>
-                    <option value="#ffffff">White</option>
-                    <option value="#f5f5f5">Light gray</option>
-                    <option value="#e3f2fd">Light blue</option>
-                    <option value="#fff3e0">Light orange</option>
-                    <option value="#f1f8e9">Light green</option>
-                    <option value="#fce4ec">Light pink</option>
-                    <option value="#e8eaf6">Lavender</option>
-                    <option value="#fff9c4">Light yellow</option>
-                    <option value="#e0f2f1">Mint</option>
-                    <option value="#263238">Dark teal</option>
-                    <option value="#3e2723">Dark brown</option>
-                    <option value="#1b5e20">Dark green</option>
-                  </select>
-                </label>
+                {activeView === "2D" ? (
+                  <span className="preview-controls-scroll-hint" aria-hidden="true">
+                    Swipe layers →
+                  </span>
+                ) : (
+                  <label>
+                    Background
+                    <select
+                      value={backgroundColor}
+                      onChange={(e) => setBackgroundColor(e.target.value)}
+                    >
+                      <option value="#2d2d44">Dark gray</option>
+                      <option value="#111111">Black</option>
+                      <option value="#1a1a2e">Dark blue</option>
+                      <option value="#2c3e50">Slate blue</option>
+                      <option value="#34495e">Charcoal</option>
+                      <option value="#ffffff">White</option>
+                      <option value="#f5f5f5">Light gray</option>
+                      <option value="#e3f2fd">Light blue</option>
+                      <option value="#fff3e0">Light orange</option>
+                      <option value="#f1f8e9">Light green</option>
+                      <option value="#fce4ec">Light pink</option>
+                      <option value="#e8eaf6">Lavender</option>
+                      <option value="#fff9c4">Light yellow</option>
+                      <option value="#e0f2f1">Mint</option>
+                      <option value="#263238">Dark teal</option>
+                      <option value="#3e2723">Dark brown</option>
+                      <option value="#1b5e20">Dark green</option>
+                    </select>
+                  </label>
+                )}
               </div>
-              <div className="visibility-chip-row">
+              <div
+                className="visibility-chip-row"
+                role="group"
+                aria-label="Assembly component visibility"
+              >
                 {[
                   { id: "frame", label: "Frame", Icon: Box },
                   { id: "motor", label: "Motors", Icon: Cog },

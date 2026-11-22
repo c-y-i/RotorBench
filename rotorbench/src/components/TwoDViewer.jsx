@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useRef, useState } from "react";
+import { Download } from "lucide-react";
 import {
   getBatteryPlacementMm,
   getFallbackDimensionsMm,
@@ -71,11 +72,24 @@ function propBladePath(radius, bladeCount, index) {
   );
 }
 
-export default function TwoDViewer({
+function mountCoordinateSource(frame) {
+  if (Array.isArray(frame?.motorPositionsMm)) return "frame.motorPositionsMm";
+  if (
+    Array.isArray(frame?.upper_left_motor_position)
+    && Array.isArray(frame?.upper_right_motor_position)
+    && Array.isArray(frame?.lower_right_motor_position)
+    && Array.isArray(frame?.lower_left_motor_position)
+  ) {
+    return "named frame motor positions";
+  }
+  return "derived from catalogued frame layout";
+}
+
+export function buildSchematicModel({
   assemblySpec = {},
   propellerDirection = "props-out",
   clearedComponents = [],
-}) {
+} = {}) {
   const hasSelectedAssembly = Boolean(assemblySpec?.frame?.id);
   const spec = hasSelectedAssembly ? assemblySpec : SAMPLE_SPEC;
   const frame = spec.frame;
@@ -172,15 +186,339 @@ export default function TwoDViewer({
     propellersVisible ? `${bladeCount}-blade propellers, ` : "no propellers visible, "
   }${propellerDirection}. ${labelParts.join("; ")}.`;
 
+  return {
+    battery,
+    batteryPlacement,
+    batteryVisible,
+    bladeCount,
+    electronics,
+    electronicsDims,
+    frame,
+    frameDims,
+    hasSelectedAssembly,
+    hidden,
+    label,
+    labelSize,
+    maxX,
+    maxZ,
+    minX,
+    minZ,
+    motor,
+    motorDims,
+    motorRadius,
+    mounts,
+    padding,
+    propeller,
+    propellerDiameter,
+    propellerDirection,
+    propellerOrigins,
+    propellersVisible,
+    spec,
+    stackLabelY,
+    viewMinX,
+    viewMinZ,
+    viewSize,
+  };
+}
+
+export function buildSchematicExportMetadata(
+  model,
+  exportedAt = new Date().toISOString(),
+) {
+  const visibleComponents = {
+    frame: !model.hidden.has("frame"),
+    motors: !model.hidden.has("motor"),
+    propellers: model.propellersVisible,
+    battery: model.batteryVisible,
+    esc: model.electronics.some((entry) => entry.key === "esc"),
+    flightController: model.electronics.some(
+      (entry) => entry.key === "flightController",
+    ),
+    receiver: model.electronics.some((entry) => entry.key === "receiver"),
+  };
+
+  return {
+    schema: "rotorbench.assembly-schematic.v1",
+    exportedAt,
+    title: model.label,
+    source: model.hasSelectedAssembly ? "selected-build" : "sample-assembly",
+    parts: {
+      frame: model.frame?.id || null,
+      motor: model.motor?.id || null,
+      propeller: model.propeller?.id || null,
+      battery: model.battery?.id || null,
+      esc: model.electronics.find((entry) => entry.key === "esc")?.part.id || null,
+      flightController:
+        model.electronics.find((entry) => entry.key === "flightController")?.part.id
+        || null,
+      receiver:
+        model.electronics.find((entry) => entry.key === "receiver")?.part.id || null,
+    },
+    coordinateSystem: {
+      units: "mm",
+      plane: "XZ",
+      view: "top-down",
+      up: "+Y",
+      front: "-Z",
+    },
+    propellerDirection: model.propellerDirection,
+    motorStationSource: mountCoordinateSource(model.frame),
+    motorStations: model.mounts.map((point, index) => ({
+      label: `M${index + 1}`,
+      positionMm: {
+        x: point[0],
+        y: point[1],
+        z: point[2],
+      },
+      propellerHandedness: model.propellersVisible
+        ? model.propellerOrigins[index]?.[3] || null
+        : null,
+    })),
+    batteryCenterMm: model.batteryPlacement
+      ? {
+        x: model.batteryPlacement.origin[0],
+        y: model.batteryPlacement.origin[1],
+        z: model.batteryPlacement.origin[2],
+      }
+      : null,
+    visibleComponents,
+    boundaries: {
+      planningSchematic: true,
+      productExact: false,
+      hardwareReady: false,
+      hardwareVerified: false,
+      flightReady: false,
+    },
+  };
+}
+
+const STANDALONE_SCHEMATIC_STYLES = `
+  .assembly-plan-view { background: #202826; }
+  .assembly-plan-grid { fill: url(#assembly-grid-major); }
+  #assembly-grid-minor path { stroke: #293632; stroke-width: 0.35; fill: none; }
+  #assembly-grid-major > path { stroke: #34423d; stroke-width: 0.65; fill: none; }
+  .assembly-plan-frame line { stroke: #aab7b1; stroke-width: 3; stroke-linecap: round; }
+  .assembly-plan-frame > rect:first-of-type {
+    fill: rgba(219, 227, 221, 0.08); stroke: #aab7b1; stroke-width: 1.4;
+  }
+  .assembly-plan-frame .assembly-plan-deck {
+    fill: #16201d; stroke: #7f938a; stroke-width: 1.1;
+  }
+  .assembly-plan-battery {
+    fill: #ff7d3a; fill-opacity: 0.88; stroke: #ffd1b4; stroke-width: 1.4;
+  }
+  .assembly-plan-battery-label {
+    fill: #2c160b; font-family: "IBM Plex Mono", monospace; font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .assembly-plan-electronics rect {
+    fill: rgba(213, 255, 79, 0.08); stroke: #d5ff4f; stroke-width: 1;
+    stroke-dasharray: 3 2;
+  }
+  .assembly-plan-electronics text, .assembly-plan-motor text,
+  .assembly-plan-propeller text, .assembly-plan-axes text {
+    fill: #dce7df; font-family: "IBM Plex Mono", monospace; font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .assembly-plan-axes line { stroke: #67d8cb; stroke-width: 1; }
+  .assembly-plan-front { fill: #d5ff4f !important; letter-spacing: 0.08em !important; }
+  .assembly-plan-propeller path {
+    fill: #76d8cd; fill-opacity: 0.82; stroke: #a6eee5; stroke-width: 0.8;
+  }
+  .assembly-plan-propeller.is-ccw path {
+    fill: #e6dac4; fill-opacity: 0.82; stroke: #fff6e6;
+  }
+  .assembly-plan-propeller > circle {
+    fill: #101816; stroke: #f7f4e9; stroke-width: 1;
+  }
+  .assembly-plan-propeller text { fill: #9eada7; }
+  .assembly-plan-motor > circle:first-child {
+    fill: #2a3733; stroke: #e8decd; stroke-width: 2;
+  }
+  .assembly-plan-motor > circle:first-child.is-hidden {
+    fill-opacity: 0.18; stroke-opacity: 0.28;
+  }
+  .assembly-plan-hub { fill: #d5ff4f; }
+  .assembly-plan-hub.is-hidden { fill-opacity: 0.18; }
+  .assembly-plan-motor.is-hidden text { fill-opacity: 0.35; }
+  .assembly-plan-export-title {
+    fill: #d5ff4f; font-family: "IBM Plex Mono", monospace; font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+  .assembly-plan-export-boundary {
+    fill: #b8c5bf; font-family: "IBM Plex Mono", monospace; font-weight: 600;
+    letter-spacing: 0.035em;
+  }
+`;
+
+export function createStandaloneSchematicSvg(svgElement, metadata, serialize) {
+  if (!svgElement) throw new Error("No schematic SVG is available to export.");
+
+  const clone = svgElement.cloneNode(true);
+  const ownerDocument = svgElement.ownerDocument;
+  const namespace = "http://www.w3.org/2000/svg";
+  const title = clone.querySelector("title")?.textContent || metadata.title;
+  const description = [
+    title,
+    "Planning schematic generated from RotorBench assembly coordinates.",
+    "Not a product-exact render, hardware verification, or flight authorization.",
+  ].join(" ");
+
+  const createSvgElement = (name) => ownerDocument.createElementNS(namespace, name);
+  clone.setAttribute("xmlns", namespace);
+  clone.setAttribute("role", "img");
+  clone.setAttribute("aria-label", description);
+
+  let descriptionElement = clone.querySelector("desc");
+  if (!descriptionElement) {
+    descriptionElement = createSvgElement("desc");
+    clone.insertBefore(descriptionElement, clone.querySelector("defs"));
+  }
+  descriptionElement.textContent = description;
+
+  const metadataElement = createSvgElement("metadata");
+  metadataElement.textContent = JSON.stringify(metadata, null, 2);
+  clone.insertBefore(metadataElement, clone.querySelector("defs"));
+
+  const styleElement = createSvgElement("style");
+  styleElement.textContent = STANDALONE_SCHEMATIC_STYLES;
+  clone.insertBefore(styleElement, clone.querySelector("defs"));
+
+  const viewBox = (clone.getAttribute("viewBox") || "0 0 100 100")
+    .trim()
+    .split(/\s+/)
+    .map(Number);
+  const [x, y, width, height] = viewBox;
+  const band = height * 0.08;
+  const exportY = y - band;
+  const exportHeight = height + band * 2;
+  const fontSize = band * 0.23;
+  clone.setAttribute("viewBox", `${x} ${exportY} ${width} ${exportHeight}`);
+  clone.setAttribute("width", "100%");
+  clone.setAttribute("height", "100%");
+  clone.setAttribute("style", "display:block;width:100%;height:100%;background:#101816");
+
+  const background = createSvgElement("rect");
+  background.setAttribute("x", String(x));
+  background.setAttribute("y", String(exportY));
+  background.setAttribute("width", String(width));
+  background.setAttribute("height", String(exportHeight));
+  background.setAttribute("fill", "#101816");
+  clone.insertBefore(background, clone.querySelector("defs"));
+
+  const exportTitle = createSvgElement("text");
+  exportTitle.setAttribute("class", "assembly-plan-export-title");
+  exportTitle.setAttribute("x", String(x + band * 0.5));
+  exportTitle.setAttribute("y", String(y - band * 0.43));
+  exportTitle.setAttribute("font-size", String(fontSize));
+  exportTitle.textContent = `ROTORBENCH · ${
+    metadata.source === "selected-build" ? "SELECTED BUILD" : "SAMPLE"
+  } · TOP VIEW`;
+
+  const boundary = createSvgElement("text");
+  boundary.setAttribute("class", "assembly-plan-export-boundary");
+  boundary.setAttribute("x", String(x + band * 0.5));
+  boundary.setAttribute("y", String(y + height + band * 0.57));
+  boundary.setAttribute("font-size", String(fontSize * 0.88));
+  boundary.textContent =
+    "PLANNING SCHEMATIC · MOTOR COORDINATES IN mm · NOT PRODUCT-EXACT OR HARDWARE-READY";
+
+  clone.append(exportTitle, boundary);
+  const serializer = serialize
+    || (typeof XMLSerializer !== "undefined" ? new XMLSerializer() : null);
+  if (!serializer) throw new Error("SVG serialization is unavailable.");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${serializer.serializeToString(clone)}`;
+}
+
+export default function TwoDViewer({
+  assemblySpec = {},
+  propellerDirection = "props-out",
+  clearedComponents = [],
+}) {
+  const svgRef = useRef(null);
+  const [exportStatus, setExportStatus] = useState("");
+  const model = buildSchematicModel({
+    assemblySpec,
+    propellerDirection,
+    clearedComponents,
+  });
+  const {
+    batteryPlacement,
+    bladeCount,
+    electronics,
+    electronicsDims,
+    hidden,
+    label,
+    labelSize,
+    maxX,
+    minX,
+    motorRadius,
+    mounts,
+    padding,
+    propellerDiameter,
+    propellerOrigins,
+    stackLabelY,
+    viewMinX,
+    viewMinZ,
+    viewSize,
+  } = model;
+  const frameDims = model.frameDims;
+
+  const downloadSchematic = () => {
+    try {
+      const metadata = buildSchematicExportMetadata(model);
+      const svg = createStandaloneSchematicSvg(svgRef.current, metadata);
+      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `rotorbench-assembly-schematic-${Date.now()}.svg`;
+      link.click();
+      URL.revokeObjectURL(url);
+      setExportStatus(
+        "Schematic SVG downloaded. Planning view only; not hardware verification.",
+      );
+    } catch {
+      setExportStatus("Could not download the schematic. Try again.");
+    }
+  };
+
   return (
     <div className="drone-wrapper assembly-plan-view">
+      <div className="assembly-plan-toolbar">
+        <div className="assembly-plan-toolbar-copy">
+          <strong>Top view</strong>
+          <span>
+            {mounts.length} motor station{mounts.length === 1 ? "" : "s"} ·
+            schematic, not product-exact
+          </span>
+        </div>
+        <button
+          type="button"
+          className="assembly-plan-download"
+          onClick={downloadSchematic}
+        >
+          <Download size={15} aria-hidden="true" />
+          Download SVG
+        </button>
+      </div>
+      {exportStatus && (
+        <span className="visually-hidden" role="status" aria-live="polite">
+          {exportStatus}
+        </span>
+      )}
       <svg
+        ref={svgRef}
         viewBox={`${viewMinX} ${viewMinZ} ${viewSize} ${viewSize}`}
         role="img"
         aria-label={label}
         preserveAspectRatio="xMidYMid meet"
       >
         <title>{label}</title>
+        <desc>
+          Planning schematic from shared assembly coordinates. Not a product-exact
+          render or hardware verification.
+        </desc>
         <defs>
           <pattern id="assembly-grid-minor" width="10" height="10" patternUnits="userSpaceOnUse">
             <path d="M 10 0 L 0 0 0 10" fill="none" />

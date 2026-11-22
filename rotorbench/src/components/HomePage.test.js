@@ -7,7 +7,16 @@ import { PLATFORM_PRESETS } from "../data/platformPresets";
 import { summarizeBuild } from "../utils/buildComparison";
 
 jest.mock("./BabylonViewer", () => () => <div data-testid="home-assembly-viewer" />);
-jest.mock("./TwoDViewer", () => () => <div data-testid="home-two-d-viewer" />);
+jest.mock("./TwoDViewer", () => function MockTwoDViewer({
+  clearedComponents = [],
+}) {
+  return (
+    <div
+      data-testid="home-two-d-viewer"
+      data-cleared={clearedComponents.join(",")}
+    />
+  );
+});
 
 function LocationProbe() {
   const location = useLocation();
@@ -136,6 +145,38 @@ test("defers the 3D runtime until the preview approaches the viewport", async ()
   } finally {
     global.IntersectionObserver = originalIntersectionObserver;
   }
+});
+
+test("keeps component visibility controls available in the 2D inspection view", async () => {
+  const preset = PLATFORM_PRESETS[0];
+  localStorage.setItem("currentBuild", JSON.stringify({
+    id: "home-two-d-build",
+    name: "2D inspection build",
+    componentIds: preset.componentIds,
+  }));
+  const { container } = renderHome();
+
+  await screen.findByTestId("home-assembly-viewer");
+  expect(screen.getByText("Visible components")).toBeInTheDocument();
+  expect(screen.getByLabelText("Background")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "2D" }));
+  const twoDViewer = await screen.findByTestId("home-two-d-viewer");
+  expect(screen.getByText("Visible components")).toBeInTheDocument();
+  expect(screen.getByRole("group", {
+    name: "Assembly component visibility",
+  })).toBeInTheDocument();
+  expect(screen.getByText("Swipe layers →")).toBeInTheDocument();
+  expect(screen.queryByLabelText("Background")).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Props" }));
+  expect(screen.getByRole("button", { name: "Props" }))
+    .toHaveAttribute("aria-pressed", "false");
+  expect(twoDViewer).toHaveAttribute("data-cleared", "propeller");
+
+  fireEvent.click(screen.getByRole("button", { name: "Frame" }));
+  expect(twoDViewer).toHaveAttribute("data-cleared", "propeller,frame");
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("starter platform actions open a preassembled build draft", async () => {

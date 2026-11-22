@@ -242,6 +242,17 @@
   gap: 8px;
 }
 
+.preview-controls-scroll-hint {
+  display: none;
+  color: #aebbb5;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .preview-controls-heading select {
   min-height: var(--control-min-height);
   padding: 0 28px 0 9px;
@@ -3351,6 +3362,10 @@
     display: none;
   }
 
+  .preview-controls-scroll-hint {
+    display: inline;
+  }
+
   .visibility-chip-row {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -3605,11 +3620,75 @@
 
 .assembly-plan-view {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   background: #202826;
 }
 
-.assembly-plan-view svg {
+.assembly-plan-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 6px 12px 6px 16px;
+  border-bottom: 1px solid #34403c;
+  background: #17211e;
+}
+
+.assembly-plan-toolbar-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.assembly-plan-toolbar-copy strong,
+.assembly-plan-toolbar-copy span {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.assembly-plan-toolbar-copy strong {
+  color: #eef3ed;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.assembly-plan-toolbar-copy span {
+  color: #aebbb5;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.assembly-plan-download {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: var(--control-min-height);
+  padding: 0 11px;
+  border: 1px solid #4a5852;
+  border-radius: 7px;
+  color: #eef3ed;
+  background: #202b27;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.assembly-plan-download:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.assembly-plan-download:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.assembly-plan-view > svg {
+  min-height: 0;
   width: 100%;
   height: 100%;
 }
