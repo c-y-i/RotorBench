@@ -7,7 +7,7 @@ import {
 import { summarizeBuild } from "../utils/buildComparison";
 
 test("every starter platform references a complete catalog build", () => {
-  expect(PLATFORM_PRESETS).toHaveLength(18);
+  expect(PLATFORM_PRESETS).toHaveLength(19);
   PLATFORM_PRESETS.forEach((preset) => {
     expect(validatePlatformPreset(preset)).toBe(true);
     expect(Object.keys(preset.componentIds)).toHaveLength(7);
@@ -78,6 +78,18 @@ test("every starter platform references a complete catalog build", () => {
       flightControllerId: "fc-holybro-kakute-f722",
       batteryId: "battery-tattu-rline-v6-6s-1480-160c",
       receiverId: "rx-radiomaster-bandit-br3-900",
+    },
+  });
+  expect(getPlatformPreset("source-5-aos-f722-xrossband")).toMatchObject({
+    name: "5-inch AOS F722 Xrossband build",
+    componentIds: {
+      frameId: "frame-aos-5-v5",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-holybro-kakute-f722",
+      batteryId: "battery-tattu-rline-v6-6s-1480-160c",
+      receiverId: "rx-radiomaster-dbr4-gemini-xrossband",
     },
   });
   expect(getPlatformPreset("source-5-aos-supernova")).toMatchObject({

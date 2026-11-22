@@ -502,6 +502,31 @@ test("the T1 H743 starter loads the documented ArduPilot wing controller", async
   )).toBeInTheDocument();
 });
 
+test("the 5-inch Xrossband starter loads the DBR4 receiver", async () => {
+  render(
+    <MemoryRouter
+      initialEntries={["/build?preset=source-5-aos-f722-xrossband"]}
+    >
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  expect(screen.getByTestId("assembly-viewer")).toHaveAttribute(
+    "data-receiver",
+    "rx-radiomaster-dbr4-gemini-xrossband",
+  );
+  expect(screen.getByText(
+    "5-inch AOS F722 Xrossband build",
+  )).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+});
+
 test("a PWM-only receiver does not claim a serial receiver route", async () => {
   render(
     <MemoryRouter initialEntries={[{

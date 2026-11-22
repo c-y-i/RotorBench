@@ -130,14 +130,14 @@ test("starter platforms filter by frame size while preserving direct launch acti
     name: "Filter starter platforms by frame size",
   });
   expect(within(filters).getAllByRole("button")).toHaveLength(7);
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(18);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(19);
 
   const fiveInch = within(filters).getByRole("button", {
-    name: /^5-inch builds\s*8$/,
+    name: /^5-inch builds\s*9$/,
   });
   fireEvent.click(fiveInch);
   expect(fiveInch).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(8);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(9);
   expect(screen.getByRole("button", {
     name: "Open 5-inch Volador II VX5 51499 build",
   })).toBeInTheDocument();
@@ -146,6 +146,9 @@ test("starter platforms filter by frame size while preserving direct launch acti
   })).toBeInTheDocument();
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS F722 900MHz build",
+  })).toBeInTheDocument();
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch AOS F722 Xrossband build",
   })).toBeInTheDocument();
   expect(screen.queryByRole("button", {
     name: "Open 7-inch long-range source build",
@@ -160,9 +163,9 @@ test("starter platforms filter by frame size while preserving direct launch acti
   })).toBeInTheDocument();
 
   fireEvent.click(within(filters).getByRole("button", {
-    name: /^All builds\s*18$/,
+    name: /^All builds\s*19$/,
   }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(18);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(19);
 
   fireEvent.click(within(filters).getByRole("button", {
     name: /^730 mm wing\s*2$/,
@@ -173,23 +176,23 @@ test("starter platforms filter by frame size while preserving direct launch acti
   })).toBeInTheDocument();
 
   fireEvent.click(within(filters).getByRole("button", {
-    name: /^All builds\s*18$/,
+    name: /^All builds\s*19$/,
   }));
 
   const evidenceFilters = screen.getByRole("group", {
     name: "Filter starter platforms by fit evidence",
   });
   const verifiedOnly = within(evidenceFilters).getByRole("button", {
-    name: /^Verified only\s*12$/,
+    name: /^Verified only\s*13$/,
   });
   fireEvent.click(verifiedOnly);
   expect(verifiedOnly).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(12);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(13);
 
   fireEvent.click(within(filters).getByRole("button", {
-    name: /^5-inch builds\s*8$/,
+    name: /^5-inch builds\s*9$/,
   }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(4);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(5);
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS 5 V5 source build",
   })).toBeInTheDocument();
@@ -212,10 +215,10 @@ test("starter platform search matches components and resets cleanly", async () =
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS F722 900MHz build",
   })).toBeInTheDocument();
-  expect(screen.getByText("1 of 18 source builds")).toBeInTheDocument();
+  expect(screen.getByText("1 of 19 source builds")).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: "Clear starter search" }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(18);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(19);
 
   fireEvent.change(search, { target: { value: "F722 900" } });
   expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(1);
@@ -226,7 +229,7 @@ test("starter platform search matches components and resets cleanly", async () =
   fireEvent.change(search, { target: { value: "not-a-real-platform" } });
   expect(screen.getByText("No starter builds match")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Reset starter filters" }));
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(18);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(19);
   expect(await getA11yViolations(container)).toEqual([]);
 });
 
@@ -235,14 +238,17 @@ test("starter filters survive through shareable URL state", async () => {
   await screen.findByTestId("home-assembly-viewer");
 
   expect(screen.getByLabelText("Search starter builds")).toHaveValue("F722");
-  expect(screen.getByRole("button", { name: /^5-inch builds\s*8$/ }))
+  expect(screen.getByRole("button", { name: /^5-inch builds\s*9$/ }))
     .toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByRole("button", { name: /^Verified only\s*12$/ }))
+  expect(screen.getByRole("button", { name: /^Verified only\s*13$/ }))
     .toHaveAttribute("aria-pressed", "true");
   expect(screen.getByLabelText("Sort starter builds")).toHaveValue("price");
-  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(2);
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(3);
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS F722 900MHz build",
+  })).toBeInTheDocument();
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch AOS F722 Xrossband build",
   })).toBeInTheDocument();
   expect(screen.getByTestId("location-path")).toHaveTextContent(
     "/?q=F722&size=5&fit=verified&sort=price",
