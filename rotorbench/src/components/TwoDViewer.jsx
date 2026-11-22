@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Download } from "lucide-react";
 import {
+  MOTOR_CORNER_ORDER,
   getBatteryPlacementMm,
   getFallbackDimensionsMm,
   getFrameMountPointsMm,
@@ -100,6 +101,8 @@ export function buildSchematicModel({
   propellerDirection = "props-out",
   clearedComponents = [],
   measuredCg = null,
+  motorOutputs = [],
+  motorOutputByCorner = null,
 } = {}) {
   const hasSelectedAssembly = Boolean(assemblySpec?.frame?.id);
   const spec = hasSelectedAssembly ? assemblySpec : SAMPLE_SPEC;
@@ -114,6 +117,11 @@ export function buildSchematicModel({
   const propellerOrigins = propellersVisible
     ? getPropellerOriginsMm(frame, motor, propeller, propellerDirection)
     : [];
+  const motorOutputLabels = mounts.map((_, index) => (
+    motorOutputByCorner?.[MOTOR_CORNER_ORDER[index]]
+    || motorOutputs[index]
+    || null
+  ));
   const frameDims = partDimensions("frame", frame);
   const motorDims = partDimensions("motor", motor || {});
   const propellerDiameter = propellersVisible
@@ -212,7 +220,16 @@ export function buildSchematicModel({
     hasSelectedAssembly ? "Top view of selected assembly" : "Top view of sample assembly"
   }. ${mounts.length} motor${mounts.length === 1 ? "" : "s"}, ${
     propellersVisible ? `${bladeCount}-blade propellers, ` : "no propellers visible, "
-  }${propellerDirection}. ${dimensionSummary}${
+  }${propellerDirection}.${
+    motorOutputLabels.some(Boolean)
+      ? ` Saved outputs: ${motorOutputLabels
+        .map((mapping, index) => mapping
+          ? `M${index + 1} output ${mapping.output} ${mapping.label || ""} ${mapping.spin || ""}`.trimEnd()
+          : null)
+        .filter(Boolean)
+        .join("; ")}.`
+      : ""
+  } ${dimensionSummary}${
     dimensionSummary ? ". " : ""
   }${labelParts.join("; ")}.${
     centerOfGravity.planarOffsetMm
@@ -245,6 +262,7 @@ export function buildSchematicModel({
     motor,
     motorDims,
     motorRadius,
+    motorOutputLabels,
     motorSpanXMm,
     motorSpanZMm,
     measuredCenterOfGravity: Array.isArray(measuredCg) && measuredCg.length === 2
@@ -317,6 +335,9 @@ export function buildSchematicExportMetadata(
     },
     motorStations: model.mounts.map((point, index) => ({
       label: `M${index + 1}`,
+      output: model.motorOutputLabels[index]?.output ?? null,
+      outputLabel: model.motorOutputLabels[index]?.label ?? null,
+      spin: model.motorOutputLabels[index]?.spin ?? null,
       positionMm: {
         x: point[0],
         y: point[1],
@@ -535,6 +556,8 @@ export default function TwoDViewer({
   propellerDirection = "props-out",
   clearedComponents = [],
   measuredCg = null,
+  motorOutputs = [],
+  motorOutputByCorner = null,
 }) {
   const svgRef = useRef(null);
   const [exportStatus, setExportStatus] = useState("");
@@ -543,6 +566,8 @@ export default function TwoDViewer({
     propellerDirection,
     clearedComponents,
     measuredCg,
+    motorOutputs,
+    motorOutputByCorner,
   });
   const {
     batteryPlacement,
@@ -558,6 +583,7 @@ export default function TwoDViewer({
     minX,
     measuredCenterOfGravity,
     motorRadius,
+    motorOutputLabels,
     motorSpanXMm,
     motorSpanZMm,
     mounts,
@@ -785,7 +811,9 @@ export default function TwoDViewer({
             />
             {!hidden.has("motor") && (
               <text y={motorRadius + 7} textAnchor="middle" fontSize={labelSize}>
-                {`M${index + 1} ${propellerOrigins[index]?.[3] || ""}`}
+                {motorOutputLabels[index]
+                  ? `OUT ${motorOutputLabels[index].output} ${motorOutputLabels[index].label || ""}`.trimEnd()
+                  : `M${index + 1} ${propellerOrigins[index]?.[3] || ""}`}
               </text>
             )}
           </g>

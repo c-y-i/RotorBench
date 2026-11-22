@@ -104,6 +104,46 @@ test("plots a recorded measured CG separately from the estimate", () => {
   })).toBeInTheDocument();
 });
 
+test("labels 2D motor stations with saved flight-controller outputs", () => {
+  const motorOutputs = [
+    { output: 1, label: "Left pusher", spin: "CW" },
+    { output: 2, label: "Right pusher", spin: "CCW" },
+  ];
+  const { container } = render(
+    <TwoDViewer
+      assemblySpec={WING_ASSEMBLY_SPEC}
+      propellerDirection="props-in"
+      motorOutputs={motorOutputs}
+    />,
+  );
+
+  expect(screen.getByText("OUT 1 Left pusher")).toBeInTheDocument();
+  expect(screen.getByText("OUT 2 Right pusher")).toBeInTheDocument();
+  expect(screen.getByRole("img", {
+    name: /Saved outputs: M1 output 1 Left pusher CW; M2 output 2 Right pusher CCW/i,
+  })).toBeInTheDocument();
+
+  const model = buildSchematicModel({
+    assemblySpec: WING_ASSEMBLY_SPEC,
+    propellerDirection: "props-in",
+    motorOutputs,
+  });
+  const metadata = buildSchematicExportMetadata(model);
+  expect(metadata.motorStations).toEqual([
+    expect.objectContaining({
+      output: 1,
+      outputLabel: "Left pusher",
+      spin: "CW",
+    }),
+    expect.objectContaining({
+      output: 2,
+      outputLabel: "Right pusher",
+      spin: "CCW",
+    }),
+  ]);
+  expect(container.querySelectorAll(".assembly-plan-motor")).toHaveLength(2);
+});
+
 test("exports a self-contained standalone SVG with source mount coordinates", () => {
   const model = buildSchematicModel({
     assemblySpec: WING_ASSEMBLY_SPEC,
