@@ -272,6 +272,9 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     rateKdMaxYaw: 0,
     dMaxGain: 0,
     dMaxAdvance: 35,
+    antiGravityGain: 0,
+    antiGravityCutoffHz: 5,
+    antiGravityPGain: 100,
   });
   const issues = validateFlightControllerConfig({
     ...config,
@@ -377,6 +380,20 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
       code: "rateKdMaxRoll-no-headroom",
     }),
   ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    antiGravityGain: 251,
+    antiGravityCutoffHz: 1,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "anti-gravity-gain-range",
+    }),
+    expect.objectContaining({
+      severity: "error",
+      code: "anti-gravity-cutoff-range",
+    }),
+  ]));
   expect(buildFlightControllerSummary(
     {
       ...config,
@@ -417,6 +434,16 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     getBoardProfile(config.profileId),
   ).join("\n")).toContain(
     "D response: D_MAX active Roll 0.0025->0.005; gyro boost 35, stick advance 35",
+  );
+  expect(buildFlightControllerSummary(
+    {
+      ...config,
+      antiGravityGain: 80,
+      antiGravityPGain: 120,
+    },
+    getBoardProfile(config.profileId),
+  ).join("\n")).toContain(
+    "Anti-gravity: enabled, gain 80, throttle-speed cutoff 5 Hz, P share 120% on roll and pitch only",
   );
 });
 

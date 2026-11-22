@@ -79,6 +79,9 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Yaw D_MAX")).toHaveValue(0);
   expect(screen.getByLabelText("Gyro boost")).toHaveValue(0);
   expect(screen.getByLabelText("Stick advance")).toHaveValue(35);
+  expect(screen.getByLabelText("Anti-gravity gain")).toHaveValue(0);
+  expect(screen.getByLabelText("Throttle cutoff")).toHaveValue(5);
+  expect(screen.getByLabelText("P share")).toHaveValue(100);
   expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
   expect(screen.getByLabelText("Centre slope")).toHaveValue(0);
   expect(screen.getByLabelText("Rate expo")).toHaveValue(0);
@@ -334,6 +337,34 @@ test("plans Aerial Kit D_MAX only above the axis D at rest", async () => {
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
     rateKdRoll: 0.006,
     rateKdMaxRoll: 0.005,
+  }));
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("plans Aerial Kit anti-gravity on roll and pitch only", async () => {
+  const onChange = jest.fn();
+  const { container } = render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.getByText("Anti-gravity")).toBeInTheDocument();
+  expect(screen.getAllByText("Off").length).toBeGreaterThan(0);
+
+  fireEvent.change(screen.getByLabelText("Anti-gravity gain"), {
+    target: { value: "80" },
+  });
+  expect(screen.getAllByText("Enabled").length).toBeGreaterThan(0);
+  expect(screen.getByText("Roll, pitch")).toBeInTheDocument();
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    antiGravityGain: 80,
+    antiGravityCutoffHz: 5,
+    antiGravityPGain: 100,
+  }));
+
+  fireEvent.change(screen.getByLabelText("P share"), {
+    target: { value: "120" },
+  });
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+    antiGravityGain: 80,
+    antiGravityPGain: 120,
   }));
   expect(await getA11yViolations(container)).toEqual([]);
 });

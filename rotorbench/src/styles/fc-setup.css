@@ -1105,7 +1105,8 @@
 .fc-feed-forward.is-feed-forward > summary em,
 .fc-feed-forward.is-relax > summary em,
 .fc-feed-forward.is-combined > summary em,
-.fc-feed-forward.is-configured > summary em {
+.fc-feed-forward.is-configured > summary em,
+.fc-feed-forward.is-enabled > summary em {
   color: var(--brand-strong);
   background: var(--brand-soft);
   border-color: transparent;
@@ -1165,7 +1166,8 @@
 .fc-feed-forward.is-feed-forward .fc-feed-forward-status strong,
 .fc-feed-forward.is-relax .fc-feed-forward-status strong,
 .fc-feed-forward.is-combined .fc-feed-forward-status strong,
-.fc-feed-forward.is-configured .fc-feed-forward-status strong {
+.fc-feed-forward.is-configured .fc-feed-forward-status strong,
+.fc-feed-forward.is-enabled .fc-feed-forward-status strong {
   color: var(--brand-strong);
 }
 

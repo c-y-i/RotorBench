@@ -61,6 +61,7 @@ import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
 import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
 import { buildAerialKitPidResponsePlan } from "../utils/aerialKitPidResponse";
 import { buildAerialKitDResponsePlan } from "../utils/aerialKitDResponse";
+import { buildAerialKitAntiGravityPlan } from "../utils/aerialKitAntiGravity";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -160,6 +161,9 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "rateKdMaxRoll-no-headroom": { id: "fc-rate-kd-max-roll", label: "roll D_MAX headroom" },
   "rateKdMaxPitch-no-headroom": { id: "fc-rate-kd-max-pitch", label: "pitch D_MAX headroom" },
   "rateKdMaxYaw-no-headroom": { id: "fc-rate-kd-max-yaw", label: "yaw D_MAX headroom" },
+  "anti-gravity-gain-range": { id: "fc-anti-gravity-gain", label: "anti-gravity gain" },
+  "anti-gravity-cutoff-range": { id: "fc-anti-gravity-cutoff", label: "anti-gravity cutoff" },
+  "anti-gravity-p-gain-range": { id: "fc-anti-gravity-p-gain", label: "anti-gravity P share" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -1218,6 +1222,123 @@ function DResponsePanel({
   );
 }
 
+function AntiGravityPanel({
+  config,
+  plan,
+  onUpdate,
+}) {
+  return (
+    <details className={`fc-feed-forward fc-anti-gravity is-${plan.status}`}>
+      <summary>
+        <span>
+          <strong>Anti-gravity</strong>
+          <small>Throttle-speed I accelerator and P boost · roll and pitch only</small>
+        </span>
+        <em>{plan.enabled ? "Enabled" : "Off"}</em>
+      </summary>
+      <div className="fc-feed-forward-body">
+        <div className="fc-feed-forward-status" role="note">
+          <span>
+            <small>Throttle acceleration response</small>
+            <strong>{plan.enabled ? "Enabled" : "Off"}</strong>
+          </span>
+          <dl>
+            <div>
+              <dt>Gain</dt>
+              <dd>{plan.gain}</dd>
+            </div>
+            <div>
+              <dt>Cutoff</dt>
+              <dd>{plan.cutoffHz} Hz</dd>
+            </div>
+            <div>
+              <dt>P share</dt>
+              <dd>{plan.pGainPercent}%</dd>
+            </div>
+            <div>
+              <dt>Axes</dt>
+              <dd>{plan.enabled ? "Roll, pitch" : "None"}</dd>
+            </div>
+          </dl>
+        </div>
+        <fieldset className="fc-feed-forward-gains">
+          <legend>Inputs</legend>
+          <div className="fc-field-grid fc-field-grid-three">
+            <Field
+              label="Anti-gravity gain"
+              htmlFor="fc-anti-gravity-gain"
+              hint="0 disables; 0 to 250"
+              hintId="fc-anti-gravity-gain-hint"
+            >
+              <input
+                id="fc-anti-gravity-gain"
+                type="number"
+                min="0"
+                max="250"
+                step="1"
+                aria-invalid={filterInputInvalid(config.antiGravityGain)}
+                aria-describedby="fc-anti-gravity-gain-hint"
+                value={filterInputValue(config.antiGravityGain)}
+                onChange={(event) => onUpdate(
+                  "antiGravityGain",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Throttle cutoff"
+              htmlFor="fc-anti-gravity-cutoff"
+              hint="2 to 50 Hz"
+              hintId="fc-anti-gravity-cutoff-hint"
+            >
+              <input
+                id="fc-anti-gravity-cutoff"
+                type="number"
+                min="2"
+                max="50"
+                step="1"
+                aria-invalid={filterInputInvalid(config.antiGravityCutoffHz)}
+                aria-describedby="fc-anti-gravity-cutoff-hint"
+                value={filterInputValue(config.antiGravityCutoffHz)}
+                onChange={(event) => onUpdate(
+                  "antiGravityCutoffHz",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="P share"
+              htmlFor="fc-anti-gravity-p-gain"
+              hint="0 to 250 percent"
+              hintId="fc-anti-gravity-p-gain-hint"
+            >
+              <input
+                id="fc-anti-gravity-p-gain"
+                type="number"
+                min="0"
+                max="250"
+                step="1"
+                aria-invalid={filterInputInvalid(config.antiGravityPGain)}
+                aria-describedby="fc-anti-gravity-p-gain-hint"
+                value={filterInputValue(config.antiGravityPGain)}
+                onChange={(event) => onUpdate(
+                  "antiGravityPGain",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+          </div>
+        </fieldset>
+        <p className="fc-feed-forward-note">
+          The firmware derives anti-gravity from commanded throttle speed,
+          with the PT2 cutoff above, and applies it only to roll and pitch.
+          Yaw and fixed-wing surfaces receive neither accelerator.
+        </p>
+      </div>
+    </details>
+  );
+}
+
 function FeedForwardPanel({
   config,
   plan,
@@ -1542,6 +1663,10 @@ export default function FlightControllerSetup({
   );
   const dResponsePlan = useMemo(
     () => buildAerialKitDResponsePlan(config),
+    [config],
+  );
+  const antiGravityPlan = useMemo(
+    () => buildAerialKitAntiGravityPlan(config),
     [config],
   );
   const aerialKitRoleKeys = new Set(
@@ -2526,6 +2651,11 @@ export default function FlightControllerSetup({
               <DResponsePanel
                 config={config}
                 plan={dResponsePlan}
+                onUpdate={(key, nextValue) => update(key, nextValue)}
+              />
+              <AntiGravityPanel
+                config={config}
+                plan={antiGravityPlan}
                 onUpdate={(key, nextValue) => update(key, nextValue)}
               />
               <FeedForwardPanel

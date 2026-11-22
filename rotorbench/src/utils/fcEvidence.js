@@ -6,6 +6,7 @@ import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
 import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
 import { AERIALKIT_PID_RESPONSE_FIELDS } from "./aerialKitPidResponse";
 import { AERIALKIT_D_RESPONSE_FIELDS } from "./aerialKitDResponse";
+import { AERIALKIT_ANTI_GRAVITY_FIELDS } from "./aerialKitAntiGravity";
 
 const STATUS_PROTOCOLS = new Set(["akp", "betaflight"]);
 const PREFLIGHT_VERDICTS = {
@@ -1573,6 +1574,10 @@ const PARAMETER_PLAN_KEYS = {
     key,
   ])),
   ...Object.fromEntries(AERIALKIT_D_RESPONSE_FIELDS.map(({ runtimeName, key }) => [
+    runtimeName,
+    key,
+  ])),
+  ...Object.fromEntries(AERIALKIT_ANTI_GRAVITY_FIELDS.map(({ runtimeName, key }) => [
     runtimeName,
     key,
   ])),

@@ -7,6 +7,7 @@ import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
 import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
 import { buildAerialKitPidResponsePlan } from "../utils/aerialKitPidResponse";
 import { buildAerialKitDResponsePlan } from "../utils/aerialKitDResponse";
+import { buildAerialKitAntiGravityPlan } from "../utils/aerialKitAntiGravity";
 
 export const FIRMWARE_FAMILIES = [
   {
@@ -1797,6 +1798,9 @@ export function createDefaultFlightControllerConfig(
     rateKdMaxYaw: 0,
     dMaxGain: 0,
     dMaxAdvance: 35,
+    antiGravityGain: 0,
+    antiGravityCutoffHz: 5,
+    antiGravityPGain: 100,
     maxRateDps: 700,
     rateCenterDps: 0,
     rateExpo: 0,
@@ -2378,6 +2382,39 @@ export function validateFlightControllerConfig(
         message: `${axis.label} D_MAX is not above D-at-rest, so the firmware leaves that axis at its low D.`,
       });
     });
+    if (
+      !finite(config.antiGravityGain)
+      || Number(config.antiGravityGain) < 0
+      || Number(config.antiGravityGain) > 250
+    ) {
+      issues.push({
+        severity: "error",
+        code: "anti-gravity-gain-range",
+        message: "Anti-gravity gain must be between 0 and 250; 0 disables it.",
+      });
+    }
+    if (
+      !finite(config.antiGravityCutoffHz)
+      || Number(config.antiGravityCutoffHz) < 2
+      || Number(config.antiGravityCutoffHz) > 50
+    ) {
+      issues.push({
+        severity: "error",
+        code: "anti-gravity-cutoff-range",
+        message: "Anti-gravity throttle-speed cutoff must be between 2 and 50 Hz.",
+      });
+    }
+    if (
+      !finite(config.antiGravityPGain)
+      || Number(config.antiGravityPGain) < 0
+      || Number(config.antiGravityPGain) > 250
+    ) {
+      issues.push({
+        severity: "error",
+        code: "anti-gravity-p-gain-range",
+        message: "Anti-gravity P share must be between 0 and 250 percent.",
+      });
+    }
     if (
       !finite(config.maxRateDps)
       || Number(config.maxRateDps) < 10
@@ -3132,6 +3169,9 @@ export function buildFlightControllerSummary(
   const dResponsePlan = config.firmwareFamily === "aerialkit"
     ? buildAerialKitDResponsePlan(config)
     : null;
+  const antiGravityPlan = config.firmwareFamily === "aerialkit"
+    ? buildAerialKitAntiGravityPlan(config)
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -3196,6 +3236,11 @@ export function buildFlightControllerSummary(
               : dResponsePlan.status === "no-headroom"
                 ? `D_MAX has no active headroom above D-at-rest${dResponsePlan.noHeadroomAxes.length ? ` (${dResponsePlan.noHeadroomAxes.map((axis) => axis.label).join(", ")})` : ""}`
                 : `D_MAX active ${dResponsePlan.enabledAxes.map((axis) => `${axis.label} ${axis.base}->${axis.maximum}`).join(", ")}; gyro boost ${dResponsePlan.dMaxGain}, stick advance ${dResponsePlan.dMaxAdvance}`
+          }`,
+          `Anti-gravity: ${
+            antiGravityPlan.enabled
+              ? `enabled, gain ${antiGravityPlan.gain}, throttle-speed cutoff ${antiGravityPlan.cutoffHz} Hz, P share ${antiGravityPlan.pGainPercent}% on roll and pitch only`
+              : "disabled; yaw remains outside anti-gravity scope"
           }`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,

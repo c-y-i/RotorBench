@@ -10,6 +10,7 @@ import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
 import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
 import { AERIALKIT_PID_RESPONSE_FIELDS } from "./aerialKitPidResponse";
 import { AERIALKIT_D_RESPONSE_FIELDS } from "./aerialKitDResponse";
+import { AERIALKIT_ANTI_GRAVITY_FIELDS } from "./aerialKitAntiGravity";
 
 export const AERIALKIT_AIRFRAME_IDS = {
   quadx: 0,
@@ -210,6 +211,13 @@ export function buildFlightControllerCommands(
     Number(config.dMaxGain) <= 100 &&
     Number(config.dMaxAdvance) >= 0 &&
     Number(config.dMaxAdvance) <= 200 &&
+    AERIALKIT_ANTI_GRAVITY_FIELDS.every(({ key }) => finite(config[key])) &&
+    Number(config.antiGravityGain) >= 0 &&
+    Number(config.antiGravityGain) <= 250 &&
+    Number(config.antiGravityCutoffHz) >= 2 &&
+    Number(config.antiGravityCutoffHz) <= 50 &&
+    Number(config.antiGravityPGain) >= 0 &&
+    Number(config.antiGravityPGain) <= 250 &&
     finite(config.maxRateDps) &&
     finite(config.rateCenterDps) &&
     finite(config.rateExpo) &&
@@ -316,6 +324,9 @@ export function buildFlightControllerCommands(
       `set ${runtimeName} ${Number(config[key])}`
     )),
     ...AERIALKIT_D_RESPONSE_FIELDS.map(({ key, runtimeName }) => (
+      `set ${runtimeName} ${Number(config[key])}`
+    )),
+    ...AERIALKIT_ANTI_GRAVITY_FIELDS.map(({ key, runtimeName }) => (
       `set ${runtimeName} ${Number(config[key])}`
     )),
     `set max_rate_dps ${Number(config.maxRateDps)}`,

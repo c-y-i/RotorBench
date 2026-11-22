@@ -56,6 +56,10 @@ import {
   AERIALKIT_D_RESPONSE_FIELDS,
   buildAerialKitDResponsePlan,
 } from "./aerialKitDResponse";
+import {
+  AERIALKIT_ANTI_GRAVITY_FIELDS,
+  buildAerialKitAntiGravityPlan,
+} from "./aerialKitAntiGravity";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -166,6 +170,9 @@ export function summarizeHardwareReadiness({
     : null;
   const fcDResponsePlan = fcPlan.firmwareFamily === "aerialkit"
     ? buildAerialKitDResponsePlan(fcPlan)
+    : null;
+  const fcAntiGravityPlan = fcPlan.firmwareFamily === "aerialkit"
+    ? buildAerialKitAntiGravityPlan(fcPlan)
     : null;
   const radioWarnings = radioPlanConfigured
     ? buildRadioWarnings(radioPlan, {
@@ -511,6 +518,13 @@ export function summarizeHardwareReadiness({
     fcDResponseActiveAxes: fcDResponsePlan
       ? fcDResponsePlan.enabledAxes.map((axis) => axis.id)
       : null,
+    ...Object.fromEntries(AERIALKIT_ANTI_GRAVITY_FIELDS.map(({ key }) => [
+      `fc${key[0].toUpperCase()}${key.slice(1)}`,
+      fcPlan.firmwareFamily === "aerialkit" ? fcPlan[key] : null,
+    ])),
+    fcAntiGravityStatus: fcAntiGravityPlan?.status ?? null,
+    fcAntiGravityEnabled: fcAntiGravityPlan?.enabled ?? null,
+    fcAntiGravityAxes: fcAntiGravityPlan?.axes ?? [],
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
@@ -722,6 +736,15 @@ export function sanitizeHardwareReadiness(readiness) {
     fcDResponseEnabled: readiness.fcDResponseEnabled ?? null,
     fcDResponseActiveAxes: Array.isArray(readiness.fcDResponseActiveAxes)
       ? readiness.fcDResponseActiveAxes
+      : [],
+    ...Object.fromEntries(AERIALKIT_ANTI_GRAVITY_FIELDS.map(({ key }) => {
+      const readinessKey = `fc${key[0].toUpperCase()}${key.slice(1)}`;
+      return [readinessKey, readiness[readinessKey] ?? null];
+    })),
+    fcAntiGravityStatus: readiness.fcAntiGravityStatus || null,
+    fcAntiGravityEnabled: readiness.fcAntiGravityEnabled ?? null,
+    fcAntiGravityAxes: Array.isArray(readiness.fcAntiGravityAxes)
+      ? readiness.fcAntiGravityAxes
       : [],
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
     fcRateCenterDps: readiness.fcRateCenterDps ?? null,

@@ -15,6 +15,7 @@ import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
 import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
 import { AERIALKIT_PID_RESPONSE_FIELDS } from "./aerialKitPidResponse";
 import { AERIALKIT_D_RESPONSE_FIELDS } from "./aerialKitDResponse";
+import { AERIALKIT_ANTI_GRAVITY_FIELDS } from "./aerialKitAntiGravity";
 
 const INFERRED_AIRFRAMES = Object.fromEntries(
   Object.entries(AERIALKIT_AIRFRAME_IDS).map(([name, id]) => [id, name]),
@@ -658,6 +659,25 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => key.includes("KdMax") && value === 0
         ? "Off"
         : String(value),
+    })),
+    ...AERIALKIT_ANTI_GRAVITY_FIELDS.map(({ key, runtimeName, label }) => ({
+      key,
+      source: runtimeName,
+      snapshotKey: runtimeName,
+      label,
+      parse: (raw) => {
+        const number = finite(raw);
+        const minimum = key === "antiGravityCutoffHz" ? 2 : 0;
+        const maximum = key === "antiGravityCutoffHz" ? 50 : 250;
+        return number != null && number >= minimum && number <= maximum
+          ? number
+          : null;
+      },
+      display: (value) => {
+        if (key === "antiGravityCutoffHz") return `${value} Hz`;
+        if (key === "antiGravityPGain") return `${value}%`;
+        return String(value);
+      },
     })),
     {
       key: "maxRateDps",
