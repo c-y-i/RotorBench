@@ -180,6 +180,49 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
   expect(screen.getByText("Ready")).toBeInTheDocument();
 });
 
+test("orbit auto-rotation respects the reduced-motion preference", async () => {
+  const originalMatchMedia = window.matchMedia;
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    writable: true,
+    value: jest.fn(() => ({
+      matches: true,
+      media: "(prefers-reduced-motion: reduce)",
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+    })),
+  });
+
+  try {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/build", state: { build } }]}>
+        <BuildProvider>
+          <BuildPage />
+        </BuildProvider>
+      </MemoryRouter>,
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const viewer = screen.getByTestId("assembly-viewer");
+    expect(screen.getByRole("button", { name: "Orbit" }))
+      .toHaveAttribute("aria-pressed", "true");
+    expect(viewer).toHaveAttribute("data-auto-rotate", "false");
+
+    fireEvent.click(screen.getByRole("button", { name: "Top" }));
+    fireEvent.click(screen.getByRole("button", { name: "Orbit" }));
+    expect(viewer).toHaveAttribute("data-camera-view", "orbit");
+    expect(viewer).toHaveAttribute("data-auto-rotate", "false");
+  } finally {
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    });
+  }
+});
+
 test("build provenance names estimated fields in readable language", async () => {
   render(
     <MemoryRouter initialEntries={[{

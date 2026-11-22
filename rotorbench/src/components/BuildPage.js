@@ -439,12 +439,22 @@ export default function BuildPage() {
   const [showDebugStatus, setShowDebugStatus] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
   const [cameraView, setCameraView] = useState("orbit");
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [explodedAssembly, setExplodedAssembly] = useState(
     () => searchParams.get("exploded") === "1",
   );
   const [showFitOverlay, setShowFitOverlay] = useState(false);
   const [measurementTarget, setMeasurementTarget] = useState(null);
   const [selectedPresetId, setSelectedPresetId] = useState(requestedPreset?.id || "");
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return undefined;
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(motionQuery.matches);
+    updatePreference();
+    motionQuery.addEventListener?.("change", updatePreference);
+    return () => motionQuery.removeEventListener?.("change", updatePreference);
+  }, []);
 
   const setExplodedInspection = (enabled) => {
     setExplodedAssembly(enabled);
@@ -1401,7 +1411,7 @@ export default function BuildPage() {
                   assemblySpec={assemblySpec}
                   exploded={explodedAssembly}
                   groundClearance={4}
-                  autoRotate={cameraView === "orbit"}
+                  autoRotate={cameraView === "orbit" && !prefersReducedMotion}
                   cameraView={cameraView}
                   onLoaded={() => {}}
                   resetKey={resetKey}
