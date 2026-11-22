@@ -11,8 +11,10 @@ function distanceLabel(value) {
 export default function AerialKitWaypointInspector({
   inventory,
   activeWaypointIndex = null,
+  selectedWaypointIndex = undefined,
+  onSelectWaypoint = null,
 }) {
-  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [uncontrolledSelection, setUncontrolledSelection] = useState(null);
   if (!inventory || !Array.isArray(inventory.slots) || inventory.slots.length === 0) {
     return null;
   }
@@ -21,8 +23,11 @@ export default function AerialKitWaypointInspector({
   const activeIndex = indexes.includes(activeWaypointIndex)
     ? activeWaypointIndex
     : null;
-  const resolvedIndex = indexes.includes(selectedIndex)
-    ? selectedIndex
+  const requestedSelection = selectedWaypointIndex === undefined
+    ? uncontrolledSelection
+    : selectedWaypointIndex;
+  const resolvedIndex = indexes.includes(requestedSelection)
+    ? requestedSelection
     : activeIndex ?? indexes[0];
   const selectedSlotIndex = inventory.slots.findIndex(
     (slot) => slot.index === resolvedIndex,
@@ -75,7 +80,12 @@ export default function AerialKitWaypointInspector({
               key={slot.index}
               type="button"
               aria-pressed={isSelected}
-              onClick={() => setSelectedIndex(slot.index)}
+              onClick={() => {
+                if (selectedWaypointIndex === undefined) {
+                  setUncontrolledSelection(slot.index);
+                }
+                onSelectWaypoint?.(slot.index);
+              }}
             >
               <span>
                 <strong>WP {slot.index}</strong>

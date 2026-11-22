@@ -1057,7 +1057,7 @@ test("reads a waypoint inventory from advertised parameters without upload contr
     ],
   });
   setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
-  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+  const { container } = render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
   await userEvent.click(screen.getByRole("button", {
@@ -1079,7 +1079,7 @@ test("reads a waypoint inventory from advertised parameters without upload contr
   expect(screen.getByText("Total route")).toBeInTheDocument();
   expect(screen.getByText("WP 0 → WP 1")).toBeInTheDocument();
   expect(screen.getByText(/Spherical great-circle estimate/i)).toBeInTheDocument();
-  expect(screen.getByRole("img", {
+  expect(screen.getByRole("group", {
     name: "Local north-up sketch of board-reported waypoint coordinates and active target WP 1",
   })).toBeInTheDocument();
   expect(screen.getByText(/WP 1 is the active target/i)).toBeInTheDocument();
@@ -1091,6 +1091,15 @@ test("reads a waypoint inventory from advertised parameters without upload contr
   expect(screen.getByText("Active target WP 1")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Copy mission briefing" }))
     .toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: /WP 0 37\.6774000/,
+  }));
+  expect(screen.getByText("Selected WP 0")).toBeInTheDocument();
+  expect(container.querySelector(".route-selected-ring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Inspect waypoint WP 1",
+  }));
+  expect(screen.getByText("Selected WP 1")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /upload waypoint/i }))
     .not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /save mission/i }))

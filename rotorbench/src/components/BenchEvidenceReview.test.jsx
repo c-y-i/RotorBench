@@ -625,7 +625,7 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("37.6774000, -122.4194000")).toBeInTheDocument();
   expect(screen.getByText("WP 0 → WP 1")).toBeInTheDocument();
   expect(screen.getByText(/Spherical great-circle estimate/i)).toBeInTheDocument();
-  expect(screen.getByRole("img", {
+  expect(screen.getByRole("group", {
     name: "Local north-up sketch of waypoint coordinates with fresh board position and active target WP 1",
   })).toBeInTheDocument();
   expect(screen.getByText("Board")).toBeInTheDocument();
@@ -637,6 +637,12 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("Active target WP 1")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Copy mission briefing" }))
     .toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: /WP 0 37\.6774000/,
+  }));
+  expect(screen.getByText("Selected WP 0")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Inspect waypoint WP 0" }))
+    .toHaveAttribute("aria-pressed", "true");
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();

@@ -242,6 +242,7 @@ export default function BenchEvidenceReview({
   onEvidenceChange = null,
 }) {
   const [evidence, setEvidence] = useState(null);
+  const [selectedWaypointIndex, setSelectedWaypointIndex] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [checkFilter, setCheckFilter] = useState("all");
@@ -261,6 +262,7 @@ export default function BenchEvidenceReview({
     setAttachment(readBenchEvidenceAttachment(buildId));
     setHistory(readBenchEvidenceAttachmentHistory(buildId));
     setAttachedAt(null);
+    setSelectedWaypointIndex(null);
   }, [buildId]);
 
   const chooseFile = () => inputRef.current?.click();
@@ -290,6 +292,7 @@ export default function BenchEvidenceReview({
       setFcAdoptIds([]);
       setRadioAdoptIds([]);
       setAttachedAt(null);
+      setSelectedWaypointIndex(null);
       onEvidenceChange?.(parsed);
       setMessage(
         `${files.length} evidence file${files.length === 1 ? "" : "s"} reviewed locally and not yet attached.`,
@@ -297,6 +300,7 @@ export default function BenchEvidenceReview({
     } catch (readError) {
       setEvidence(null);
       onEvidenceChange?.(null);
+      setSelectedWaypointIndex(null);
       setError(readError.message);
     }
   };
@@ -308,6 +312,7 @@ export default function BenchEvidenceReview({
     setReviewedScope(null);
     setFcAdoptIds([]);
     setRadioAdoptIds([]);
+    setSelectedWaypointIndex(null);
     setError("");
     setMessage("Imported evidence cleared from this page.");
   };
@@ -1588,6 +1593,8 @@ export default function BenchEvidenceReview({
                   === "ok" && evidence.fcEvidence.liveStatus.mission.active
                   ? evidence.fcEvidence.liveStatus.mission.index
                   : null}
+                selectedWaypointIndex={selectedWaypointIndex}
+                onSelectWaypoint={setSelectedWaypointIndex}
               />
               <AerialKitRouteSketch
                 inventory={evidence.fcEvidence.liveStatus.waypointInventory}
@@ -1599,6 +1606,8 @@ export default function BenchEvidenceReview({
                   === "ok" && evidence.fcEvidence.liveStatus.mission.active
                   ? evidence.fcEvidence.liveStatus.mission.index
                   : null}
+                selectedWaypointIndex={selectedWaypointIndex}
+                onSelectWaypoint={setSelectedWaypointIndex}
               />
               <AerialKitWaypointRouteSummary
                 route={evidence.fcEvidence.liveStatus.routeSummary}

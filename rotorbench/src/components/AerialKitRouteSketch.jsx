@@ -5,6 +5,8 @@ export default function AerialKitRouteSketch({
   inventory,
   currentPosition = null,
   activeWaypointIndex = null,
+  selectedWaypointIndex = null,
+  onSelectWaypoint = null,
 }) {
   const sketch = buildAerialKitRouteSketch(inventory, currentPosition);
   if (sketch.status === "unavailable") return null;
@@ -27,7 +29,14 @@ export default function AerialKitRouteSketch({
   const activePoint = Number.isInteger(activeWaypointIndex)
     ? sketch.points.find((point) => point.index === activeWaypointIndex) || null
     : null;
+  const selectedPoint = Number.isInteger(selectedWaypointIndex)
+    ? sketch.points.find((point) => point.index === selectedWaypointIndex) || null
+    : null;
+  const selectable = typeof onSelectWaypoint === "function";
   const activeTargetLabel = activePoint ? ` WP ${activePoint.index} is the active target.` : "";
+  const selectedTargetLabel = selectedPoint
+    ? ` Selected for inspection is WP ${selectedPoint.index}.`
+    : "";
   const positionLabel = boardPosition ? " Fresh board position shown." : "";
   const outsideLabel = sketch.currentPosition && !boardPosition
     ? " Fresh board position lies outside this sketch extent."
@@ -36,11 +45,12 @@ export default function AerialKitRouteSketch({
     <figure className="aerial-kit-route-sketch">
       <svg
         viewBox="0 0 100 100"
-        role="img"
+        role={selectable ? "group" : "img"}
         aria-label={[
           "Local north-up sketch of",
           boardPosition ? "waypoint coordinates with fresh board position" : "board-reported waypoint coordinates",
           activePoint ? `and active target WP ${activePoint.index}` : "",
+          selectedPoint ? `with selected waypoint WP ${selectedPoint.index}` : "",
         ].filter(Boolean).join(" ")}
       >
         <title>Local waypoint route sketch</title>
@@ -52,6 +62,9 @@ export default function AerialKitRouteSketch({
             : ""}
           {activePoint
             ? ` WP ${activePoint.index} is marked as the active target.`
+            : ""}
+          {selectedPoint
+            ? ` WP ${selectedPoint.index} is selected for local inspection.`
             : ""}
         </desc>
         <line className="route-north-line" x1="88" y1="12" x2="88" y2="4" />
@@ -69,36 +82,62 @@ export default function AerialKitRouteSketch({
             y2={activePoint.y}
           />
         )}
-        {sketch.points.map((point, index) => (
-          <g key={point.index}>
-            {point.index === activeWaypointIndex && (
+        {sketch.points.map((point, index) => {
+          const isSelected = point.index === selectedWaypointIndex;
+          return (
+            <g
+              key={point.index}
+              className={selectable ? "route-point-target" : undefined}
+              role={selectable ? "button" : undefined}
+              tabIndex={selectable ? 0 : undefined}
+              aria-label={selectable ? `Inspect waypoint WP ${point.index}` : undefined}
+              aria-pressed={selectable ? isSelected : undefined}
+              onClick={selectable ? () => onSelectWaypoint(point.index) : undefined}
+              onKeyDown={selectable
+                ? (event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    onSelectWaypoint(point.index);
+                  }
+                : undefined}
+            >
+              {isSelected && (
+                <circle
+                  className="route-selected-ring"
+                  cx={point.x}
+                  cy={point.y}
+                  r="6.2"
+                />
+              )}
+              {point.index === activeWaypointIndex && (
+                <circle
+                  className="route-active-ring"
+                  cx={point.x}
+                  cy={point.y}
+                  r="4.2"
+                />
+              )}
               <circle
-                className="route-active-ring"
+                className={[
+                  "route-point",
+                  index === 0 ? "is-start" : "",
+                  point.index === activeWaypointIndex ? "is-active" : "",
+                ].filter(Boolean).join(" ")}
                 cx={point.x}
                 cy={point.y}
-                r="4.2"
+                r="2.2"
               />
-            )}
-            <circle
-              className={[
-                "route-point",
-                index === 0 ? "is-start" : "",
-                point.index === activeWaypointIndex ? "is-active" : "",
-              ].filter(Boolean).join(" ")}
-              cx={point.x}
-              cy={point.y}
-              r="2.2"
-            />
-            <text
-              className="route-point-label"
-              x={point.x}
-              y={point.y - 3.6}
-              textAnchor="middle"
-            >
-              WP {point.index}
-            </text>
-          </g>
-        ))}
+              <text
+                className="route-point-label"
+                x={point.x}
+                y={point.y - 3.6}
+                textAnchor="middle"
+              >
+                WP {point.index}
+              </text>
+            </g>
+          );
+        })}
         {boardPosition && (
           <g className="route-current-position">
             <circle className="route-current-ring" cx={boardPosition.x} cy={boardPosition.y} r="4.2" />
@@ -119,6 +158,7 @@ export default function AerialKitRouteSketch({
       <figcaption>
         Local equirectangular sketch · north up · not a basemap or flown path.
         {activeTargetLabel}
+        {selectedTargetLabel}
         {positionLabel}
         {boardPosition && activePoint
           ? " The dashed link is an observation, not a flight track."

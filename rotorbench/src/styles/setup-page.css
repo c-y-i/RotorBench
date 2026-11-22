@@ -3618,6 +3618,25 @@
   stroke-width: 1;
 }
 
+.route-point-target {
+  cursor: pointer;
+}
+
+.route-point-target:hover .route-point,
+.route-point-target:focus-visible .route-point {
+  stroke-width: 1.8;
+}
+
+.route-point-target:focus-visible .route-point-label {
+  font-size: 3.6px;
+}
+
+.route-selected-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
 .route-point.is-start {
   fill: currentColor;
 }

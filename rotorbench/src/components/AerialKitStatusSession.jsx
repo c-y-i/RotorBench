@@ -214,6 +214,7 @@ export default function AerialKitStatusSession({
   const [waypointInventory, setWaypointInventory] = useState(null);
   const [waypointState, setWaypointState] = useState("idle");
   const [waypointError, setWaypointError] = useState("");
+  const [selectedWaypointIndex, setSelectedWaypointIndex] = useState(null);
   const [waypointProgress, setWaypointProgress] = useState({
     read: 0,
     total: 0,
@@ -312,6 +313,7 @@ export default function AerialKitStatusSession({
     setWaypointInventory(null);
     setWaypointState("idle");
     setWaypointError("");
+    setSelectedWaypointIndex(null);
     setWaypointProgress({ read: 0, total: 0 });
     observationRef.current = null;
     onObservation?.(null);
@@ -2380,6 +2382,8 @@ export default function AerialKitStatusSession({
                       activeWaypointIndex={mission?.status === "ok" && mission.active
                         ? mission.index
                         : null}
+                      selectedWaypointIndex={selectedWaypointIndex}
+                      onSelectWaypoint={setSelectedWaypointIndex}
                     />
                     <AerialKitRouteSketch
                       inventory={waypointInventory}
@@ -2389,6 +2393,8 @@ export default function AerialKitStatusSession({
                       activeWaypointIndex={mission?.status === "ok" && mission.active
                         ? mission.index
                         : null}
+                      selectedWaypointIndex={selectedWaypointIndex}
+                      onSelectWaypoint={setSelectedWaypointIndex}
                     />
                     <AerialKitWaypointRouteSummary route={routeSummary} />
                   </div>

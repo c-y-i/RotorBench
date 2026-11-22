@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import AerialKitRouteSketch from "./AerialKitRouteSketch";
 import { buildAerialKitWaypointInventory } from "../utils/aerialKitWaypoints";
 
@@ -40,4 +40,28 @@ test("does not compress the route when the board position is far outside", () =>
   expect(container.querySelector(".route-active-ring")).toBeInTheDocument();
   expect(screen.getByText(/Fresh board position lies outside this sketch extent/i))
     .toBeInTheDocument();
+});
+
+test("shares a selectable waypoint marker with an accessible local selection", () => {
+  const onSelectWaypoint = jest.fn();
+  const { container } = render(<AerialKitRouteSketch
+    inventory={inventory}
+    activeWaypointIndex={1}
+    selectedWaypointIndex={0}
+    onSelectWaypoint={onSelectWaypoint}
+  />);
+  expect(screen.getByRole("group", {
+    name: "Local north-up sketch of board-reported waypoint coordinates and active target WP 1 with selected waypoint WP 0",
+  })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Inspect waypoint WP 0" }))
+    .toHaveAttribute("aria-pressed", "true");
+  expect(container.querySelector(".route-selected-ring")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Inspect waypoint WP 1" }));
+  expect(onSelectWaypoint).toHaveBeenCalledWith(1);
+  fireEvent.keyDown(
+    screen.getByRole("button", { name: "Inspect waypoint WP 1" }),
+    { key: "Enter" },
+  );
+  expect(onSelectWaypoint).toHaveBeenCalledTimes(2);
 });
