@@ -153,6 +153,10 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
     {
       values: {
         max_rate_dps: "680.5",
+        rate_center_dps: "300",
+        rate_expo: "0.35",
+        tpa_rate: "18",
+        tpa_breakpoint: "0.55",
         max_tilt_deg: "40",
         yaw_rate_dps: "320",
         max_dt_ms: "25",
@@ -163,6 +167,10 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
     },
     {
       maxRateDps: 700,
+      rateCenterDps: 0,
+      rateExpo: 0,
+      tpaRate: 0,
+      tpaBreakpoint: 0.5,
       maxTiltDeg: 35,
       yawRateDps: 350,
       maxDtMs: 50,
@@ -175,6 +183,10 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
   expect(patch.supported).toBe(true);
   expect(patch.fields).toEqual(expect.arrayContaining([
     expect.objectContaining({ key: "maxRateDps", observedValue: 680.5 }),
+    expect.objectContaining({ key: "rateCenterDps", observedValue: 300 }),
+    expect.objectContaining({ key: "rateExpo", observedValue: 0.35 }),
+    expect.objectContaining({ key: "tpaRate", observedValue: 18 }),
+    expect.objectContaining({ key: "tpaBreakpoint", observedValue: 0.55 }),
     expect.objectContaining({ key: "maxTiltDeg", observedValue: 40 }),
     expect.objectContaining({ key: "yawRateDps", observedValue: 320 }),
     expect.objectContaining({ key: "maxDtMs", observedValue: 25 }),

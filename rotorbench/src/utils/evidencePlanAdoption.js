@@ -532,6 +532,50 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => `${value}°/s`,
     },
     {
+      key: "rateCenterDps",
+      source: "rate_center_dps",
+      snapshotKey: "rate_center_dps",
+      label: "Rate-curve centre slope",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 1800 ? number : null;
+      },
+      display: (value) => value === 0 ? "Linear curve" : `${value}°/s`,
+    },
+    {
+      key: "rateExpo",
+      source: "rate_expo",
+      snapshotKey: "rate_expo",
+      label: "Rate-curve expo",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 1 ? number : null;
+      },
+      display: (value) => `${Math.round(value * 100)}%`,
+    },
+    {
+      key: "tpaRate",
+      source: "tpa_rate",
+      snapshotKey: "tpa_rate",
+      label: "Throttle-gain scaling",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 100 ? number : null;
+      },
+      display: (value) => `${value}%`,
+    },
+    {
+      key: "tpaBreakpoint",
+      source: "tpa_breakpoint",
+      snapshotKey: "tpa_breakpoint",
+      label: "Throttle-gain breakpoint",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 1 ? number : null;
+      },
+      display: (value) => `${Math.round(value * 100)}%`,
+    },
+    {
       key: "maxTiltDeg",
       source: "max_tilt_deg",
       snapshotKey: "max_tilt_deg",

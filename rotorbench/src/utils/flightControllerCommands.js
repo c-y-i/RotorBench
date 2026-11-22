@@ -142,6 +142,10 @@ export function buildFlightControllerCommands(
     integer(config.gyroRateHz) &&
     integer(config.pidDenom) &&
     finite(config.maxRateDps) &&
+    finite(config.rateCenterDps) &&
+    finite(config.rateExpo) &&
+    finite(config.tpaRate) &&
+    finite(config.tpaBreakpoint) &&
     finite(config.maxTiltDeg) &&
     finite(config.yawRateDps) &&
     integer(config.maxDtMs) &&
@@ -222,6 +226,10 @@ export function buildFlightControllerCommands(
     `set gyro_rate_hz ${Number(config.gyroRateHz)}`,
     `set pid_denom ${Number(config.pidDenom)}`,
     `set max_rate_dps ${Number(config.maxRateDps)}`,
+    `set rate_center_dps ${Number(config.rateCenterDps)}`,
+    `set rate_expo ${Number(config.rateExpo)}`,
+    `set tpa_rate ${Number(config.tpaRate)}`,
+    `set tpa_breakpoint ${Number(config.tpaBreakpoint)}`,
     `set max_tilt_deg ${Number(config.maxTiltDeg)}`,
     `set yaw_rate_dps ${Number(config.yawRateDps)}`,
     `set max_dt_ms ${Number(config.maxDtMs)}`,

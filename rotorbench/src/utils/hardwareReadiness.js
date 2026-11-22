@@ -402,6 +402,18 @@ export function summarizeHardwareReadiness({
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
+    fcRateCenterDps: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.rateCenterDps
+      : null,
+    fcRateExpo: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.rateExpo
+      : null,
+    fcTpaRate: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.tpaRate
+      : null,
+    fcTpaBreakpoint: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.tpaBreakpoint
+      : null,
     fcMaxTiltDeg: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxTiltDeg
       : null,
@@ -521,6 +533,10 @@ export function sanitizeHardwareReadiness(readiness) {
     fcGyroRateHz: readiness.fcGyroRateHz ?? null,
     fcPidDenom: readiness.fcPidDenom ?? null,
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
+    fcRateCenterDps: readiness.fcRateCenterDps ?? null,
+    fcRateExpo: readiness.fcRateExpo ?? null,
+    fcTpaRate: readiness.fcTpaRate ?? null,
+    fcTpaBreakpoint: readiness.fcTpaBreakpoint ?? null,
     fcMaxTiltDeg: readiness.fcMaxTiltDeg ?? null,
     fcYawRateDps: readiness.fcYawRateDps ?? null,
     fcMaxDtMs: readiness.fcMaxDtMs ?? null,

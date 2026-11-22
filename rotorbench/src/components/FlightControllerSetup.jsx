@@ -51,6 +51,10 @@ import {
 } from "../data/flightControllerProfiles";
 import { buildFlightControllerCommands } from "../utils/flightControllerCommands";
 import { buildReceiverWiringPlan } from "../utils/receiverWiring";
+import {
+  buildAerialKitRateCurve,
+  summarizeAerialKitRateFeel,
+} from "../utils/aerialKitRateCurve";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -108,6 +112,11 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "gyro-rate-range": { id: "fc-gyro-rate", label: "requested gyro rate" },
   "pid-denom-range": { id: "fc-pid-denom", label: "control-loop divisor" },
   "max-rate-range": { id: "fc-max-rate", label: "maximum angular rate" },
+  "rate-center-range": { id: "fc-rate-center", label: "rate-curve centre slope" },
+  "rate-center-linear": { id: "fc-rate-center", label: "rate-curve centre slope" },
+  "rate-expo-range": { id: "fc-rate-expo", label: "rate-curve expo" },
+  "tpa-rate-range": { id: "fc-tpa-rate", label: "throttle-gain scaling" },
+  "tpa-breakpoint-range": { id: "fc-tpa-breakpoint", label: "throttle-gain breakpoint" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -126,6 +135,146 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "arm-channel-unset": { id: "fc-arm-channel", label: "arm channel" },
   "channel-conflict": { id: "fc-arm-channel", label: "control channels" },
 });
+
+function RateCurveFigure({ config, summary: rateFeel, fixedWing }) {
+  const points = buildAerialKitRateCurve(config);
+  const width = 640;
+  const height = 250;
+  const padX = 46;
+  const padY = 28;
+  const maxRate = Math.max(1, Math.abs(Number(config.maxRateDps) || 0));
+  const xForStick = (stick) => padX + ((stick + 1) / 2) * (width - padX * 2);
+  const yForRate = (rate) => (
+    height - padY - ((rate + maxRate) / (maxRate * 2)) * (height - padY * 2)
+  );
+  const linePath = points
+    .map((point, index) => (
+      `${index === 0 ? "M" : "L"}${xForStick(point.stick).toFixed(2)} ${yForRate(point.rateDps).toFixed(2)}`
+    ))
+    .join(" ");
+  const linearPath = [
+    `M${xForStick(-1)} ${yForRate(-maxRate)}`,
+    `L${xForStick(1)} ${yForRate(maxRate)}`,
+  ].join(" ");
+  const halfStickX = xForStick(0.5);
+  const halfStickY = yForRate(rateFeel.halfStickRateDps);
+  const gainLabel = fixedWing
+    ? "Full-throttle P/I/D/FF scale"
+    : "Full-throttle P/D scale";
+
+  return (
+    <figure className="fc-rate-curve">
+      <div className="fc-rate-curve-heading">
+        <span>
+          <small>Actual-rate preview</small>
+          <strong>
+            {rateFeel.usesLinearCurve
+              ? "Linear stick response"
+              : "Firmware rate curve"}
+          </strong>
+        </span>
+        <em>
+          {rateFeel.usesLinearCurve
+            ? "Expo inactive at centre 0"
+            : `${Math.round(rateFeel.expo * 100)}% expo`}
+        </em>
+      </div>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-labelledby="fc-rate-curve-title fc-rate-curve-desc"
+      >
+        <title id="fc-rate-curve-title">Commanded angular rate by stick position</title>
+        <desc id="fc-rate-curve-desc">
+          {rateFeel.usesLinearCurve
+            ? `Linear response from minus ${maxRate} to plus ${maxRate} degrees per second.`
+            : `A shaped response with a ${rateFeel.centerRateDps} degree per second centre slope and ${Math.round(rateFeel.expo * 100)} percent expo, reaching plus or minus ${maxRate} degrees per second at full stick.`}
+          {" "}Half stick commands {Math.round(rateFeel.halfStickRateDps)} degrees per second.
+          {" "}A dashed line shows the linear reference.
+        </desc>
+        {[-1, -0.5, 0, 0.5, 1].map((stick) => (
+          <line
+            key={`x-${stick}`}
+            className="fc-rate-curve-grid"
+            x1={xForStick(stick)}
+            y1={padY}
+            x2={xForStick(stick)}
+            y2={height - padY}
+          />
+        ))}
+        {[-1, -0.5, 0, 0.5, 1].map((fraction) => (
+          <line
+            key={`y-${fraction}`}
+            className="fc-rate-curve-grid"
+            x1={padX}
+            y1={yForRate(fraction * maxRate)}
+            x2={width - padX}
+            y2={yForRate(fraction * maxRate)}
+          />
+        ))}
+        <line
+          className="fc-rate-curve-axis"
+          x1={padX}
+          y1={yForRate(0)}
+          x2={width - padX}
+          y2={yForRate(0)}
+        />
+        <line
+          className="fc-rate-curve-axis"
+          x1={xForStick(0)}
+          y1={padY}
+          x2={xForStick(0)}
+          y2={height - padY}
+        />
+        <path className="fc-rate-curve-reference" d={linearPath} />
+        {linePath && <path className="fc-rate-curve-line" d={linePath} />}
+        <circle
+          className="fc-rate-curve-point"
+          cx={halfStickX}
+          cy={halfStickY}
+          r="5"
+        />
+        <text className="fc-rate-curve-value" x={halfStickX + 10} y={halfStickY - 9}>
+          {Math.round(rateFeel.halfStickRateDps)}°/s
+        </text>
+        <text className="fc-rate-curve-label" x={padX} y={height - 8}>
+          −100%
+        </text>
+        <text className="fc-rate-curve-label" x={width / 2} y={height - 8} textAnchor="middle">
+          Stick centre
+        </text>
+        <text className="fc-rate-curve-label" x={width - padX} y={height - 8} textAnchor="end">
+          +100%
+        </text>
+        <text className="fc-rate-curve-label" x={padX - 8} y={yForRate(maxRate) + 4} textAnchor="end">
+          {maxRate}°/s
+        </text>
+        <text className="fc-rate-curve-label" x={padX - 8} y={yForRate(-maxRate) + 4} textAnchor="end">
+          −{maxRate}°/s
+        </text>
+      </svg>
+      <figcaption>
+        Planning geometry only. The aircraft's measured rate response, gyro
+        noise, and final feel require a disarmed output check followed by
+        qualified flight evidence.
+      </figcaption>
+      <dl className="fc-rate-curve-facts">
+        <div>
+          <dt>Centre slope</dt>
+          <dd>{rateFeel.usesLinearCurve ? "Linear" : `${rateFeel.centerRateDps}°/s`}</dd>
+        </div>
+        <div>
+          <dt>Half stick</dt>
+          <dd>{Math.round(rateFeel.halfStickRateDps)}°/s</dd>
+        </div>
+        <div>
+          <dt>{gainLabel}</dt>
+          <dd>×{rateFeel.fullThrottleTpaFactor.toFixed(2)}</dd>
+        </div>
+      </dl>
+    </figure>
+  );
+}
 
 function useFlightControllerConfig(
   value,
@@ -281,6 +430,10 @@ export default function FlightControllerSetup({
   );
   const aerialKitControlRoles = getAerialKitControlRoles(profile);
   const aerialKitLaunchAvailable = supportsAerialKitLaunch(config.airframe);
+  const aerialKitFixedWing = supportsAerialKitWingFailsafe(config.airframe);
+  const rateFeelSummary = summarizeAerialKitRateFeel(config, {
+    fixedWing: aerialKitFixedWing,
+  });
   const aerialKitRoleKeys = new Set(
     aerialKitControlRoles.map((role) => role.key),
   );
@@ -803,6 +956,9 @@ export default function FlightControllerSetup({
             label="Flight controller sections"
             items={[
               { id: "fc-profile-title", label: "Board" },
+              ...(config.firmwareFamily === "aerialkit"
+                ? [{ id: "fc-rate-feel-title", label: "Rate feel" }]
+                : []),
               { id: "fc-receiver-title", label: "Receiver" },
               ...(config.firmwareFamily === "aerialkit"
                 ? [
@@ -922,22 +1078,6 @@ export default function FlightControllerSetup({
                       aria-invalid={integerInvalid(config.pidDenom)}
                       value={numericValue(config.pidDenom)}
                       onChange={(event) => update("pidDenom", numericInput(event.target.value))}
-                    />
-                  </Field>
-                  <Field
-                    label="Maximum angular rate"
-                    htmlFor="fc-max-rate"
-                    hint="Rate mode at full stick, 10 to 1800 °/s"
-                  >
-                    <input
-                      id="fc-max-rate"
-                      type="number"
-                      min="10"
-                      max="1800"
-                      step="1"
-                      aria-invalid={numericInvalid(config.maxRateDps)}
-                      value={numericValue(config.maxRateDps)}
-                      onChange={(event) => update("maxRateDps", numericInput(event.target.value))}
                     />
                   </Field>
                   <Field
@@ -1133,6 +1273,124 @@ export default function FlightControllerSetup({
               </div>
             )}
           </section>
+
+          {config.firmwareFamily === "aerialkit" && (
+            <section className="fc-section" aria-labelledby="fc-rate-feel-title">
+              <div className="fc-section-heading">
+                <Gauge size={18} aria-hidden="true" />
+                <div>
+                  <h3 id="fc-rate-feel-title">Rate feel</h3>
+                  <p>
+                    Shape the firmware's Actual-rate response and throttle gain
+                    scaling. These are planning values, not measured aircraft rates.
+                  </p>
+                </div>
+              </div>
+
+              <div className="fc-rate-feel-layout">
+                <RateCurveFigure
+                  config={config}
+                  summary={rateFeelSummary}
+                  fixedWing={aerialKitFixedWing}
+                />
+                <div className="fc-rate-feel-fields">
+                  <div className="fc-field-grid">
+                    <Field
+                      label="Maximum angular rate"
+                      htmlFor="fc-max-rate"
+                      hint="Rate mode at full stick, 10 to 1800 °/s"
+                    >
+                      <input
+                        id="fc-max-rate"
+                        type="number"
+                        min="10"
+                        max="1800"
+                        step="1"
+                        aria-invalid={numericInvalid(config.maxRateDps)}
+                        value={numericValue(config.maxRateDps)}
+                        onChange={(event) => update("maxRateDps", numericInput(event.target.value))}
+                      />
+                    </Field>
+                    <Field
+                      label="Centre slope"
+                      htmlFor="fc-rate-center"
+                      hint="0 selects the linear curve; otherwise 0 to 1800 °/s per full stick"
+                    >
+                      <input
+                        id="fc-rate-center"
+                        type="number"
+                        min="0"
+                        max="1800"
+                        step="1"
+                        aria-invalid={numericInvalid(config.rateCenterDps)}
+                        value={numericValue(config.rateCenterDps)}
+                        onChange={(event) => update("rateCenterDps", numericInput(event.target.value))}
+                      />
+                    </Field>
+                    <Field
+                      label="Rate expo"
+                      htmlFor="fc-rate-expo"
+                      hint="0 to 1; bends the curve toward the maximum rate"
+                    >
+                      <input
+                        id="fc-rate-expo"
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        aria-invalid={numericInvalid(config.rateExpo)}
+                        value={numericValue(config.rateExpo)}
+                        onChange={(event) => update("rateExpo", numericInput(event.target.value))}
+                      />
+                    </Field>
+                    <Field
+                      label="TPA amount"
+                      htmlFor="fc-tpa-rate"
+                      hint="0 disables; 0 to 100 percent of gain scaling"
+                    >
+                      <input
+                        id="fc-tpa-rate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        aria-invalid={numericInvalid(config.tpaRate)}
+                        value={numericValue(config.tpaRate)}
+                        onChange={(event) => update("tpaRate", numericInput(event.target.value))}
+                      />
+                    </Field>
+                    <Field
+                      label="TPA breakpoint"
+                      htmlFor="fc-tpa-breakpoint"
+                      hint="Throttle pivot, 0 to 1; 0.5 is half throttle"
+                    >
+                      <input
+                        id="fc-tpa-breakpoint"
+                        type="number"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        aria-invalid={numericInvalid(config.tpaBreakpoint)}
+                        value={numericValue(config.tpaBreakpoint)}
+                        onChange={(event) => update("tpaBreakpoint", numericInput(event.target.value))}
+                      />
+                    </Field>
+                  </div>
+                  <div className="fc-rate-feel-note" role="note">
+                    <strong>
+                      {aerialKitFixedWing
+                        ? "Fixed-wing TPA scales P, I, D, and feed-forward."
+                        : "Multirotor TPA scales P and D; yaw and I remain unchanged."}
+                    </strong>
+                    <span>
+                      Centre slope 0 or at least the maximum rate selects the
+                      linear curve. Expo has no effect while the curve is linear.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {config.firmwareFamily === "aerialkit" && airframeSpec?.servos > 0 && (
             <section className="fc-section" aria-labelledby="fc-servo-title">

@@ -386,6 +386,10 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     gyroRateHz: 8001,
     pidDenom: 33,
     maxRateDps: 1801,
+    rateCenterDps: -1,
+    rateExpo: 1.1,
+    tpaRate: 101,
+    tpaBreakpoint: -0.1,
     maxTiltDeg: 81,
     yawRateDps: 1001,
     maxDtMs: 201,
@@ -401,6 +405,10 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     "gyro-rate-range",
     "pid-denom-range",
     "max-rate-range",
+    "rate-center-range",
+    "rate-expo-range",
+    "tpa-rate-range",
+    "tpa-breakpoint-range",
     "max-tilt-range",
     "yaw-rate-range",
     "max-dt-range",
@@ -417,6 +425,10 @@ test("Aerial Kit flight limits use documented firmware defaults and ranges", () 
   const defaults = createDefaultFlightControllerConfig();
   expect(defaults).toMatchObject({
     maxRateDps: 700,
+    rateCenterDps: 0,
+    rateExpo: 0,
+    tpaRate: 0,
+    tpaBreakpoint: 0.5,
     maxTiltDeg: 35,
     yawRateDps: 350,
     maxDtMs: 50,
@@ -424,17 +436,27 @@ test("Aerial Kit flight limits use documented firmware defaults and ranges", () 
   expect(validateFlightControllerConfig({
     ...defaults,
     maxRateDps: 10,
+    rateCenterDps: 0,
+    rateExpo: 1,
+    tpaRate: 100,
+    tpaBreakpoint: 1,
     maxTiltDeg: 80,
     yawRateDps: 1000,
     maxDtMs: 200,
   })).not.toEqual(expect.arrayContaining([
     expect.objectContaining({ code: "max-rate-range" }),
+    expect.objectContaining({ code: "rate-center-range" }),
+    expect.objectContaining({ code: "rate-expo-range" }),
+    expect.objectContaining({ code: "tpa-rate-range" }),
+    expect.objectContaining({ code: "tpa-breakpoint-range" }),
     expect.objectContaining({ code: "max-tilt-range" }),
     expect.objectContaining({ code: "yaw-rate-range" }),
     expect.objectContaining({ code: "max-dt-range" }),
   ]));
   expect(buildFlightControllerSummary(defaults).join("\n"))
     .toContain("Flight limits: rate mode 700°/s, angle tilt 35°, yaw 350°/s, integration step ≤50 ms");
+  expect(buildFlightControllerSummary(defaults).join("\n"))
+    .toContain("Rate feel: centre slope linear, expo 0%, TPA 0% above 50% throttle");
 });
 
 test("Aerial Kit fixed wings plan a powered lost-link descent", () => {

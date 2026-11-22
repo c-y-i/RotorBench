@@ -46,10 +46,50 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Requested gyro rate")).toHaveValue(0);
   expect(screen.getByLabelText("Loop divisor")).toHaveValue(1);
   expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
+  expect(screen.getByLabelText("Centre slope")).toHaveValue(0);
+  expect(screen.getByLabelText("Rate expo")).toHaveValue(0);
+  expect(screen.getByLabelText("TPA amount")).toHaveValue(0);
+  expect(screen.getByLabelText("TPA breakpoint")).toHaveValue(0.5);
   expect(screen.getByLabelText("Integration-step cap")).toHaveValue(50);
   expect(screen.getByLabelText("Maximum angle-mode tilt")).toHaveValue(35);
   expect(screen.getByLabelText("Full-stick yaw rate")).toHaveValue(350);
   expect(screen.getByRole("status")).toHaveTextContent("Driver default");
+});
+
+test("plans and previews the Aerial Kit Actual-rate curve", async () => {
+  const onChange = jest.fn();
+  const { container } = render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.getByRole("heading", { name: "Rate feel" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Rate feel" })).toBeInTheDocument();
+  expect(screen.getByRole("img", {
+    name: /^Commanded angular rate by stick position/,
+  })).toBeInTheDocument();
+  expect(screen.getByText("Linear stick response")).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Centre slope"), {
+    target: { value: "350" },
+  });
+  fireEvent.change(screen.getByLabelText("Rate expo"), {
+    target: { value: "0.5" },
+  });
+  fireEvent.change(screen.getByLabelText("TPA amount"), {
+    target: { value: "20" },
+  });
+  fireEvent.change(screen.getByLabelText("TPA breakpoint"), {
+    target: { value: "0.6" },
+  });
+
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    rateCenterDps: 350,
+    rateExpo: 0.5,
+    tpaRate: 20,
+    tpaBreakpoint: 0.6,
+  }));
+  expect(screen.getByText("Firmware rate curve")).toBeInTheDocument();
+  expect(screen.getByText("×0.80")).toBeInTheDocument();
+  expect(screen.getByText(/Multirotor TPA scales P and D/i)).toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("plans Aerial Kit fixed-wing lost-link descent only for wing airframes", () => {

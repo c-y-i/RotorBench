@@ -1754,6 +1754,10 @@ export function createDefaultFlightControllerConfig(
     gyroRateHz: 0,
     pidDenom: 1,
     maxRateDps: 700,
+    rateCenterDps: 0,
+    rateExpo: 0,
+    tpaRate: 0,
+    tpaBreakpoint: 0.5,
     maxTiltDeg: 35,
     yawRateDps: 350,
     maxDtMs: 50,
@@ -2092,6 +2096,59 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "max-rate-range",
         message: "Maximum rate-mode angular rate must be between 10 and 1800 degrees per second.",
+      });
+    }
+    if (
+      !finite(config.rateCenterDps)
+      || Number(config.rateCenterDps) < 0
+      || Number(config.rateCenterDps) > 1800
+    ) {
+      issues.push({
+        severity: "error",
+        code: "rate-center-range",
+        message: "Rate-curve centre slope must be between 0 and 1800 degrees per second.",
+      });
+    } else if (
+      finite(config.maxRateDps)
+      && Number(config.rateCenterDps) >= Number(config.maxRateDps)
+    ) {
+      issues.push({
+        severity: "warning",
+        code: "rate-center-linear",
+        message: "A centre slope at or above the maximum rate selects the firmware's linear rate curve.",
+      });
+    }
+    if (
+      !finite(config.rateExpo)
+      || Number(config.rateExpo) < 0
+      || Number(config.rateExpo) > 1
+    ) {
+      issues.push({
+        severity: "error",
+        code: "rate-expo-range",
+        message: "Rate-curve expo must be between 0 and 1.",
+      });
+    }
+    if (
+      !finite(config.tpaRate)
+      || Number(config.tpaRate) < 0
+      || Number(config.tpaRate) > 100
+    ) {
+      issues.push({
+        severity: "error",
+        code: "tpa-rate-range",
+        message: "Throttle-gain scaling must be between 0 and 100 percent.",
+      });
+    }
+    if (
+      !finite(config.tpaBreakpoint)
+      || Number(config.tpaBreakpoint) < 0
+      || Number(config.tpaBreakpoint) > 1
+    ) {
+      issues.push({
+        severity: "error",
+        code: "tpa-breakpoint-range",
+        message: "Throttle-gain breakpoint must be between 0 and 1.",
       });
     }
     if (
@@ -2709,6 +2766,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
           `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
+          `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,
           ...(supportsAerialKitWingFailsafe(config.airframe)
             ? [
                 `Wing lost-link descent: bank ${config.wingDescendBankDeg}°, nose-down ${config.wingDescendPitchDeg}°, throttle ${Math.round(Number(config.wingDescendThrottle) * 100)}%`,

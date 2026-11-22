@@ -785,6 +785,186 @@
   line-height: 1.45;
 }
 
+.fc-rate-feel-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.92fr) minmax(280px, 1.08fr);
+  align-items: start;
+  gap: 14px;
+}
+
+.fc-rate-feel-fields {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.fc-rate-feel-note {
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.fc-rate-feel-note strong {
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.fc-rate-feel-note span {
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.fc-rate-curve {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  margin: 0;
+  padding: 13px;
+  color: #d9e1d9;
+  background: var(--ink);
+  border: 1px solid #34413c;
+  border-radius: 7px;
+}
+
+.fc-rate-curve-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fc-rate-curve-heading > span {
+  display: grid;
+  gap: 2px;
+}
+
+.fc-rate-curve-heading small {
+  color: #9eada7;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.fc-rate-curve-heading strong {
+  color: #f3f5f3;
+  font-size: 13px;
+}
+
+.fc-rate-curve-heading em {
+  padding: 3px 6px;
+  color: var(--signal);
+  border: 1px solid #4d5c55;
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.fc-rate-curve svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.fc-rate-curve-grid {
+  stroke: #33413b;
+  stroke-width: 1;
+}
+
+.fc-rate-curve-axis {
+  stroke: #708078;
+  stroke-width: 1.2;
+}
+
+.fc-rate-curve-reference {
+  fill: none;
+  stroke: #93a29b;
+  stroke-dasharray: 5 6;
+  stroke-width: 1.4;
+}
+
+.fc-rate-curve-line {
+  fill: none;
+  stroke: var(--signal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.fc-rate-curve-point {
+  fill: var(--signal);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.fc-rate-curve-value,
+.fc-rate-curve-label {
+  fill: #b8c5bf;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+
+.fc-rate-curve-value {
+  fill: var(--signal);
+  font-weight: 650;
+}
+
+.fc-rate-curve figcaption {
+  color: #b8c5bf;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.fc-rate-curve-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding-top: 9px;
+  border-top: 1px solid #34413c;
+}
+
+.fc-rate-curve-facts > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding-inline: 9px;
+  border-inline-end: 1px solid #34413c;
+}
+
+.fc-rate-curve-facts > div:first-child {
+  padding-inline-start: 0;
+}
+
+.fc-rate-curve-facts > div:last-child {
+  border-inline-end: 0;
+}
+
+.fc-rate-curve-facts dt {
+  color: #9eada7;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.fc-rate-curve-facts dd {
+  margin: 0;
+  color: #f3f5f3;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 650;
+}
+
 .fc-board-facts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2025,6 +2205,10 @@
 
   .fc-field-grid,
   .fc-field-grid-three {
+    grid-template-columns: 1fr;
+  }
+
+  .fc-rate-feel-layout {
     grid-template-columns: 1fr;
   }
 
