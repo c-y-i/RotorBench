@@ -46,6 +46,7 @@ import {
   buildSerialAllocationText,
   getSerialPortAssignments,
   supportsAerialKitLaunch,
+  supportsAerialKitWingFailsafe,
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
 import { buildFlightControllerCommands } from "../utils/flightControllerCommands";
@@ -110,6 +111,12 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
+  "wing-bank-range": { id: "fc-wing-bank", label: "fixed-wing lost-link bank" },
+  "wing-pitch-range": { id: "fc-wing-pitch", label: "fixed-wing lost-link pitch" },
+  "wing-throttle-range": { id: "fc-wing-throttle", label: "fixed-wing lost-link throttle" },
+  "wing-zero-throttle": { id: "fc-wing-throttle", label: "fixed-wing lost-link throttle" },
+  "wing-bank-clamp": { id: "fc-wing-bank", label: "fixed-wing lost-link bank" },
+  "wing-pitch-clamp": { id: "fc-wing-pitch", label: "fixed-wing lost-link pitch" },
   "servo-reverse": { id: "fc-servo1-reverse", label: "servo reversal" },
   "servo-trim-range": { id: "fc-servo1-trim", label: "servo centre trim" },
   "servo-travel-range": { id: "fc-servo1-travel", label: "servo travel" },
@@ -1886,6 +1893,67 @@ export default function FlightControllerSetup({
                       onChange={(event) => update("yawRateDps", numericInput(event.target.value))}
                     />
                   </Field>
+                  {supportsAerialKitWingFailsafe(config.airframe) && (
+                    <>
+                      <Field
+                        label="Lost-link bank"
+                        htmlFor="fc-wing-bank"
+                        hint="Circling bank, 0 to 60 degrees"
+                      >
+                        <input
+                          id="fc-wing-bank"
+                          type="number"
+                          min="0"
+                          max="60"
+                          step="1"
+                          aria-invalid={numericInvalid(config.wingDescendBankDeg)}
+                          value={numericValue(config.wingDescendBankDeg)}
+                          onChange={(event) => update(
+                            "wingDescendBankDeg",
+                            numericInput(event.target.value),
+                          )}
+                        />
+                      </Field>
+                      <Field
+                        label="Lost-link nose-down"
+                        htmlFor="fc-wing-pitch"
+                        hint="Held descent pitch, 0 to 30 degrees"
+                      >
+                        <input
+                          id="fc-wing-pitch"
+                          type="number"
+                          min="0"
+                          max="30"
+                          step="1"
+                          aria-invalid={numericInvalid(config.wingDescendPitchDeg)}
+                          value={numericValue(config.wingDescendPitchDeg)}
+                          onChange={(event) => update(
+                            "wingDescendPitchDeg",
+                            numericInput(event.target.value),
+                          )}
+                        />
+                      </Field>
+                      <Field
+                        label="Lost-link throttle"
+                        htmlFor="fc-wing-throttle"
+                        hint="0 to 0.60; keep air over the elevons"
+                      >
+                        <input
+                          id="fc-wing-throttle"
+                          type="number"
+                          min="0"
+                          max="0.6"
+                          step="0.01"
+                          aria-invalid={numericInvalid(config.wingDescendThrottle)}
+                          value={numericValue(config.wingDescendThrottle)}
+                          onChange={(event) => update(
+                            "wingDescendThrottle",
+                            numericInput(event.target.value),
+                          )}
+                        />
+                      </Field>
+                    </>
+                  )}
                 </>
               )}
               <Field label="Link-loss action" htmlFor="fc-failsafe">

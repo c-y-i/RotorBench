@@ -1638,8 +1638,17 @@ const AERIALKIT_LAUNCH_AIRFRAMES = Object.freeze([
   "elevonwingsingle",
 ]);
 
+const AERIALKIT_FIXED_WING_AIRFRAMES = Object.freeze([
+  "elevonwing",
+  "elevonwingsingle",
+]);
+
 export function supportsAerialKitLaunch(airframe) {
   return AERIALKIT_LAUNCH_AIRFRAMES.includes(airframe);
+}
+
+export function supportsAerialKitWingFailsafe(airframe) {
+  return AERIALKIT_FIXED_WING_AIRFRAMES.includes(airframe);
 }
 
 export function getAerialKitControlRoles(profile = CUSTOM_BOARD_PROFILE) {
@@ -1748,6 +1757,9 @@ export function createDefaultFlightControllerConfig(
     maxTiltDeg: 35,
     yawRateDps: 350,
     maxDtMs: 50,
+    wingDescendBankDeg: 30,
+    wingDescendPitchDeg: 8,
+    wingDescendThrottle: 0.15,
     servo1Reverse: false,
     servo1TrimUs: 0,
     servo1TravelUs: AERIALKIT_SERVO_LIMITS.defaultTravelUs,
@@ -2110,6 +2122,73 @@ export function validateFlightControllerConfig(
         code: "max-dt-range",
         message: "Longest integration step must be a whole number from 5 to 200 milliseconds.",
       });
+    }
+    if (supportsAerialKitWingFailsafe(config.airframe)) {
+      if (
+        !finite(config.wingDescendBankDeg)
+        || Number(config.wingDescendBankDeg) < 0
+        || Number(config.wingDescendBankDeg) > 60
+      ) {
+        issues.push({
+          severity: "error",
+          code: "wing-bank-range",
+          message: "Fixed-wing lost-link bank must be between 0 and 60 degrees.",
+        });
+      }
+      if (
+        !finite(config.wingDescendPitchDeg)
+        || Number(config.wingDescendPitchDeg) < 0
+        || Number(config.wingDescendPitchDeg) > 30
+      ) {
+        issues.push({
+          severity: "error",
+          code: "wing-pitch-range",
+          message: "Fixed-wing lost-link nose-down pitch must be between 0 and 30 degrees.",
+        });
+      }
+      if (
+        !finite(config.wingDescendThrottle)
+        || Number(config.wingDescendThrottle) < 0
+        || Number(config.wingDescendThrottle) > 0.6
+      ) {
+        issues.push({
+          severity: "error",
+          code: "wing-throttle-range",
+          message: "Fixed-wing lost-link throttle must be between 0 and 0.60.",
+        });
+      }
+      if (
+        finite(config.wingDescendThrottle)
+        && Number(config.wingDescendThrottle) === 0
+      ) {
+        issues.push({
+          severity: "warning",
+          code: "wing-zero-throttle",
+          message: "A lost-link wing at zero throttle has no airflow over the elevons; verify this is intentional.",
+        });
+      }
+      if (
+        finite(config.wingDescendBankDeg)
+        && finite(config.maxTiltDeg)
+        && Number(config.wingDescendBankDeg) > Number(config.maxTiltDeg)
+      ) {
+        issues.push({
+          severity: "warning",
+          code: "wing-bank-clamp",
+          message: `The requested ${config.wingDescendBankDeg}° lost-link bank exceeds the ${config.maxTiltDeg}° angle-mode tilt and will be clamped.`,
+        });
+      }
+      if (
+        finite(config.wingDescendPitchDeg)
+        && finite(config.maxTiltDeg)
+        && Number(config.wingDescendPitchDeg) > Number(config.maxTiltDeg)
+      ) {
+        issues.push({
+          severity: "warning",
+          code: "wing-pitch-clamp",
+          message: `The requested ${config.wingDescendPitchDeg}° lost-link pitch exceeds the ${config.maxTiltDeg}° angle-mode tilt and will be clamped.`,
+        });
+      }
     }
     for (const servo of AERIALKIT_SERVO_OUTPUTS.slice(0, airframe?.servos || 0)) {
       if (typeof config[servo.reverseKey] !== "boolean") {
@@ -2630,6 +2709,11 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
           `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
+          ...(supportsAerialKitWingFailsafe(config.airframe)
+            ? [
+                `Wing lost-link descent: bank ${config.wingDescendBankDeg}°, nose-down ${config.wingDescendPitchDeg}°, throttle ${Math.round(Number(config.wingDescendThrottle) * 100)}%`,
+              ]
+            : []),
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell, critical-pack return ${config.batteryRthEnabled ? "enabled" : "disabled"}`,
           `Geofence: ${config.fenceEnabled ? "enabled" : "disabled"}; radius ${config.fenceRadiusM} m, ceiling ${Number(config.fenceCeilingM) === 0 ? "none" : `${config.fenceCeilingM} m`}, GPS gate ${config.gpsMinSats} satellites`,
           `Return floor: ${Number(config.rthMinAltM) === 0 ? "none" : `${config.rthMinAltM} m`}`,

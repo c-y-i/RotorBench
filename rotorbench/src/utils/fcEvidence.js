@@ -1546,6 +1546,9 @@ const PARAMETER_PLAN_KEYS = {
   max_tilt_deg: "maxTiltDeg",
   yaw_rate_dps: "yawRateDps",
   max_dt_ms: "maxDtMs",
+  wing_descend_bank_deg: "wingDescendBankDeg",
+  wing_descend_pitch_deg: "wingDescendPitchDeg",
+  wing_descend_throttle: "wingDescendThrottle",
   rth_enable: "rthEnabled",
 };
 

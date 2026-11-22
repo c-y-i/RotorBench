@@ -156,6 +156,9 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
         max_tilt_deg: "40",
         yaw_rate_dps: "320",
         max_dt_ms: "25",
+        wing_descend_bank_deg: "24",
+        wing_descend_pitch_deg: "7",
+        wing_descend_throttle: "0.2",
       },
     },
     {
@@ -163,6 +166,9 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
       maxTiltDeg: 35,
       yawRateDps: 350,
       maxDtMs: 50,
+      wingDescendBankDeg: 30,
+      wingDescendPitchDeg: 8,
+      wingDescendThrottle: 0.15,
     },
   );
 
@@ -172,6 +178,9 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
     expect.objectContaining({ key: "maxTiltDeg", observedValue: 40 }),
     expect.objectContaining({ key: "yawRateDps", observedValue: 320 }),
     expect.objectContaining({ key: "maxDtMs", observedValue: 25 }),
+    expect.objectContaining({ key: "wingDescendBankDeg", observedValue: 24 }),
+    expect.objectContaining({ key: "wingDescendPitchDeg", observedValue: 7 }),
+    expect.objectContaining({ key: "wingDescendThrottle", observedValue: 0.2 }),
   ]));
 });
 

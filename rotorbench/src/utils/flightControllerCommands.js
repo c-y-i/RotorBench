@@ -2,6 +2,7 @@ import {
   AERIALKIT_SERVO_OUTPUTS,
   AIRFRAMES,
   BETAFLIGHT_FAILSAFE_THROTTLE,
+  supportsAerialKitWingFailsafe,
 } from "../data/flightControllerProfiles";
 
 export const AERIALKIT_AIRFRAME_IDS = {
@@ -144,6 +145,12 @@ export function buildFlightControllerCommands(
     finite(config.maxTiltDeg) &&
     finite(config.yawRateDps) &&
     integer(config.maxDtMs) &&
+    (!supportsAerialKitWingFailsafe(config.airframe)
+      || (
+        finite(config.wingDescendBankDeg)
+        && finite(config.wingDescendPitchDeg)
+        && finite(config.wingDescendThrottle)
+      )) &&
     activeServoOutputs.every((servo) => (
       typeof config[servo.reverseKey] === "boolean" &&
       finite(config[servo.trimKey]) &&
@@ -218,8 +225,15 @@ export function buildFlightControllerCommands(
     `set max_tilt_deg ${Number(config.maxTiltDeg)}`,
     `set yaw_rate_dps ${Number(config.yawRateDps)}`,
     `set max_dt_ms ${Number(config.maxDtMs)}`,
-    `set rth_enable ${config.rthEnabled ? 1 : 0}`,
   );
+  if (supportsAerialKitWingFailsafe(config.airframe)) {
+    lines.push(
+      `set wing_descend_bank_deg ${Number(config.wingDescendBankDeg)}`,
+      `set wing_descend_pitch_deg ${Number(config.wingDescendPitchDeg)}`,
+      `set wing_descend_throttle ${Number(config.wingDescendThrottle)}`,
+    );
+  }
+  lines.push(`set rth_enable ${config.rthEnabled ? 1 : 0}`);
 
   return {
     supported: true,

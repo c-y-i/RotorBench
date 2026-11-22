@@ -52,6 +52,41 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByRole("status")).toHaveTextContent("Driver default");
 });
 
+test("plans Aerial Kit fixed-wing lost-link descent only for wing airframes", () => {
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.queryByLabelText("Lost-link bank")).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "elevonwing" },
+  });
+
+  expect(screen.getByLabelText("Lost-link bank")).toHaveValue(30);
+  expect(screen.getByLabelText("Lost-link nose-down")).toHaveValue(8);
+  expect(screen.getByLabelText("Lost-link throttle")).toHaveValue(0.15);
+
+  fireEvent.change(screen.getByLabelText("Lost-link bank"), {
+    target: { value: "25" },
+  });
+  fireEvent.change(screen.getByLabelText("Lost-link nose-down"), {
+    target: { value: "6" },
+  });
+  fireEvent.change(screen.getByLabelText("Lost-link throttle"), {
+    target: { value: "0.2" },
+  });
+
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    wingDescendBankDeg: 25,
+    wingDescendPitchDeg: 6,
+    wingDescendThrottle: 0.2,
+  }));
+
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "quadx" },
+  });
+  expect(screen.queryByLabelText("Lost-link bank")).not.toBeInTheDocument();
+});
+
 test("jumps from the section strip to the plan summary", () => {
   render(<FlightControllerSetup />);
 

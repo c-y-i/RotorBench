@@ -437,6 +437,42 @@ test("Aerial Kit flight limits use documented firmware defaults and ranges", () 
     .toContain("Flight limits: rate mode 700°/s, angle tilt 35°, yaw 350°/s, integration step ≤50 ms");
 });
 
+test("Aerial Kit fixed wings plan a powered lost-link descent", () => {
+  const defaults = {
+    ...createDefaultFlightControllerConfig(),
+    airframe: "elevonwing",
+  };
+  expect(defaults).toMatchObject({
+    wingDescendBankDeg: 30,
+    wingDescendPitchDeg: 8,
+    wingDescendThrottle: 0.15,
+  });
+
+  const issues = validateFlightControllerConfig({
+    ...defaults,
+    wingDescendBankDeg: 61,
+    wingDescendPitchDeg: 31,
+    wingDescendThrottle: 0.61,
+  });
+  expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+    "wing-bank-range",
+    "wing-pitch-range",
+    "wing-throttle-range",
+  ]));
+
+  const warnings = validateFlightControllerConfig({
+    ...defaults,
+    wingDescendBankDeg: 60,
+    wingDescendThrottle: 0,
+  });
+  expect(warnings.map((issue) => issue.code)).toEqual(expect.arrayContaining([
+    "wing-zero-throttle",
+    "wing-bank-clamp",
+  ]));
+  expect(buildFlightControllerSummary(defaults).join("\n"))
+    .toContain("Wing lost-link descent: bank 30°, nose-down 8°, throttle 15%");
+});
+
 test("Betaflight summary fingerprints its own normal QUAD X motor order", () => {
   const profile = getBoardProfile("custom-board");
   const config = {

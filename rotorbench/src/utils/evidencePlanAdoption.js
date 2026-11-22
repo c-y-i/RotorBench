@@ -562,6 +562,39 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => `${value} ms`,
     },
     {
+      key: "wingDescendBankDeg",
+      source: "wing_descend_bank_deg",
+      snapshotKey: "wing_descend_bank_deg",
+      label: "Fixed-wing lost-link bank",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 60 ? number : null;
+      },
+      display: (value) => `${value}°`,
+    },
+    {
+      key: "wingDescendPitchDeg",
+      source: "wing_descend_pitch_deg",
+      snapshotKey: "wing_descend_pitch_deg",
+      label: "Fixed-wing lost-link nose-down pitch",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 30 ? number : null;
+      },
+      display: (value) => `${value}°`,
+    },
+    {
+      key: "wingDescendThrottle",
+      source: "wing_descend_throttle",
+      snapshotKey: "wing_descend_throttle",
+      label: "Fixed-wing lost-link throttle",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 0.6 ? number : null;
+      },
+      display: (value) => `${Math.round(value * 100)}%`,
+    },
+    {
       key: "rthEnabled",
       source: "rth_enable",
       snapshotKey: "rth_enable",

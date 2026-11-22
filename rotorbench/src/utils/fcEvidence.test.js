@@ -875,6 +875,9 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     "max_tilt_deg=35 status=0",
     "yaw_rate_dps=350 status=0",
     "max_dt_ms=50 status=0",
+    "wing_descend_bank_deg=30 status=0",
+    "wing_descend_pitch_deg=8 status=0",
+    "wing_descend_throttle=0.15 status=0",
     "rth_enable=0 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
@@ -912,6 +915,9 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
     maxTiltDeg: 40,
     yawRateDps: 350,
     maxDtMs: 40,
+    wingDescendBankDeg: 25,
+    wingDescendPitchDeg: 8,
+    wingDescendThrottle: 0.2,
     rthEnabled: false,
   });
 
@@ -964,6 +970,12 @@ test("compares read-only Aerial Kit runtime parameters with the staged plan", ()
   expect(checks.find((check) => check.id === "fc-param-yaw-rate-dps").status)
     .toBe("pass");
   expect(checks.find((check) => check.id === "fc-param-max-dt-ms").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-wing-descend-bank-deg").status)
+    .toBe("fail");
+  expect(checks.find((check) => check.id === "fc-param-wing-descend-pitch-deg").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-wing-descend-throttle").status)
     .toBe("fail");
 });
 

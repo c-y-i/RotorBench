@@ -48,6 +48,9 @@ const config = {
   maxTiltDeg: 35,
   yawRateDps: 350,
   maxDtMs: 50,
+  wingDescendBankDeg: 30,
+  wingDescendPitchDeg: 8,
+  wingDescendThrottle: 0.15,
   rthEnabled: false,
 };
 
@@ -98,11 +101,29 @@ test("Aerial Kit preview uses current runtime parameter names and omits save", (
     "set max_tilt_deg 35",
     "set yaw_rate_dps 350",
     "set max_dt_ms 50",
+    "set wing_descend_bank_deg 30",
+    "set wing_descend_pitch_deg 8",
+    "set wing_descend_throttle 0.15",
     "set rth_enable 0",
     "set velocity_channel 0",
   ]));
   expect(preview.text).not.toMatch(/^save$/m);
   expect(AERIALKIT_AIRFRAME_IDS.quadx).toBe(0);
+});
+
+test("omits fixed-wing descent parameters for a quad plan", () => {
+  const preview = buildFlightControllerCommands({
+    ...config,
+    airframe: "quadx",
+    wingDescendBankDeg: 60,
+    wingDescendPitchDeg: 30,
+    wingDescendThrottle: 0.6,
+  });
+
+  expect(preview.supported).toBe(true);
+  expect(preview.text).not.toContain("set wing_descend_bank_deg");
+  expect(preview.text).not.toContain("set wing_descend_pitch_deg");
+  expect(preview.text).not.toContain("set wing_descend_throttle");
 });
 
 test("Betaflight receives discovery commands but no invented setting names", () => {
