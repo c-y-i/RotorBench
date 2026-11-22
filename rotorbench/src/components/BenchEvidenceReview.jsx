@@ -1595,6 +1595,10 @@ export default function BenchEvidenceReview({
               )}
               <AerialKitRouteSketch
                 inventory={evidence.fcEvidence.liveStatus.waypointInventory}
+                currentPosition={evidence.fcEvidence.liveStatus.missionProximity?.status
+                  === "ok"
+                  ? evidence.fcEvidence.liveStatus.missionProximity.position
+                  : null}
               />
               <AerialKitWaypointRouteSummary
                 route={evidence.fcEvidence.liveStatus.routeSummary}

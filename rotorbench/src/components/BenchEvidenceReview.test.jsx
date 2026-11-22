@@ -505,7 +505,7 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
         ageMs: 100,
         positionSource: "status",
         position: {
-          lat: 37.6,
+          lat: 37.69,
           lon: -122.4,
           gpsFixType: 3,
         },
@@ -626,8 +626,10 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("WP 0 → WP 1")).toBeInTheDocument();
   expect(screen.getByText(/Spherical great-circle estimate/i)).toBeInTheDocument();
   expect(screen.getByRole("img", {
-    name: "Local north-up sketch of board-reported waypoint coordinates",
+    name: "Local north-up sketch of waypoint coordinates with fresh board position",
   })).toBeInTheDocument();
+  expect(screen.getByText("Board")).toBeInTheDocument();
+  expect(screen.getByText(/Fresh board position shown/i)).toBeInTheDocument();
   expect(screen.getByText("Distance to active waypoint")).toBeInTheDocument();
   expect(screen.getByText("1.234 km")).toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();

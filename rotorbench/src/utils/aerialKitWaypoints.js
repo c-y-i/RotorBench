@@ -154,7 +154,7 @@ export function buildAerialKitRouteSummary(inventory) {
   };
 }
 
-export function buildAerialKitRouteSketch(inventory) {
+export function buildAerialKitRouteSketch(inventory, currentPosition = null) {
   if (!inventory || typeof inventory !== "object") {
     throw new Error("Read a waypoint inventory before sketching route geometry.");
   }
@@ -212,11 +212,31 @@ export function buildAerialKitRouteSketch(inventory) {
     x: 50 + (point.x - (minX + maxX) / 2) * finiteScale,
     y: 50 - (point.y - (minY + maxY) / 2) * finiteScale,
   }));
+  const projectedPosition = currentPosition
+    && Number.isFinite(currentPosition.lat)
+    && Number.isFinite(currentPosition.lon)
+    ? (() => {
+        const x = 50
+          + ((currentPosition.lon - centerLon) * longitudeScale
+            - (minX + maxX) / 2) * finiteScale;
+        const y = 50
+          - (currentPosition.lat - centerLat
+            - (minY + maxY) / 2) * finiteScale;
+        return {
+          lat: currentPosition.lat,
+          lon: currentPosition.lon,
+          x,
+          y,
+          insideExtent: x >= 2 && x <= 98 && y >= 2 && y <= 98,
+        };
+      })()
+    : null;
   return {
     status: "ok",
     reason: null,
     points,
     bounds,
+    currentPosition: projectedPosition,
     projection: "local-equirectangular",
     northUp: true,
   };

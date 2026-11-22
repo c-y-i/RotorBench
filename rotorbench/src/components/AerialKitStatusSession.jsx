@@ -2377,7 +2377,12 @@ export default function AerialKitStatusSession({
                         ))}
                       </ol>
                     )}
-                    <AerialKitRouteSketch inventory={waypointInventory} />
+                    <AerialKitRouteSketch
+                      inventory={waypointInventory}
+                      currentPosition={missionProximity?.status === "ok"
+                        ? missionProximity.position
+                        : null}
+                    />
                     <AerialKitWaypointRouteSummary route={routeSummary} />
                   </div>
                 )}

@@ -182,6 +182,20 @@ test("projects a north-up local route sketch without inventing a basemap", () =>
     expect(point.y).toBeGreaterThanOrEqual(10);
     expect(point.y).toBeLessThanOrEqual(90);
   });
+  const withPosition = buildAerialKitRouteSketch(inventory, {
+    lat: 0.05,
+    lon: 0.05,
+  });
+  expect(withPosition.currentPosition).toMatchObject({
+    lat: 0.05,
+    lon: 0.05,
+    insideExtent: true,
+  });
+  const outside = buildAerialKitRouteSketch(inventory, {
+    lat: 40,
+    lon: -120,
+  });
+  expect(outside.currentPosition.insideExtent).toBe(false);
 });
 
 test("centers a single waypoint and keeps empty sketches separate", () => {

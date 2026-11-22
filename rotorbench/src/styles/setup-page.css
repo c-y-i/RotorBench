@@ -3517,6 +3517,35 @@
   font-weight: 600;
 }
 
+.route-current-position path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 0.8;
+  stroke-linecap: round;
+}
+
+.route-current-position {
+  color: var(--brand);
+}
+
+.route-current-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  stroke-dasharray: 1.4 1.2;
+}
+
+.route-current-core {
+  fill: currentColor;
+}
+
+.route-current-label {
+  fill: currentColor;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 3.2px;
+  font-weight: 700;
+}
+
 .route-north-line,
 .route-north-arrow {
   fill: none;
