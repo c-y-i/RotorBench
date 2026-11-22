@@ -1155,6 +1155,17 @@
   }
 }
 
+.saved-page .message-bar {
+  position: static;
+  inset: auto;
+  width: auto;
+  max-width: none;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  box-shadow: none;
+  transform: none;
+}
+
 /* Shared utility-route language: Analysis, Saved, Profile, and Legal. */
 .app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) {
   background: transparent;
