@@ -26,6 +26,7 @@ import {
 import { buildShareUrl } from "../utils/buildLink";
 import { summarizeTakeoffWeight } from "../utils/flightEnvelope";
 import { getFrameServoHardware } from "../utils/frameHardware";
+import { summarizeModelSources } from "../utils/modelAssets";
 import {
   describeMissionControls,
   describeNavigationSafety,
@@ -345,6 +346,10 @@ export default function AnalysisPage() {
     flightController: componentRows[5]?.part,
     receiver: componentRows[6]?.part,
   }), [componentRows]);
+  const modelSources = useMemo(
+    () => summarizeModelSources(assemblySpec),
+    [assemblySpec],
+  );
   const viewerPlacement = useMemo(() => {
     return buildViewerPlacementAudit(assemblySpec.frame, assemblySpec);
   }, [assemblySpec]);
@@ -821,6 +826,30 @@ export default function AnalysisPage() {
               </button>
             </div>
           </section>
+
+          <aside
+            className="analysis-build-note analysis-model-note"
+            role="note"
+            aria-label="Model geometry basis"
+          >
+            <Box size={17} aria-hidden="true" />
+            <span>
+              <strong>Model geometry basis</strong>
+              <p>
+                {modelSources.catalogModelCount}/{modelSources.selectedCount} catalog
+                GLB{modelSources.selectedCount === 1 ? "" : "s"} ·{" "}
+                {modelSources.generatedFallbackCount} generated fallback
+                {modelSources.generatedFallbackCount === 1 ? "" : "s"}.
+                Performance estimates use component specifications; fallback
+                geometry affects placement inspection, not the thrust model.
+                {modelSources.legacyNormalizationCount > 0
+                  ? ` ${modelSources.legacyNormalizationCount} catalog asset${
+                    modelSources.legacyNormalizationCount === 1 ? " has" : "s have"
+                  } legacy normalization still unverified.`
+                  : ""}
+              </p>
+            </span>
+          </aside>
 
           {/* Selected Components */}
           <div className="components-section">

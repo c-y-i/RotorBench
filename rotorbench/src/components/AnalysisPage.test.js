@@ -127,6 +127,10 @@ test("renders the completed analysis and opens the browser print dialog", async 
   expect(screen.getByText(/3.5-inch bench quad/)).toBeInTheDocument();
   expect(screen.getByRole("note", { name: "Build note" }))
     .toHaveTextContent("Verify receiver UART direction before the bench run.");
+  expect(screen.getByRole("note", { name: "Model geometry basis" }))
+    .toHaveTextContent(
+      "0/6 catalog GLBs · 6 generated fallbacks. Performance estimates use component specifications; fallback geometry affects placement inspection, not the thrust model.",
+    );
   expect(screen.getByText("1 analysis notice")).toBeInTheDocument();
   expect(screen.getByText("Estimated thrust curve")).toBeInTheDocument();
   const hardwareSection = screen.getByRole("region", {
