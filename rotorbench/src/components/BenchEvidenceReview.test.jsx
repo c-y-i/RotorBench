@@ -933,6 +933,8 @@ test("adopts observed TX radio settings independently from FC evidence", async (
 
   expect(await screen.findByText("Apply observed TX radio values"))
     .toBeInTheDocument();
+  expect(screen.getByText("Observed TX parameter snapshot")).toBeInTheDocument();
+  expect(screen.getByText("7 read-only module values")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", {
     name: "Select all differences",
   }));

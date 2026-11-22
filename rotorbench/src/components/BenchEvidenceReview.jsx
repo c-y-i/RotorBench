@@ -21,6 +21,7 @@ import {
   summarizeBenchEvidenceAttachment,
 } from "../utils/benchEvidenceAttachment";
 import FcParameterSnapshot from "./FcParameterSnapshot";
+import RadioParameterSnapshot from "./RadioParameterSnapshot";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -901,6 +902,11 @@ export default function BenchEvidenceReview({
 
           {evidence.fcEvidence?.parameters?.values && (
             <FcParameterSnapshot values={evidence.fcEvidence.parameters.values} />
+          )}
+          {evidence.bundle?.txParameters?.entries && (
+            <RadioParameterSnapshot
+              entries={evidence.bundle.txParameters.entries}
+            />
           )}
 
           {onAdoptPlanPatch && fcAdoptionPatch && (
