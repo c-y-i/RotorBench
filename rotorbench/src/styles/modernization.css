@@ -249,6 +249,19 @@
   line-height: 1.35;
 }
 
+.analysis-evidence-state.is-current-plan {
+  color: var(--ok);
+  background: #e8f5ee;
+  border-color: #b8ddc8;
+}
+
+.analysis-evidence-state.is-review,
+.analysis-evidence-state.is-different-plan {
+  color: var(--warn);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+}
+
 .analysis-hardware-state strong {
   color: var(--brand-strong);
   font-family: "IBM Plex Mono", monospace;

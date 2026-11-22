@@ -35,6 +35,7 @@ import {
 import {
   readBenchEvidenceAttachment,
   readCurrentBenchEvidenceScope,
+  sanitizePlanComparisonMetadata,
   summarizeBenchEvidenceAttachment,
 } from "../utils/benchEvidenceAttachment";
 import {
@@ -291,6 +292,10 @@ export default function AnalysisPage() {
     readBenchEvidenceAttachment(build?.id),
     readCurrentBenchEvidenceScope(build),
   ), [build]);
+  const portablePlanComparison = useMemo(
+    () => sanitizePlanComparisonMetadata(build?.importedEvidence?.planComparison),
+    [build?.importedEvidence?.planComparison],
+  );
   const assemblySpec = useMemo(() => ({
     frame: componentRows[0]?.part,
     motor: componentRows[1]?.part,
@@ -708,6 +713,17 @@ export default function AnalysisPage() {
                   <dd>{benchEvidence.label}</dd>
                 </div>
               )}
+              {portablePlanComparison && (
+                <div className="analysis-hardware-evidence">
+                  <dt>Imported plan comparison</dt>
+                  <dd>
+                    {portablePlanComparison.targetName || "Target not recorded"} ·{" "}
+                    {portablePlanComparison.matched} match /{" "}
+                    {portablePlanComparison.differing} differ /{" "}
+                    {portablePlanComparison.notObserved} not observed
+                  </dd>
+                </div>
+              )}
             </dl>
             <div className="analysis-hardware-state">
               <strong>{hardwareReadiness.label}</strong>
@@ -716,6 +732,17 @@ export default function AnalysisPage() {
                 {benchEvidence.configured && (
                   <span className={`analysis-evidence-state is-${benchEvidence.status}`}>
                     Imported file · not independently verified
+                  </span>
+                )}
+                {portablePlanComparison && (
+                  <span
+                    className={`analysis-evidence-state is-${
+                      portablePlanComparison.currentPlanMatches === false
+                        ? "different-plan"
+                        : portablePlanComparison.differing ? "review" : "current-plan"
+                    }`}
+                  >
+                    Portable plan metadata · not hardware evidence
                   </span>
                 )}
               </div>

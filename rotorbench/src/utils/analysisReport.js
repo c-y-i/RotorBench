@@ -88,6 +88,9 @@ export function createAnalysisReport(
     },
     hardwarePlan: sanitizeHardwareReadiness(hardwarePlan),
     importedEvidence: sanitizeImportedEvidence(importedEvidence),
+    portablePlanComparison: sanitizePlanComparisonMetadata(
+      build.importedEvidence?.planComparison,
+    ),
     measuredGeometry: summarizeMeasuredGeometry(
       assemblySpec || {},
       build.geometryOverrides,

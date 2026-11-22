@@ -25,6 +25,23 @@ const build = {
       },
     },
   },
+  importedEvidence: {
+    planComparison: {
+      targetName: "SpeedyBee F405 V5",
+      firmwareFamily: "aerialkit",
+      profileId: "speedybee-f405-v5",
+      generatedAt: "2026-11-20T11:55:00.000Z",
+      currentPlanMatches: true,
+      planFingerprint: "fnv1a-87654321",
+      compared: 38,
+      matched: 1,
+      differing: 1,
+      notObserved: 36,
+      parameterValuesRead: true,
+      parameterMetadataRead: true,
+      parameters: [{ parameter: "arm_channel", expected: "6" }],
+    },
+  },
 };
 
 const analysis = {
@@ -239,6 +256,16 @@ test("creates a versioned analysis report without mutating the build", () => {
   });
   expect(report.importedEvidence.planComparison).not.toHaveProperty("parameters");
   expect(report.importedEvidence.planComparison).not.toHaveProperty("observedValue");
+  expect(report.portablePlanComparison).toMatchObject({
+    targetName: "SpeedyBee F405 V5",
+    planFingerprint: "fnv1a-87654321",
+    compared: 38,
+    matched: 1,
+    differing: 1,
+    notObserved: 36,
+    hardwareVerified: false,
+  });
+  expect(report.portablePlanComparison).not.toHaveProperty("parameters");
   expect(JSON.stringify(report)).not.toContain("/dev/tty");
 });
 

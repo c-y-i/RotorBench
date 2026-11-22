@@ -65,9 +65,12 @@ const analysis = {
   totalCost: 389.95,
 };
 
-function renderAnalysis() {
+function renderAnalysis(stateBuild = build) {
   return render(
-    <MemoryRouter initialEntries={[{ pathname: "/analysis", state: { build } }]}>
+    <MemoryRouter initialEntries={[{
+      pathname: "/analysis",
+      state: { build: stateBuild },
+    }]}>
       <BuildProvider>
         <Routes>
           <Route path="/analysis" element={<AnalysisPage />} />
@@ -395,6 +398,44 @@ test("shows imported bench evidence without changing hardware verification", asy
     .toBeInTheDocument();
   expect(within(hardwareSection).getByText(/Imported file · not independently verified/i))
     .toBeInTheDocument();
+  expect(within(hardwareSection).getByText(/hardware not tested/i)).toBeInTheDocument();
+});
+
+test("shows imported plan-comparison metadata without hardware verification", async () => {
+  renderAnalysis({
+    ...build,
+    importedEvidence: {
+      status: "plan-comparison",
+      label: "FC plan comparison matched",
+      planComparison: {
+        targetName: "SpeedyBee F405 V5",
+        firmwareFamily: "aerialkit",
+        profileId: "speedybee-f405-v5",
+        generatedAt: "2026-11-22T12:00:00.000Z",
+        currentPlanMatches: true,
+        planFingerprint: "fnv1a-12345678",
+        compared: 38,
+        matched: 1,
+        differing: 1,
+        notObserved: 36,
+        parameterValuesRead: true,
+        parameterMetadataRead: true,
+        hardwareVerified: false,
+      },
+    },
+  });
+
+  const hardwareSection = await screen.findByRole("region", {
+    name: /Betaflight · CRSF \/ ExpressLRS/i,
+  });
+  expect(within(hardwareSection).getByText("Imported plan comparison"))
+    .toBeInTheDocument();
+  expect(within(hardwareSection).getByText(
+    /SpeedyBee F405 V5 · 1 match \/ 1 differ \/ 36 not observed/,
+  )).toBeInTheDocument();
+  expect(within(hardwareSection).getByText(
+    "Portable plan metadata · not hardware evidence",
+  )).toBeInTheDocument();
   expect(within(hardwareSection).getByText(/hardware not tested/i)).toBeInTheDocument();
 });
 
