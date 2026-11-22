@@ -676,6 +676,48 @@ export default function AnalysisPage() {
                   </dd>
                 </div>
               )}
+              {hasHardwareSelection && hardwareReadiness.fcPropellerDirection && (
+                <div>
+                  <dt>Propeller plan</dt>
+                  <dd>{hardwareReadiness.fcPropellerDirection}</dd>
+                </div>
+              )}
+              {hasHardwareSelection && hardwareReadiness.fcMaxRateDps != null && (
+                <>
+                  <div>
+                    <dt>Rate response</dt>
+                    <dd>
+                      {hardwareReadiness.fcMaxRateDps}°/s max · expo{" "}
+                      {Math.round(Number(hardwareReadiness.fcRateExpo) * 100)}% · TPA{" "}
+                      {hardwareReadiness.fcTpaRate}% above{" "}
+                      {Math.round(Number(hardwareReadiness.fcTpaBreakpoint) * 100)}%
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>PID gains</dt>
+                    <dd>
+                      P {hardwareReadiness.fcRateKpRoll}/
+                      {hardwareReadiness.fcRateKpPitch}/
+                      {hardwareReadiness.fcRateKpYaw} · I{" "}
+                      {hardwareReadiness.fcRateKiRoll}/
+                      {hardwareReadiness.fcRateKiPitch}/
+                      {hardwareReadiness.fcRateKiYaw} · D{" "}
+                      {hardwareReadiness.fcRateKdRoll}/
+                      {hardwareReadiness.fcRateKdPitch}/
+                      {hardwareReadiness.fcRateKdYaw}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Tuning features</dt>
+                    <dd>
+                      RC {hardwareReadiness.fcRcSmoothingStatus} · stick FF{" "}
+                      {hardwareReadiness.fcFeedForwardStatus} · D_MAX{" "}
+                      {hardwareReadiness.fcDResponseStatus} · anti-gravity{" "}
+                      {hardwareReadiness.fcAntiGravityStatus}
+                    </dd>
+                  </div>
+                </>
+              )}
               {selectedFrameServoHardware && (
                 <div>
                   <dt>Control surfaces</dt>

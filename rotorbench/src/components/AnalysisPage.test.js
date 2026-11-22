@@ -381,6 +381,68 @@ test("keeps mission controls visible in the saved analysis hardware context", as
     .toBeInTheDocument();
 });
 
+test("shows the saved Aerial Kit tuning profile in analysis", async () => {
+  const aerialBuild = {
+    ...build,
+    id: "analysis-aerial-tuning",
+    componentIds: {
+      ...build.componentIds,
+      flightControllerId: "fc-adafruit-feather-f405",
+      receiverId: null,
+    },
+  };
+  localStorage.setItem(
+    "rotorbench:hardware-plan:analysis-aerial-tuning:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-adafruit-feather-f405",
+      selectedReceiverId: null,
+      firmwareFamily: "aerialkit",
+      profileId: "feather-f405",
+      airframe: "elevonwingsingle",
+      receiverProtocol: "crsf",
+      receiverUart: "USART3",
+      receiverBaud: 420000,
+      maxRateDps: 650,
+      rateExpo: 0.25,
+      tpaRate: 20,
+      tpaBreakpoint: 0.55,
+      rateKpRoll: 0.3,
+      rateKiRoll: 0.18,
+      rateKdRoll: 0.003,
+      rcSmooth: 1,
+      rcSmoothFactor: 30,
+      rateFfdRoll: 0.01,
+      rateKdMaxRoll: 0.005,
+      antiGravityGain: 80,
+    }),
+  );
+  localStorage.setItem(
+    "rotorbench:hardware-plan:analysis-aerial-tuning:radio",
+    JSON.stringify({
+      planVersion: 3,
+      selectedReceiverId: null,
+      packetRateMode: "250",
+    }),
+  );
+
+  renderAnalysis(aerialBuild);
+  const hardwareSection = await screen.findByRole("region", {
+    name: /Aerial Kit Firmware/i,
+  });
+
+  expect(within(hardwareSection).getByText("Rate response")).toBeInTheDocument();
+  expect(within(hardwareSection).getByText(/650°\/s max · expo 25% · TPA 20% above 55%/))
+    .toBeInTheDocument();
+  expect(within(hardwareSection).getByText("PID gains")).toBeInTheDocument();
+  expect(within(hardwareSection).getByText(/P 0.3\/0.25\/0.35 · I 0.18\/0.15\/0.2/))
+    .toBeInTheDocument();
+  expect(within(hardwareSection).getByText("Tuning features")).toBeInTheDocument();
+  expect(within(hardwareSection).getByText(
+    "RC auto · stick FF planned · D_MAX configured · anti-gravity enabled",
+  )).toBeInTheDocument();
+});
+
 test("shows imported bench evidence without changing hardware verification", async () => {
   const evidenceScope = createBenchEvidenceScope({ build });
   localStorage.setItem(
