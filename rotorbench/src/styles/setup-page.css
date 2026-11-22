@@ -1616,6 +1616,47 @@
   gap: 6px;
 }
 
+.fc-parameter-filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+
+.fc-parameter-group-filter {
+  display: grid;
+  flex: 1 1 210px;
+  gap: 4px;
+  max-width: 330px;
+}
+
+.fc-parameter-group-filter span {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.fc-parameter-group-filter select {
+  min-width: 0;
+  min-height: var(--control-min-height);
+  padding: 0 30px 0 9px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.fc-parameter-group-filter select:focus-visible {
+  border-color: var(--brand);
+  outline: 2px solid color-mix(in srgb, var(--brand) 26%, transparent);
+  outline-offset: 1px;
+}
+
 .fc-parameter-filter-bar button {
   display: inline-flex;
   align-items: center;

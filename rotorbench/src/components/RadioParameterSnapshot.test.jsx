@@ -90,6 +90,21 @@ test("identifies TX plan matches and differences inline", async () => {
   })).getByText("Not in snapshot")).toBeInTheDocument();
   expect(screen.queryByText("Packet Rate")).not.toBeInTheDocument();
 
+  await userEvent.selectOptions(
+    screen.getByLabelText("Radio parameter group"),
+    "power",
+  );
+  expect(within(screen.getByRole("region", {
+    name: "Power radio parameters",
+  })).getByText("Max Power")).toBeInTheDocument();
+  expect(screen.queryByRole("region", {
+    name: "RF link radio parameters",
+  })).not.toBeInTheDocument();
+
+  await userEvent.selectOptions(
+    screen.getByLabelText("Radio parameter group"),
+    "all",
+  );
   await userEvent.click(screen.getByRole("button", {
     name: "Differences · 1",
   }));

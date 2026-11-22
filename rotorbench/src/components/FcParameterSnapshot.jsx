@@ -145,6 +145,7 @@ export default function FcParameterSnapshot({
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
   const groups = useMemo(() => {
     const statusByCheckId = new Map(checks.map((check) => [check.id, check.status]));
     const grouped = groupFcParameters(values);
@@ -192,19 +193,22 @@ export default function FcParameterSnapshot({
   const normalizedQuery = query.trim().toLowerCase();
   const visibleGroups = groups.map((group) => ({
     ...group,
-    entries: group.entries.filter(({ name, value, status, statusLabel }) => {
-      const matchesQuery = !normalizedQuery
-        || name.includes(normalizedQuery)
-        || value.toLowerCase().includes(normalizedQuery)
-        || statusLabel.toLowerCase().includes(normalizedQuery);
-      const matchesStatus = statusFilter === "all"
-        || (statusFilter === "review" && ["fail", "unverified"].includes(status))
-        || (statusFilter === "differences" && status === "fail");
-      return matchesQuery && matchesStatus;
-    }),
+    entries: group.id !== groupFilter && groupFilter !== "all"
+      ? []
+      : group.entries.filter(({ name, value, status, statusLabel }) => {
+          const matchesQuery = !normalizedQuery
+            || name.includes(normalizedQuery)
+            || value.toLowerCase().includes(normalizedQuery)
+            || statusLabel.toLowerCase().includes(normalizedQuery);
+          const matchesStatus = statusFilter === "all"
+            || (statusFilter === "review" && ["fail", "unverified"].includes(status))
+            || (statusFilter === "differences" && status === "fail");
+          return matchesQuery && matchesStatus;
+        }),
   })).filter((group) => group.entries.length > 0);
   const parameterCount = Object.keys(values).length;
   const visibleCount = groups.flatMap((group) => group.entries).length;
+  const selectedGroupLabel = groups.find((group) => group.id === groupFilter)?.label;
   const formatLabel = FORMAT_LABELS[format] || null;
   const filterCounts = {
     all: visibleCount,
@@ -249,6 +253,22 @@ export default function FcParameterSnapshot({
           Values below are shown exactly as the imported snapshot reported them.
           RotorBench did not write, save, or re-read them from the controller.
         </p>
+        <div className="fc-parameter-filter-controls">
+          <label className="fc-parameter-group-filter">
+            <span>Group</span>
+            <select
+              aria-label="Parameter group"
+              value={groupFilter}
+              onChange={(event) => setGroupFilter(event.target.value)}
+            >
+              <option value="all">All groups ({visibleCount})</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.label} ({group.entries.length})
+                </option>
+              ))}
+            </select>
+          </label>
         {checks.length > 0 && (
           <div
             className="fc-parameter-filter-bar"
@@ -269,6 +289,7 @@ export default function FcParameterSnapshot({
             ))}
           </div>
         )}
+        </div>
         {visibleGroups.length ? (
           <div className="fc-parameter-groups">
             {visibleGroups.map((group) => (
@@ -292,16 +313,17 @@ export default function FcParameterSnapshot({
           <div className="fc-parameter-empty">
             <span>
               {statusFilter === "review"
-                ? "No imported parameters need review against the staged plan."
+                ? `No imported parameters need review${selectedGroupLabel ? ` in ${selectedGroupLabel}` : ""} against the staged plan.`
                 : statusFilter === "differences"
-                  ? "No imported parameters differ from the staged plan."
-                  : `No observed parameters match “${query}”.`}
+                  ? `No imported parameters differ${selectedGroupLabel ? ` in ${selectedGroupLabel}` : ""} from the staged plan.`
+                  : `No observed parameters match “${query}”${selectedGroupLabel ? ` in ${selectedGroupLabel}` : ""}.`}
             </span>
             <button
               type="button"
               onClick={() => {
                 setQuery("");
                 setStatusFilter("all");
+                setGroupFilter("all");
               }}
             >
               Clear filter

@@ -62,6 +62,7 @@ export function groupRadioParameters(entries = []) {
 export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
   const groups = useMemo(() => {
     const statusByCheckId = new Map(checks.map((check) => [check.id, check.status]));
     const grouped = groupRadioParameters(entries);
@@ -117,19 +118,22 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
   const normalizedQuery = query.trim().toLowerCase();
   const visibleGroups = groups.map((group) => ({
     ...group,
-    entries: group.entries.filter((entry) => {
-      const matchesQuery = !normalizedQuery
-        || entry.name.toLowerCase().includes(normalizedQuery)
-        || String(entry.value).toLowerCase().includes(normalizedQuery)
-        || String(entry.type || "").toLowerCase().includes(normalizedQuery)
-        || entry.statusLabel.toLowerCase().includes(normalizedQuery);
-      const matchesStatus = statusFilter === "all"
-        || (statusFilter === "review" && ["fail", "unverified"].includes(entry.status))
-        || (statusFilter === "differences" && entry.status === "fail");
-      return matchesQuery && matchesStatus;
-    }),
+    entries: group.id !== groupFilter && groupFilter !== "all"
+      ? []
+      : group.entries.filter((entry) => {
+          const matchesQuery = !normalizedQuery
+            || entry.name.toLowerCase().includes(normalizedQuery)
+            || String(entry.value).toLowerCase().includes(normalizedQuery)
+            || String(entry.type || "").toLowerCase().includes(normalizedQuery)
+            || entry.statusLabel.toLowerCase().includes(normalizedQuery);
+          const matchesStatus = statusFilter === "all"
+            || (statusFilter === "review" && ["fail", "unverified"].includes(entry.status))
+            || (statusFilter === "differences" && entry.status === "fail");
+          return matchesQuery && matchesStatus;
+        }),
   })).filter((group) => group.entries.length > 0);
   const visibleCount = groups.flatMap((group) => group.entries).length;
+  const selectedGroupLabel = groups.find((group) => group.id === groupFilter)?.label;
   const filterCounts = {
     all: visibleCount,
     review: reviewCount,
@@ -171,6 +175,22 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
           Values below are shown exactly as the imported ExpressLRS snapshot
           reported them. RotorBench did not write or save module parameters.
         </p>
+        <div className="fc-parameter-filter-controls">
+          <label className="fc-parameter-group-filter">
+            <span>Group</span>
+            <select
+              aria-label="Radio parameter group"
+              value={groupFilter}
+              onChange={(event) => setGroupFilter(event.target.value)}
+            >
+              <option value="all">All groups ({visibleCount})</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.label} ({group.entries.length})
+                </option>
+              ))}
+            </select>
+          </label>
         {checks.length > 0 && (
           <div
             className="fc-parameter-filter-bar"
@@ -191,6 +211,7 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
             ))}
           </div>
         )}
+        </div>
         {visibleGroups.length ? (
           <div className="fc-parameter-groups">
             {visibleGroups.map((group) => (
@@ -217,16 +238,17 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
           <div className="fc-parameter-empty">
             <span>
               {statusFilter === "review"
-                ? "No imported radio parameters need review against the staged plan."
+                ? `No imported radio parameters need review${selectedGroupLabel ? ` in ${selectedGroupLabel}` : ""} against the staged plan.`
                 : statusFilter === "differences"
-                  ? "No imported radio parameters differ from the staged plan."
-                  : `No observed radio parameters match “${query}”.`}
+                  ? `No imported radio parameters differ${selectedGroupLabel ? ` in ${selectedGroupLabel}` : ""} from the staged plan.`
+                  : `No observed radio parameters match “${query}”${selectedGroupLabel ? ` in ${selectedGroupLabel}` : ""}.`}
             </span>
             <button
               type="button"
               onClick={() => {
                 setQuery("");
                 setStatusFilter("all");
+                setGroupFilter("all");
               }}
             >
               Clear filter

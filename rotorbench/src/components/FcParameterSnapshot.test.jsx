@@ -128,6 +128,15 @@ test("identifies plan matches and differences inline", async () => {
   })).getByText("Not in snapshot")).toBeInTheDocument();
   expect(screen.queryByText("arm_channel")).not.toBeInTheDocument();
 
+  await userEvent.selectOptions(screen.getByLabelText("Parameter group"), "channels");
+  expect(within(screen.getByRole("region", {
+    name: "Modes and channels parameters",
+  })).getByText("mode_channel")).toBeInTheDocument();
+  expect(screen.queryByRole("region", {
+    name: "Arming and receiver parameters",
+  })).not.toBeInTheDocument();
+
+  await userEvent.selectOptions(screen.getByLabelText("Parameter group"), "all");
   await userEvent.click(screen.getByRole("button", {
     name: "Differences · 1",
   }));
