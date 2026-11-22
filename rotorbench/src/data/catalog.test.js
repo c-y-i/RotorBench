@@ -379,6 +379,34 @@ test("Kakute F722 keeps official specs and price with only mounting estimated", 
   expect(controller.estimatedFields).toEqual(["mounting_point"]);
 });
 
+test("Adafruit Feather F405 binds a public product to the Aerial Kit wing profile", () => {
+  const controller = componentsData.flight_controllers.find(
+    (item) => item.id === "fc-adafruit-feather-f405",
+  );
+
+  expect(controller).toMatchObject({
+    name: "Adafruit Feather STM32F405 Express",
+    manufacturer: "Adafruit",
+    processor: "STM32F405",
+    weight: 6.2,
+    dimensionsMm: [52, 10, 23],
+    firmware: ["Aerial Kit"],
+    imu: "External LSM6DSO or BNO055",
+    features: expect.arrayContaining([
+      "Aerial Kit",
+      "2 motor outputs",
+      "2 servo outputs",
+    ]),
+    price: 39.95,
+    modelStatus: "not_available",
+    sourceUrl: "https://www.adafruit.com/product/4382",
+  });
+  expect(controller.estimatedFields).toEqual([
+    "mounting_point",
+    "maxVoltage",
+  ]);
+});
+
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
   expect(componentsData.receivers).toHaveLength(14);
   for (const receiver of componentsData.receivers) {

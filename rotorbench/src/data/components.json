@@ -1058,6 +1058,26 @@
       "priceSourceUrl": "https://holybro.com/products/kakute-f722",
       "dataStatus": "verified_specs_estimated_mounting",
       "estimatedFields": ["mounting_point"]
+    },
+    {
+      "id": "fc-adafruit-feather-f405",
+      "name": "Adafruit Feather STM32F405 Express",
+      "manufacturer": "Adafruit",
+      "processor": "STM32F405",
+      "weight": 6.2,
+      "mounting_point": [0, 0, 0],
+      "dimensionsMm": [52, 10, 23],
+      "firmware": ["Aerial Kit"],
+      "imu": "External LSM6DSO or BNO055",
+      "maxVoltage": 5.5,
+      "features": ["Aerial Kit", "USB-C", "MicroSD", "2 MB SPI Flash", "2 motor outputs", "2 servo outputs"],
+      "price": 39.95,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://www.adafruit.com/product/4382",
+      "priceSourceUrl": "https://www.adafruit.com/product/4382",
+      "dataStatus": "verified_product_envelope_estimated_mounting_and_voltage_ceiling",
+      "estimatedFields": ["mounting_point", "maxVoltage"]
     }
   ],
   "frames": [

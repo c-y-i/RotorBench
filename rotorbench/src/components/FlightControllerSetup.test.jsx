@@ -222,6 +222,29 @@ test("selecting the SpeedyBee F405 V5 uses its documented board mapping", () => 
   expect(screen.getByText(/16 MB onboard blackbox/i)).toBeInTheDocument();
 });
 
+test("selecting the Adafruit Feather starts an Aerial Kit wing plan", () => {
+  const feather = {
+    id: "fc-adafruit-feather-f405",
+    name: "Adafruit Feather STM32F405 Express",
+    processor: "STM32F405",
+    imu: "External LSM6DSO or BNO055",
+    firmware: ["Aerial Kit"],
+  };
+  render(<FlightControllerSetup selectedFlightController={feather} />);
+
+  expect(screen.getByLabelText("Board profile")).toHaveValue("feather-f405");
+  expect(screen.getByLabelText("Firmware family")).toHaveValue("aerialkit");
+  expect(screen.getByLabelText("Airframe")).toHaveValue("elevonwingsingle");
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("USART3");
+  expect(screen.getByRole("heading", { name: "Servo outputs" }))
+    .toBeInTheDocument();
+  expect(screen.getByText("1 motor · 2 servos")).toBeInTheDocument();
+  const outputs = screen.getByRole("list", {
+    name: "Single-motor elevon wing motor outputs",
+  });
+  expect(within(outputs).getByText("Centre pusher")).toBeInTheDocument();
+});
+
 test("selecting Kakute H7 V2 exposes its documented Betaflight mapping", () => {
   render(
     <FlightControllerSetup

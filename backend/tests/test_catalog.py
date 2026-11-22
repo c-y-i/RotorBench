@@ -43,11 +43,11 @@ class CatalogContractTests(unittest.TestCase):
                 "propellers": 11,
                 "batteries": 11,
                 "escs": 8,
-                "flight_controllers": 10,
+                "flight_controllers": 11,
                 "receivers": 14,
             },
         )
-        self.assertEqual(sum(counts.values()), 81)
+        self.assertEqual(sum(counts.values()), 82)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,8 +68,22 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 81)
+        self.assertEqual(len(records), 82)
         self.assertTrue(all(record.id for record in records))
+
+    def test_adafruit_feather_f405_keeps_public_product_provenance(self):
+        record = next(
+            item
+            for item in self.database.flight_controllers
+            if item.id == "fc-adafruit-feather-f405"
+        )
+        self.assertEqual(record.processor, "STM32F405")
+        self.assertEqual(record.dimensions_mm, [52, 10, 23])
+        self.assertEqual(record.weight, 6.2)
+        self.assertEqual(record.firmware, ["Aerial Kit"])
+        self.assertEqual(record.source_url, "https://www.adafruit.com/product/4382")
+        self.assertEqual(record.price, 39.95)
+        self.assertIn("mounting_point", record.estimated_fields)
 
     def test_published_board_planforms_survive_catalog_hydration(self):
         expected = {

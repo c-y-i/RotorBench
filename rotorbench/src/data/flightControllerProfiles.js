@@ -37,6 +37,7 @@ export const FC_BOARD_PROFILES = [
     family: "aerialkit",
     availability: "public",
     buildScope: "public",
+    catalogFlightControllerIds: ["fc-adafruit-feather-f405"],
     label: "Adafruit Feather F405",
     board: "FEATHER_F405",
     processor: "STM32F405RGT6",

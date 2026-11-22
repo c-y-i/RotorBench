@@ -23,8 +23,29 @@ test("every catalog flight controller resolves to one documented board map", () 
     .flatMap((profile) => profile.catalogFlightControllerIds || []);
 
   expect(missing).toEqual([]);
-  expect(componentsData.flight_controllers).toHaveLength(10);
+  expect(componentsData.flight_controllers).toHaveLength(11);
   expect(new Set(mappedIds).size).toBe(mappedIds.length);
+});
+
+test("the Feather product resolves to the public Aerial Kit wing map", () => {
+  const feather = componentsData.flight_controllers.find(
+    (controller) => controller.id === "fc-adafruit-feather-f405",
+  );
+  const profile = getCatalogBoardProfile(feather);
+
+  expect(profile).toMatchObject({
+    id: "feather-f405",
+    family: "aerialkit",
+    availability: "public",
+    receiverUart: "USART3",
+    defaultAirframe: "elevonwingsingle",
+    outputs: { motors: 2, servos: 2 },
+  });
+  expect(createDefaultFlightControllerConfig(feather)).toMatchObject({
+    firmwareFamily: "aerialkit",
+    profileId: "feather-f405",
+    airframe: "elevonwingsingle",
+  });
 });
 
 test("Kakute F722 maps its documented receiver and ESC telemetry UARTs", () => {

@@ -694,7 +694,12 @@ export default function FlightControllerSetup({
             <span>
               <small>Airframe</small>
               <strong>{airframeSpec?.label || "Airframe not selected"}</strong>
-              <b>{airframeSpec?.motors ?? 0} motors · {airframeSpec?.servos ?? 0} servos</b>
+              <b>
+                {airframeSpec?.motors ?? 0} motor
+                {airframeSpec?.motors === 1 ? "" : "s"} ·{" "}
+                {airframeSpec?.servos ?? 0} servo
+                {airframeSpec?.servos === 1 ? "" : "s"}
+              </b>
             </span>
             <ArrowRight size={14} aria-hidden="true" />
           </li>
