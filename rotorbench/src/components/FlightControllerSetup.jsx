@@ -236,6 +236,12 @@ export default function FlightControllerSetup({
         }
       : profileBase;
   }, [config.firmwareFamily, config.profileId, selectedFlightController]);
+  const ardupilotParameterRequirements = (
+    profile.parameterRequirements || []
+  ).filter((requirement) => (
+    !requirement.whenReceiverProtocol
+    || requirement.whenReceiverProtocol === config.receiverProtocol
+  ));
   const channelPreset = getChannelPreset(config);
   const availableChannelPresets = CHANNEL_PRESETS.filter((preset) => (
     config.firmwareFamily === "aerialkit"
@@ -1261,6 +1267,32 @@ export default function FlightControllerSetup({
                 </button>
               </div>
             </details>
+
+            {config.firmwareFamily === "ardupilot"
+              && ardupilotParameterRequirements.length > 0 && (
+                <div
+                  className="fc-ardupilot-parameter-plan"
+                  role="region"
+                  aria-label="ArduPilot parameter plan"
+                >
+                  <div className="fc-calibration-heading">
+                    <strong>ArduPilot parameter plan</strong>
+                    <span>
+                      These receiver-side values come from the documented board
+                      map. Import a parameter snapshot to compare observed values;
+                      RotorBench does not write them here.
+                    </span>
+                  </div>
+                  <ul aria-label="Documented ArduPilot parameter requirements">
+                    {ardupilotParameterRequirements.map((requirement) => (
+                      <li key={requirement.name}>
+                        <code>{requirement.name}={requirement.value}</code>
+                        <span>{requirement.description}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
             {config.firmwareFamily === "aerialkit" && (
               <div className="fc-calibration">

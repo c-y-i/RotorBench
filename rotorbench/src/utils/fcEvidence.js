@@ -1,3 +1,5 @@
+import { getBoardProfile } from "../data/flightControllerProfiles";
+
 const STATUS_PROTOCOLS = new Set(["akp", "betaflight"]);
 const PREFLIGHT_VERDICTS = {
   0: { status: "fail", label: "Fail" },
@@ -675,12 +677,15 @@ export function fcParameterChecks(snapshot, plan) {
       );
     }));
 
-  const ardupilotChecks = plan.profileId === "matek-h743-wing-v3-ardupilot"
-    && plan.receiverProtocol === "crsf"
-    ? [
-        ["BRD_ALT_CONFIG", "1", "true UART RX on UART6"],
-        ["SERIAL7_PROTOCOL", "23", "CRSF/ELRS on SERIAL7"],
-      ].map(([runtimeName, expected, requirement]) => {
+  const boardProfile = plan.profileId ? getBoardProfile(plan.profileId) : null;
+  const ardupilotRequirements = plan.firmwareFamily === "ardupilot"
+    ? (boardProfile?.parameterRequirements || []).filter((requirement) => (
+        !requirement.whenReceiverProtocol
+        || requirement.whenReceiverProtocol === plan.receiverProtocol
+      ))
+    : [];
+  const ardupilotChecks = ardupilotRequirements
+    .map(({ name: runtimeName, value: expected, description: requirement }) => {
         const actual = snapshot.values[runtimeName.toLowerCase()];
         if (actual === undefined) {
           return makeCheck(
@@ -695,11 +700,10 @@ export function fcParameterChecks(snapshot, plan) {
           `FC parameter ${runtimeName}`,
           comparableParameterValue(actual) === expected ? "pass" : "fail",
           comparableParameterValue(actual) === expected
-            ? `Imported ${runtimeName}=${actual}, matching the documented H743 ${requirement} requirement.`
-            : `Imported ${runtimeName}=${actual}; the documented H743 plan requires ${expected} for ${requirement}.`,
+            ? `Imported ${runtimeName}=${actual}, matching the documented ${boardProfile.label} ${requirement} requirement.`
+            : `Imported ${runtimeName}=${actual}; the documented ${boardProfile.label} plan requires ${expected} for ${requirement}.`,
         );
-      })
-    : [];
+      });
 
   return [...checks, ...ardupilotChecks];
 }

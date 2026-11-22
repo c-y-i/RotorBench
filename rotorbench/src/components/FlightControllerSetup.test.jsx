@@ -575,6 +575,13 @@ test("selecting Matek H743-WING exposes the ArduPilot UART and servo map", () =>
   expect(within(ports).getByText("UART6").closest("li")).toHaveTextContent(
     "BRD_ALT_CONFIG=1",
   );
+  const parameterPlan = screen.getByRole("region", {
+    name: "ArduPilot parameter plan",
+  });
+  expect(within(parameterPlan).getByText("BRD_ALT_CONFIG=1"))
+    .toBeInTheDocument();
+  expect(within(parameterPlan).getByText("SERIAL7_PROTOCOL=23"))
+    .toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText("Firmware family"), {
     target: { value: "inav" },
@@ -611,6 +618,9 @@ test("Matek keeps its documented mapping when switching to ArduPilot", () => {
     .toHaveTextContent("GPS");
   expect(within(ports).getByText("ArduPilot GPS2").closest("li"))
     .toHaveTextContent("Documented");
+  expect(within(screen.getByRole("region", {
+    name: "ArduPilot parameter plan",
+  })).getByText("SERIAL6_PROTOCOL=23")).toBeInTheDocument();
 });
 
 test("shows the documented serial map and marks active plan routes", async () => {

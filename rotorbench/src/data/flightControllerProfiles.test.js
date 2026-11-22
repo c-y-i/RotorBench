@@ -60,6 +60,20 @@ test("Matek H743-WING resolves to its documented ArduPilot wing map", () => {
     "UART8",
   ]);
   expect(profile.notes.join(" ")).toMatch(/BRD_ALT_CONFIG=1/i);
+  expect(profile.parameterRequirements).toEqual([
+    {
+      name: "BRD_ALT_CONFIG",
+      value: "1",
+      whenReceiverProtocol: "crsf",
+      description: "true UART RX on UART6",
+    },
+    {
+      name: "SERIAL7_PROTOCOL",
+      value: "23",
+      whenReceiverProtocol: "crsf",
+      description: "CRSF/ELRS on SERIAL7",
+    },
+  ]);
   expect(createDefaultFlightControllerConfig(controller)).toMatchObject({
     firmwareFamily: "ardupilot",
     profileId: "matek-h743-wing-v3-ardupilot",
@@ -510,6 +524,14 @@ test("Matek F405-WMN selects its documented INAV wing profile", () => {
     sharedPwmOutputs: 12,
   });
   expect(arduPilotProfile.notes.join(" ")).toMatch(/SERIAL3\/UART5 GPS1/i);
+  expect(arduPilotProfile.parameterRequirements).toEqual([
+    {
+      name: "SERIAL6_PROTOCOL",
+      value: "23",
+      whenReceiverProtocol: "crsf",
+      description: "CRSF/ELRS on SERIAL6/UART2",
+    },
+  ]);
 });
 
 test("Kakute H7 V2 selects its documented Betaflight mapping", () => {

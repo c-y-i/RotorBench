@@ -351,6 +351,14 @@ export const FC_BOARD_PROFILES = [
     sharedPwmOutputs: 12,
     defaultAirframe: "elevonwing",
     receiverUartLocked: true,
+    parameterRequirements: [
+      {
+        name: "SERIAL6_PROTOCOL",
+        value: "23",
+        whenReceiverProtocol: "crsf",
+        description: "CRSF/ELRS on SERIAL6/UART2",
+      },
+    ],
     serialPorts: [
       {
         id: "UART1",
@@ -425,6 +433,20 @@ export const FC_BOARD_PROFILES = [
     sharedPwmOutputs: 13,
     defaultAirframe: "elevonwing",
     receiverUartLocked: true,
+    parameterRequirements: [
+      {
+        name: "BRD_ALT_CONFIG",
+        value: "1",
+        whenReceiverProtocol: "crsf",
+        description: "true UART RX on UART6",
+      },
+      {
+        name: "SERIAL7_PROTOCOL",
+        value: "23",
+        whenReceiverProtocol: "crsf",
+        description: "CRSF/ELRS on SERIAL7",
+      },
+    ],
     serialPorts: [
       {
         id: "UART1",

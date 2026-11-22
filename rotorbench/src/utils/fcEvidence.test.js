@@ -436,3 +436,21 @@ test("checks the documented H743 UART6 requirements in ArduPilot snapshots", () 
   expect(mismatch.find((check) => check.id === "fc-param-serial7-protocol").status)
     .toBe("fail");
 });
+
+test("uses profile data to check the F405-WMN ArduPilot receiver route", () => {
+  const checks = fcParameterChecks(
+    parseFcParameterSnapshotText("SERIAL6_PROTOCOL,23"),
+    {
+      profileId: "matek-f405-wmn-ardupilot",
+      receiverProtocol: "crsf",
+      firmwareFamily: "ardupilot",
+    },
+  );
+
+  expect(checks).toHaveLength(1);
+  expect(checks[0]).toMatchObject({
+    id: "fc-param-serial6-protocol",
+    status: "pass",
+    detail: expect.stringMatching(/CRSF\/ELRS on SERIAL6\/UART2/i),
+  });
+});
