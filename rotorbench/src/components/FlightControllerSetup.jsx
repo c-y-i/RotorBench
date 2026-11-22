@@ -2171,7 +2171,7 @@ export default function FlightControllerSetup({
         <aside className="fc-plan-panel" aria-label="Configuration plan summary">
           <div className="fc-plan-panel-heading">
             <div>
-              <h3 id="fc-plan-summary-title">Plan summary</h3>
+              <h3 id="fc-plan-summary-title" tabIndex={-1}>Plan summary</h3>
               <p>{profile.label}</p>
             </div>
             <span className={`fc-readiness ${readinessClass}`}>

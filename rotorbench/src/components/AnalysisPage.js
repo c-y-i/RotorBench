@@ -749,9 +749,16 @@ export default function AnalysisPage() {
               <button
                 type="button"
                 className="analysis-hardware-action"
-                onClick={() => navigate("/setup", { state: { build } })}
+                onClick={() => navigate("/setup", {
+                  state: {
+                    build,
+                    ...(portablePlanComparison
+                      ? { focus: "fc-plan-summary" }
+                      : {}),
+                  },
+                })}
               >
-                Review setup
+                {portablePlanComparison ? "Review current plan" : "Review setup"}
               </button>
             </div>
           </section>

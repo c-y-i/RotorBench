@@ -437,6 +437,10 @@ test("shows imported plan-comparison metadata without hardware verification", as
     "Portable plan metadata · not hardware evidence",
   )).toBeInTheDocument();
   expect(within(hardwareSection).getByText(/hardware not tested/i)).toBeInTheDocument();
+  await userEvent.click(within(hardwareSection).getByRole("button", {
+    name: "Review current plan",
+  }));
+  expect(screen.getByText("Hardware setup route")).toBeInTheDocument();
 });
 
 test("does not offer printing until analysis has completed", async () => {

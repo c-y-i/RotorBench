@@ -117,6 +117,11 @@ export default function SetupPage() {
   const [setupBenchToolsOpen, setSetupBenchToolsOpen] = useState(false);
   const [benchRunbookOpen, setBenchRunbookOpen] = useState(false);
   const [focusBenchEvidence, setFocusBenchEvidence] = useState(false);
+  const [pendingSetupFocus, setPendingSetupFocus] = useState(() => (
+    location.state?.focus === "fc-plan-summary"
+      ? "fc-plan-summary"
+      : null
+  ));
   const [reviewedEvidence, setReviewedEvidence] = useState(null);
   const [liveFcObservation, setLiveFcObservation] = useState(null);
   const [claimLedgerOpen, setClaimLedgerOpen] = useState(() => {
@@ -201,6 +206,26 @@ export default function SetupPage() {
     });
     return () => cancelAnimationFrame(frame);
   }, [benchRunbookOpen, focusBenchEvidence]);
+
+  useEffect(() => {
+    if (!plansLoaded || pendingSetupFocus !== "fc-plan-summary") {
+      return undefined;
+    }
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById("fc-plan-summary-title");
+      if (!target) return;
+      const reducedMotion = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      )?.matches;
+      target.scrollIntoView?.({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "start",
+      });
+      target.focus({ preventScroll: true });
+      setPendingSetupFocus(null);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [pendingSetupFocus, plansLoaded]);
 
   useEffect(() => {
     setPlansLoaded(false);

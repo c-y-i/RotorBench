@@ -30,6 +30,7 @@ jest.mock("./FlightControllerSetup", () => function MockFlightControllerSetup(pr
   } = props;
   return (
     <div>
+      <h3 id="fc-plan-summary-title" tabIndex={-1}>Plan summary</h3>
       Flight controller panel: {selectedFlightController?.name || "none"} / motors {buildMotorCount ?? "unknown"} / servos {buildServoCount ?? "unknown"} / arm {value?.armChannel ?? "none"}
       <button type="button" onClick={onOpenEvidenceReview}>
         Review mock parameters
@@ -140,9 +141,9 @@ jest.mock("./WebSerialCapture", () => {
   });
 });
 
-function renderSetup() {
+function renderSetup(initialEntries = ["/setup"]) {
   return render(
-    <MemoryRouter initialEntries={["/setup"]}>
+    <MemoryRouter initialEntries={initialEntries}>
       <BuildProvider>
         <Routes>
           <Route path="/setup" element={<SetupPage />} />
@@ -206,6 +207,16 @@ test("renders the hardware planning page and switches to radio setup", async () 
     "true",
   );
   expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("focuses the flight-controller plan summary from an analysis handoff", async () => {
+  renderSetup([{
+    pathname: "/setup",
+    state: { focus: "fc-plan-summary" },
+  }]);
+
+  const heading = await screen.findByRole("heading", { name: "Plan summary" });
+  await waitFor(() => expect(heading).toHaveFocus());
 });
 
 test("does not create setup drafts until a plan changes", () => {

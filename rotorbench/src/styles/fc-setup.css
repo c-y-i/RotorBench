@@ -247,6 +247,11 @@
   line-height: 1.45;
 }
 
+.fc-plan-panel-heading h3:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 3px;
+}
+
 .fc-field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
