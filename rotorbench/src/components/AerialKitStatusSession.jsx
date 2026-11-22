@@ -19,6 +19,7 @@ import {
   AERIAL_KIT_FEATURE_RC_CHANNELS,
   AerialKitReadOnlySession,
   aerialKitArmedState,
+  createAerialKitStatusEvidence,
   parseAerialKitHello,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
@@ -74,6 +75,7 @@ export default function AerialKitStatusSession({
   firmwareFamily = null,
   channelMap = null,
   targetName = null,
+  onObservation = null,
 }) {
   const supportedBrowser = useMemo(() => hasWebSerial(), []);
   const firmwareSupported = firmwareFamily === "aerialkit";
@@ -100,6 +102,7 @@ export default function AerialKitStatusSession({
   const writerRef = useRef(null);
   const sessionRef = useRef(null);
   const pollTimerRef = useRef(null);
+  const observationRef = useRef(null);
 
   useEffect(() => {
     if (!["monitoring", "connecting"].includes(sessionState)) return undefined;
@@ -135,6 +138,8 @@ export default function AerialKitStatusSession({
     setError("");
     setMessage("");
     setProtocolStats(null);
+    observationRef.current = null;
+    onObservation?.(null);
   };
 
   const closeSession = useCallback(async (nextState = "stopped") => {
@@ -142,6 +147,12 @@ export default function AerialKitStatusSession({
     if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     pollTimerRef.current = null;
     if (sessionRef.current) setProtocolStats({ ...sessionRef.current.stats });
+    if (observationRef.current) {
+      onObservation?.({
+        ...observationRef.current,
+        active: false,
+      });
+    }
     await sessionRef.current?.close?.();
     sessionRef.current = null;
     try {
@@ -163,7 +174,7 @@ export default function AerialKitStatusSession({
     writerRef.current = null;
     portRef.current = null;
     if (mountedRef.current) setSessionState(nextState);
-  }, []);
+  }, [onObservation]);
 
   useEffect(() => {
     if (firmwareSupported && supportedBrowser) {
@@ -185,6 +196,16 @@ export default function AerialKitStatusSession({
     setLiveStatus(parsedStatus);
     setLastStatusAt(observedAt);
     setProtocolStats({ ...session.stats });
+    if (!observationRef.current) {
+      const observed = {
+        hello: helloValue,
+        status: parsedStatus,
+        observedAt,
+        active: true,
+      };
+      observationRef.current = observed;
+      onObservation?.(observed);
+    }
 
     const rcCapabilityUnknown = helloValue?.features == null;
     const rcCapabilityClaimed = rcCapabilityUnknown
@@ -308,49 +329,19 @@ export default function AerialKitStatusSession({
   };
 
   const downloadSnapshot = () => {
-    const armed = aerialKitArmedState(liveStatus, {
-      observedAtMs: lastStatusAt,
-      nowMs: Date.now(),
-      connectionActive: sessionState === "monitoring",
-    });
-    const evidence = {
-      schema: "rotorbench.aerial-kit-live-status.v1",
-      observedAt: new Date().toISOString(),
-      targetName,
-      transport: {
-        kind: "web-serial",
-        logicalBaud: baudRate,
-        queries: ["HELLO", "STATUS", "RC_CHANNELS"],
-      },
+    const evidence = createAerialKitStatusEvidence({
       hello,
-      status: liveStatus
-        ? {
-            ...liveStatus,
-            observedAt: lastStatusAt
-              ? new Date(lastStatusAt).toISOString()
-              : null,
-          }
-        : null,
-      armedState: armed,
-      rc: rc
-        ? {
-            ...rc,
-            observedAt: lastRcAt
-              ? new Date(lastRcAt).toISOString()
-              : null,
-          }
-        : null,
-      rcError: rcError || null,
-      parser: protocolStats,
-      boundaries: {
-        readOnlyQueriesOnly: true,
-        hardwareVerifiedByRotorBench: false,
-        rfPathVerified: false,
-        flightReady: false,
-        writesApplied: false,
-        persisted: false,
-      },
-    };
+      status: liveStatus,
+      rc,
+      rcError,
+      statusObservedAtMs: lastStatusAt,
+      rcObservedAtMs: lastRcAt,
+      baudRate,
+      targetName,
+      protocolStats,
+      connectionActive: sessionState === "monitoring",
+      nowMs: Date.now(),
+    });
     const blob = new Blob([JSON.stringify(evidence, null, 2)], {
       type: "application/json",
     });

@@ -7,6 +7,7 @@ import {
   aerialKitArmedState,
   aerialKitCrc16,
   buildAerialKitFrame,
+  createAerialKitStatusEvidence,
   parseAerialKitHello,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
@@ -198,4 +199,42 @@ test("reports a closed AKP read stream instead of silently staying live", async 
 
   expect(session.active).toBe(false);
   expect(onClose).toHaveBeenCalledWith("The Aerial Kit read stream closed.");
+});
+
+test("creates a sanitized live-status evidence boundary", () => {
+  const evidence = createAerialKitStatusEvidence({
+    hello: { protocolVersion: 1, product: "aerialkit-f405" },
+    status: { flightState: 0, linkLive: 1 },
+    statusObservedAtMs: 1000,
+    baudRate: 115200,
+    targetName: "Aerial Kit F405",
+    protocolStats: { framesDecoded: 3 },
+    connectionActive: true,
+    nowMs: 1500,
+  });
+
+  expect(evidence).toMatchObject({
+    schema: "rotorbench.aerial-kit-live-status.v1",
+    targetName: "Aerial Kit F405",
+    transport: {
+      kind: "web-serial",
+      logicalBaud: 115200,
+      queries: ["HELLO", "STATUS", "RC_CHANNELS"],
+    },
+    status: {
+      flightState: 0,
+      observedAt: "1970-01-01T00:00:01.000Z",
+    },
+    armedState: { state: "disarmed", fresh: true },
+    boundaries: {
+      readOnlyQueriesOnly: true,
+      hardwareVerifiedByRotorBench: false,
+      rfPathVerified: false,
+      flightReady: false,
+      writesApplied: false,
+      persisted: false,
+    },
+  });
+  expect(evidence).not.toHaveProperty("serialPort");
+  expect(evidence).not.toHaveProperty("serialNumber");
 });

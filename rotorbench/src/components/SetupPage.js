@@ -117,6 +117,7 @@ export default function SetupPage() {
   const [benchRunbookOpen, setBenchRunbookOpen] = useState(false);
   const [focusBenchEvidence, setFocusBenchEvidence] = useState(false);
   const [reviewedEvidence, setReviewedEvidence] = useState(null);
+  const [liveFcObservation, setLiveFcObservation] = useState(null);
   const [claimLedgerOpen, setClaimLedgerOpen] = useState(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
       return true;
@@ -413,21 +414,32 @@ export default function SetupPage() {
   const setupReady = issueCount === 0;
   const reviewedFcIdentity = reviewedEvidence?.fcEvidence?.identity || null;
   const reviewedFcParameters = reviewedEvidence?.fcEvidence?.parameters || null;
-  const readbackReviewed = Boolean(reviewedFcIdentity || reviewedFcParameters);
+  const liveStatusObserved = Boolean(liveFcObservation?.status);
+  const readbackReviewed = Boolean(
+    reviewedFcIdentity || reviewedFcParameters || liveStatusObserved,
+  );
   const readbackStatus = reviewedFcParameters
     ? "Parameter snapshot reviewed"
-    : reviewedFcIdentity
-      ? "Firmware identity reviewed"
-      : "Readback not imported";
+    : liveStatusObserved
+      ? liveFcObservation.active
+        ? "Live status observed"
+        : "Live status observed earlier"
+      : reviewedFcIdentity
+        ? "Firmware identity reviewed"
+        : "Readback not imported";
   const readbackDetail = reviewedFcParameters
     ? "Imported controller values were compared, not sent or re-read."
-    : !reviewedFcIdentity
-      ? "A device answer can show reception, not that a controller applied it."
-      : reviewedFcIdentity.features == null
-        ? "HELLO predates the capability word, so this firmware cannot say what it supports."
-        : `${reviewedFcIdentity.featureNames.length} capability bit${
-          reviewedFcIdentity.featureNames.length === 1 ? "" : "s"
-        } reported by HELLO; values remain separate.`;
+    : liveStatusObserved
+      ? liveFcObservation.active
+        ? "Fresh AKP STATUS was observed in this page; no parameter values were read or written."
+        : "A previous live STATUS was observed in this page; the session is not currently monitoring."
+      : !reviewedFcIdentity
+        ? "A device answer can show reception, not that a controller applied it."
+        : reviewedFcIdentity.features == null
+          ? "HELLO predates the capability word, so this firmware cannot say what it supports."
+          : `${reviewedFcIdentity.featureNames.length} capability bit${
+            reviewedFcIdentity.featureNames.length === 1 ? "" : "s"
+          } reported by HELLO; values remain separate.`;
   const readinessLabel = issueCount
     ? [
         `${issueCount} combined check${issueCount === 1 ? "" : "s"}`,
@@ -1128,6 +1140,7 @@ export default function SetupPage() {
             firmwareFamily={fcPlan.firmwareFamily}
             targetName={selectedFlightController?.name || fcProfile.label}
             channelMap={radioPlan.channelMap}
+            onObservation={setLiveFcObservation}
           />
           <div className="serial-capture-deck">
             <div className="serial-capture-deck-header">

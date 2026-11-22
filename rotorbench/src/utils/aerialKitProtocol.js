@@ -438,6 +438,63 @@ export function aerialKitArmedState(
   };
 }
 
+export function createAerialKitStatusEvidence({
+  hello = null,
+  status = null,
+  rc = null,
+  rcError = null,
+  statusObservedAtMs = null,
+  rcObservedAtMs = null,
+  baudRate = null,
+  targetName = null,
+  protocolStats = null,
+  connectionActive = false,
+  nowMs = Date.now(),
+} = {}) {
+  return {
+    schema: "rotorbench.aerial-kit-live-status.v1",
+    observedAt: new Date(nowMs).toISOString(),
+    targetName,
+    transport: {
+      kind: "web-serial",
+      logicalBaud: baudRate,
+      queries: ["HELLO", "STATUS", "RC_CHANNELS"],
+    },
+    hello,
+    status: status
+      ? {
+          ...status,
+          observedAt: Number.isFinite(statusObservedAtMs)
+            ? new Date(statusObservedAtMs).toISOString()
+            : null,
+        }
+      : null,
+    armedState: aerialKitArmedState(status, {
+      observedAtMs: statusObservedAtMs,
+      nowMs,
+      connectionActive,
+    }),
+    rc: rc
+      ? {
+          ...rc,
+          observedAt: Number.isFinite(rcObservedAtMs)
+            ? new Date(rcObservedAtMs).toISOString()
+            : null,
+        }
+      : null,
+    rcError: rcError || null,
+    parser: protocolStats,
+    boundaries: {
+      readOnlyQueriesOnly: true,
+      hardwareVerifiedByRotorBench: false,
+      rfPathVerified: false,
+      flightReady: false,
+      writesApplied: false,
+      persisted: false,
+    },
+  };
+}
+
 export class AerialKitReadOnlySession {
   constructor({
     reader,

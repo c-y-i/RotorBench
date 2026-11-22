@@ -124,12 +124,14 @@ test("does not offer AKP queries for a different firmware family", () => {
 test("queries HELLO, STATUS, and RC without issuing a mutation command", async () => {
   const { port, reader, writer } = createPort();
   const requestPort = jest.fn().mockResolvedValue(port);
+  const onObservation = jest.fn();
   setSerial({ requestPort });
   const { container } = render(
     <AerialKitStatusSession
       firmwareFamily="aerialkit"
       targetName="Aerial Kit F405"
       channelMap={{ arm: 2, flightMode: 3 }}
+      onObservation={onObservation}
     />,
   );
 
@@ -161,6 +163,10 @@ test("queries HELLO, STATUS, and RC without issuing a mutation command", async (
   expect(commands.slice(0, 3)).toEqual([0x01, 0x05, 0x0d]);
   expect(commands.every((command) => [0x01, 0x05, 0x0d].includes(command)))
     .toBe(true);
+  expect(onObservation).toHaveBeenCalledWith(expect.objectContaining({
+    active: true,
+    status: expect.objectContaining({ flightState: 1 }),
+  }));
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
@@ -169,6 +175,9 @@ test("queries HELLO, STATUS, and RC without issuing a mutation command", async (
   expect(reader.cancel).toHaveBeenCalled();
   expect(reader.releaseLock).toHaveBeenCalled();
   expect(writer.releaseLock).toHaveBeenCalled();
+  expect(onObservation).toHaveBeenLastCalledWith(expect.objectContaining({
+    active: false,
+  }));
 });
 
 test("does not ask for RC when HELLO explicitly omits that capability", async () => {
