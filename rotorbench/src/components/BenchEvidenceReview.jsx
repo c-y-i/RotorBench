@@ -260,6 +260,7 @@ export default function BenchEvidenceReview({
   const [history, setHistory] = useState(
     () => readBenchEvidenceAttachmentHistory(buildId),
   );
+  const [historyComparisonAt, setHistoryComparisonAt] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -267,6 +268,7 @@ export default function BenchEvidenceReview({
     setHistory(readBenchEvidenceAttachmentHistory(buildId));
     setAttachedAt(null);
     setSelectedWaypointIndex(null);
+    setHistoryComparisonAt(null);
   }, [buildId]);
 
   const chooseFile = () => inputRef.current?.click();
@@ -360,6 +362,7 @@ export default function BenchEvidenceReview({
       return;
     }
     setHistory([]);
+    setHistoryComparisonAt(null);
     setError("");
     setMessage("Local evidence run history cleared. The current attachment was kept.");
   };
@@ -768,8 +771,11 @@ export default function BenchEvidenceReview({
   const previousRuns = history.filter(
     (run) => !attachment || run.attachedAt !== attachment.attachedAt,
   );
-  const historyComparison = attachment && previousRuns[0]
-    ? compareBenchEvidenceRuns(attachment, previousRuns[0], {
+  const comparisonRun = previousRuns.find(
+    (run) => run.attachedAt === historyComparisonAt,
+  ) || previousRuns[0] || null;
+  const historyComparison = attachment && comparisonRun
+    ? compareBenchEvidenceRuns(attachment, comparisonRun, {
         currentScope: evidenceScope,
       })
     : null;
@@ -2026,7 +2032,11 @@ export default function BenchEvidenceReview({
               <p className={`bench-evidence-history-delta is-${historyComparison.status}`}>
                 <strong>{historyComparison.label}</strong>
                 <span>
-                  Compared with the previous run: {historyComparison.summary}
+                  Compared with {comparisonRun.attachedAt === previousRuns[0]?.attachedAt
+                    ? "the latest prior run"
+                    : `the selected run from ${attachmentDate(comparisonRun.attachedAt)}`}:
+                  {" "}
+                  {historyComparison.summary}
                 </span>
               </p>
             )}
@@ -2038,6 +2048,7 @@ export default function BenchEvidenceReview({
             <ol>
               {previousRuns.map((run, index) => {
                 const runSummary = summarizeBenchEvidenceAttachment(run, evidenceScope);
+                const isComparisonRun = run.attachedAt === comparisonRun?.attachedAt;
                 return (
                   <li key={`${run.attachedAt}-${index}`}>
                     <div>
@@ -2058,6 +2069,15 @@ export default function BenchEvidenceReview({
                         <dd>{runSummary.checkCounts?.unverified ?? 0}</dd>
                       </div>
                     </dl>
+                    <button
+                      type="button"
+                      className={isComparisonRun ? "is-active" : ""}
+                      aria-pressed={isComparisonRun}
+                      aria-label={`Compare with saved run from ${attachmentDate(run.attachedAt)}`}
+                      onClick={() => setHistoryComparisonAt(run.attachedAt)}
+                    >
+                      {isComparisonRun ? "Comparing" : "Compare"}
+                    </button>
                   </li>
                 );
               })}

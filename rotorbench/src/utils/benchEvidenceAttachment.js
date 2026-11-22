@@ -580,7 +580,7 @@ export function compareBenchEvidenceRuns(current, previous, {
         : "Mission route changed";
       const routeChanges = [
         missionRouteComparison.waypointCountDelta
-          ? `${missionRouteComparison.waypointCountDelta > 0 ? "+" : ""}${missionRouteComparison.waypointCountDelta} waypoint`
+          ? `${missionRouteComparison.waypointCountDelta > 0 ? "+" : ""}${missionRouteComparison.waypointCountDelta} waypoint${Math.abs(missionRouteComparison.waypointCountDelta) === 1 ? "" : "s"}`
           : null,
         missionRouteComparison.activeTargetChanged
           ? `WP ${missionRouteComparison.activeTarget.previous ?? "—"} → WP ${missionRouteComparison.activeTarget.current ?? "—"}`

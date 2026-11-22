@@ -1514,7 +1514,7 @@
 
 .bench-evidence-history li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   padding: 10px 11px;
@@ -1570,6 +1570,30 @@
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
   font-weight: 600;
+}
+
+.bench-evidence-history li > button {
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.bench-evidence-history li > button:hover {
+  border-color: var(--ink);
+}
+
+.bench-evidence-history li > button.is-active {
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-color: var(--signal-strong);
 }
 
 .bench-file-review-controls {

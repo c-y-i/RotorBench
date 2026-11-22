@@ -1188,6 +1188,16 @@ test("shows mission-route geometry deltas in local evidence history", async () =
     "2026-11-20T12:10:00.000Z",
     evidenceScope,
   );
+  const oldest = createBenchEvidenceAttachment(
+    routeReview({
+      waypointCount: 2,
+      totalDistanceM: 4000,
+      activeWaypointIndex: 0,
+      remainingDistanceM: 2500,
+    }),
+    "2026-11-20T12:00:00.000Z",
+    evidenceScope,
+  );
   localStorage.setItem(
     "rotorbench:bench-evidence:mission-route-history:v1",
     JSON.stringify(current),
@@ -1195,6 +1205,11 @@ test("shows mission-route geometry deltas in local evidence history", async () =
   appendBenchEvidenceAttachmentHistory(
     "mission-route-history",
     previous,
+    localStorage,
+  );
+  appendBenchEvidenceAttachmentHistory(
+    "mission-route-history",
+    oldest,
     localStorage,
   );
 
@@ -1214,6 +1229,14 @@ test("shows mission-route geometry deltas in local evidence history", async () =
   expect(screen.getByText(/3\.612 km → 4\.300 km.*\+688\.0 m/))
     .toBeInTheDocument();
   expect(screen.getByText("Fresh · unchanged")).toBeInTheDocument();
+
+  const compareButtons = screen.getAllByRole("button", {
+    name: /Compare with saved run from/i,
+  });
+  await userEvent.click(compareButtons[1]);
+  expect(compareButtons[1]).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByText(/\+2 waypoints/)).toBeInTheDocument();
+  expect(screen.getByText(/the selected run from/i)).toBeInTheDocument();
 });
 
 test("invalid JSON is rejected without retaining prior evidence", async () => {
