@@ -20,6 +20,7 @@ const HELLO_PAYLOAD_WITH_PERF = "0161657269616c6b69742d663430350002003000f113000
 const HELLO_PAYLOAD_WITH_MOTORS = "0161657269616c6b69742d663430350002003000f1330000920638cf";
 const HELLO_PAYLOAD_WITH_MISSION = "0161657269616c6b69742d663430350002003000f13b0000920638cf";
 const HELLO_PAYLOAD_WITH_CALIBRATION = "0161657269616c6b69742d663430350002003000f13f0000920638cf";
+const HELLO_PAYLOAD_WITH_WAYPOINTS = "0161657269616c6b69742d663430350005003000f13b0000920638cf";
 const STATUS_REPLY = "aa550185160101030b7d00d8ff84038768111f3f0ef90228283c3c8598";
 
 function setSerial(value) {
@@ -163,6 +164,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   calibrationSamples = 1000,
   calibrationRejected = 3,
   calibrationResults = [-1, -2, -3, 0, 0, 0],
+  parameterValues = null,
 } = {}) {
   const waiters = [];
   const queued = [];
@@ -191,11 +193,17 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
       else if (command === 0x0d) deliver(rcReply());
       else if (command === 0x02) {
         const index = frame[5];
-        const name = index === 0 ? "rate_kp_roll" : "rate_ki_roll";
-        const value = index === 0 ? "0.250" : "1.500";
+        const fallback = {
+          name: index === 0 ? "rate_kp_roll" : "rate_ki_roll",
+          value: index === 0 ? "0.250" : "1.500",
+        };
+        const parameter = parameterValues?.[index] || fallback;
         deliver(buildAerialKitFrame(
           0x82,
-          Uint8Array.from([0, ...Buffer.from(`${name}\0${value}\0`)]),
+          Uint8Array.from([
+            0,
+            ...Buffer.from(`${parameter.name}\0${parameter.value}\0`),
+          ]),
         ));
       }
       else if (command === 0x0a) {
@@ -1030,6 +1038,48 @@ test("does not present calibration results after an armed refusal", async () => 
   expect(await screen.findByText("Calibration response")).toBeInTheDocument();
   expect(screen.getByText(/answered aircraft-armed/)).toBeInTheDocument();
   expect(screen.queryByText("bias roll (mdps)")).not.toBeInTheDocument();
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads a waypoint inventory from advertised parameters without upload controls", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_WITH_WAYPOINTS, {
+    parameterValues: [
+      { name: "wp_count", value: "2" },
+      { name: "wp0_lat", value: "37.6774000" },
+      { name: "wp0_lon", value: "-122.4194000" },
+      { name: "wp1_lat", value: "37.7000000" },
+      { name: "wp1_lon", value: "-122.4000000" },
+    ],
+  });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read waypoint inventory",
+  }));
+
+  expect(await screen.findByText("2 configured · 2 available slots"))
+    .toBeInTheDocument();
+  expect(screen.getByText("37.6774000, -122.4194000")).toBeInTheDocument();
+  expect(screen.getByText("37.7000000, -122.4000000")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /upload waypoint/i }))
+    .not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /save mission/i }))
+    .not.toBeInTheDocument();
+
+  const parameterRequests = writer.write.mock.calls
+    .map(([frame]) => frame)
+    .filter((frame) => frame[3] === 0x02)
+    .map((frame) => frame[5]);
+  expect(parameterRequests).toEqual([0, 1, 2, 3, 4]);
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

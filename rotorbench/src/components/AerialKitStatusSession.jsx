@@ -63,6 +63,7 @@ import {
   createAerialKitLogExport,
   serializeAerialKitLogCsv,
 } from "../utils/aerialKitLogExport";
+import { buildAerialKitWaypointInventory } from "../utils/aerialKitWaypoints";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
@@ -200,6 +201,13 @@ export default function AerialKitStatusSession({
   const [calibration, setCalibration] = useState(null);
   const [calibrationState, setCalibrationState] = useState("idle");
   const [calibrationError, setCalibrationError] = useState("");
+  const [waypointInventory, setWaypointInventory] = useState(null);
+  const [waypointState, setWaypointState] = useState("idle");
+  const [waypointError, setWaypointError] = useState("");
+  const [waypointProgress, setWaypointProgress] = useState({
+    read: 0,
+    total: 0,
+  });
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -291,6 +299,10 @@ export default function AerialKitStatusSession({
     setCalibration(null);
     setCalibrationState("idle");
     setCalibrationError("");
+    setWaypointInventory(null);
+    setWaypointState("idle");
+    setWaypointError("");
+    setWaypointProgress({ read: 0, total: 0 });
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -653,6 +665,72 @@ export default function AerialKitStatusSession({
       if (!mountedRef.current) return;
       setCalibrationState("error");
       setCalibrationError(readError.message);
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
+  const readWaypointInventory = async () => {
+    const session = sessionRef.current;
+    const count = hello?.parameterCount;
+    if (!activeRef.current || !session) return;
+    if (
+      !Number.isInteger(count)
+      || count < 0
+      || count > AERIAL_KIT_PARAMETER_READ_LIMIT
+    ) {
+      setWaypointError(
+        `HELLO reports ${count ?? "an invalid"} parameters; this reader is bounded to ${AERIAL_KIT_PARAMETER_READ_LIMIT}.`,
+      );
+      setWaypointState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setWaypointError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setWaypointError("");
+    setWaypointState("reading");
+    setWaypointProgress({ read: 0, total: count });
+    const read = [];
+    try {
+      for (let index = 0; index < count; index += 1) {
+        if (!activeRef.current) break;
+        read.push(parseAerialKitParamGet(
+          await session.request(
+            AERIAL_KIT_COMMANDS.paramGet,
+            Uint8Array.of(index),
+          ),
+          index,
+        ));
+        setWaypointProgress({ read: index + 1, total: count });
+      }
+      if (!mountedRef.current) return;
+      const inventory = buildAerialKitWaypointInventory(read);
+      setParameters(read);
+      setParameterState("ready");
+      setParameterProgress({ read: read.length, total: count });
+      setWaypointInventory({
+        ...inventory,
+        observedAtMs: Date.now(),
+      });
+      setWaypointState("ready");
+      setMessage(
+        inventory.status === "ok"
+          ? `Read ${inventory.count} configured waypoint${inventory.count === 1 ? "" : "s"} from the board parameter table without uploading or changing a point.`
+          : "Read the waypoint parameters, but the inventory is incomplete or unavailable. RotorBench did not repair it.",
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setParameters(read);
+      setWaypointState("error");
+      setWaypointError(
+        `${readError.message} ${read.length} parameter${read.length === 1 ? "" : "s"} were read before the stop.`,
+      );
     } finally {
       pollBusyRef.current = false;
       if (activeRef.current) schedulePoll(session, hello);
@@ -1548,6 +1626,7 @@ export default function AerialKitStatusSession({
       telemetryStream,
       mission,
       calibration,
+      waypointInventory,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -2100,8 +2179,22 @@ export default function AerialKitStatusSession({
                     <Search size={15} aria-hidden="true" />
                     Read mission status
                   </button>
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || waypointState === "reading"
+                    }
+                    onClick={readWaypointInventory}
+                  >
+                    <Search size={15} aria-hidden="true" />
+                    Read waypoint inventory
+                  </button>
                   <span>
-                    {mission?.observedAtMs
+                    {waypointState === "reading"
+                      ? `Waypoints ${waypointProgress.read}/${waypointProgress.total}`
+                      : mission?.observedAtMs
                       ? `Observed ${ageLabel(mission.observedAtMs, clockNow)}`
                       : "Status verb only"}
                   </span>
@@ -2172,6 +2265,73 @@ export default function AerialKitStatusSession({
                       </dd>
                     </div>
                   </dl>
+                )}
+                {waypointError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Waypoint inventory unavailable</strong>
+                      <small>{waypointError}</small>
+                    </span>
+                  </div>
+                )}
+                {waypointInventory && (
+                  <div className="aerial-kit-waypoints">
+                    <div>
+                      <span>Waypoint parameters</span>
+                      <strong>
+                        {waypointInventory.count ?? "Unknown"} configured ·{" "}
+                        {waypointInventory.availableSlots} available slot
+                        {waypointInventory.availableSlots === 1 ? "" : "s"}
+                      </strong>
+                    </div>
+                    {mission?.status === "ok"
+                      && waypointInventory.count != null
+                      && mission.count !== waypointInventory.count
+                      && !mission.countCapped && (
+                      <div className="aerial-kit-rc-unavailable" role="note">
+                        <ShieldAlert size={16} aria-hidden="true" />
+                        <span>
+                          <strong>Mission counts differ</strong>
+                          <small>
+                            Mission status reports {mission.count}; the parameter
+                            table reports {waypointInventory.count}. RotorBench
+                            does not choose one.
+                          </small>
+                        </span>
+                      </div>
+                    )}
+                    {waypointInventory.status === "unavailable" && (
+                      <p>
+                        The advertised parameter table has no <code>wp_count</code>
+                        value, so RotorBench cannot identify a waypoint list.
+                      </p>
+                    )}
+                    {waypointInventory.status === "incomplete" && (
+                      <p>
+                        The waypoint list is incomplete: {waypointInventory.reason}.
+                        No coordinate is repaired or defaulted.
+                      </p>
+                    )}
+                    {waypointInventory.status === "ok"
+                      && waypointInventory.count === 0 && (
+                      <p>No waypoints are configured. This is an empty list, not missing hardware.</p>
+                    )}
+                    {waypointInventory.slots.length > 0 && (
+                      <ol aria-label="Board-reported waypoint coordinates">
+                        {waypointInventory.slots.map((slot) => (
+                          <li key={slot.index} className={slot.complete ? "is-complete" : "is-incomplete"}>
+                            <strong>WP {slot.index}</strong>
+                            <span>
+                              {slot.complete
+                                ? `${slot.lat.toFixed(7)}, ${slot.lon.toFixed(7)}`
+                                : slot.errors.join(" · ")}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
                 )}
               </section>
             )}

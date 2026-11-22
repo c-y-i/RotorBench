@@ -601,6 +601,44 @@ function normalizedCalibrationStatus(value) {
   };
 }
 
+function normalizedWaypointInventory(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!["ok", "incomplete", "unavailable"].includes(value.status)) {
+    throw new Error("The Aerial Kit waypoint inventory has an invalid status.");
+  }
+  const count = value.count == null ? null : sensorNumber(value.count);
+  const availableSlots = sensorNumber(value.availableSlots);
+  if (
+    !Number.isInteger(availableSlots)
+    || availableSlots < 0
+    || (count != null && (!Number.isInteger(count) || count < 0 || count > 255))
+  ) {
+    throw new Error("The Aerial Kit waypoint inventory has invalid counts.");
+  }
+  const slots = Array.isArray(value.slots)
+    ? value.slots.map((slot, fallbackIndex) => ({
+        index: Number.isInteger(slot?.index) ? slot.index : fallbackIndex,
+        lat: sensorNumber(slot?.lat),
+        lon: sensorNumber(slot?.lon),
+        rawLat: sensorString(slot?.rawLat),
+        rawLon: sensorString(slot?.rawLon),
+        complete: slot?.complete === true,
+        errors: Array.isArray(slot?.errors)
+          ? slot.errors.filter((error) => typeof error === "string")
+          : [],
+      }))
+    : [];
+  return {
+    status: value.status,
+    reason: sensorString(value.reason),
+    count,
+    availableSlots,
+    slots,
+    complete: value.complete === true,
+    observedAtMs: timestampMilliseconds(value.observedAt),
+  };
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -914,6 +952,7 @@ export function parseAerialKitLiveStatusJson(payload) {
   const telemetryStream = normalizedTelemetryStream(payload.telemetryStream);
   const mission = normalizedMissionStatus(payload.mission);
   const calibration = normalizedCalibrationStatus(payload.calibration);
+  const waypointInventory = normalizedWaypointInventory(payload.waypointInventory);
   return {
     kind: "fc-live-status",
     identity,
@@ -937,6 +976,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     telemetryStream,
     mission,
     calibration,
+    waypointInventory,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

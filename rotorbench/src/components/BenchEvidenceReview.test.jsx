@@ -465,6 +465,34 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
         ],
         observedAt: new Date().toISOString(),
       },
+      waypointInventory: {
+        status: "ok",
+        reason: null,
+        count: 2,
+        availableSlots: 2,
+        complete: true,
+        observedAt: new Date().toISOString(),
+        slots: [
+          {
+            index: 0,
+            lat: 37.6774,
+            lon: -122.4194,
+            rawLat: "37.6774000",
+            rawLon: "-122.4194000",
+            complete: true,
+            errors: [],
+          },
+          {
+            index: 1,
+            lat: 37.7,
+            lon: -122.4,
+            rawLat: "37.7000000",
+            rawLon: "-122.4000000",
+            complete: true,
+            errors: [],
+          },
+        ],
+      },
       logInventory: [{
         status: "available",
         requestedSource: 0,
@@ -570,6 +598,10 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   })).toBeInTheDocument();
   expect(screen.getAllByText("gyro").length).toBeGreaterThan(0);
   expect(screen.getByText("bias roll (mdps)")).toBeInTheDocument();
+  expect(screen.getByRole("region", {
+    name: "Imported Aerial Kit waypoint inventory",
+  })).toBeInTheDocument();
+  expect(screen.getByText("37.6774000, -122.4194000")).toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();

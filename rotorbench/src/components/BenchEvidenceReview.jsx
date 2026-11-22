@@ -1545,6 +1545,54 @@ export default function BenchEvidenceReview({
             </section>
           )}
 
+          {evidence.fcEvidence?.liveStatus?.waypointInventory && (
+            <section
+              className="aerial-kit-mission aerial-kit-waypoints"
+              aria-label="Imported Aerial Kit waypoint inventory"
+            >
+              <div className="aerial-kit-section-heading">
+                <strong>Imported waypoint inventory</strong>
+                <span>
+                  {evidence.fcEvidence.liveStatus.waypointInventory.count ?? "Unknown"}
+                  {" configured · "}
+                  {evidence.fcEvidence.liveStatus.waypointInventory.availableSlots}
+                  {" available slots"}
+                </span>
+              </div>
+              <p>
+                Coordinates come from the imported `wp_count`, `wpN_lat`, and
+                `wpN_lon` parameters. This is a read-only inventory, not an
+                uploaded mission.
+              </p>
+              {evidence.fcEvidence.liveStatus.waypointInventory.status !== "ok" && (
+                <div className="aerial-kit-rc-unavailable" role="note">
+                  <ShieldAlert size={16} aria-hidden="true" />
+                  <span>
+                    <strong>Waypoint inventory incomplete</strong>
+                    <small>
+                      {evidence.fcEvidence.liveStatus.waypointInventory.reason
+                        || evidence.fcEvidence.liveStatus.waypointInventory.status}
+                    </small>
+                  </span>
+                </div>
+              )}
+              {evidence.fcEvidence.liveStatus.waypointInventory.slots.length > 0 && (
+                <ol>
+                  {evidence.fcEvidence.liveStatus.waypointInventory.slots.map((slot) => (
+                    <li key={slot.index} className={slot.complete ? "is-complete" : "is-incomplete"}>
+                      <strong>WP {slot.index}</strong>
+                      <span>
+                        {slot.complete
+                          ? `${slot.lat.toFixed(7)}, ${slot.lon.toFixed(7)}`
+                          : slot.errors.join(" · ")}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          )}
+
           {evidence.fcEvidence?.liveStatus?.calibration && (
             <section
               className="aerial-kit-calibration"

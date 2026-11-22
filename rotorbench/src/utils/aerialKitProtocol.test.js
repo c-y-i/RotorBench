@@ -1127,6 +1127,23 @@ test("creates a sanitized live-status evidence boundary", () => {
       ],
       observedAtMs: 1250,
     },
+    waypointInventory: {
+      status: "ok",
+      reason: null,
+      count: 1,
+      availableSlots: 1,
+      complete: true,
+      observedAtMs: 1250,
+      slots: [{
+        index: 0,
+        lat: 37.6774,
+        lon: -122.4194,
+        rawLat: "37.6774000",
+        rawLon: "-122.4194000",
+        complete: true,
+        errors: [],
+      }],
+    },
     logInventory: [{
       status: "available",
       requestedSource: 0,
@@ -1264,6 +1281,16 @@ test("creates a sanitized live-status evidence boundary", () => {
       active: true,
       samples: 1000,
       observedAt: "1970-01-01T00:00:01.250Z",
+    },
+    waypointInventory: {
+      status: "ok",
+      count: 1,
+      complete: true,
+      observedAt: "1970-01-01T00:00:01.250Z",
+      slots: [{
+        lat: 37.6774,
+        lon: -122.4194,
+      }],
     },
     logInventory: [{
       requestedSource: 0,

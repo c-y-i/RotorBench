@@ -3322,6 +3322,84 @@
   font-variant-numeric: tabular-nums;
 }
 
+.aerial-kit-waypoints {
+  display: grid;
+  gap: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+
+.aerial-kit-mission.aerial-kit-waypoints {
+  padding-top: 11px;
+  border-top: 0;
+}
+
+.aerial-kit-waypoints > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.aerial-kit-waypoints > div:first-child span {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.aerial-kit-waypoints > div:first-child strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.aerial-kit-waypoints > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.aerial-kit-waypoints ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aerial-kit-waypoints li {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-waypoints li.is-complete {
+  background: #e8f5ee;
+  border-color: #b8ddc8;
+}
+
+.aerial-kit-waypoints li.is-incomplete {
+  background: #fff0e9;
+  border-color: #efb596;
+}
+
+.aerial-kit-waypoints li strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.aerial-kit-waypoints li span {
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
 .aerial-kit-log-frames {
   display: grid;
   gap: 5px;
@@ -5185,6 +5263,10 @@
 
   .aerial-kit-calibration-state > div:last-child {
     grid-column: 1 / -1;
+  }
+
+  .aerial-kit-waypoints ol {
+    grid-template-columns: 1fr;
   }
 
   .aerial-kit-log-frames dl {

@@ -271,6 +271,34 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       ],
       observedAt: "2026-11-22T10:00:00.000Z",
     },
+    waypointInventory: {
+      status: "ok",
+      reason: null,
+      count: 2,
+      availableSlots: 2,
+      complete: true,
+      observedAt: "2026-11-22T10:00:00.000Z",
+      slots: [
+        {
+          index: 0,
+          lat: 37.6774,
+          lon: -122.4194,
+          rawLat: "37.6774000",
+          rawLon: "-122.4194000",
+          complete: true,
+          errors: [],
+        },
+        {
+          index: 1,
+          lat: 37.7,
+          lon: -122.4,
+          rawLat: "37.7000000",
+          rawLon: "-122.4000000",
+          complete: true,
+          errors: [],
+        },
+      ],
+    },
     logInventory: [{
       status: "available",
       requestedSource: 0,
@@ -449,6 +477,25 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
         { name: "bias roll (mdps)", value: -1 },
         { name: "bias pitch (mdps)", value: -2 },
         { name: "bias yaw (mdps)", value: -3 },
+      ],
+    },
+    waypointInventory: {
+      status: "ok",
+      count: 2,
+      availableSlots: 2,
+      slots: [
+        {
+          index: 0,
+          lat: 37.6774,
+          lon: -122.4194,
+          complete: true,
+        },
+        {
+          index: 1,
+          lat: 37.7,
+          lon: -122.4,
+          complete: true,
+        },
       ],
     },
     logInventory: [{
