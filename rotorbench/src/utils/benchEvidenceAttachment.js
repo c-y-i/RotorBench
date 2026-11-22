@@ -285,6 +285,36 @@ export function createBenchEvidenceAttachment(
           geometryRecomputed: true,
         }
       : null,
+    planComparisonComplete: review.kind === "fc-plan-comparison"
+      && review.fcEvidence?.planComparison?.currentPlanMatches === true,
+    planComparisonReviewed: review.kind === "fc-plan-comparison"
+      && Boolean(review.fcEvidence?.planComparison),
+    planComparison: review.kind === "fc-plan-comparison"
+      && review.fcEvidence?.planComparison
+      ? {
+          targetName: review.fcEvidence.planComparison.target?.name || null,
+          firmwareFamily:
+            review.fcEvidence.planComparison.target?.firmwareFamily || null,
+          profileId: review.fcEvidence.planComparison.target?.profileId || null,
+          generatedAt: review.fcEvidence.planComparison.generatedAt || null,
+          currentPlanMatches:
+            review.fcEvidence.planComparison.currentPlanMatches,
+          planFingerprint: stableFingerprint(JSON.stringify(
+            review.fcEvidence.planComparison.stagedPlanParameters || [],
+          )),
+          compared: review.fcEvidence.planComparison.summary?.compared || 0,
+          matched: review.fcEvidence.planComparison.summary?.matched || 0,
+          differing: review.fcEvidence.planComparison.summary?.differing || 0,
+          notObserved:
+            review.fcEvidence.planComparison.summary?.notObserved || 0,
+          parameterValuesRead:
+            review.fcEvidence.planComparison.source?.parameterValuesRead
+            === true,
+          parameterMetadataRead:
+            review.fcEvidence.planComparison.source?.parameterMetadataRead
+            === true,
+        }
+      : null,
     radioEvidenceComplete: Boolean(review.radioDeviceEvidence?.evidenceComplete),
     diagnosticsComplete: review.bundle?.complete ?? null,
     settingsComplete: review.bundle?.settingsComplete ?? null,
@@ -432,15 +462,22 @@ export function compareBenchEvidenceRuns(current, previous, {
     : !current.scope && !previous.scope;
   const comparisonIssue = current.kind !== previous.kind
     ? "Different evidence types cannot be compared."
-    : !current.checkSetFingerprint
-      || current.checkSetFingerprint !== previous.checkSetFingerprint
+    : current.kind !== "fc-plan-comparison"
+      && (
+        !current.checkSetFingerprint
+        || current.checkSetFingerprint !== previous.checkSetFingerprint
+      )
       ? "The runs cover different checks."
-      : !scopeComparable
+      : current.kind !== "fc-plan-comparison" && !scopeComparable
         ? "The runs were recorded against different build or plan scopes."
-        : currentPairing !== previousPairing
+        : current.kind !== "fc-plan-comparison"
+          && currentPairing !== previousPairing
           ? "The runs were recorded against different staged pairing identities."
-          : ["stale", "identity-mismatch"].includes(currentSummary.scopeStatus)
-            || ["stale", "identity-mismatch"].includes(previousSummary.scopeStatus)
+          : current.kind !== "fc-plan-comparison"
+            && (
+              ["stale", "identity-mismatch"].includes(currentSummary.scopeStatus)
+              || ["stale", "identity-mismatch"].includes(previousSummary.scopeStatus)
+            )
             ? "At least one run no longer matches the current build scope."
             : null;
   if (comparisonIssue) {
@@ -462,6 +499,7 @@ export function compareBenchEvidenceRuns(current, previous, {
     "fcEvidenceComplete",
     "fcParametersComplete",
     "missionRouteComplete",
+    "planComparisonComplete",
     "radioEvidenceComplete",
     "observationCorrelationComplete",
   ];
@@ -565,8 +603,86 @@ export function compareBenchEvidenceRuns(current, previous, {
             && Math.abs(remainingDistanceDeltaM) > 0.05),
       }
     : null;
+  const currentPlanComparison = current.planComparison;
+  const previousPlanComparison = previous.planComparison;
+  const planComparisonComparison = currentPlanComparison && previousPlanComparison
+    ? {
+        targetChanged:
+          currentPlanComparison.targetName !== previousPlanComparison.targetName,
+        target: {
+          previous: previousPlanComparison.targetName,
+          current: currentPlanComparison.targetName,
+        },
+        planFingerprintComparable: Boolean(
+          currentPlanComparison.planFingerprint
+          && previousPlanComparison.planFingerprint
+        ),
+        planChanged: Boolean(
+          currentPlanComparison.planFingerprint
+          && previousPlanComparison.planFingerprint
+          && currentPlanComparison.planFingerprint
+            !== previousPlanComparison.planFingerprint
+        ),
+        comparedDelta:
+          currentPlanComparison.compared - previousPlanComparison.compared,
+        matchedDelta:
+          currentPlanComparison.matched - previousPlanComparison.matched,
+        differingDelta:
+          currentPlanComparison.differing - previousPlanComparison.differing,
+        notObservedDelta:
+          currentPlanComparison.notObserved - previousPlanComparison.notObserved,
+        currentPlanMatches: currentPlanComparison.currentPlanMatches,
+      }
+    : null;
   let label;
-  if (missionRouteComparison) {
+  if (planComparisonComparison) {
+    const planChanges = [
+      planComparisonComparison.targetChanged
+        ? `${planComparisonComparison.target.previous || "Unknown"} → ${planComparisonComparison.target.current || "Unknown"}`
+        : null,
+      planComparisonComparison.planChanged
+        ? "Staged plan fingerprint changed"
+        : null,
+      planComparisonComparison.matchedDelta
+        ? `${planComparisonComparison.matchedDelta > 0 ? "+" : ""}${planComparisonComparison.matchedDelta} match`
+        : null,
+      planComparisonComparison.differingDelta
+        ? `${planComparisonComparison.differingDelta > 0 ? "+" : ""}${planComparisonComparison.differingDelta} differ`
+        : null,
+      planComparisonComparison.notObservedDelta
+        ? `${planComparisonComparison.notObservedDelta > 0 ? "+" : ""}${planComparisonComparison.notObservedDelta} not observed`
+        : null,
+    ].filter(Boolean);
+    if (planComparisonComparison.targetChanged || planComparisonComparison.planChanged) {
+      status = "changed";
+      label = planComparisonComparison.targetChanged
+        && !planComparisonComparison.planChanged
+        ? "Plan comparison target changed"
+        : "Staged FC plan changed";
+      changes = planChanges;
+    } else if (
+      planComparisonComparison.differingDelta < 0
+      || planComparisonComparison.notObservedDelta < 0
+    ) {
+      status = planComparisonComparison.differingDelta > 0 ? "mixed" : "improved";
+      label = "FC plan comparison improved";
+      changes = planChanges;
+    } else if (
+      planComparisonComparison.differingDelta > 0
+      || planComparisonComparison.notObservedDelta > 0
+    ) {
+      status = planComparisonComparison.matchedDelta > 0 ? "mixed" : "regressed";
+      label = "FC plan comparison regressed";
+      changes = planChanges;
+    } else {
+      label = status === "unchanged"
+        ? "FC plan comparison unchanged"
+        : "FC plan comparison changed";
+      if (status === "unchanged") {
+        changes = ["No match, difference, or missing-count change"];
+      }
+    }
+  } else if (missionRouteComparison) {
     if (missionRouteComparison.geometryChanged) {
       status = "changed";
       label = missionRouteComparison.activeTargetChanged
@@ -648,6 +764,7 @@ export function compareBenchEvidenceRuns(current, previous, {
     failDelta,
     unverifiedDelta,
     missionRouteComparison,
+    planComparisonComparison,
   };
 }
 
@@ -693,6 +810,10 @@ export function summarizeBenchEvidenceAttachment(attachment, currentScope = null
     ? "radio-evidence"
     : attachment.missionRouteComplete
       ? "mission-route"
+    : attachment.planComparisonComplete
+      ? "plan-comparison"
+    : attachment.planComparisonReviewed
+      ? "plan-comparison-review"
     : attachment.fcParametersComplete
       ? "fc-parameters"
     : attachment.fcEvidenceComplete
@@ -733,6 +854,8 @@ export function summarizeBenchEvidenceAttachment(attachment, currentScope = null
     "fc-evidence",
     "fc-parameters",
     "mission-route",
+    "plan-comparison",
+    "plan-comparison-review",
     "radio-evidence",
     "correlated",
     "observation-pair",
@@ -753,6 +876,11 @@ export function summarizeBenchEvidenceAttachment(attachment, currentScope = null
     "mission-route": attachment.missionRoute?.staleOnImport
       ? "Mission route validated · historical observation"
       : "Mission route geometry validated",
+    "plan-comparison": "FC plan comparison matched",
+    "plan-comparison-review":
+      attachment.planComparison?.currentPlanMatches === false
+        ? "FC plan comparison reviewed · different staged plan"
+        : "FC plan comparison reviewed",
     "fc-evidence": "FC status and preflight reviewed",
     "identity-mismatch": "Imported evidence · staged UID changed",
     "identity-unstaged": "Imported evidence · UID not currently staged",

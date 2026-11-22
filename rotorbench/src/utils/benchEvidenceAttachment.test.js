@@ -92,7 +92,7 @@ test("attaches only a sanitized bench evidence summary", () => {
     checkCounts: { pass: 2, fail: 1, unverified: 1 },
     failedChecks: ["Module max power"],
     unverifiedChecks: ["Drive exit disarmed"],
-  });
+  }, undefined, scope);
   expect(JSON.stringify(attachment)).not.toContain("/dev/tty");
   expect(JSON.stringify(attachment)).not.toContain("bindingPhrase");
   expect(JSON.stringify(attachment)).not.toMatch(/10:73:a1:1f:a8:0f/i);
@@ -445,6 +445,116 @@ test("preserves validated mission-route evidence in attached history", () => {
     status: "mission-route",
     label: "Mission route validated · historical observation",
     hardwareVerified: false,
+  });
+});
+
+function planComparisonAttachment({
+  targetName = "SpeedyBee F405 V5",
+  expectedArm = "6",
+  matched = 2,
+  differing = 1,
+  notObserved = 3,
+} = {}) {
+  return createBenchEvidenceAttachment({
+    ...review,
+    kind: "fc-plan-comparison",
+    fileOverall: "Plan comparison validated against the current staged plan",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    checks: [
+      { id: "akp-plan-summary", label: "Plan comparison summary", status: "pass" },
+      { id: "akp-plan-boundaries", label: "Plan comparison boundaries", status: "pass" },
+      { id: "akp-plan-current", label: "Current staged plan", status: "pass" },
+    ],
+    fcEvidence: {
+      planComparison: {
+        target: {
+          name: targetName,
+          firmwareFamily: "aerialkit",
+          profileId: "esp32dev",
+        },
+        generatedAt: "2026-11-22T12:00:00.000Z",
+        currentPlanMatches: true,
+        stagedPlanParameters: [
+          { name: "arm_channel", expected: expectedArm },
+          { name: "dshot_khz", expected: "300" },
+        ],
+        parameters: [
+          {
+            parameter: "arm_channel",
+            status: "fail",
+            expected: expectedArm,
+          },
+        ],
+        source: {
+          parameterValuesRead: true,
+          parameterMetadataRead: true,
+        },
+        summary: {
+          compared: matched + differing + notObserved,
+          matched,
+          differing,
+          notObserved,
+        },
+      },
+    },
+  }, undefined, scope);
+}
+
+test("stores only sanitized plan-comparison history metadata", () => {
+  const attachment = planComparisonAttachment();
+
+  expect(attachment).toMatchObject({
+    kind: "fc-plan-comparison",
+    planComparisonComplete: true,
+    planComparisonReviewed: true,
+    planComparison: {
+      targetName: "SpeedyBee F405 V5",
+      currentPlanMatches: true,
+      compared: 6,
+      matched: 2,
+      differing: 1,
+      notObserved: 3,
+    },
+  });
+  expect(attachment.planComparison.planFingerprint).toMatch(/^fnv1a-/);
+  expect(JSON.stringify(attachment)).not.toContain('"arm_channel"');
+  expect(JSON.stringify(attachment)).not.toContain('"expected":"6"');
+  expect(JSON.stringify(attachment)).not.toContain('"parameters":[');
+  expect(summarizeBenchEvidenceAttachment(attachment, scope)).toMatchObject({
+    status: "plan-comparison",
+    label: "FC plan comparison matched",
+    hardwareVerified: false,
+  });
+});
+
+test("compares plan identity and count changes without raw parameter rows", () => {
+  const previous = planComparisonAttachment();
+  const current = planComparisonAttachment({
+    expectedArm: "7",
+    matched: 3,
+    differing: 0,
+    notObserved: 2,
+  });
+
+  expect(compareBenchEvidenceRuns(current, previous)).toMatchObject({
+    status: "changed",
+    label: "Staged FC plan changed",
+    planComparisonComparison: {
+      planFingerprintComparable: true,
+      planChanged: true,
+      matchedDelta: 1,
+      differingDelta: -1,
+      notObservedDelta: -1,
+    },
+  });
+  expect(compareBenchEvidenceRuns(current, previous).summary)
+    .toContain("Staged plan fingerprint changed");
+
+  const retargeted = planComparisonAttachment({ targetName: "Custom board" });
+  expect(compareBenchEvidenceRuns(retargeted, previous)).toMatchObject({
+    status: "changed",
+    label: "Plan comparison target changed",
   });
 });
 
