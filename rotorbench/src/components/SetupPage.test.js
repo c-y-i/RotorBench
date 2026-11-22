@@ -157,6 +157,19 @@ test("renders the hardware planning page and switches to radio setup", async () 
   expect(await getA11yViolations(container)).toEqual([]);
 });
 
+test("does not create setup drafts until a plan changes", () => {
+  renderSetup();
+
+  expect(localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:fc:draft",
+  )).toBeNull();
+  expect(localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:radio:draft",
+  )).toBeNull();
+  expect(screen.queryByText(/Recovered an unsaved local setup draft/i))
+    .not.toBeInTheDocument();
+});
+
 test("opens the evidence review directly from bench tools", () => {
   renderSetup();
 
@@ -315,7 +328,7 @@ test("copies a sanitized human-readable hardware plan summary", async () => {
   expect(await screen.findByText(/Binding material was excluded/i)).toBeInTheDocument();
 });
 
-test("passes the staged binding UID to imported bench evidence review", () => {
+test("passes the staged binding UID to evidence review without putting it in a draft", async () => {
   localStorage.setItem(
     "rotorbench:hardware-plan:standalone:radio",
     JSON.stringify({
@@ -327,6 +340,38 @@ test("passes the staged binding UID to imported bench evidence review", () => {
   renderSetup();
 
   expect(screen.getByText(/plan UID: 83:63:42:33:50:ab/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("tab", { name: "Radio link" }));
+  fireEvent.click(screen.getByRole("button", { name: "Adopt mock radio values" }));
+  await waitFor(() => {
+    expect(localStorage.getItem(
+      "rotorbench:hardware-plan:standalone:radio:draft",
+    )).not.toBeNull();
+  });
+  const draft = localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:radio:draft",
+  );
+  expect(draft).not.toContain("local-test-phrase");
+  expect(JSON.parse(draft).bindingPhrase).toBe("");
+});
+
+test("does not restore binding material from a local draft", async () => {
+  localStorage.setItem(
+    "rotorbench:hardware-plan:standalone:radio:draft",
+    JSON.stringify({
+      ...DEFAULT_RADIO_CONFIG,
+      bindingPhrase: "draft-secret",
+      uid: "10:73:a1:1f:a8:0f",
+    }),
+  );
+
+  renderSetup();
+
+  expect(screen.getByText(/plan UID: none/)).toBeInTheDocument();
+  await waitFor(() => {
+    expect(localStorage.getItem(
+      "rotorbench:hardware-plan:standalone:radio:draft",
+    )).toBeNull();
+  });
 });
 
 test("copies the capture-session procedure with both endpoint rates", async () => {
@@ -400,7 +445,7 @@ test("stops both endpoints when one synchronized port fails to open", async () =
   expect(mockCaptureStop).toHaveBeenCalledTimes(2);
 });
 
-test("adopts reviewed values into local FC and radio plans without saving", () => {
+test("adopts reviewed values into local plans and preserves a safe draft", async () => {
   renderSetup();
 
   expect(screen.getByText(/arm 6/)).toBeInTheDocument();
@@ -418,6 +463,41 @@ test("adopts reviewed values into local FC and radio plans without saving", () =
     .toBeInTheDocument();
   expect(localStorage.getItem("rotorbench:hardware-plan:standalone:fc")).toBeNull();
   expect(localStorage.getItem("rotorbench:hardware-plan:standalone:radio")).toBeNull();
+  await waitFor(() => {
+    expect(localStorage.getItem(
+      "rotorbench:hardware-plan:standalone:fc:draft",
+    )).not.toBeNull();
+  });
+  const fcDraft = JSON.parse(localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:fc:draft",
+  ));
+  const radioDraft = JSON.parse(localStorage.getItem(
+    "rotorbench:hardware-plan:standalone:radio:draft",
+  ));
+  expect(fcDraft.armChannel).toBe(5);
+  expect(radioDraft.packetRateMode).toBe("100-full");
+  expect(radioDraft.bindingPhrase).toBe("");
+  expect(radioDraft.uid).toBe("");
+});
+
+test("restores an unsaved local setup draft after remounting", async () => {
+  const view = renderSetup();
+  fireEvent.click(screen.getByRole("button", { name: "Adopt mock FC values" }));
+  expect(screen.getByText(/arm 5/)).toBeInTheDocument();
+  await waitFor(() => {
+    expect(JSON.parse(localStorage.getItem(
+      "rotorbench:hardware-plan:standalone:fc:draft",
+    )).armChannel).toBe(5);
+  });
+
+  view.unmount();
+  renderSetup();
+
+  expect(await screen.findByText(/arm 5/)).toBeInTheDocument();
+  expect(screen.getByText(/Recovered an unsaved local setup draft/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/Binding phrase and direct UID are not retained/i))
+    .toBeInTheDocument();
 });
 
 test("uses the selected build controller and receiver", () => {

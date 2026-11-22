@@ -36,6 +36,7 @@ import {
   getRadioChannelRoles,
   getRadioTarget,
   normalizeRadioConfig,
+  sanitizeRadioChannelMap,
 } from "../data/radioProfiles";
 import FlightControllerSetup from "./FlightControllerSetup";
 import RadioLinkSetup from "./RadioLinkSetup";
@@ -76,6 +77,18 @@ function readStoredPlan(key, fallback) {
   }
 }
 
+function createRadioDraft(config, channelLimit, controlRoles) {
+  return {
+    ...config,
+    bindingPhrase: "",
+    uid: "",
+    channelMap: sanitizeRadioChannelMap(config.channelMap, {
+      channelLimit,
+      controlRoles,
+    }),
+  };
+}
+
 export default function SetupPage() {
   const { currentBuild } = useBuild();
   const location = useLocation();
@@ -99,15 +112,24 @@ export default function SetupPage() {
   const [setupBenchToolsOpen, setSetupBenchToolsOpen] = useState(false);
   const [benchRunbookOpen, setBenchRunbookOpen] = useState(false);
   const [focusBenchEvidence, setFocusBenchEvidence] = useState(false);
+  const [plansLoaded, setPlansLoaded] = useState(false);
+  const [recoveredDraft, setRecoveredDraft] = useState({
+    fc: false,
+    radio: false,
+  });
   const importInputRef = useRef(null);
   const captureRefs = useRef({});
   const captureCommandPendingRef = useRef(false);
+  const fcBaselineRef = useRef(null);
+  const radioBaselineRef = useRef(null);
   const activeTab = searchParams.get("tab") === "radio" ? "radio" : "flight-controller";
   const setupStorageBase = build?.id
     ? `rotorbench:hardware-plan:${build.id}`
     : "rotorbench:hardware-plan:standalone";
   const fcStorageKey = `${setupStorageBase}:fc`;
   const radioStorageKey = `${setupStorageBase}:radio`;
+  const fcDraftKey = `${setupStorageBase}:fc:draft`;
+  const radioDraftKey = `${setupStorageBase}:radio:draft`;
 
   const openEvidenceReview = () => {
     setSetupBenchToolsOpen(true);
@@ -134,11 +156,19 @@ export default function SetupPage() {
   }, [benchRunbookOpen, focusBenchEvidence]);
 
   useEffect(() => {
+    setPlansLoaded(false);
     const fallback = createDefaultFlightControllerConfig(
       selectedFlightController,
       selectedReceiver,
     );
-    setFcPlan(readStoredPlan(fcStorageKey, fallback));
+    const savedFcPlan = readStoredPlan(fcStorageKey, fallback);
+    const hasFcDraft = Boolean(localStorage.getItem(fcDraftKey));
+    const nextFcPlan = readStoredPlan(
+      hasFcDraft ? fcDraftKey : fcStorageKey,
+      fallback,
+    );
+    setFcPlan(nextFcPlan);
+    fcBaselineRef.current = JSON.stringify(savedFcPlan);
     const radioFallback = {
       ...DEFAULT_RADIO_CONFIG,
       selectedReceiverId: selectedReceiver?.id || null,
@@ -152,10 +182,48 @@ export default function SetupPage() {
         launch: fallback.launchChannel ?? null,
       },
     };
-    setRadioPlan(readStoredPlan(radioStorageKey, radioFallback));
+    const savedRadioPlan = readStoredPlan(radioStorageKey, radioFallback);
+    const hasRadioDraft = Boolean(localStorage.getItem(radioDraftKey));
+    const nextRadioPlan = hasRadioDraft
+      ? {
+          ...readStoredPlan(radioDraftKey, radioFallback),
+          bindingPhrase: "",
+          uid: "",
+        }
+      : readStoredPlan(radioStorageKey, radioFallback);
+    setRadioPlan(nextRadioPlan);
+    const savedProfile = getBoardProfile(
+      savedFcPlan.profileId,
+      selectedFlightController,
+    );
+    const savedChannelLimit = savedFcPlan.firmwareFamily === "aerialkit" ? 8 : 16;
+    const savedControlRoles = savedFcPlan.firmwareFamily === "aerialkit"
+      ? getAerialKitControlRoles(savedProfile).map((role) => role.key)
+      : null;
+    radioBaselineRef.current = JSON.stringify(createRadioDraft(
+      savedRadioPlan,
+      savedChannelLimit,
+      savedControlRoles,
+    ));
+    setRecoveredDraft({
+      fc: Boolean(
+        hasFcDraft && JSON.stringify(nextFcPlan) !== fcBaselineRef.current,
+      ),
+      radio: Boolean(
+        hasRadioDraft
+        && JSON.stringify(createRadioDraft(
+          nextRadioPlan,
+          savedChannelLimit,
+          savedControlRoles,
+        )) !== radioBaselineRef.current,
+      ),
+    });
+    setPlansLoaded(true);
   }, [
     build?.id,
+    fcDraftKey,
     fcStorageKey,
+    radioDraftKey,
     radioStorageKey,
     selectedFlightController,
     selectedReceiver,
@@ -172,6 +240,37 @@ export default function SetupPage() {
       : null,
     [fcPlan.firmwareFamily, fcProfile],
   );
+  useEffect(() => {
+    if (!plansLoaded) return;
+    try {
+      const fcDraft = JSON.stringify(fcPlan);
+      if (fcDraft === fcBaselineRef.current) {
+        localStorage.removeItem(fcDraftKey);
+      } else {
+        localStorage.setItem(fcDraftKey, fcDraft);
+      }
+      const radioDraft = JSON.stringify(createRadioDraft(
+        radioPlan,
+        radioChannelLimit,
+        radioControlRoles,
+      ));
+      if (radioDraft === radioBaselineRef.current) {
+        localStorage.removeItem(radioDraftKey);
+      } else {
+        localStorage.setItem(radioDraftKey, radioDraft);
+      }
+    } catch {
+      // Draft persistence is best-effort; explicit saves still report failures.
+    }
+  }, [
+    fcDraftKey,
+    fcPlan,
+    plansLoaded,
+    radioChannelLimit,
+    radioControlRoles,
+    radioDraftKey,
+    radioPlan,
+  ]);
   const radioRoleOptions = useMemo(() => ({
     channelLimit: radioChannelLimit,
     controlRoles: radioControlRoles,
@@ -396,6 +495,9 @@ export default function SetupPage() {
   const saveFcPlan = () => {
     try {
       localStorage.setItem(fcStorageKey, JSON.stringify(fcPlan));
+      localStorage.removeItem(fcDraftKey);
+      fcBaselineRef.current = JSON.stringify(fcPlan);
+      setRecoveredDraft((current) => ({ ...current, fc: false }));
       setMessage("Flight-controller plan saved locally.");
     } catch {
       setMessage("The browser could not save the flight-controller plan.");
@@ -403,6 +505,13 @@ export default function SetupPage() {
   };
 
   const saveRadioPlan = () => {
+    localStorage.removeItem(radioDraftKey);
+    radioBaselineRef.current = JSON.stringify(createRadioDraft(
+      radioPlan,
+      radioChannelLimit,
+      radioControlRoles,
+    ));
+    setRecoveredDraft((current) => ({ ...current, radio: false }));
     setMessage("Radio plan saved locally. Binding material was not persisted.");
   };
 
@@ -710,6 +819,12 @@ export default function SetupPage() {
       )}
 
       {message && <div className="setup-message" role="status">{message}</div>}
+      {(recoveredDraft.fc || recoveredDraft.radio) && !message && (
+        <div className="setup-message" role="status">
+          Recovered an unsaved local setup draft. Binding phrase and direct UID
+          are not retained in drafts.
+        </div>
+      )}
       {mappingWarnings.length > 0 && (
         <div className="setup-mapping-warning" role="status">
           <ShieldAlert size={17} aria-hidden="true" />
