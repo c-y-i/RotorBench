@@ -4,6 +4,7 @@ import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
 import componentsData from "../data/components.json";
 import PartPicker from "./PartPicker";
+import ModelAssetAudit from "./ModelAssetAudit";
 import AssemblyNotes from "./AssemblyNotes";
 import AssemblyStackMap from "./AssemblyStackMap";
 import AssemblyInterfaceMap from "./AssemblyInterfaceMap";
@@ -1656,6 +1657,7 @@ export default function BuildPage() {
               </div>
             </details>
           )}
+          <ModelAssetAudit parts={assemblySpec} />
           <AssemblyInterfaceMap
             frame={assemblySpec.frame}
             motor={assemblySpec.motor}

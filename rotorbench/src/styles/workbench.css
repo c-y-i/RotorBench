@@ -1234,6 +1234,11 @@
   border: 1px solid #acd5cd;
 }
 
+.viewer-placement-audit > summary em.is-catalog {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+}
+
 .viewer-placement-audit-body {
   display: grid;
   gap: 10px;
@@ -1278,6 +1283,10 @@
 }
 
 .viewer-placement-audit-body li.is-measured > svg {
+  color: var(--brand);
+}
+
+.viewer-placement-audit-body li.is-catalog > svg {
   color: var(--brand);
 }
 
