@@ -6,10 +6,15 @@ import SetupPage from "./SetupPage";
 import { getA11yViolations } from "../test/a11y";
 
 jest.mock("./FlightControllerSetup", () => function MockFlightControllerSetup(props = {}) {
-  const { selectedFlightController, buildMotorCount, value } = props;
+  const {
+    selectedFlightController,
+    buildMotorCount,
+    buildServoCount,
+    value,
+  } = props;
   return (
     <div>
-      Flight controller panel: {selectedFlightController?.name || "none"} / motors {buildMotorCount ?? "unknown"} / arm {value?.armChannel ?? "none"}
+      Flight controller panel: {selectedFlightController?.name || "none"} / motors {buildMotorCount ?? "unknown"} / servos {buildServoCount ?? "unknown"} / arm {value?.armChannel ?? "none"}
     </div>
   );
 });
@@ -278,6 +283,20 @@ test("uses the selected build controller and receiver", () => {
   fireEvent.click(screen.getByRole("tab", { name: "Radio link" }));
   expect(screen.getByText(/Radio panel: JHEMCU EP24S ExpressLRS Receiver \/ roles all/))
     .toBeInTheDocument();
+});
+
+test("carries the selected T1 frame servo hardware into Setup", () => {
+  localStorage.setItem("currentBuild", JSON.stringify({
+    id: "t1-setup",
+    name: "T1 setup",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      flightControllerId: "fc-matek-f405-wmn",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  }));
+  renderSetup();
+  expect(screen.getByText(/motors 2 \/ servos 3/)).toBeInTheDocument();
 });
 
 test("editing the build carries its unsaved draft state back to Build", () => {

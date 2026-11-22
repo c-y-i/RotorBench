@@ -787,6 +787,7 @@ export default function SetupPage() {
             selectedFlightController={selectedFlightController}
             selectedReceiver={selectedReceiver}
             buildMotorCount={selectedFrame?.motorCount ?? null}
+            buildServoCount={selectedFrame?.servoHardware?.quantity ?? null}
             storageKey={fcStorageKey}
           />
         </div>

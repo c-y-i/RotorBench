@@ -1680,7 +1680,7 @@ export function getChannelPreset(config) {
 export function validateFlightControllerConfig(
   config,
   profile = getBoardProfile(config.profileId),
-  { buildMotorCount = null } = {},
+  { buildMotorCount = null, buildServoCount = null } = {},
 ) {
   const issues = [];
   const airframe = AIRFRAMES.find((item) => item.value === config.airframe);
@@ -1746,6 +1746,20 @@ export function validateFlightControllerConfig(
       severity: "error",
       code: "build-airframe-mismatch",
       message: `The selected frame has ${buildMotorCount} motor mount${buildMotorCount === 1 ? "" : "s"}, but the planned ${airframe.label} airframe uses ${airframe.motors}.`,
+    });
+  }
+
+  if (
+    config.firmwareFamily === "aerialkit" &&
+    airframe &&
+    Number.isInteger(Number(buildServoCount)) &&
+    Number(buildServoCount) > airframe.servos
+  ) {
+    issues.push({
+      severity: "warning",
+      code: "build-servo-coverage",
+      targetId: "fc-servo-title",
+      message: `The selected frame carries ${buildServoCount} catalogued control-surface servo${Number(buildServoCount) === 1 ? "" : "s"}, but the planned ${airframe.label} mixer exposes ${airframe.servos}. One or more servo outputs remain unassigned.`,
     });
   }
 

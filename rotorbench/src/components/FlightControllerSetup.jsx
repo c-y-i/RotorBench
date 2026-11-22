@@ -57,6 +57,7 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "servo-count": { id: "fc-airframe", label: "airframe" },
   "pwm-output-count": { id: "fc-airframe", label: "airframe" },
   "build-airframe-mismatch": { id: "fc-airframe", label: "airframe" },
+  "build-servo-coverage": { id: "fc-servo-title", label: "servo outputs" },
   "sbus-inverter": { id: "fc-protocol", label: "receiver protocol" },
   "sbus-no-telemetry": { id: "fc-protocol", label: "receiver protocol" },
   "receiver-baud": { id: "fc-baud", label: "line rate" },
@@ -188,6 +189,7 @@ export default function FlightControllerSetup({
   selectedFlightController = null,
   selectedReceiver = null,
   buildMotorCount = null,
+  buildServoCount = null,
   storageKey = "rotorbench:flightControllerPlan",
 }) {
   const [config, updateConfig, resetInternal] = useFlightControllerConfig(
@@ -340,8 +342,14 @@ export default function FlightControllerSetup({
       })
     : [];
   const issues = useMemo(
-    () => validateFlightControllerConfig(config, profile, { buildMotorCount }),
-    [buildMotorCount, config, profile],
+    () => validateFlightControllerConfig(config, profile, {
+      buildMotorCount,
+      buildServoCount,
+    }),
+    [buildMotorCount, buildServoCount, config, profile],
+  );
+  const buildServoCoverageIssue = issues.find(
+    (issue) => issue.code === "build-servo-coverage",
   );
   const summary = useMemo(
     () => buildFlightControllerSummary(config, profile),
@@ -1027,7 +1035,7 @@ export default function FlightControllerSetup({
               <div className="fc-section-heading">
                 <SlidersHorizontal size={18} aria-hidden="true" />
                 <div>
-                  <h3 id="fc-servo-title">Servo outputs</h3>
+                  <h3 id="fc-servo-title" tabIndex="-1">Servo outputs</h3>
                   <p>
                     Set the firmware's linkage plumbing for the selected
                     airframe. These are plan values, not a surface-direction or
@@ -1035,6 +1043,17 @@ export default function FlightControllerSetup({
                   </p>
                 </div>
               </div>
+
+              {buildServoCoverageIssue && (
+                <div className="fc-servo-build-coverage" role="status">
+                  <CircleAlert size={16} aria-hidden="true" />
+                  <span>
+                    <strong>Catalogued servo hardware exceeds this mixer</strong>
+                    <small>{buildServoCoverageIssue.message}</small>
+                  </span>
+                  <em>Review</em>
+                </div>
+              )}
 
               <div className="fc-servo-output-grid">
                 {AERIALKIT_SERVO_OUTPUTS

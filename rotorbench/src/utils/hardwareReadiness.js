@@ -103,6 +103,7 @@ export function summarizeHardwareReadiness({
   const wiring = buildReceiverWiringPlan(fcPlan, profile, receiver);
   const fcIssues = validateFlightControllerConfig(fcPlan, profile, {
     buildMotorCount,
+    buildServoCount,
   });
   const fcPlanConfigured = Boolean(storedFc);
   const radioPlanConfigured = Boolean(storedRadio);

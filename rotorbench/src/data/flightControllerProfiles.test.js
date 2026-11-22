@@ -1112,6 +1112,26 @@ test("build frame motor count must match the planned airframe", () => {
   ]));
 });
 
+test("catalogued servo hardware must fit the planned Aerial Kit mixer", () => {
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    airframe: "elevonwing",
+  };
+  const issues = validateFlightControllerConfig(
+    config,
+    getBoardProfile(config.profileId),
+    { buildMotorCount: 2, buildServoCount: 3 },
+  );
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      code: "build-servo-coverage",
+      severity: "warning",
+      targetId: "fc-servo-title",
+      message: expect.stringMatching(/carries 3 catalogued.*mixer exposes 2/i),
+    }),
+  ]));
+});
+
 test("u32 safety timing and receiver baud require whole numbers", () => {
   const config = {
     ...createDefaultFlightControllerConfig(),

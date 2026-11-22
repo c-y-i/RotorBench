@@ -722,6 +722,20 @@ test("review actions focus the field that owns a plan issue", () => {
   expect(screen.getByLabelText("Airframe")).toHaveFocus();
 });
 
+test("servo hardware coverage remains reviewable from the servo section", () => {
+  render(<FlightControllerSetup buildServoCount={3} />);
+  fireEvent.change(screen.getByLabelText("Airframe"), {
+    target: { value: "elevonwing" },
+  });
+
+  expect(screen.getByText("Catalogued servo hardware exceeds this mixer"))
+    .toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Review servo outputs" }))
+    .toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Review servo outputs" }));
+  expect(screen.getByRole("heading", { name: "Servo outputs" })).toHaveFocus();
+});
+
 test("choosing Betaflight switches to its documented bench channel preset", () => {
   render(<FlightControllerSetup />);
   fireEvent.change(screen.getByLabelText("Firmware family"), {
