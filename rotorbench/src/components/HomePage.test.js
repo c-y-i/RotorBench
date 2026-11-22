@@ -119,6 +119,8 @@ test("defers the 3D runtime until the preview approaches the viewport", async ()
   try {
     renderHome();
     expect(screen.queryByTestId("home-assembly-viewer")).not.toBeInTheDocument();
+    expect(screen.getByTestId("home-preview-viewport"))
+      .toHaveAttribute("data-preview-state", "pending");
     expect(screen.getByText(/loads when it reaches the viewport/i))
       .toBeInTheDocument();
 
@@ -126,6 +128,8 @@ test("defers the 3D runtime until the preview approaches the viewport", async ()
       intersectionCallback([{ isIntersecting: true }]);
     });
     expect(await screen.findByTestId("home-assembly-viewer")).toBeInTheDocument();
+    expect(screen.getByTestId("home-preview-viewport"))
+      .toHaveAttribute("data-preview-state", "ready");
     expect(disconnect).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "2D" }));
     expect(await screen.findByTestId("home-two-d-viewer")).toBeInTheDocument();

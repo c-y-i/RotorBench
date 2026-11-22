@@ -758,7 +758,14 @@ export default function HomePage() {
             </div>
           )}
 
-          <div className="viewer-container" ref={viewerContainerRef}>
+          <div
+            className={`viewer-container ${
+              previewInView ? "is-preview-ready" : "is-preview-pending"
+            }`}
+            data-testid="home-preview-viewport"
+            data-preview-state={previewInView ? "ready" : "pending"}
+            ref={viewerContainerRef}
+          >
             {activeView === "3D" && previewInView && (
               <Suspense
                 fallback={(

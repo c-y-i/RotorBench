@@ -3587,6 +3587,15 @@
   background: #202826;
 }
 
+.home-preview-panel .viewer-container.is-preview-pending {
+  min-height: clamp(360px, 53vh, 630px);
+}
+
+.home-preview-panel .viewer-container.is-preview-pending .viewer-preview-pending {
+  padding: 28px;
+  line-height: 1.55;
+}
+
 .home-preview-panel .drone-wrapper {
   height: clamp(360px, 53vh, 630px);
   border: 0;
@@ -4912,6 +4921,10 @@
     min-height: 320px;
   }
 
+  .home-preview-panel .viewer-container.is-preview-pending {
+    min-height: 320px;
+  }
+
   .build-preview-panel .build-viewer-frame,
   .build-preview-panel .build-viewer-frame .drone-wrapper {
     min-height: 340px;
@@ -4954,6 +4967,10 @@
 
   .home-preview-panel .drone-wrapper {
     height: 34vh;
+    min-height: 270px;
+  }
+
+  .home-preview-panel .viewer-container.is-preview-pending {
     min-height: 270px;
   }
 
