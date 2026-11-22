@@ -10,6 +10,7 @@ import {
   Upload,
 } from "lucide-react";
 import { parseBenchEvidenceBundle } from "../utils/benchEvidence";
+import { getBoardProfile } from "../data/flightControllerProfiles";
 import {
   benchEvidenceDomainScopeMatches,
   clearBenchEvidenceAttachmentHistory,
@@ -203,6 +204,16 @@ function EvidenceAdoptionCard({
   );
 }
 
+const RADIO_EVIDENCE_KINDS = new Set([
+  "pair",
+  "bench",
+  "capture",
+  "observation",
+  "observation-pair",
+  "diagnostics",
+  "radio-status-evidence",
+]);
+
 export default function BenchEvidenceReview({
   expectedUid = null,
   expectedBauds = null,
@@ -346,6 +357,48 @@ export default function BenchEvidenceReview({
     );
   };
 
+  const fcBoardProfile = expectedFc?.plan?.profileId
+    ? getBoardProfile(
+        expectedFc.plan.profileId,
+        expectedFc.selectedFlightController || null,
+      )
+    : null;
+  const fcPlanTarget = [
+    expectedFc?.targetName || fcBoardProfile?.label,
+    expectedFc?.boardName || fcBoardProfile?.board,
+  ].filter(Boolean).join(" · ");
+  const fcEvidencePresent = Boolean(
+    evidence?.fcEvidence?.status
+    || evidence?.fcEvidence?.rc
+    || evidence?.fcEvidence?.preflight
+    || evidence?.fcEvidence?.parameters
+    || evidence?.bundle?.fcEvidenceCount,
+  );
+  const radioEvidencePresent = Boolean(
+    evidence
+    && (
+      RADIO_EVIDENCE_KINDS.has(evidence.kind)
+      || evidence.bundle?.observationCount
+      || evidence.bundle?.diagnosticCount
+      || evidence.bundle?.txParameters
+      || evidence.bundle?.radioStatusCount
+    ),
+  );
+  const radioPlanTarget = evidence?.planContext?.targetName
+    || evidence?.bundle?.targetName
+    || expectedRadio?.targetName
+    || null;
+  const combinedPlanTargets = fcEvidencePresent && radioEvidencePresent;
+  const planTargetFacts = [
+    fcEvidencePresent && {
+      label: combinedPlanTargets ? "FC plan target" : "Plan target",
+      value: fcPlanTarget || "Selected flight-controller plan",
+    },
+    radioEvidencePresent && {
+      label: combinedPlanTargets ? "Radio plan target" : "Plan target",
+      value: radioPlanTarget || "Selected radio endpoint",
+    },
+  ].filter(Boolean);
   const facts = evidence ? [
     { label: "Report", value: evidenceKindLabels[evidence.kind] },
     {
@@ -359,13 +412,13 @@ export default function BenchEvidenceReview({
         : 1,
     },
     { label: "File overall", value: evidence.fileOverall },
-    { label: "Plan role", value: evidence.planContext?.role?.toUpperCase() || null },
     {
-      label: "Plan target",
-      value: evidence.planContext?.targetName
-        || evidence.bundle?.targetName
-        || null,
+      label: "Plan role",
+      value: radioEvidencePresent
+        ? evidence.planContext?.role?.toUpperCase() || null
+        : null,
     },
+    ...planTargetFacts,
     {
       label: "Reported baud",
       value: evidence.reportedBaud ? `${evidence.reportedBaud} baud` : null,
@@ -896,7 +949,10 @@ export default function BenchEvidenceReview({
             </div>
           </div>
 
-          <dl className="bench-file-review-facts">
+          <dl
+            className="bench-file-review-facts"
+            aria-label="Evidence review facts"
+          >
             {facts.map((fact) => (
               <div key={fact.label}>
                 <dt>{fact.label}</dt>

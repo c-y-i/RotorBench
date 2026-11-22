@@ -139,7 +139,10 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
   if (!entries.length) return null;
 
   return (
-    <details className="fc-parameter-snapshot radio-parameter-snapshot">
+    <details
+      className="fc-parameter-snapshot radio-parameter-snapshot"
+      aria-label="Observed TX parameter snapshot"
+    >
       <summary>
         <SlidersHorizontal size={17} aria-hidden="true" />
         <span>

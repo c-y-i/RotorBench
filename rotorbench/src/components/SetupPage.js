@@ -764,6 +764,8 @@ export default function SetupPage() {
             expectedFc={{
               firmwareFamily: fcPlan.firmwareFamily,
               plan: fcPlan,
+              targetName: selectedFlightController?.name || fcProfile.label,
+              boardName: fcProfile.board,
             }}
             expectedRadio={{
               role: radioPlan.role,

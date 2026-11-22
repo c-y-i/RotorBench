@@ -215,7 +215,10 @@ export default function FcParameterSnapshot({
   if (!parameterCount) return null;
 
   return (
-    <details className="fc-parameter-snapshot">
+    <details
+      className="fc-parameter-snapshot"
+      aria-label={`Observed parameter snapshot${formatLabel ? ` · ${formatLabel}` : ""}`}
+    >
       <summary>
         <SlidersHorizontal size={17} aria-hidden="true" />
         <span>

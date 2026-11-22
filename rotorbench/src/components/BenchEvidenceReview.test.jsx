@@ -810,10 +810,15 @@ test("reviews Mission Planner parameters for the documented H743 receiver path",
     <BenchEvidenceReview
       expectedFc={{
         firmwareFamily: "ardupilot",
+        targetName: "Matek H743-WING V3",
+        boardName: "MATEKH743",
         plan: {
           profileId: "matek-h743-wing-v3-ardupilot",
           receiverProtocol: "crsf",
         },
+      }}
+      expectedRadio={{
+        targetName: "Aerial Kit ELRS USB TX Rev A3",
       }}
     />,
   );
@@ -830,11 +835,17 @@ test("reviews Mission Planner parameters for the documented H743 receiver path",
     "FC parameters match the staged plan; hardware remains unverified",
   )).toBeInTheDocument();
   expect(screen.getByText("Observed parameter snapshot")).toBeInTheDocument();
-  expect(within(
-    screen.getByText("Observed parameter snapshot").closest("summary"),
-  ).getByText(/Mission Planner/)).toBeInTheDocument();
+  expect(within(screen.getByRole("group", {
+    name: /Observed parameter snapshot/,
+  })).getByText(/Mission Planner/)).toBeInTheDocument();
   expect(screen.getByText(/true UART RX on UART6/i)).toBeInTheDocument();
   expect(screen.getByText(/CRSF\/ELRS on SERIAL7/i)).toBeInTheDocument();
+  const facts = screen.getByLabelText("Evidence review facts");
+  expect(within(facts).getByText("Plan target")).toBeInTheDocument();
+  expect(within(facts).getByText("Matek H743-WING V3 · MATEKH743"))
+    .toBeInTheDocument();
+  expect(within(facts).queryByText("Aerial Kit ELRS USB TX Rev A3"))
+    .not.toBeInTheDocument();
 });
 
 test("adopts only selected observed FC values through an explicit local action", async () => {
