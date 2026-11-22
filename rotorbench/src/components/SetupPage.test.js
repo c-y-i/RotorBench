@@ -184,8 +184,8 @@ test("renders the hardware planning page and switches to radio setup", async () 
   expect(within(claimLedger).getByText("Requested")).toBeInTheDocument();
   expect(within(claimLedger).getByText("Current local values"))
     .toBeInTheDocument();
-  expect(within(claimLedger).getByText("Readback not imported"))
-    .toBeInTheDocument();
+  expect(within(claimLedger).getAllByText("Readback not imported"))
+    .toHaveLength(2);
   expect(within(claimLedger).getByText(
     "A device answer can show reception, not that a controller applied it.",
   )).toBeInTheDocument();
@@ -194,8 +194,8 @@ test("renders the hardware planning page and switches to radio setup", async () 
   fireEvent.click(screen.getByRole("button", {
     name: "Import mock FC identity",
   }));
-  expect(within(claimLedger).getByText("Firmware identity reviewed"))
-    .toBeInTheDocument();
+  expect(within(claimLedger).getAllByText("Firmware identity reviewed"))
+    .toHaveLength(2);
   expect(within(claimLedger).getByText(/3 capability bits reported by HELLO/i))
     .toBeInTheDocument();
 

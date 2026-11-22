@@ -115,6 +115,12 @@ export default function SetupPage() {
   const [benchRunbookOpen, setBenchRunbookOpen] = useState(false);
   const [focusBenchEvidence, setFocusBenchEvidence] = useState(false);
   const [reviewedEvidence, setReviewedEvidence] = useState(null);
+  const [claimLedgerOpen, setClaimLedgerOpen] = useState(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return true;
+    }
+    return !window.matchMedia("(max-width: 900px)").matches;
+  });
   const [plansLoaded, setPlansLoaded] = useState(false);
   const [recoveredDraft, setRecoveredDraft] = useState({
     fc: false,
@@ -797,55 +803,69 @@ export default function SetupPage() {
         className="setup-claim-ledger"
         aria-labelledby="setup-claim-ledger-title"
       >
-        <div className="setup-claim-ledger-heading">
-          <div>
-            <h2 id="setup-claim-ledger-title">What the plan can prove</h2>
+        <details
+          className="setup-claim-ledger-details"
+          open={claimLedgerOpen}
+          onToggle={(event) => setClaimLedgerOpen(event.currentTarget.open)}
+        >
+          <summary className="setup-claim-ledger-summary">
+            <span>
+              <strong id="setup-claim-ledger-title">
+                What the plan can prove
+              </strong>
+              <small>{readbackStatus}</small>
+            </span>
+            <em>{claimLedgerOpen ? "Hide facts" : "Show facts"}</em>
+          </summary>
+          <div className="setup-claim-ledger-body">
+            <div className="setup-claim-ledger-heading">
             <p>
               A requested value, a device readback, a running change, and
               stored memory are separate facts.
             </p>
+              <button type="button" onClick={openEvidenceReview}>
+                Review readback
+                <ArrowRight size={15} aria-hidden="true" />
+              </button>
+            </div>
+            <ol className="setup-claim-ledger-items">
+              <li className={unsavedPlanLabels.length > 0 ? "is-requested" : ""}>
+                <span>Requested</span>
+                <strong>
+                  {unsavedPlanLabels.length > 0
+                    ? "Changes staged locally"
+                    : "Current local values"}
+                </strong>
+                <small>
+                  {unsavedPlanLabels.length > 0
+                    ? "Save the changed plan to keep this request in the browser."
+                    : "This is a local request, not a hardware state."}
+                </small>
+              </li>
+              <li className={readbackReviewed ? "is-reviewed" : ""}>
+                <span>Echoed</span>
+                <strong>{readbackStatus}</strong>
+                <small>{readbackDetail}</small>
+              </li>
+              <li>
+                <span>Applied</span>
+                <strong>Not established</strong>
+                <small>
+                  RotorBench does not infer running controller state from a
+                  readback.
+                </small>
+              </li>
+              <li>
+                <span>Persisted</span>
+                <strong>Not established</strong>
+                <small>
+                  Require a device-side save and a fresh readback before
+                  claiming persistence.
+                </small>
+              </li>
+            </ol>
           </div>
-          <button type="button" onClick={openEvidenceReview}>
-            Review readback
-            <ArrowRight size={15} aria-hidden="true" />
-          </button>
-        </div>
-        <ol className="setup-claim-ledger-items">
-          <li className={unsavedPlanLabels.length > 0 ? "is-requested" : ""}>
-            <span>Requested</span>
-            <strong>
-              {unsavedPlanLabels.length > 0
-                ? "Changes staged locally"
-                : "Current local values"}
-            </strong>
-            <small>
-              {unsavedPlanLabels.length > 0
-                ? "Save the changed plan to keep this request in the browser."
-                : "This is a local request, not a hardware state."}
-            </small>
-          </li>
-          <li className={readbackReviewed ? "is-reviewed" : ""}>
-            <span>Echoed</span>
-            <strong>{readbackStatus}</strong>
-            <small>{readbackDetail}</small>
-          </li>
-          <li>
-            <span>Applied</span>
-            <strong>Not established</strong>
-            <small>
-              RotorBench does not infer running controller state from a
-              readback.
-            </small>
-          </li>
-          <li>
-            <span>Persisted</span>
-            <strong>Not established</strong>
-            <small>
-              Require a device-side save and a fresh readback before claiming
-              persistence.
-            </small>
-          </li>
-        </ol>
+        </details>
       </section>
 
       <div className="setup-tabs">

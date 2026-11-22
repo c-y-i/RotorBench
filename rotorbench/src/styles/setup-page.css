@@ -120,30 +120,68 @@
   background: var(--surface-raised);
 }
 
-.setup-claim-ledger-heading {
+.setup-claim-ledger-details {
+  display: block;
+}
+
+.setup-claim-ledger-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 13px 15px;
+  min-height: 56px;
+  padding: 10px 15px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.setup-claim-ledger-summary::-webkit-details-marker {
+  display: none;
+}
+
+.setup-claim-ledger-details[open] .setup-claim-ledger-summary {
   border-bottom: 1px solid var(--line);
 }
 
-.setup-claim-ledger-heading > div {
+.setup-claim-ledger-summary > span {
   display: grid;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
 }
 
-.setup-claim-ledger-heading h2 {
-  margin: 0;
+.setup-claim-ledger-summary strong {
   color: var(--ink);
   font-size: 14px;
   line-height: 1.2;
   letter-spacing: -0.01em;
 }
 
+.setup-claim-ledger-summary small {
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.setup-claim-ledger-summary em {
+  flex: 0 0 auto;
+  color: var(--brand-strong);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.setup-claim-ledger-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 15px;
+}
+
 .setup-claim-ledger-heading p {
+  max-width: 72ch;
   margin: 0;
   color: var(--ink-soft);
   font-size: 11px;
