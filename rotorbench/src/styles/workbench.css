@@ -6366,3 +6366,20 @@
     border: 0;
   }
 }
+
+@media (max-width: 480px) {
+  .home-preview-panel .preview-panel-header {
+    display: grid;
+    gap: 10px;
+  }
+
+  .home-preview-panel .view-switch-container {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .home-preview-panel .view-switch-track {
+    width: 100%;
+    max-width: 100%;
+  }
+}

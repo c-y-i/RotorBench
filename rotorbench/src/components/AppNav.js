@@ -66,7 +66,11 @@ export default function AppNav() {
           <img src={logo} alt="" className="brand-logo" />
           <strong>RotorBench</strong>
         </Link>
-        <Link to="/build?new=1" className="mobile-build-action">
+        <Link
+          to="/build?new=1"
+          className="mobile-build-action"
+          aria-label="New build"
+        >
           <Plus size={18} strokeWidth={2.2} aria-hidden="true" />
           <span>New build</span>
         </Link>

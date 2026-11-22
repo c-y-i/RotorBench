@@ -30,6 +30,13 @@ test('renders the hardware setup destination', async () => {
   await settleLazyRoute();
 });
 
+test('keeps the compact mobile New Build action explicitly labelled', async () => {
+  render(<App />);
+  expect(screen.getByRole('link', { name: 'New build' }))
+    .toHaveAttribute('href', '/build?new=1');
+  await settleLazyRoute();
+});
+
 test('route loading exposes one status and hides decorative placeholders', async () => {
   const { container } = render(<RouteLoading />);
 

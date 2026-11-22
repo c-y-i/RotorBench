@@ -923,7 +923,7 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   .page-header {
     display: grid;
   }
@@ -1082,7 +1082,7 @@
   background: #fbe9e9;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .saved-title-actions {
     flex-wrap: wrap;
     justify-content: flex-end;
@@ -1122,7 +1122,7 @@
   border-color: #c77e83;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 760px) {
   .saved-page .saved-toolbar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1418,12 +1418,14 @@
   min-height: var(--control-min-height);
 }
 
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   .app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) {
     border-radius: 0;
   }
 
   .app-container:is(.analysis-page, .saved-page, .profile-page, .legal-page) .page-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-items: flex-start;
     padding: 18px 16px 16px;
   }

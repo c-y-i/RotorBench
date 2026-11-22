@@ -612,6 +612,26 @@ select:focus-visible {
   }
 }
 
+@media (max-width: 360px) {
+  .mobile-header {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .brand-lockup-mobile strong {
+    font-size: 16px;
+  }
+
+  .mobile-build-action {
+    width: 44px;
+    padding: 0;
+  }
+
+  .mobile-build-action span {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
