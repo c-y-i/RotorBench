@@ -405,7 +405,8 @@ test("the selected build receiver is carried into the plan summary", () => {
     .toBeGreaterThan(0);
   expect(screen.getByText("Receiver RF bands")).toBeInTheDocument();
   expect(screen.getByText("2.4 GHz / Sub-G 900 MHz")).toBeInTheDocument();
-  expect(screen.getByText("Shared 2.4 GHz")).toBeInTheDocument();
+  expect(screen.getByText("Partial 2.4 GHz")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Use target" })).toBeInTheDocument();
   expect(screen.getByRole("navigation", { name: "Radio transceiver sections" }))
     .toBeInTheDocument();
   expect(screen.getByText(/Settings match; RF is still unverified|Profile is not a hardware pass/))
@@ -502,17 +503,16 @@ test("selects the dual-band Nomad module for a dual-band receiver", () => {
   render(
     <RadioLinkSetup
       selectedReceiver={{
-        id: "rx-radiomaster-xr4-gemini",
-        name: "RadioMaster XR4 Gemini Xrossband",
+        id: "rx-radiomaster-dbr4-gemini-xrossband",
+        name: "RadioMaster DBR4 Gemini Xrossband Receiver",
         protocol: "CRSF",
         frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
       }}
     />,
   );
 
-  fireEvent.change(screen.getByRole("combobox", { name: "Device" }), {
-    target: { value: "radiomaster-nomad-gemini-xrossband-tx" },
-  });
+  expect(screen.getByText(/Partial 2\.4 GHz/i)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Use target" }));
 
   expect(screen.getByRole("combobox", { name: "Device" }))
     .toHaveValue("radiomaster-nomad-gemini-xrossband-tx");

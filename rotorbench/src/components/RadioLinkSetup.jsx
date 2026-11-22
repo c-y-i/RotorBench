@@ -609,14 +609,15 @@ export default function RadioLinkSetup({
                 </span>
                 <em>
                   {receiverBandCompatibility.status === "compatible"
-                    ? `Shared ${receiverBandCompatibility.sharedBandLabels.join(" / ")}`
+                    ? `${receiverBandCompatibility.receiverBandCoverageComplete ? "Shared" : "Partial"} ${receiverBandCompatibility.sharedBandLabels.join(" / ")}`
                     : receiverBandCompatibility.status === "conflict"
                       ? "No shared band"
                       : "Verify bands"}
                 </em>
               </div>
             )}
-            {receiverBandCompatibility.status === "conflict"
+            {(receiverBandCompatibility.status === "conflict"
+              || !receiverBandCompatibility.receiverBandCoverageComplete)
               && suggestedTarget
               && suggestedTarget.id !== target.id && (
                 <div className="radio-target-suggestion" role="status">

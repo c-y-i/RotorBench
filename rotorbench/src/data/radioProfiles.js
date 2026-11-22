@@ -768,6 +768,8 @@ export function getRadioReceiverBandCompatibility(targetId, receiver = null) {
   const sharedBandLabels = targetBandLabels.filter(
     (label) => sharedBands.includes(normalizedFrequencyBand(label)),
   );
+  const receiverBandCoverageComplete = receiverBands.length > 0
+    && receiverBands.every((band) => targetBands.includes(band));
   return {
     status: sharedBands.length ? "compatible" : "conflict",
     targetBands,
@@ -776,20 +778,36 @@ export function getRadioReceiverBandCompatibility(targetId, receiver = null) {
     targetBandLabels,
     receiverBandLabels,
     sharedBandLabels,
+    receiverBandCoverageComplete,
   };
 }
 
 export function getSuggestedRadioTargetForReceiver(targetId, receiver = null) {
   const current = getRadioTarget(targetId);
   const currentBands = getRadioReceiverBandCompatibility(current.id, receiver);
-  if (current.roles.includes("tx") && currentBands.status === "compatible") {
+  if (
+    current.roles.includes("tx")
+    && currentBands.status === "compatible"
+    && currentBands.receiverBandCoverageComplete
+  ) {
     return current;
   }
-  return RADIO_TARGETS.find((target) => (
-    target.roles.includes("tx")
-    && !target.allowUnverifiedHostTransports
-    && getRadioReceiverBandCompatibility(target.id, receiver).status === "compatible"
-  )) || null;
+  const completeCoverageTarget = RADIO_TARGETS
+    .filter((target) => {
+    if (!target.roles.includes("tx") || target.allowUnverifiedHostTransports) {
+      return false;
+    }
+    const compatibility = getRadioReceiverBandCompatibility(target.id, receiver);
+    return compatibility.status === "compatible"
+      && compatibility.receiverBandCoverageComplete;
+    })
+    .sort((left, right) => (
+      (left.frequencyBands?.length || 0) - (right.frequencyBands?.length || 0)
+    ))[0];
+  if (completeCoverageTarget) return completeCoverageTarget;
+  return current.roles.includes("tx") && currentBands.status === "compatible"
+    ? current
+    : null;
 }
 
 export function getRadioHostTransports(targetId) {
