@@ -380,7 +380,7 @@ test("Kakute F722 keeps official specs and price with only mounting estimated", 
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
-  expect(componentsData.receivers).toHaveLength(11);
+  expect(componentsData.receivers).toHaveLength(12);
   for (const receiver of componentsData.receivers) {
     expect(receiver.protocol).toBeTruthy();
     expect(receiver.frequencyBands?.length).toBeGreaterThan(0);
@@ -405,6 +405,31 @@ test("Bandit BR3 adds a source-backed sub-GHz receiver", () => {
     price: 24.99,
     modelStatus: "not_available",
     sourceUrl: "https://radiomasterrc.com/products/bandit-br3-expresslrs-receiver",
+  });
+  expect(receiver.estimatedFields).toEqual([
+    "currentDraw",
+    "channels",
+    "mounting_point",
+  ]);
+});
+
+test("Bandit BR1 adds the compact sub-GHz receiver option", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-radiomaster-bandit-br1-900",
+  );
+
+  expect(receiver).toMatchObject({
+    name: "RadioMaster Bandit BR1 ExpressLRS 900MHz Receiver",
+    protocol: "CRSF",
+    frequencyBands: ["Sub-G 900 MHz"],
+    weight: 2.9,
+    planformMm: [18, 13.8],
+    rfChips: "Semtech SX1276",
+    telemetryPowerMw: 50,
+    workingVoltage: "5 V",
+    price: 19.99,
+    modelStatus: "not_available",
+    sourceUrl: "https://radiomasterrc.com/products/bandit-br1-expresslrs-receiver",
   });
   expect(receiver.estimatedFields).toEqual([
     "currentDraw",

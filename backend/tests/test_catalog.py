@@ -44,10 +44,10 @@ class CatalogContractTests(unittest.TestCase):
                 "batteries": 11,
                 "escs": 8,
                 "flight_controllers": 10,
-                "receivers": 11,
+                "receivers": 12,
             },
         )
-        self.assertEqual(sum(counts.values()), 78)
+        self.assertEqual(sum(counts.values()), 79)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 78)
+        self.assertEqual(len(records), 79)
         self.assertTrue(all(record.id for record in records))
 
     def test_published_board_planforms_survive_catalog_hydration(self):
