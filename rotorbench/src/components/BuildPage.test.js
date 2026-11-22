@@ -649,6 +649,43 @@ test("the power path surfaces source-backed manual termination", async () => {
   expect(within(powerPath).getByText("Solder pads")).toBeInTheDocument();
   expect(within(powerPath).getByText(/verify polarity and wire gauge/i))
     .toBeInTheDocument();
+  expect(within(powerPath).getByLabelText("Power polarity inspection"))
+    .toHaveTextContent(/verify red\/black polarity and connector gender/i);
+});
+
+test("the power path names an adapter for a connector mismatch", async () => {
+  const adapterBuild = {
+    id: "adapter-power-build",
+    name: "Adapter power build",
+    componentIds: {
+      frameId: "frame-aos-5-v5",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build: adapterBuild } }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const powerPath = screen.getByRole("region", {
+    name: "Battery to ESC power path",
+  });
+  expect(within(powerPath).getByText("Adapter required")).toBeInTheDocument();
+  expect(within(powerPath).getByLabelText("Connector adapter requirement"))
+    .toHaveTextContent("XT30-to-XT60 adapter");
+  expect(within(powerPath).getByLabelText("Connector adapter requirement"))
+    .toHaveTextContent(/confirm connector gender/i);
 });
 
 test("copies a sanitized human-readable build briefing", async () => {

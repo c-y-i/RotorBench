@@ -273,6 +273,11 @@ export function summarizePowerPath(battery, esc) {
     ...check,
     displayState,
     label,
+    adapterLabel: check.status === "conflict"
+      ? `${batteryConnector}-to-${escConnector} adapter`
+      : null,
+    polarityNote:
+      "Verify red/black polarity and connector gender against the ESC markings before first power.",
     batteryName: battery?.name || "Battery not selected",
     escName: esc?.name || "ESC not selected",
     batteryConnector: batteryConnector || null,

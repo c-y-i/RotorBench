@@ -73,6 +73,7 @@ import { humanizeProvenanceFields } from "../utils/provenanceLabels";
 import {
   BatteryCharging,
   Box,
+  Cable,
   ChartNoAxesCombined,
   Check,
   ChevronRight,
@@ -93,6 +94,7 @@ import {
   Ruler,
   Save,
   Settings2,
+  ShieldCheck,
   Zap,
 } from "lucide-react";
 
@@ -1734,6 +1736,29 @@ export default function BuildPage() {
                 </div>
               </div>
               <p>{powerPath.message}</p>
+              <div className="power-path-review">
+                {powerPath.adapterLabel && (
+                  <div className="is-required" aria-label="Connector adapter requirement">
+                    <Cable size={15} aria-hidden="true" />
+                    <span>
+                      <strong>{powerPath.adapterLabel}</strong>
+                      <small>
+                        Fit the adapter or reterminate the ESC lead. Confirm
+                        connector gender before connecting.
+                      </small>
+                    </span>
+                    <em>Required</em>
+                  </div>
+                )}
+                <div className="is-inspect" aria-label="Power polarity inspection">
+                  <ShieldCheck size={15} aria-hidden="true" />
+                  <span>
+                    <strong>Polarity and connector gender</strong>
+                    <small>{powerPath.polarityNote}</small>
+                  </span>
+                  <em>Inspect</em>
+                </div>
+              </div>
             </section>
           )}
 

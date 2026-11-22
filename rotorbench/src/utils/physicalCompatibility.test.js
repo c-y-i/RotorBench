@@ -206,6 +206,8 @@ test("power path summaries name matches, adapters, solder pads, and unpublished 
   )).toMatchObject({
     displayState: "conflict",
     label: "Adapter required",
+    adapterLabel: "XT30-to-XT60 adapter",
+    polarityNote: expect.stringMatching(/red\/black polarity and connector gender/i),
   });
   expect(summarizePowerPath(
     { name: "XT60 pack", dischargeConnector: "XT60" },
@@ -213,6 +215,7 @@ test("power path summaries name matches, adapters, solder pads, and unpublished 
   )).toMatchObject({
     displayState: "manual",
     label: "Solder lead",
+    adapterLabel: null,
   });
   expect(summarizePowerPath(
     { name: "XT60 pack", dischargeConnector: "XT60" },
