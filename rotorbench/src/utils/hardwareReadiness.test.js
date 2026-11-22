@@ -58,9 +58,10 @@ test("an unsaved hardware plan is identified without claiming hardware readiness
     fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
     fcMotorLayoutSource: "Betaflight",
     fcPropellerDirection: "props-in",
-    radioReceiverBandStatus: "compatible",
+    radioPlanConfigured: false,
+    radioReceiverBandStatus: "unconfigured",
     radioReceiverBands: ["2.4 GHz"],
-    radioSharedBands: ["2.4 GHz"],
+    radioSharedBands: [],
     fcMotorOutputByCorner: {
       upperLeft: { output: 4, label: "FL", spin: "CW" },
       upperRight: { output: 2, label: "FR", spin: "CCW" },
@@ -478,6 +479,28 @@ test("hardware readiness flags a receiver with no shared transmitter band", () =
   });
   expect(readiness).toMatchObject({
     radioReceiverBandStatus: "conflict",
+    radioReceiverBands: ["Sub-G 900 MHz"],
+    radioSharedBands: [],
+  });
+});
+
+test("an unsaved sub-GHz radio plan is not reported as a band conflict", () => {
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-rf-unconfigured",
+    flightController: fc,
+    receiver: {
+      id: "rx-radiomaster-bandit-br3-900",
+      name: "Bandit BR3",
+      protocol: "CRSF",
+      frequencyBands: ["Sub-G 900 MHz"],
+    },
+    storage: memoryStorage(),
+  });
+
+  expect(readiness).toMatchObject({
+    configured: false,
+    radioPlanConfigured: false,
+    radioReceiverBandStatus: "unconfigured",
     radioReceiverBands: ["Sub-G 900 MHz"],
     radioSharedBands: [],
   });

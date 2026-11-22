@@ -600,10 +600,18 @@ export function comparisonRows(left, right) {
       id: "radio-receiver-bands",
       label: "Radio receiver bands",
       left: left.radioReceiverBands?.length
-        ? `${left.radioReceiverBands.join(" / ")} · ${left.radioReceiverBandStatus}`
+        ? `${left.radioReceiverBands.join(" / ")} · ${
+          left.radioReceiverBandStatus === "unconfigured"
+            ? "no radio plan"
+            : left.radioReceiverBandStatus
+        }`
         : "Receiver bands unverified",
       right: right.radioReceiverBands?.length
-        ? `${right.radioReceiverBands.join(" / ")} · ${right.radioReceiverBandStatus}`
+        ? `${right.radioReceiverBands.join(" / ")} · ${
+          right.radioReceiverBandStatus === "unconfigured"
+            ? "no radio plan"
+            : right.radioReceiverBandStatus
+        }`
         : "Receiver bands unverified",
       format: (value) => value,
     },

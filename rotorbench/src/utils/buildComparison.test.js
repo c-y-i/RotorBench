@@ -142,9 +142,9 @@ test("comparison summaries expose documented versus unverified receiver wiring",
     fcMotorDirection: "props-in",
     fcMotorDirectionLabel: "Normal · props in",
     fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
-    radioReceiverBandStatus: "compatible",
+    radioReceiverBandStatus: "unconfigured",
     radioReceiverBands: ["2.4 GHz"],
-    radioSharedBands: ["2.4 GHz"],
+    radioSharedBands: [],
   });
   const rows = comparisonRows(left, summarizeBuild(build));
   expect(rows.find((row) => row.id === "receiver-wiring")).toMatchObject({
@@ -174,7 +174,7 @@ test("comparison summaries expose documented versus unverified receiver wiring",
   });
   expect(rows.find((row) => row.id === "radio-receiver-bands")).toMatchObject({
     changed: false,
-    left: "2.4 GHz · compatible",
+    left: "2.4 GHz · no radio plan",
   });
   expect(rows.find((row) => row.id === "power-path")).toMatchObject({
     changed: false,

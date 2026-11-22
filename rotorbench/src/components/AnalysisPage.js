@@ -621,7 +621,9 @@ export default function AnalysisPage() {
                     <dt>Receiver RF</dt>
                     <dd>
                       {hardwareReadiness.radioReceiverBands.join(" / ")} ·{" "}
-                      {hardwareReadiness.radioReceiverBandStatus}
+                      {hardwareReadiness.radioReceiverBandStatus === "unconfigured"
+                        ? "save a radio plan to compare TX band"
+                        : hardwareReadiness.radioReceiverBandStatus}
                     </dd>
                   </div>
                 )}

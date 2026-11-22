@@ -101,11 +101,17 @@ export function summarizeHardwareReadiness({
   const fcIssues = validateFlightControllerConfig(fcPlan, profile, {
     buildMotorCount,
   });
-  const radioWarnings = buildRadioWarnings(radioPlan, {
-    channelLimit: fcPlan.firmwareFamily === "aerialkit" ? 8 : 16,
-    receiver,
-  });
-  const mappingWarnings = buildChannelMappingWarnings(fcPlan, radioPlan);
+  const fcPlanConfigured = Boolean(storedFc);
+  const radioPlanConfigured = Boolean(storedRadio);
+  const radioWarnings = radioPlanConfigured
+    ? buildRadioWarnings(radioPlan, {
+        channelLimit: fcPlan.firmwareFamily === "aerialkit" ? 8 : 16,
+        receiver,
+      })
+    : [];
+  const mappingWarnings = fcPlanConfigured && radioPlanConfigured
+    ? buildChannelMappingWarnings(fcPlan, radioPlan)
+    : [];
   const blockerCount = fcIssues.filter((issue) => issue.severity === "error").length;
   const issueCount = fcIssues.length + radioWarnings.length + mappingWarnings.length;
   const configured = Boolean(storedFc || storedRadio);
@@ -151,6 +157,14 @@ export function summarizeHardwareReadiness({
     radioTarget.id,
     receiver,
   );
+  const effectiveRadioReceiverBands = radioPlanConfigured
+    ? radioReceiverBands
+    : {
+        ...radioReceiverBands,
+        status: "unconfigured",
+        sharedBands: [],
+        sharedBandLabels: [],
+      };
   const radioRegulatoryLimit = getRadioRegulatoryLimit(
     radioTarget.id,
     radioPlan.regulatoryRegion,
@@ -207,6 +221,8 @@ export function summarizeHardwareReadiness({
     status,
     label,
     configured,
+    fcPlanConfigured,
+    radioPlanConfigured,
     complete,
     issueCount,
     blockerCount,
@@ -248,9 +264,9 @@ export function summarizeHardwareReadiness({
     radioRegulatoryMaxDbm: radioRegulatoryLimit?.dbm ?? null,
     radioRegulatoryMaxMw: radioRegulatoryLimit?.mw ?? null,
     radioPowerCapStatus,
-    radioReceiverBandStatus: radioReceiverBands.status,
-    radioReceiverBands: radioReceiverBands.receiverBandLabels,
-    radioSharedBands: radioReceiverBands.sharedBandLabels,
+    radioReceiverBandStatus: effectiveRadioReceiverBands.status,
+    radioReceiverBands: effectiveRadioReceiverBands.receiverBandLabels,
+    radioSharedBands: effectiveRadioReceiverBands.sharedBandLabels,
     fcAirframe: fcPlan.airframe,
     fcAirframeLabel: fcAirframeSpec?.label
       || fcPlan.airframe,
@@ -333,6 +349,8 @@ export function sanitizeHardwareReadiness(readiness) {
     status: readiness.status,
     label: readiness.label,
     configured: Boolean(readiness.configured),
+    fcPlanConfigured: Boolean(readiness.fcPlanConfigured),
+    radioPlanConfigured: Boolean(readiness.radioPlanConfigured),
     complete: Boolean(readiness.complete),
     issueCount: Number(readiness.issueCount) || 0,
     blockerCount: Number(readiness.blockerCount) || 0,
