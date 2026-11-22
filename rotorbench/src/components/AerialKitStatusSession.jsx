@@ -137,6 +137,12 @@ function ageLabel(observedAtMs, nowMs) {
       : (Math.max(0, nowMs - observedAtMs) / 1000).toFixed(1)} s ago`;
 }
 
+function parameterGroupName(parameter) {
+  return !parameter.groupName || parameter.groupName === "none"
+    ? "Ungrouped"
+    : parameter.groupName;
+}
+
 export default function AerialKitStatusSession({
   firmwareFamily = null,
   channelMap = null,
@@ -162,6 +168,7 @@ export default function AerialKitStatusSession({
   const [protocolStats, setProtocolStats] = useState(null);
   const [parameters, setParameters] = useState(null);
   const [parameterQuery, setParameterQuery] = useState("");
+  const [parameterGroup, setParameterGroup] = useState("all");
   const [parameterState, setParameterState] = useState("idle");
   const [parameterProgress, setParameterProgress] = useState({
     read: 0,
@@ -268,6 +275,7 @@ export default function AerialKitStatusSession({
     setProtocolStats(null);
     setParameters(null);
     setParameterQuery("");
+    setParameterGroup("all");
     setParameterState("idle");
     setParameterProgress({ read: 0, total: 0 });
     setParameterError("");
@@ -1683,18 +1691,45 @@ export default function AerialKitStatusSession({
     });
     return [...rows.values()].sort((left, right) => left.index - right.index);
   }, [parameterMetadata, parameters]);
+  const parameterGroups = useMemo(() => {
+    const groups = new Map();
+    inventoryRows.forEach((parameter) => {
+      const label = parameterGroupName(parameter);
+      groups.set(label, (groups.get(label) || 0) + 1);
+    });
+    return {
+      all: inventoryRows.length,
+      entries: [...groups.entries()].map(([label, count]) => ({ label, count })),
+    };
+  }, [inventoryRows]);
+  const hasReportedParameterGroups = inventoryRows.some(
+    (parameter) => parameter.groupName && parameter.groupName !== "none",
+  );
+
+  useEffect(() => {
+    if (
+      parameterGroup !== "all"
+      && !parameterGroups.entries.some((group) => group.label === parameterGroup)
+    ) {
+      setParameterGroup("all");
+    }
+  }, [parameterGroup, parameterGroups.entries]);
+
   const visibleParameters = useMemo(() => {
     const normalizedQuery = parameterQuery.trim().toLowerCase();
     return inventoryRows.filter((parameter) => (
-      !normalizedQuery
-      || parameter.name.toLowerCase().includes(normalizedQuery)
-      || String(parameter.value || "").toLowerCase().includes(normalizedQuery)
-      || String(parameter.groupName || "").toLowerCase().includes(normalizedQuery)
-      || String(parameter.typeName || "").toLowerCase().includes(normalizedQuery)
-      || String(parameter.default || "").toLowerCase().includes(normalizedQuery)
-      || String(parameter.unavailable || "").toLowerCase().includes(normalizedQuery)
+      (parameterGroup === "all" || parameterGroupName(parameter) === parameterGroup)
+      && (
+        !normalizedQuery
+        || parameter.name.toLowerCase().includes(normalizedQuery)
+        || String(parameter.value || "").toLowerCase().includes(normalizedQuery)
+        || String(parameter.groupName || "").toLowerCase().includes(normalizedQuery)
+        || String(parameter.typeName || "").toLowerCase().includes(normalizedQuery)
+        || String(parameter.default || "").toLowerCase().includes(normalizedQuery)
+        || String(parameter.unavailable || "").toLowerCase().includes(normalizedQuery)
+      )
     ));
-  }, [inventoryRows, parameterQuery]);
+  }, [inventoryRows, parameterGroup, parameterQuery]);
   const armed = aerialKitArmedState(liveStatus, {
     observedAtMs: lastStatusAt,
     nowMs: clockNow,
@@ -3210,6 +3245,39 @@ export default function AerialKitStatusSession({
                         placeholder="Filter names, values, groups, or types"
                       />
                     </label>
+                    {hasReportedParameterGroups && (
+                      <div
+                        className="aerial-kit-parameter-groups"
+                        role="group"
+                        aria-label="Filter parameters by board-reported group"
+                      >
+                        <button
+                          type="button"
+                          className={parameterGroup === "all" ? "is-active" : ""}
+                          aria-label={`All, ${parameterGroups.all} parameters`}
+                          aria-pressed={parameterGroup === "all"}
+                          onClick={() => setParameterGroup("all")}
+                        >
+                          All
+                          <small>{parameterGroups.all}</small>
+                        </button>
+                        {parameterGroups.entries.map((group) => (
+                          <button
+                            key={group.label}
+                            type="button"
+                            className={parameterGroup === group.label ? "is-active" : ""}
+                            aria-label={`${group.label}, ${group.count} parameter${
+                              group.count === 1 ? "" : "s"
+                            }`}
+                            aria-pressed={parameterGroup === group.label}
+                            onClick={() => setParameterGroup(group.label)}
+                          >
+                            {group.label}
+                            <small>{group.count}</small>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {visibleParameters.length > 0 ? (
                       <ol
                         className="aerial-kit-parameter-list"

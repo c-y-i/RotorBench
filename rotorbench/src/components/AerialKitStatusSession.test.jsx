@@ -166,6 +166,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   calibrationRejected = 3,
   calibrationResults = [-1, -2, -3, 0, 0, 0],
   parameterValues = null,
+  parameterGroups = [1, 1],
 } = {}) {
   const waiters = [];
   const queued = [];
@@ -212,12 +213,14 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
         const entries = [
           {
             name: "rate_kp_roll",
+            group: parameterGroups[0] ?? 1,
             min: "0.000",
             max: "3.000",
             defaultValue: "0.250",
           },
           {
             name: "rate_ki_roll",
+            group: parameterGroups[1] ?? 1,
             min: "0.000",
             max: "2.000",
             defaultValue: "0.150",
@@ -230,7 +233,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
           ...entries.flatMap((entry) => [
             ...Buffer.from(`${entry.name}\0`),
             0,
-            1,
+            entry.group,
             3,
             0,
             ...Buffer.from(`${entry.min}\0`),
@@ -607,6 +610,47 @@ test("reads capability-gated parameter metadata without requesting help", async 
   expect(commands).toContain(0x0a);
   expect(commands).toContain(0x0b);
   expect(commands).not.toContain(0x2d);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("filters live parameters by board-reported metadata groups", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS, {
+    parameterGroups: [1, 4],
+  });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read ranges/defaults",
+  }));
+  expect(await screen.findByText(/receiver · float · 0\.000 to 2\.000/i))
+    .toBeInTheDocument();
+
+  const groups = screen.getByRole("group", {
+    name: "Filter parameters by board-reported group",
+  });
+  expect(within(groups).getByRole("button", { name: "All, 2 parameters" }))
+    .toHaveAttribute("aria-pressed", "true");
+  expect(within(groups).getByRole("button", { name: "rates, 1 parameter" }))
+    .toBeInTheDocument();
+
+  await userEvent.click(within(groups).getByRole("button", {
+    name: "receiver, 1 parameter",
+  }));
+
+  expect(screen.queryByText("rate_kp_roll")).not.toBeInTheDocument();
+  expect(screen.getByText("rate_ki_roll")).toBeInTheDocument();
+  expect(within(groups).getByRole("button", { name: "receiver, 1 parameter" }))
+    .toHaveAttribute("aria-pressed", "true");
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
