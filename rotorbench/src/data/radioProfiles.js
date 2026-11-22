@@ -397,7 +397,15 @@ export const RADIO_TARGETS = [
     supportedHostBays: ["jr-micro-5", "nano-8"],
     firmwareVersion: "ExpressLRS with Gemini Xrossband",
     roles: ["tx"],
-    packetRateModes: ["25", "50", "100-full", "150", "250", "500"],
+    packetRateModes: [
+      "50",
+      "100-full",
+      "sub200-full",
+      "sub250",
+      "500",
+      "x100-full",
+      "x150",
+    ],
     serial: {
       txBaud: null,
       rxBaud: null,
@@ -514,9 +522,13 @@ export const RADIO_PACKET_RATES = [
   { value: "25", hz: 25, label: "25 Hz", note: "Lowest refresh option" },
   { value: "50", hz: 50, label: "50 Hz", note: "More robust link, lower control rate" },
   { value: "100-full", hz: 100, label: "100 Hz Full", note: "Longer range mode" },
+  { value: "x100-full", hz: 100, label: "X100 Full", note: "Simultaneous dual-band Gemini mode with full channel resolution" },
   { value: "150", hz: 150, label: "150 Hz", note: "Balanced control rate" },
+  { value: "x150", hz: 150, label: "X150", note: "Simultaneous dual-band Gemini mode" },
   { value: "200", hz: 200, label: "200 Hz", note: "Bandit maximum refresh" },
+  { value: "sub200-full", hz: 200, label: "Sub-G 200 Full", note: "Full-resolution Sub-G 900 MHz mode" },
   { value: "250", hz: 250, label: "250 Hz", note: "Bench-tested with 25 mW" },
+  { value: "sub250", hz: 250, label: "Sub-G 250", note: "High-rate Sub-G 900 MHz mode" },
   { value: "333-full", hz: 333, label: "333 Hz Full", note: "High-rate full-resolution mode" },
   { value: "500", hz: 500, label: "500 Hz", note: "Race-oriented rate" },
   { value: "d250", hz: 250, label: "D250", note: "ExpressLRS mode name; confirm target support" },
@@ -554,7 +566,12 @@ export const RADIO_SWITCH_MODES = [
   { value: "16ch-rate2", label: "16ch Rate/2", note: "Fixed switch mode" },
 ];
 
-const FULL_RESOLUTION_PACKET_RATES = new Set(["100-full", "333-full"]);
+const FULL_RESOLUTION_PACKET_RATES = new Set([
+  "100-full",
+  "x100-full",
+  "sub200-full",
+  "333-full",
+]);
 const NORMAL_SWITCH_MODES = new Set(["wide", "hybrid"]);
 const FULL_RESOLUTION_SWITCH_MODES = new Set([
   "8ch-rate2",

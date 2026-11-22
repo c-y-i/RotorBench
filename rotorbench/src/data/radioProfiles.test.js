@@ -295,6 +295,20 @@ test("Nomad exposes the dual-band Xrossband module profile", () => {
     voltage: "DC 6-16.8 V through XT30",
   });
   expect(target.hostLink.moduleBay.pins).toMatch(/Nano 8-pin adapter/i);
+  expect(getPacketRatesForTarget(target.id).map((rate) => rate.value))
+    .toEqual([
+      "50",
+      "100-full",
+      "x100-full",
+      "x150",
+      "sub200-full",
+      "sub250",
+      "500",
+    ]);
+  expect(getSuggestedTelemetryRatio("x100-full")).toBeNull();
+  expect(getSuggestedTelemetryRatio("x150")).toBeNull();
+  expect(getSuggestedTelemetryRatio("sub200-full")).toBeNull();
+  expect(getSuggestedTelemetryRatio("sub250")).toBeNull();
 });
 
 test("radio targets are grouped by transport and RF band", () => {

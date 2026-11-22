@@ -1123,7 +1123,9 @@ export default function RadioLinkSetup({
               <dd>
                 {config.telemetryRatio === "std" && suggestedTelemetryRatio
                   ? `Std (${suggestedTelemetryRatio})`
-                  : config.telemetryRatio}
+                  : config.telemetryRatio === "std"
+                    ? "Std · target mapping not bundled"
+                    : config.telemetryRatio}
               </dd>
             </div>
             <div><dt>Link mode</dt><dd>{config.linkMode === "mavlink" ? "MAVLink" : "Normal CRSF"}</dd></div>

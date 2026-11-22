@@ -520,6 +520,10 @@ test("selects the dual-band Nomad module for a dual-band receiver", () => {
     .toBeInTheDocument();
   expect(screen.getByText(/Shared 2\.4 GHz \/ Sub-G 900 MHz/i))
     .toBeInTheDocument();
+  expect(screen.getByRole("option", { name: "X100 Full - Simultaneous dual-band Gemini mode with full channel resolution" }))
+    .toBeInTheDocument();
+  expect(screen.getByRole("option", { name: "Sub-G 250 - High-rate Sub-G 900 MHz mode" }))
+    .toBeInTheDocument();
 });
 
 test("Rev A3 discloses the source-backed GPIO4 and LED role legend", () => {
