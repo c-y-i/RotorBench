@@ -182,6 +182,7 @@ test("saved T1 builds expose incomplete servo output coverage", async () => {
   );
 
   expect(await screen.findByText("2/3 outputs mapped")).toBeInTheDocument();
+  expect(screen.getByText("+6 g over 500 g envelope")).toBeInTheDocument();
 });
 
 test("malformed offline build storage recovers to an empty state", async () => {

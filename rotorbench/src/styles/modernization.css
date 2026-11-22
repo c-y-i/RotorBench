@@ -652,6 +652,17 @@
   background: var(--brand-soft);
 }
 
+.saved-build-state .is-envelope-above,
+.saved-build-state .is-envelope-below {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.saved-build-state .is-envelope-within {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+}
+
 .saved-build-state .is-power-verified {
   color: var(--ok);
   background: #e8f5ee;

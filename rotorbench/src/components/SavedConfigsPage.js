@@ -644,6 +644,11 @@ export default function SavedConfigsPage() {
                                                     {buildSummary.servoOutputCoverageLabel}
                                                 </span>
                                             )}
+                                            {buildSummary.takeoffEnvelopeStatus !== "unavailable" && (
+                                                <span className={`is-envelope-${buildSummary.takeoffEnvelopeStatus}`}>
+                                                    {buildSummary.takeoffEnvelopeShortLabel}
+                                                </span>
+                                            )}
                                             {buildSummary.hasHardwareParts
                                                 && buildSummary.navigationSafetyLabel && (
                                                 <span>

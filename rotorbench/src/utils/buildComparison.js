@@ -167,6 +167,8 @@ export function summarizeBuild(build) {
     publishedTakeoffRangeG:
       byCategory.frames?.flightEnvelope?.takeoffWeightG || null,
     takeoffEnvelopeStatus: takeoffEnvelope?.status || "unavailable",
+    takeoffEnvelopeShortLabel:
+      takeoffEnvelope?.shortLabel || "No published envelope",
     takeoffEnvelopeLabel:
       takeoffEnvelope?.label || "No published takeoff envelope",
     physicalFitStatus,
@@ -329,6 +331,7 @@ export function createComparisonReport(
       totalPrice: build.totalPrice,
       publishedTakeoffRangeG: build.publishedTakeoffRangeG,
       takeoffEnvelopeStatus: build.takeoffEnvelopeStatus,
+      takeoffEnvelopeShortLabel: build.takeoffEnvelopeShortLabel,
       takeoffEnvelopeLabel: build.takeoffEnvelopeLabel,
     })),
     differenceCount: rows.filter((row) => row.changed).length,

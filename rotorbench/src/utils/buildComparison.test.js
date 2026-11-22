@@ -100,6 +100,8 @@ test("comparison rows compare planning weight with a published takeoff envelope"
   expect(summary.takeoffEnvelopeLabel).toMatch(
     /506 g planning estimate · 6 g over the 500 g published maximum/i,
   );
+  expect(summary.takeoffEnvelopeShortLabel)
+    .toBe("+6 g over 500 g envelope");
   expect(row).toMatchObject({
     changed: false,
     left: summary.takeoffEnvelopeLabel,

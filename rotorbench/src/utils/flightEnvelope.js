@@ -34,19 +34,23 @@ export function summarizeTakeoffWeight(weightG, flightEnvelope) {
     : `${minimum}–${formatGrams(maximum)}`;
   let status = "within";
   let difference = "";
+  let shortLabel = `Within ${publishedRange} envelope`;
 
   if (weight < minimum) {
     status = "below";
     difference = `${formatGrams(roundTenths(minimum - weight))} below the ${formatGrams(minimum)} published minimum`;
+    shortLabel = `−${formatGrams(roundTenths(minimum - weight))} under ${formatGrams(minimum)} envelope`;
   } else if (weight > maximum) {
     status = "above";
     difference = `${formatGrams(roundTenths(weight - maximum))} over the ${formatGrams(maximum)} published maximum`;
+    shortLabel = `+${formatGrams(roundTenths(weight - maximum))} over ${formatGrams(maximum)} envelope`;
   } else {
     difference = `within the ${publishedRange} published envelope`;
   }
 
   return {
     status,
+    shortLabel,
     weightG: weight,
     minimumG: minimum,
     maximumG: maximum,

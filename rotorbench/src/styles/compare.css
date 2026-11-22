@@ -160,6 +160,17 @@
   border-color: #8b5137;
 }
 
+.compare-build-statuses span.is-envelope-above,
+.compare-build-statuses span.is-envelope-below {
+  color: #ffb083;
+  border-color: #8b5137;
+}
+
+.compare-build-statuses span.is-envelope-within {
+  color: #a8e8df;
+  border-color: #397c73;
+}
+
 .compare-build-statuses span.is-unverified,
 .compare-build-statuses span.is-plan-partial,
 .compare-build-statuses span.is-plan-review,

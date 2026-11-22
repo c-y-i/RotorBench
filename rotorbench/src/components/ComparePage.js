@@ -10,6 +10,7 @@ import {
   Link2,
   ListFilter,
   Printer,
+  Scale,
   Settings2,
 } from "lucide-react";
 import {
@@ -240,6 +241,12 @@ export default function ComparePage() {
                   ? "No hardware plan"
                   : build.hardwareReadinessLabel}
               </span>
+              {build.takeoffEnvelopeStatus !== "unavailable" && (
+                <span className={`is-envelope-${build.takeoffEnvelopeStatus}`}>
+                  <Scale size={13} aria-hidden="true" />
+                  {build.takeoffEnvelopeShortLabel}
+                </span>
+              )}
             </div>
             <div>
               <button type="button" onClick={() => navigate("/analysis", { state: { build: builds.find((item) => item.id === build.id) } })}>

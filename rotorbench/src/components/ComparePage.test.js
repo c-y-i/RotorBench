@@ -88,6 +88,7 @@ test("comparison surfaces published takeoff-envelope fit", async () => {
 
   expect(screen.getByRole("rowheader", { name: "Takeoff envelope fit" }))
     .toBeInTheDocument();
+  expect(screen.getAllByText("+6 g over 500 g envelope")).toHaveLength(2);
   expect(screen.getAllByText(
     /506 g planning estimate · 6 g over the 500 g published maximum/i,
   )).toHaveLength(2);
