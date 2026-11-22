@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import { DEFAULT_RADIO_CONFIG } from "../data/radioProfiles";
@@ -136,6 +143,78 @@ test("renders the hardware planning page and switches to radio setup", async () 
     "true",
   );
   expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("stages imported hardware plans until the user reviews and applies them", async () => {
+  const { container } = renderSetup();
+  const importedPlan = {
+    schema: "rotorbench.hardware-plan.v1",
+    build: null,
+    receiver: null,
+    flightController: {
+      config: {
+        planVersion: 3,
+        armChannel: 7,
+        armHoldMs: 800,
+      },
+    },
+    radio: {
+      target: { id: "aerialkit-elrs-rev-a3" },
+      configuration: {
+        role: "tx",
+        powerDbm: -14,
+        packetRateMode: "250",
+        linkMode: "normal",
+        telemetryRatio: "std",
+        switchMode: "wide",
+        dynamicPower: "off",
+        hostTransport: "native-usb",
+        hostBay: "native-usb",
+        handsetId: "verify",
+        channelMap: { arm: 7, flightMode: 6 },
+        antennaConfirmed: false,
+        roleSwitchConfirmed: false,
+      },
+    },
+  };
+  const file = {
+    name: "bench-plan.json",
+    text: async () => JSON.stringify(importedPlan),
+  };
+  const input = screen.getByLabelText("Import combined hardware plan");
+
+  await act(async () => {
+    fireEvent.change(input, { target: { files: [file] } });
+  });
+
+  const review = await screen.findByRole("region", {
+    name: "Review imported hardware plan",
+  });
+  expect(within(review).getByText("bench-plan.json · staged only, nothing sent or saved"))
+    .toBeInTheDocument();
+  expect(within(review).getAllByText(/arm channel/i).length).toBeGreaterThan(0);
+  expect(screen.getByText(/Flight controller panel: none.*arm 6/i))
+    .toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
+
+  fireEvent.click(within(review).getByRole("button", { name: "Cancel import" }));
+  expect(screen.queryByRole("region", {
+    name: "Review imported hardware plan",
+  })).not.toBeInTheDocument();
+  expect(screen.getByText(/Flight controller panel: none.*arm 6/i))
+    .toBeInTheDocument();
+
+  await act(async () => {
+    fireEvent.change(input, { target: { files: [file] } });
+  });
+  const secondReview = await screen.findByRole("region", {
+    name: "Review imported hardware plan",
+  });
+  fireEvent.click(within(secondReview).getByRole("button", {
+    name: "Apply imported plan",
+  }));
+  expect(screen.getByText(/Flight controller panel: none.*arm 7/i))
+    .toBeInTheDocument();
 });
 
 test("copies a sanitized human-readable hardware plan summary", async () => {

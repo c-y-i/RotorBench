@@ -1,6 +1,7 @@
 import {
   createCombinedHardwarePlan,
   parseCombinedHardwarePlanJson,
+  summarizeHardwarePlanImportChanges,
 } from "./hardwarePlanTransfer";
 import {
   createDefaultFlightControllerConfig,
@@ -56,6 +57,73 @@ test("combined hardware plans round-trip without binding secrets", () => {
     wiringVerified: false,
     scope: "planning continuity checklist; hardware not tested",
   });
+});
+
+test("summarizes imported plan changes without binding material", () => {
+  const currentFc = createDefaultFlightControllerConfig();
+  const importedFc = {
+    ...currentFc,
+    armChannel: 7,
+    armHoldMs: 800,
+    features: {
+      ...currentFc.features,
+      gps: true,
+    },
+    bindingPhrase: "never-show-this",
+    uid: "10:73:a1:1f:a8:0f",
+  };
+  const currentRadio = {
+    ...DEFAULT_RADIO_CONFIG,
+    channelMap: {
+      ...DEFAULT_RADIO_CONFIG.channelMap,
+      arm: 5,
+    },
+  };
+  const importedRadio = {
+    ...currentRadio,
+    powerDbm: -14,
+    channelMap: {
+      ...currentRadio.channelMap,
+      arm: 7,
+    },
+  };
+  const changes = summarizeHardwarePlanImportChanges(
+    currentFc,
+    importedFc,
+    currentRadio,
+    importedRadio,
+  );
+
+  expect(changes).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      section: "Flight controller",
+      field: "armChannel",
+      label: "Arm channel",
+      from: String(currentFc.armChannel),
+      to: "7",
+    }),
+    expect.objectContaining({
+      section: "Flight controller",
+      field: "features.gps",
+      label: "Features · GPS",
+      from: "Off",
+      to: "On",
+    }),
+    expect.objectContaining({
+      section: "Radio",
+      field: "channelMap.arm",
+      from: "5",
+      to: "7",
+    }),
+  ]));
+  expect(changes.find((change) => change.field === "powerDbm")).toMatchObject({
+    section: "Radio",
+    label: "Power dBm",
+    from: String(currentRadio.powerDbm),
+    to: "-14",
+  });
+  expect(JSON.stringify(changes)).not.toContain("never-show-this");
+  expect(JSON.stringify(changes)).not.toContain("10:73:a1:1f:a8:0f");
 });
 
 test("internal-RF handset plans round-trip without inventing a module bay", () => {

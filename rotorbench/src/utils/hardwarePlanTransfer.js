@@ -29,6 +29,7 @@ import {
   MOTOR_DIRECTIONS,
 } from "../data/flightControllerProfiles";
 import { buildReceiverWiringPlan } from "./receiverWiring";
+import { humanizeProvenanceField } from "./provenanceLabels";
 
 export function createCombinedHardwarePlan({
   build,
@@ -274,4 +275,102 @@ export function parseCombinedHardwarePlanJson(text) {
     fcPlan,
     radioPlan,
   };
+}
+
+const IMPORT_DIFF_EXCLUSIONS = new Set(["planVersion"]);
+const IMPORT_DIFF_SENSITIVE = /binding|uid|password|secret|token/i;
+
+function isPlainObject(value) {
+  return value != null
+    && typeof value === "object"
+    && !Array.isArray(value);
+}
+
+function formatPlanValue(value, path) {
+  if (value == null) return "Not set";
+  if (typeof value === "boolean") return value ? "On" : "Off";
+  if (Array.isArray(value)) {
+    return value.length ? value.join(", ") : "None";
+  }
+  if (isPlainObject(value)) {
+    return humanizeProvenanceField(path.at(-1)) || "Configured";
+  }
+  return String(value);
+}
+
+const PLAN_LABEL_TERMS = {
+  dbm: "dBm",
+  gps: "GPS",
+  gyro: "gyro",
+  imu: "IMU",
+  ms: "ms",
+  osd: "OSD",
+  uart: "UART",
+  uid: "UID",
+};
+
+function humanizePlanLabel(segment) {
+  return humanizeProvenanceField(segment)
+    .split(" ")
+    .map((word) => PLAN_LABEL_TERMS[word] || word)
+    .join(" ")
+    .replace(/^./, (letter) => letter.toUpperCase());
+}
+
+function collectPlanChanges(current, imported, section, prefix = [], changes = []) {
+  const keys = new Set([
+    ...Object.keys(current || {}),
+    ...Object.keys(imported || {}),
+  ]);
+  for (const key of keys) {
+    if (
+      IMPORT_DIFF_EXCLUSIONS.has(key)
+      || IMPORT_DIFF_SENSITIVE.test(key)
+    ) {
+      continue;
+    }
+    const currentValue = current?.[key];
+    const importedValue = imported?.[key];
+    const path = [...prefix, key];
+    if (isPlainObject(currentValue) || isPlainObject(importedValue)) {
+      collectPlanChanges(
+        isPlainObject(currentValue) ? currentValue : {},
+        isPlainObject(importedValue) ? importedValue : {},
+        section,
+        path,
+        changes,
+      );
+      continue;
+    }
+    if (JSON.stringify(currentValue ?? null) === JSON.stringify(importedValue ?? null)) {
+      continue;
+    }
+    changes.push({
+      section,
+      field: path.join("."),
+      label: path.map(humanizePlanLabel).filter(Boolean).join(" · "),
+      from: formatPlanValue(currentValue, path),
+      to: formatPlanValue(importedValue, path),
+    });
+  }
+  return changes;
+}
+
+export function summarizeHardwarePlanImportChanges(
+  currentFcPlan,
+  importedFcPlan,
+  currentRadioPlan,
+  importedRadioPlan,
+) {
+  return [
+    ...collectPlanChanges(
+      currentFcPlan,
+      importedFcPlan,
+      "Flight controller",
+    ),
+    ...collectPlanChanges(currentRadioPlan, importedRadioPlan, "Radio"),
+  ].sort((left, right) => (
+    left.section.localeCompare(right.section)
+    || left.label.localeCompare(right.label)
+  ));
 }

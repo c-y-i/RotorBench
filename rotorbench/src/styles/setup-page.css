@@ -187,6 +187,150 @@
   border: 0;
 }
 
+.setup-import-review {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #fff8e8;
+  border: 1px solid #d9bc85;
+  border-radius: 8px;
+}
+
+.setup-import-review-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.setup-import-review-heading > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--warn);
+}
+
+.setup-import-review-heading > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.setup-import-review-heading strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.setup-import-review-heading small {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.setup-import-review-heading em {
+  margin-inline-start: auto;
+  color: var(--warn);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.setup-import-review > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.setup-import-review-changes {
+  display: grid;
+  max-height: 280px;
+  margin: 0;
+  padding: 0 3px 0 0;
+  gap: 6px;
+  overflow: auto;
+  list-style: none;
+  scrollbar-color: #b79662 transparent;
+}
+
+.setup-import-review-changes:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.setup-import-review-changes li {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.7fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid #e4cfaa;
+  border-radius: 5px;
+}
+
+.setup-import-review-changes span {
+  color: var(--warn);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.setup-import-review-changes strong {
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.setup-import-review-changes small {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.setup-import-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.setup-import-review-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 13px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.setup-import-review-actions button:first-child {
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
+.setup-import-review-actions button:hover {
+  border-color: var(--brand);
+}
+
+.setup-import-review-actions button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
 .setup-message {
   padding: 11px 13px;
   color: #164a3f;
@@ -2718,6 +2862,25 @@
 
   .setup-plan-transfer .setup-export {
     flex: 1 1 150px;
+  }
+
+  .setup-import-review-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .setup-import-review-heading em {
+    grid-column: 2;
+    margin-inline-start: 0;
+  }
+
+  .setup-import-review-changes li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .setup-import-review-actions button {
+    flex: 1 1 160px;
   }
 
   .bench-file-review-heading {

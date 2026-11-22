@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Upload,
   Wrench,
+  X,
 } from "lucide-react";
 import { useBuild } from "../context/BuildContext";
 import componentsData from "../data/components.json";
@@ -43,6 +44,7 @@ import WebSerialCapture from "./WebSerialCapture";
 import {
   createCombinedHardwarePlan,
   parseCombinedHardwarePlanJson,
+  summarizeHardwarePlanImportChanges,
 } from "../utils/hardwarePlanTransfer";
 import { createHardwarePlanBriefing } from "../utils/hardwarePlanBriefing";
 import { buildBenchRunbook } from "../utils/benchRunbook";
@@ -90,6 +92,7 @@ export default function SetupPage() {
   );
   const [radioPlan, setRadioPlan] = useState(DEFAULT_RADIO_CONFIG);
   const [message, setMessage] = useState("");
+  const [pendingPlanImport, setPendingPlanImport] = useState(null);
   const [captureStatuses, setCaptureStatuses] = useState({});
   const [captureMessage, setCaptureMessage] = useState("");
   const [captureCommandPending, setCaptureCommandPending] = useState(false);
@@ -473,22 +476,51 @@ export default function SetupPage() {
       ) {
         throw new Error("This hardware plan belongs to a different receiver.");
       }
-      setFcPlan({
+      const nextFcPlan = {
         ...imported.fcPlan,
         selectedFlightControllerId:
           imported.fcPlan.selectedFlightControllerId || selectedFlightController?.id || null,
         selectedReceiverId:
           imported.fcPlan.selectedReceiverId || selectedReceiver?.id || null,
-      });
-      setRadioPlan({
+      };
+      const nextRadioPlan = {
         ...imported.radioPlan,
         selectedReceiverId:
           imported.radioPlan.selectedReceiverId || selectedReceiver?.id || null,
+      };
+      const changes = summarizeHardwarePlanImportChanges(
+        fcPlan,
+        nextFcPlan,
+        radioPlan,
+        nextRadioPlan,
+      );
+      setPendingPlanImport({
+        fileName: file.name,
+        fcPlan: nextFcPlan,
+        radioPlan: nextRadioPlan,
+        changes,
       });
-      setMessage("Hardware plan imported. Binding material and hardware state were not imported.");
+      setMessage(
+        `Hardware plan staged from ${file.name}. Review ${changes.length} change${changes.length === 1 ? "" : "s"} before applying it.`,
+      );
     } catch (error) {
       setMessage(`Could not import hardware plan: ${error.message}`);
     }
+  };
+
+  const applyPendingPlanImport = () => {
+    if (!pendingPlanImport) return;
+    setFcPlan(pendingPlanImport.fcPlan);
+    setRadioPlan(pendingPlanImport.radioPlan);
+    setMessage(
+      `Hardware plan applied from ${pendingPlanImport.fileName}. Binding material and hardware state were not imported.`,
+    );
+    setPendingPlanImport(null);
+  };
+
+  const cancelPendingPlanImport = () => {
+    setPendingPlanImport(null);
+    setMessage("Hardware plan import canceled. The current plan was not changed.");
   };
 
   return (
@@ -599,6 +631,56 @@ export default function SetupPage() {
           />
         </div>
       </div>
+
+      {pendingPlanImport && (
+        <section
+          className="setup-import-review"
+          aria-label="Review imported hardware plan"
+        >
+          <div className="setup-import-review-heading">
+            <Upload size={18} aria-hidden="true" />
+            <span>
+              <strong>Review imported plan</strong>
+              <small>
+                {pendingPlanImport.fileName} · staged only, nothing sent or saved
+              </small>
+            </span>
+            <em>
+              {pendingPlanImport.changes.length} change
+              {pendingPlanImport.changes.length === 1 ? "" : "s"}
+            </em>
+          </div>
+          {pendingPlanImport.changes.length > 0 ? (
+            <ul
+              className="setup-import-review-changes"
+              aria-label="Imported plan changes"
+              tabIndex={0}
+            >
+              {pendingPlanImport.changes.map((change) => (
+                <li key={`${change.section}:${change.field}`}>
+                  <span>{change.section}</span>
+                  <strong>{change.label}</strong>
+                  <small>
+                    {change.from} → {change.to}
+                  </small>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No effective configuration differences were found.</p>
+          )}
+          <div className="setup-import-review-actions">
+            <button type="button" onClick={applyPendingPlanImport}>
+              <Check size={16} aria-hidden="true" />
+              Apply imported plan
+            </button>
+            <button type="button" onClick={cancelPendingPlanImport}>
+              <X size={16} aria-hidden="true" />
+              Cancel import
+            </button>
+          </div>
+        </section>
+      )}
 
       {message && <div className="setup-message" role="status">{message}</div>}
       {mappingWarnings.length > 0 && (
