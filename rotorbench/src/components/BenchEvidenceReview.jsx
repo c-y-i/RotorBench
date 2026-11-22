@@ -20,6 +20,7 @@ import {
   saveBenchEvidenceAttachment,
   summarizeBenchEvidenceAttachment,
 } from "../utils/benchEvidenceAttachment";
+import FcParameterSnapshot from "./FcParameterSnapshot";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -897,6 +898,10 @@ export default function BenchEvidenceReview({
               </div>
             ))}
           </dl>
+
+          {evidence.fcEvidence?.parameters?.values && (
+            <FcParameterSnapshot values={evidence.fcEvidence.parameters.values} />
+          )}
 
           {onAdoptPlanPatch && fcAdoptionPatch && (
             <EvidenceAdoptionCard

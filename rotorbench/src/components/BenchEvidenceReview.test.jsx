@@ -780,6 +780,9 @@ test("compares an imported FC parameter snapshot with the staged plan", async ()
   expect(screen.getByText("FC parameter arm_channel")).toBeInTheDocument();
   expect(screen.getByText(/rc_min=180; the staged plan expects 172/i))
     .toBeInTheDocument();
+  expect(screen.getByText("Observed parameter snapshot")).toBeInTheDocument();
+  expect(screen.getByText("2 read-only values from the imported file"))
+    .toBeInTheDocument();
 });
 
 test("does not call a partial FC parameter snapshot a plan match", async () => {
