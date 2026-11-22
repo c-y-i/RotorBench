@@ -119,6 +119,11 @@ export function createBuildBriefing({
             `- Motor order: ${hardwareReadiness.fcMotorDirectionLabel} / ${hardwareReadiness.fcMotorOrder}`,
           ]
         : []),
+      ...(hardwareReadiness.fcPropellerDirection
+        ? [
+            `- Propeller direction: ${hardwareReadiness.fcPropellerDirection} / planning only`,
+          ]
+        : []),
       ...(hardwareReadiness.fcParameterRequirements?.length
         ? [
             `- ArduPilot receiver parameters: ${hardwareReadiness.fcParameterRequirements

@@ -111,6 +111,7 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       fcGpsMinSats: 8,
       fcBatteryRthEnabled: true,
       fcAirframe: "elevonwing",
+      fcPropellerDirection: "props-in",
       fcMissionChannel: 7,
       fcLaunchChannel: 8,
       fcLaunchThrottle: 0.65,
@@ -133,6 +134,9 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
   );
   expect(briefing.text).toContain(
     "Motor order: Normal · props in / 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+  );
+  expect(briefing.text).toContain(
+    "Propeller direction: props-in / planning only",
   );
   expect(briefing.text).toContain(
     "Servo output coverage: 2/3 outputs mapped / 1 catalogued servo output remains unassigned by the saved firmware mixer.",

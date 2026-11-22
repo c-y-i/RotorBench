@@ -3008,6 +3008,10 @@ export function buildFlightControllerSummary(
     config.firmwareFamily,
     config.motorDirection,
   );
+  const propellerDirection = motorLayout
+    ? getPropellerDirectionForOutputMap(getMotorOutputByCorner(motorLayout))
+      || getPropellerDirectionForWingLayout(motorLayout)
+    : null;
   const motorOrderLabel = config.firmwareFamily === "betaflight"
     ? `Betaflight ${config.motorDirection === "props-out"
       ? "reversed props-out"
@@ -3109,7 +3113,9 @@ export function buildFlightControllerSummary(
       ? [
           `${motorOrderLabel}: ${motorLayout.motors
             .map((motor) => `${motor.output} ${motor.label} ${motor.spin}`)
-            .join(", ")}`,
+            .join(", ")}${propellerDirection
+            ? `; propeller plan ${propellerDirection}`
+            : ""}`,
         ]
       : []),
     ...(config.firmwareFamily === "aerialkit" && airframe?.servos > 0

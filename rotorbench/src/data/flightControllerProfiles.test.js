@@ -416,6 +416,7 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain("launch off");
   expect(summary).toContain("arm, flight mode, velocity mode, mission, launch only");
   expect(summary).toContain("Motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW");
+  expect(summary).toContain("propeller plan props-in");
   expect(summary).toContain("Failsafe: Firmware-derived");
   expect(summary).toContain(
     "Battery telemetry: divider 11:1, cells auto, warning 3.5 V/cell, minimum 3.3 V/cell, critical-pack return disabled",
