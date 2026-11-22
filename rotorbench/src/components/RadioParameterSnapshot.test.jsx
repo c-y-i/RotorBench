@@ -45,3 +45,37 @@ test("filters TX parameters and preserves the read-only boundary", async () => {
   expect(screen.queryByRole("region", { name: "RF link radio parameters" }))
     .not.toBeInTheDocument();
 });
+
+test("identifies TX plan matches and differences inline", async () => {
+  render(
+    <RadioParameterSnapshot
+      entries={entries}
+      checks={[
+        { id: "settings-packet-rate", status: "pass" },
+        { id: "settings-telemetry", status: "fail" },
+        { id: "settings-power", status: "unverified" },
+      ]}
+    />,
+  );
+
+  await userEvent.click(screen.getByText("Observed TX parameter snapshot"));
+  const link = screen.getByRole("region", { name: "RF link radio parameters" });
+  expect(within(link).getByText("Matches plan")).toBeInTheDocument();
+  expect(within(link).getByText("Differs")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "Power radio parameters",
+  })).getByText("Unverified")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "Other observed radio parameters",
+  })).getByText("Observed")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: /Differences only · 1/,
+  }));
+  expect(within(screen.getByRole("region", {
+    name: "RF link radio parameters",
+  })).getByText("Telem Ratio")).toBeInTheDocument();
+  expect(screen.queryByText("Packet Rate")).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Power radio parameters" }))
+    .not.toBeInTheDocument();
+});

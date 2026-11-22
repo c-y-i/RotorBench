@@ -919,6 +919,15 @@ test("adopts observed TX radio settings independently from FC evidence", async (
           modelMatch: true,
         },
       }}
+      expectedSettings={{
+        packetRateMode: "100-full",
+        powerDbm: -14,
+        telemetryRatio: "1:128",
+        switchMode: "16ch-rate2",
+        linkMode: "mavlink",
+        dynamicPower: "dynamic",
+        modelMatch: true,
+      }}
       onAdoptPlanPatch={adopt}
     />,
   );
@@ -934,7 +943,8 @@ test("adopts observed TX radio settings independently from FC evidence", async (
   expect(await screen.findByText("Apply observed TX radio values"))
     .toBeInTheDocument();
   expect(screen.getByText("Observed TX parameter snapshot")).toBeInTheDocument();
-  expect(screen.getByText("7 read-only module values")).toBeInTheDocument();
+  expect(screen.getByText(/7 read-only module values/i))
+    .toHaveTextContent(/0 matches · 6 differ/i);
   await userEvent.click(screen.getByRole("button", {
     name: "Select all differences",
   }));

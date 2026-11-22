@@ -909,6 +909,7 @@ export default function BenchEvidenceReview({
           {evidence.bundle?.txParameters?.entries && (
             <RadioParameterSnapshot
               entries={evidence.bundle.txParameters.entries}
+              checks={evidence.checks}
             />
           )}
 
