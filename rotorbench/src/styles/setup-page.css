@@ -3359,45 +3359,150 @@
   line-height: 1.45;
 }
 
-.aerial-kit-waypoints ol {
+.aerial-kit-waypoint-inspector {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: 7px;
+  padding: 9px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 3px;
 }
 
-.aerial-kit-waypoints li {
+.aerial-kit-waypoint-inspector-heading,
+.aerial-kit-waypoint-inspector-detail > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.aerial-kit-waypoint-inspector-heading strong,
+.aerial-kit-waypoint-inspector-detail > div strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.aerial-kit-waypoint-inspector-heading span,
+.aerial-kit-waypoint-inspector-detail > div span {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.aerial-kit-waypoint-inspector-list {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 5px;
+}
+
+.aerial-kit-waypoint-inspector-list button {
+  display: grid;
+  align-content: center;
   gap: 2px;
   min-width: 0;
-  padding: 8px 9px;
+  min-height: 44px;
+  padding: 6px 8px;
+  color: var(--ink);
+  text-align: start;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.aerial-kit-waypoint-inspector-list button:hover {
+  border-color: var(--line-strong);
+}
+
+.aerial-kit-waypoint-inspector-list button[aria-pressed="true"] {
+  background: var(--signal);
+  border-color: var(--signal-strong);
+}
+
+.aerial-kit-waypoint-inspector-list button > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.aerial-kit-waypoint-inspector-list button strong {
+  color: inherit;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.aerial-kit-waypoint-inspector-list button small {
+  padding: 1px 4px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 999px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.aerial-kit-waypoint-inspector-list button[aria-pressed="true"] small {
+  color: var(--signal);
+  background: var(--signal-ink);
+}
+
+.aerial-kit-waypoint-inspector-list button em {
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.aerial-kit-waypoint-inspector-detail {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: 3px;
 }
 
-.aerial-kit-waypoints li.is-complete {
-  background: #e8f5ee;
-  border-color: #b8ddc8;
+.aerial-kit-waypoint-inspector-detail dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
 }
 
-.aerial-kit-waypoints li.is-incomplete {
-  background: #fff0e9;
-  border-color: #efb596;
+.aerial-kit-waypoint-inspector-detail dl > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-soft);
+  border-radius: 3px;
 }
 
-.aerial-kit-waypoints li strong {
-  color: var(--ink);
-  font-size: 10px;
-}
-
-.aerial-kit-waypoints li span {
-  overflow-wrap: anywhere;
-  color: var(--ink-soft);
+.aerial-kit-waypoint-inspector-detail dt {
+  color: var(--ink-faint);
   font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.aerial-kit-waypoint-inspector-detail dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-waypoint-inspector-detail p {
+  margin: 0;
+  color: var(--ink-soft);
   font-size: 9px;
+  line-height: 1.45;
 }
 
 .aerial-kit-route-summary {
@@ -5628,10 +5733,6 @@
 
   .aerial-kit-calibration-state > div:last-child {
     grid-column: 1 / -1;
-  }
-
-  .aerial-kit-waypoints ol {
-    grid-template-columns: 1fr;
   }
 
   .aerial-kit-route-summary ol {

@@ -77,6 +77,7 @@ import AerialKitRouteSketch from "./AerialKitRouteSketch";
 import AerialKitMissionProximity from "./AerialKitMissionProximity";
 import AerialKitMissionRouteProgress from "./AerialKitMissionRouteProgress";
 import AerialKitMissionBriefingButton from "./AerialKitMissionBriefingButton";
+import AerialKitWaypointInspector from "./AerialKitWaypointInspector";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -2374,20 +2375,12 @@ export default function AerialKitStatusSession({
                       proximity={missionProximity}
                       inventory={waypointInventory}
                     />
-                    {waypointInventory.slots.length > 0 && (
-                      <ol aria-label="Board-reported waypoint coordinates">
-                        {waypointInventory.slots.map((slot) => (
-                          <li key={slot.index} className={slot.complete ? "is-complete" : "is-incomplete"}>
-                            <strong>WP {slot.index}</strong>
-                            <span>
-                              {slot.complete
-                                ? `${slot.lat.toFixed(7)}, ${slot.lon.toFixed(7)}`
-                                : slot.errors.join(" · ")}
-                            </span>
-                          </li>
-                        ))}
-                      </ol>
-                    )}
+                    <AerialKitWaypointInspector
+                      inventory={waypointInventory}
+                      activeWaypointIndex={mission?.status === "ok" && mission.active
+                        ? mission.index
+                        : null}
+                    />
                     <AerialKitRouteSketch
                       inventory={waypointInventory}
                       currentPosition={missionProximity?.status === "ok"
