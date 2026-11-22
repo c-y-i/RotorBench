@@ -408,12 +408,39 @@ test("Adafruit Feather F405 binds a public product to the Aerial Kit wing profil
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
-  expect(componentsData.receivers).toHaveLength(19);
+  expect(componentsData.receivers).toHaveLength(20);
   for (const receiver of componentsData.receivers) {
     expect(receiver.protocol).toBeTruthy();
     expect(receiver.frequencyBands?.length).toBeGreaterThan(0);
     expect(receiver.sourceUrl).toMatch(/^https:\/\//);
   }
+});
+
+test("ER16 keeps dual-band PWM and serial capabilities source-backed", () => {
+  const receiver = componentsData.receivers.find(
+    (item) => item.id === "rx-radiomaster-er16-dual-band-pwm",
+  );
+
+  expect(receiver).toMatchObject({
+    name: "RadioMaster ER16 PWM Dual-Band Receiver",
+    manufacturer: "RadioMaster",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    weight: 33,
+    channels: 16,
+    pwmOutputs: 16,
+    outputMode: "serial-pwm",
+    dimensionsMm: [61.5, 16.8, 43.8],
+    rfChips: "Semtech LR1121 ×2",
+    telemetryPowerMw: 100,
+    workingVoltage: "5.0-12.0 V",
+    firmwareVersion: "ExpressLRS 4.1.0 or newer",
+    serialProtocols: ["CRSF", "SBUS"],
+    wifiUpdates: true,
+    price: 79.99,
+  });
+  expect(receiver.sourceUrl).toContain("er16-pwm-dual-band");
+  expect(receiver.estimatedFields).toEqual(["currentDraw", "mounting_point"]);
 });
 
 test("DBR4 completes the dual-band Gemini endpoint with a sourced planform", () => {

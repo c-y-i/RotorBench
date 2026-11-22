@@ -44,10 +44,10 @@ class CatalogContractTests(unittest.TestCase):
                 "batteries": 11,
                 "escs": 9,
                 "flight_controllers": 12,
-                "receivers": 19,
+                "receivers": 20,
             },
         )
-        self.assertEqual(sum(counts.values()), 92)
+        self.assertEqual(sum(counts.values()), 93)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 92)
+        self.assertEqual(len(records), 93)
         self.assertTrue(all(record.id for record in records))
 
     def test_dbr4_completes_the_dual_band_gemini_endpoint(self):
@@ -125,6 +125,32 @@ class CatalogContractTests(unittest.TestCase):
         self.assertNotIn("pwmOutputs", receiver.estimated_fields)
         self.assertIsNone(receiver.telemetry_power_mw)
         self.assertIsNone(receiver.serial_protocols)
+
+    def test_er16_keeps_dual_band_pwm_and_serial_capabilities(self):
+        receiver = next(
+            item
+            for item in self.database.receivers
+            if item.id == "rx-radiomaster-er16-dual-band-pwm"
+        )
+        self.assertEqual(receiver.protocol, "CRSF")
+        self.assertEqual(
+            receiver.frequency_bands,
+            ["2.4 GHz", "Sub-G 900 MHz"],
+        )
+        self.assertEqual(receiver.pwm_outputs, 16)
+        self.assertEqual(receiver.output_mode, "serial-pwm")
+        self.assertEqual(receiver.weight, 33)
+        self.assertEqual(receiver.dimensions_mm, [61.5, 16.8, 43.8])
+        self.assertEqual(receiver.rf_chips, "Semtech LR1121 ×2")
+        self.assertEqual(receiver.telemetry_power_mw, 100)
+        self.assertEqual(receiver.working_voltage, "5.0-12.0 V")
+        self.assertEqual(receiver.serial_protocols, ["CRSF", "SBUS"])
+        self.assertEqual(receiver.price, 79.99)
+        self.assertTrue(receiver.wifi_updates)
+        self.assertIn("currentDraw", receiver.estimated_fields)
+        self.assertIn("mounting_point", receiver.estimated_fields)
+        self.assertNotIn("pwmOutputs", receiver.estimated_fields)
+        self.assertNotIn("dimensionsMm", receiver.estimated_fields)
 
     def test_heewing_t1_ranger_preserves_non_quad_motor_positions(self):
         frame = next(

@@ -2288,6 +2288,36 @@
         "mounting_point"
       ],
       "price": 29.99
+    },
+    {
+      "id": "rx-radiomaster-er16-dual-band-pwm",
+      "name": "RadioMaster ER16 PWM Dual-Band Receiver",
+      "manufacturer": "RadioMaster",
+      "protocol": "CRSF",
+      "frequencyBands": ["2.4 GHz", "Sub-G 900 MHz"],
+      "weight": 33,
+      "mounting_point": [0, 0, 0],
+      "currentDraw": 90,
+      "channels": 16,
+      "pwmOutputs": 16,
+      "outputMode": "serial-pwm",
+      "dimensionsMm": [61.5, 16.8, 43.8],
+      "rfChips": "Semtech LR1121 ×2",
+      "telemetryPowerMw": 100,
+      "receiverRefreshRate": "Dual-band Gemini / Gemini-X; transmitter-dependent",
+      "workingVoltage": "5.0-12.0 V",
+      "telemetryVoltageRange": "EXT-V 4.0-70 V; PWM/XT30 inputs up to 12 V",
+      "firmwareVersion": "ExpressLRS 4.1.0 or newer",
+      "antenna": "MMCX; two 2.4 GHz and two dual-band antennas included",
+      "serialProtocols": ["CRSF", "SBUS"],
+      "wifiUpdates": true,
+      "model": null,
+      "modelStatus": "not_available",
+      "sourceUrl": "https://radiomasterrc.com/products/er16-pwm-dual-band-gemini-and-gemini-x-receiver",
+      "priceSourceUrl": "https://radiomasterrc.com/products/er16-pwm-dual-band-gemini-and-gemini-x-receiver",
+      "dataStatus": "verified_specs_estimated_current_and_mounting",
+      "estimatedFields": ["currentDraw", "mounting_point"],
+      "price": 79.99
     }
   ]
 }
