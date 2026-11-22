@@ -939,6 +939,7 @@ function PidGainsPanel({
   config,
   plan,
   onUpdate,
+  onReset,
 }) {
   const statusLabel = plan.matchesFirmwareDefaults
     ? "Source defaults"
@@ -1090,6 +1091,9 @@ function PidGainsPanel({
           make the aircraft unstable; verify a tune only with props-off checks
           and qualified flight evidence.
         </p>
+        <button type="button" className="fc-pid-reset" onClick={onReset}>
+          Restore source PID defaults
+        </button>
       </div>
     </details>
   );
@@ -2821,6 +2825,17 @@ export default function FlightControllerSetup({
                 config={config}
                 plan={pidGainPlan}
                 onUpdate={(key, nextValue) => update(key, nextValue)}
+                onReset={() => updateConfig({
+                  ...config,
+                  rateKpRoll: 0.25,
+                  rateKpPitch: 0.25,
+                  rateKpYaw: 0.35,
+                  rateKiRoll: 0.15,
+                  rateKiPitch: 0.15,
+                  rateKiYaw: 0.2,
+                  rateILimit: 0.3,
+                  torqueLimit: 0.6,
+                })}
               />
               <PidResponsePanel
                 config={config}

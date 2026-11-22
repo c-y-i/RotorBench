@@ -401,6 +401,19 @@ test("stages Aerial Kit baseline P and I gains from source defaults", async () =
     rateKpRoll: 0.3,
     torqueLimit: 0.7,
   }));
+  fireEvent.click(screen.getByRole("button", {
+    name: "Restore source PID defaults",
+  }));
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+    rateKpRoll: 0.25,
+    rateKpPitch: 0.25,
+    rateKpYaw: 0.35,
+    rateKiRoll: 0.15,
+    rateKiPitch: 0.15,
+    rateKiYaw: 0.2,
+    rateILimit: 0.3,
+    torqueLimit: 0.6,
+  }));
   expect(await getA11yViolations(container)).toEqual([]);
 });
 
