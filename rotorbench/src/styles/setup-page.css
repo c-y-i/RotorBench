@@ -3108,7 +3108,8 @@
 }
 
 .elrs-menu-identity,
-.elrs-menu-inventory {
+.elrs-menu-inventory,
+.elrs-link-stats {
   display: grid;
   gap: 9px;
   padding: 11px;
@@ -3117,11 +3118,54 @@
   border-radius: 4px;
 }
 
+.elrs-link-stats.is-stale {
+  border-color: color-mix(in srgb, var(--warn) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 28%, var(--surface));
+}
+
 .elrs-menu-identity dl {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 5px;
   margin: 0;
+}
+
+.elrs-link-stats dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.elrs-link-stats dl > div {
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border-radius: 3px;
+}
+
+.elrs-link-stats dt {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.elrs-link-stats dd {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.elrs-link-stats > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
 }
 
 .elrs-menu-identity dl > div {
@@ -4156,6 +4200,7 @@
 
   .elrs-menu-identity dl,
   .elrs-menu-inventory dl,
+  .elrs-link-stats dl,
   .elrs-menu-diagnostics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4331,6 +4376,7 @@
 
   .elrs-menu-identity dl,
   .elrs-menu-inventory dl,
+  .elrs-link-stats dl,
   .elrs-menu-diagnostics {
     grid-template-columns: 1fr;
   }

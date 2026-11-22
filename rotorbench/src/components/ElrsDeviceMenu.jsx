@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 import {
   ELRS_ADDRESS,
+  ELRS_FRAME_TYPE,
   ElrsMenuReadOnlySession,
   createElrsDeviceMenuEvidence,
   elrsParameterValueLabel,
 } from "../utils/elrsRadioMenu";
+import { decodeCrsfLinkStatistics } from "../utils/crsfCapture";
 import {
   SERIAL_CAPTURE_BAUD_RATES,
   hasWebSerial,
@@ -58,6 +60,9 @@ export default function ElrsDeviceMenu({
   const [parameters, setParameters] = useState(null);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [diagnostics, setDiagnostics] = useState(null);
+  const [latestLink, setLatestLink] = useState(null);
+  const [linkObservedAt, setLinkObservedAt] = useState(null);
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -67,6 +72,12 @@ export default function ElrsDeviceMenu({
   const readerRef = useRef(null);
   const writerRef = useRef(null);
   const sessionRef = useRef(null);
+
+  useEffect(() => {
+    if (!["reading", "ready"].includes(status)) return undefined;
+    const timer = setInterval(() => setClockNow(Date.now()), 250);
+    return () => clearInterval(timer);
+  }, [status]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -84,6 +95,8 @@ export default function ElrsDeviceMenu({
     setParameters(null);
     setProgress({ done: 0, total: 0 });
     setDiagnostics(null);
+    setLatestLink(null);
+    setLinkObservedAt(null);
     setQuery("");
     setError("");
     setMessage("");
@@ -128,7 +141,17 @@ export default function ElrsDeviceMenu({
       readerRef.current = reader;
       writerRef.current = writer;
       activeRef.current = true;
-      const session = new ElrsMenuReadOnlySession({ reader, writer });
+      const session = new ElrsMenuReadOnlySession({
+        reader,
+        writer,
+        onFrame: (frame) => {
+          if (frame.frameType !== ELRS_FRAME_TYPE.linkStatistics) return;
+          const decoded = decodeCrsfLinkStatistics(frame.payload);
+          if (!decoded || !mountedRef.current) return;
+          setLatestLink(decoded);
+          setLinkObservedAt(Date.now());
+        },
+      });
       sessionRef.current = session;
       const identify = session.identify();
       session.startReading();
@@ -199,6 +222,8 @@ export default function ElrsDeviceMenu({
       targetName,
       logicalBaud: baudRate,
       diagnostics,
+      link: latestLink,
+      linkObservedAtMs: linkObservedAt,
     });
     const blob = new Blob([JSON.stringify(evidence, null, 2)], {
       type: "application/json",
@@ -235,6 +260,10 @@ export default function ElrsDeviceMenu({
     });
     return [...groups.entries()];
   }, [folderNames, parameters, query]);
+  const linkAgeMs = linkObservedAt == null
+    ? null
+    : Math.max(0, clockNow - linkObservedAt);
+  const linkFresh = linkAgeMs != null && linkAgeMs <= 2000;
   const active = ["reading", "ready"].includes(status);
   const canDownload = Boolean(device);
 
@@ -343,6 +372,45 @@ export default function ElrsDeviceMenu({
                   <div><dt>Software</dt><dd>{versionLabel(device.softwareVersion)}</dd></div>
                 </dl>
               </section>
+            )}
+
+            {latestLink && (
+              <section
+                className={`elrs-link-stats ${linkFresh ? "is-fresh" : "is-stale"}`}
+                aria-label="Observed ExpressLRS link statistics"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Observed link statistics</strong>
+                  <span>
+                    {linkFresh ? "Fresh" : "Stale"} · {(linkAgeMs / 1000).toFixed(1)} s
+                  </span>
+                </div>
+                <dl>
+                  <div><dt>Uplink LQ</dt><dd>{latestLink.uplinkLinkQuality}%</dd></div>
+                  <div>
+                    <dt>Uplink RSSI</dt>
+                    <dd>
+                      {latestLink.uplinkRssi1Dbm} / {latestLink.uplinkRssi2Dbm} dBm
+                    </dd>
+                  </div>
+                  <div><dt>Uplink SNR</dt><dd>{latestLink.uplinkSnrDb} dB</dd></div>
+                  <div><dt>RF mode</dt><dd>{latestLink.rfMode}</dd></div>
+                  <div><dt>TX power code</dt><dd>{latestLink.uplinkTxPowerRaw}</dd></div>
+                  <div><dt>Downlink RSSI</dt><dd>{latestLink.downlinkRssiDbm} dBm</dd></div>
+                  <div><dt>Downlink LQ</dt><dd>{latestLink.downlinkLinkQuality}%</dd></div>
+                  <div><dt>Downlink SNR</dt><dd>{latestLink.downlinkSnrDb} dB</dd></div>
+                </dl>
+                <p>
+                  These are values from an observed CRSF LINK_STATISTICS frame.
+                  This is not an RF range, link-reliability, or flight-readiness pass.
+                </p>
+              </section>
+            )}
+
+            {!latestLink && active && (
+              <div className="aerial-kit-session-message" role="status">
+                No LINK_STATISTICS frame has been observed on this port.
+              </div>
             )}
 
             {parameters && (

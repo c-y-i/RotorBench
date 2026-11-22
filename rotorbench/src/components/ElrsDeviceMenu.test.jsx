@@ -12,6 +12,7 @@ import { getA11yViolations } from "../test/a11y";
 import {
   ELRS_ADDRESS,
   ELRS_FRAME_TYPE,
+  encodeElrsCrsfFrame,
   encodeElrsExtendedFrame,
 } from "../utils/elrsRadioMenu";
 
@@ -79,7 +80,7 @@ function createPort() {
     write: jest.fn(async (frame) => {
       const type = frame[2];
       if (type === ELRS_FRAME_TYPE.devicePing) {
-        deliver(encodeElrsExtendedFrame(
+        const info = encodeElrsExtendedFrame(
           ELRS_FRAME_TYPE.deviceInfo,
           ELRS_ADDRESS.usb,
           ELRS_ADDRESS.transmitter,
@@ -91,7 +92,13 @@ function createPort() {
             3,
             1,
           ]),
-        ));
+        );
+        const link = encodeElrsCrsfFrame(
+          ELRS_FRAME_TYPE.linkStatistics,
+          Uint8Array.of(0x30, 0x34, 88, 0xe2, 1, 2, 3, 0x40, 77, 0xf0),
+          ELRS_ADDRESS.radioTransmitter,
+        );
+        deliver(Uint8Array.from([...link, ...info]));
         return;
       }
       if (type === ELRS_FRAME_TYPE.parameterRead) {
@@ -161,6 +168,9 @@ test("reads an ExpressLRS device menu without write or command frames", async ()
   expect(screen.getByText("Packet Rate")).toBeInTheDocument();
   expect(screen.getByText("100Hz · index 1")).toBeInTheDocument();
   expect(screen.getByText("25 mW · 0..100")).toBeInTheDocument();
+  expect(screen.getByText("88%")).toBeInTheDocument();
+  expect(screen.getByText("-48 / -52 dBm")).toBeInTheDocument();
+  expect(screen.getByText(/not an RF range/i)).toBeInTheDocument();
   expect(screen.queryByText("Command")).not.toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
 

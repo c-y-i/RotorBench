@@ -78,8 +78,18 @@ test("decodes device identity without requiring a serial number to be displayed"
     targetName: "Nomad DBR4",
     logicalBaud: 420000,
     diagnostics: { validFrames: 1 },
+    link: {
+      uplinkLinkQuality: 88,
+      uplinkRssi1Dbm: -48,
+      uplinkRssi2Dbm: -52,
+    },
+    linkObservedAtMs: Date.now(),
   });
   expect(evidence.device).not.toHaveProperty("serial");
+  expect(evidence.link).toMatchObject({
+    uplinkLinkQuality: 88,
+    uplinkRssi1Dbm: -48,
+  });
   expect(evidence.boundaries).toMatchObject({
     readOnlyMenuQueriesOnly: true,
     writesAllowed: false,
@@ -290,6 +300,11 @@ test("validates imported radio-menu evidence against the staged endpoint", () =>
       units: "Hz",
     }],
     diagnostics: { validFrames: 2 },
+    link: {
+      uplinkLinkQuality: 88,
+      uplinkRssi1Dbm: -48,
+      observedAt: new Date().toISOString(),
+    },
     boundaries: {
       readOnlyMenuQueriesOnly: true,
       writesAllowed: false,
@@ -315,4 +330,8 @@ test("validates imported radio-menu evidence against the staged endpoint", () =>
   });
   expect(parsed.hardwareVerifiedByRotorBench).toBe(false);
   expect(parsed.rfPathVerified).toBe(false);
+  expect(parsed.link).toMatchObject({
+    uplinkLinkQuality: 88,
+    fresh: true,
+  });
 });

@@ -16,6 +16,7 @@ export const ELRS_ADDRESS = Object.freeze({
 });
 
 export const ELRS_FRAME_TYPE = Object.freeze({
+  linkStatistics: 0x14,
   devicePing: 0x28,
   deviceInfo: 0x29,
   parameterEntry: 0x2b,
@@ -258,6 +259,8 @@ export function createElrsDeviceMenuEvidence({
   targetName,
   logicalBaud,
   diagnostics,
+  link = null,
+  linkObservedAtMs = null,
   generatedAt = new Date().toISOString(),
 }) {
   return {
@@ -281,6 +284,14 @@ export function createElrsDeviceMenuEvidence({
       ...parameter,
     })),
     diagnostics: diagnostics || null,
+    link: link
+      ? {
+          ...link,
+          observedAt: Number.isFinite(linkObservedAtMs)
+            ? new Date(linkObservedAtMs).toISOString()
+            : null,
+        }
+      : null,
     boundaries: {
       readOnlyMenuQueriesOnly: true,
       writesAllowed: false,
@@ -313,6 +324,12 @@ export function parseElrsDeviceMenuEvidence(
     ))
     .map((parameter) => ({ ...parameter }));
   const boundaries = payload.boundaries || {};
+  const linkObservedAtMs = payload.link?.observedAt
+    ? Date.parse(payload.link.observedAt)
+    : null;
+  const linkAgeMs = Number.isFinite(linkObservedAtMs)
+    ? Math.max(0, Date.now() - linkObservedAtMs)
+    : null;
   const targetMatch = !targetName || !payload.targetName
     ? null
     : String(payload.targetName).trim().toLowerCase()
@@ -396,6 +413,13 @@ export function parseElrsDeviceMenuEvidence(
     parameters,
     entries,
     diagnostics: payload.diagnostics || null,
+    link: payload.link
+      ? {
+          ...payload.link,
+          ageMs: linkAgeMs,
+          fresh: linkAgeMs != null && linkAgeMs <= 2000,
+        }
+      : null,
     boundaries,
     checks,
     hardwareVerifiedByRotorBench: false,
@@ -408,10 +432,12 @@ export class ElrsMenuReadOnlySession {
     reader,
     writer,
     timeoutMs = 1800,
+    onFrame = null,
   }) {
     this.reader = reader;
     this.writer = writer;
     this.timeoutMs = timeoutMs;
+    this.onFrame = onFrame;
     this.parser = new CrsfStreamParser();
     this.active = true;
     this.reading = null;
@@ -457,6 +483,7 @@ export class ElrsMenuReadOnlySession {
   }
 
   handleFrame(frame) {
+    this.onFrame?.(frame);
     const pending = this.pending;
     if (!pending || !pending.match(frame)) return;
     this.pending = null;
