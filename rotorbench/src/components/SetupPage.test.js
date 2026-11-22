@@ -186,6 +186,9 @@ test("renders the hardware planning page and switches to radio setup", async () 
     .toBeInTheDocument();
   expect(within(claimLedger).getByText("Readback not imported"))
     .toBeInTheDocument();
+  expect(within(claimLedger).getByText(
+    "A device answer can show reception, not that a controller applied it.",
+  )).toBeInTheDocument();
   expect(within(claimLedger).getAllByText("Not established")).toHaveLength(2);
   fireEvent.click(screen.getByText("Bench tools"));
   fireEvent.click(screen.getByRole("button", {

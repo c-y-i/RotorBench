@@ -396,13 +396,13 @@ export default function SetupPage() {
       : "Readback not imported";
   const readbackDetail = reviewedFcParameters
     ? "Imported controller values were compared, not sent or re-read."
-    : reviewedFcIdentity?.features == null
-      ? "HELLO predates the capability word, so this firmware cannot say what it supports."
-      : reviewedFcIdentity
-        ? `${reviewedFcIdentity.featureNames.length} capability bit${
+    : !reviewedFcIdentity
+      ? "A device answer can show reception, not that a controller applied it."
+      : reviewedFcIdentity.features == null
+        ? "HELLO predates the capability word, so this firmware cannot say what it supports."
+        : `${reviewedFcIdentity.featureNames.length} capability bit${
           reviewedFcIdentity.featureNames.length === 1 ? "" : "s"
-        } reported by HELLO; values remain separate.`
-        : "A device answer can show reception, not that a controller applied it.";
+        } reported by HELLO; values remain separate.`;
   const readinessLabel = issueCount
     ? [
         `${issueCount} combined check${issueCount === 1 ? "" : "s"}`,
