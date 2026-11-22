@@ -15,8 +15,11 @@ function hasDocumentedPins(pins) {
 
 export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = null) {
   const pwmOutputs = Number(receiver?.pwmOutputs) || 0;
+  const receiverSerialProtocols = Array.isArray(receiver?.serialProtocols)
+    ? receiver.serialProtocols.filter(Boolean)
+    : [];
   const pwmOnly = receiver?.outputMode === "pwm"
-    || (pwmOutputs > 0 && !receiver?.serialProtocols?.length);
+    || (pwmOutputs > 0 && receiverSerialProtocols.length === 0);
   if (pwmOnly) {
     const steps = [
       {
@@ -44,6 +47,10 @@ export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = nu
       protocol: "pwm",
       protocolLabel: "PWM servo outputs",
       outputMode: "pwm-only",
+      receiverOutputs: {
+        serialProtocols: receiverSerialProtocols,
+        pwmOutputs,
+      },
       documented: false,
       uart: null,
       pins: `${pwmOutputs} PWM outputs · no serial route published`,
@@ -135,6 +142,12 @@ export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = nu
     `# Receiver: ${receiver?.name || "Not selected"}`,
     `# FC route: ${uart} | ${pins} | ${baud || "rate not set"} baud`,
     `# Protocol: ${protocol.label}`,
+    ...(pwmOutputs > 0 && receiverSerialProtocols.length > 0
+      ? [
+          `# Receiver outputs: ${receiverSerialProtocols.join(" / ")} serial; ${pwmOutputs} PWM outputs also documented`,
+          "# Flight control is planned through the serial route. PWM allocations are not assigned by RotorBench.",
+        ]
+      : []),
     ...steps.map((step, index) => `${index + 1}. ${step.label}: ${step.detail}`),
     "",
     "# Props off. Verify polarity, continuity, receiver supply voltage, and TX/RX direction.",
@@ -144,9 +157,13 @@ export function buildReceiverWiringPlan(config = {}, profile = {}, receiver = nu
   return {
     protocol: protocol.value,
     protocolLabel: protocol.label,
-    outputMode: pwmOutputs > 0 && receiver?.serialProtocols?.length
+    outputMode: pwmOutputs > 0 && receiverSerialProtocols.length > 0
       ? "serial-pwm"
       : "serial",
+    receiverOutputs: {
+      serialProtocols: receiverSerialProtocols,
+      pwmOutputs,
+    },
     documented,
     uart,
     pins,

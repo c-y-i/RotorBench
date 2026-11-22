@@ -920,6 +920,33 @@ test("PWM-only receivers replace the serial route with direct-output guidance", 
     .not.toBeInTheDocument();
 });
 
+test("dual-output receivers keep serial control and PWM inventory visible", async () => {
+  const { container } = render(
+    <FlightControllerSetup
+      selectedReceiver={{
+        id: "rx-radiomaster-er16-dual-band-pwm",
+        name: "RadioMaster ER16 PWM Dual-Band Receiver",
+        protocol: "CRSF",
+        pwmOutputs: 16,
+        outputMode: "serial-pwm",
+        serialProtocols: ["CRSF", "SBUS"],
+      }}
+    />,
+  );
+
+  const controlPath = screen.getByRole("region", { name: "Control path" });
+  expect(within(controlPath).getByText(/\+16 PWM outputs/)).toBeInTheDocument();
+  const topology = screen.getByRole("group", {
+    name: "Receiver output topology",
+  });
+  expect(within(topology).getByText("Dual-output receiver")).toBeInTheDocument();
+  expect(within(topology).getByText("CRSF / SBUS")).toBeInTheDocument();
+  expect(within(topology).getByText("16 outputs")).toBeInTheDocument();
+  expect(within(topology).getByText(/no PWM allocation is inferred/i))
+    .toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
 test("SBUS wiring adds the documented inverter step", () => {
   render(<FlightControllerSetup />);
   fireEvent.change(screen.getByLabelText("Board profile"), {

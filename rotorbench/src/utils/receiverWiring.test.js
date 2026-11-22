@@ -102,6 +102,37 @@ test("does not invent a serial route for a PWM-only receiver", () => {
   expect(plan.copyText).not.toMatch(/CRSF TX to FC RX/i);
 });
 
+test("keeps both documented output paths on a dual-output receiver", () => {
+  const plan = buildReceiverWiringPlan(
+    {
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+    },
+    speedybee,
+    {
+      name: "RadioMaster ER16",
+      protocol: "CRSF",
+      pwmOutputs: 16,
+      outputMode: "serial-pwm",
+      serialProtocols: ["CRSF", "SBUS"],
+    },
+  );
+
+  expect(plan).toMatchObject({
+    protocol: "crsf",
+    outputMode: "serial-pwm",
+    receiverOutputs: {
+      serialProtocols: ["CRSF", "SBUS"],
+      pwmOutputs: 16,
+    },
+  });
+  expect(plan.copyText).toContain(
+    "# Receiver outputs: CRSF / SBUS serial; 16 PWM outputs also documented",
+  );
+  expect(plan.copyText).toMatch(/PWM allocations are not assigned/i);
+});
+
 test("does not inherit the primary receiver pads on an alternate UART", () => {
   const alternate = buildReceiverWiringPlan(
     {

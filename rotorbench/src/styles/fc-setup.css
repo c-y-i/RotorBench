@@ -297,6 +297,90 @@
   line-height: 1.45;
 }
 
+.fc-receiver-dual-output {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 13px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.fc-receiver-dual-output-heading {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-receiver-dual-output-heading > svg {
+  color: var(--brand);
+}
+
+.fc-receiver-dual-output-heading > span {
+  display: grid;
+  gap: 1px;
+}
+
+.fc-receiver-dual-output-heading small,
+.fc-receiver-output-paths span {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fc-receiver-dual-output-heading strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.fc-receiver-dual-output-heading em {
+  color: var(--brand-strong);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.fc-receiver-output-paths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fc-receiver-output-paths > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  padding: 9px 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.fc-receiver-output-paths strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+
+.fc-receiver-output-paths small {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.fc-receiver-dual-output > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .fc-field {
   display: grid;
   min-width: 0;
@@ -2217,7 +2301,8 @@
   }
 
   .fc-servo-output-grid,
-  .fc-servo-fields {
+  .fc-servo-fields,
+  .fc-receiver-output-paths {
     grid-template-columns: 1fr;
   }
 
@@ -2337,6 +2422,14 @@
   .fc-section,
   .fc-plan-panel-heading {
     padding: 14px;
+  }
+
+  .fc-receiver-dual-output-heading {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .fc-receiver-dual-output-heading em {
+    grid-column: 2;
   }
 
   .fc-channel-map {

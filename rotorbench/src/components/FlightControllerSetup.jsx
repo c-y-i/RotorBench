@@ -828,6 +828,15 @@ export default function FlightControllerSetup({
     selectedReceiver?.id && wiringPlan.documented,
   );
   const pwmOnlyReceiver = wiringPlan.outputMode === "pwm-only";
+  const receiverPwmOutputs = Number(selectedReceiver?.pwmOutputs) || 0;
+  const receiverSerialProtocols = Array.isArray(selectedReceiver?.serialProtocols)
+    ? selectedReceiver.serialProtocols
+    : [];
+  const dualOutputReceiver = Boolean(
+    selectedReceiver?.id
+    && receiverPwmOutputs > 0
+    && receiverSerialProtocols.length > 0,
+  );
   const serialPorts = useMemo(
     () => getSerialPortAssignments(config, profile),
     [config, profile],
@@ -921,7 +930,11 @@ export default function FlightControllerSetup({
               <b>
                 {pwmOnlyReceiver
                   ? wiringPlan.pins
-                  : `${wiringPlan.pins} · ${config.receiverBaud || "rate not set"} baud`}
+                  : `${wiringPlan.pins} · ${config.receiverBaud || "rate not set"} baud${
+                    dualOutputReceiver
+                      ? ` · +${receiverPwmOutputs} PWM outputs`
+                      : ""
+                  }`}
               </b>
             </span>
             <ArrowRight size={14} aria-hidden="true" />
@@ -1527,47 +1540,88 @@ export default function FlightControllerSetup({
                 </div>
               </div>
             ) : (
-              <div className="fc-field-grid">
-              <Field label="Protocol" htmlFor="fc-protocol">
-                <select id="fc-protocol" value={config.receiverProtocol} onChange={(event) => changeProtocol(event.target.value)}>
-                  {RECEIVER_PROTOCOLS.map((item) => (
-                    <option key={item.value} value={item.value}>{item.label}</option>
-                  ))}
-                </select>
-              </Field>
+              <>
+                {dualOutputReceiver && (
+                  <div
+                    className="fc-receiver-dual-output"
+                    role="group"
+                    aria-label="Receiver output topology"
+                  >
+                    <div className="fc-receiver-dual-output-heading">
+                      <RadioTower size={16} aria-hidden="true" />
+                      <span>
+                        <small>Catalogued receiver outputs</small>
+                        <strong>Dual-output receiver</strong>
+                      </span>
+                      <em>Choose one control path</em>
+                    </div>
+                    <div className="fc-receiver-output-paths">
+                      <div>
+                        <span>Flight-controller serial</span>
+                        <strong>{receiverSerialProtocols.join(" / ")}</strong>
+                        <small>
+                          Plan route: {config.receiverUart || "UART not assigned"} ·{" "}
+                          {config.receiverBaud || "rate not set"} baud
+                        </small>
+                      </div>
+                      <div>
+                        <span>Receiver PWM</span>
+                        <strong>{receiverPwmOutputs} outputs</strong>
+                        <small>
+                          Separate direct-device path; no PWM allocation is inferred here.
+                        </small>
+                      </div>
+                    </div>
+                    <p>
+                      Both paths are documented by the receiver source. RotorBench
+                      plans the serial path for flight control and leaves PWM
+                      channel assignment to receiver-side configuration and
+                      continuity checks.
+                    </p>
+                  </div>
+                )}
+                <div className="fc-field-grid">
+                <Field label="Protocol" htmlFor="fc-protocol">
+                  <select id="fc-protocol" value={config.receiverProtocol} onChange={(event) => changeProtocol(event.target.value)}>
+                    {RECEIVER_PROTOCOLS.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </select>
+                </Field>
 
-              <Field
-                label="Receiver UART"
-                htmlFor="fc-uart"
-                hint={profile.receiverUartLocked
-                  ? `Compiled board mapping: ${wiringPlan.pins}.`
-                  : wiringPlan.documented
-                    ? `Documented pins: ${wiringPlan.pins}`
-                    : wiringPlan.portDetail
-                      ? `${wiringPlan.uart}: ${wiringPlan.portDetail}. Pad mapping must be verified.`
-                    : "Verify the selected board before wiring."}
-              >
-                <input
-                  id="fc-uart"
-                  disabled={profile.receiverUartLocked}
-                  value={config.receiverUart}
-                  onChange={(event) => update("receiverUart", event.target.value.toUpperCase())}
-                />
-              </Field>
+                <Field
+                  label="Receiver UART"
+                  htmlFor="fc-uart"
+                  hint={profile.receiverUartLocked
+                    ? `Compiled board mapping: ${wiringPlan.pins}.`
+                    : wiringPlan.documented
+                      ? `Documented pins: ${wiringPlan.pins}`
+                      : wiringPlan.portDetail
+                        ? `${wiringPlan.uart}: ${wiringPlan.portDetail}. Pad mapping must be verified.`
+                      : "Verify the selected board before wiring."}
+                >
+                  <input
+                    id="fc-uart"
+                    disabled={profile.receiverUartLocked}
+                    value={config.receiverUart}
+                    onChange={(event) => update("receiverUart", event.target.value.toUpperCase())}
+                  />
+                </Field>
 
-              <Field label="Line rate" htmlFor="fc-baud" hint={protocol ? `${protocol.frame}${protocol.telemetry ? " with telemetry" : ", no return path"}` : ""}>
-                <input
-                  id="fc-baud"
-                  type="number"
-                  min="9600"
-                  step="1"
-                  disabled={profile.receiverUartLocked}
-                  aria-invalid={integerInvalid(config.receiverBaud)}
-                  value={numericValue(config.receiverBaud)}
-                  onChange={(event) => update("receiverBaud", numericInput(event.target.value))}
-                />
-              </Field>
-              </div>
+                <Field label="Line rate" htmlFor="fc-baud" hint={protocol ? `${protocol.frame}${protocol.telemetry ? " with telemetry" : ", no return path"}` : ""}>
+                  <input
+                    id="fc-baud"
+                    type="number"
+                    min="9600"
+                    step="1"
+                    disabled={profile.receiverUartLocked}
+                    aria-invalid={integerInvalid(config.receiverBaud)}
+                    value={numericValue(config.receiverBaud)}
+                    onChange={(event) => update("receiverBaud", numericInput(event.target.value))}
+                  />
+                </Field>
+                </div>
+              </>
             )}
 
             <details className="fc-wiring-plan">
