@@ -75,6 +75,7 @@ import AerialKitLogReadings from "./AerialKitLogReadings";
 import AerialKitWaypointRouteSummary from "./AerialKitWaypointRouteSummary";
 import AerialKitRouteSketch from "./AerialKitRouteSketch";
 import AerialKitMissionProximity from "./AerialKitMissionProximity";
+import AerialKitMissionRouteProgress from "./AerialKitMissionRouteProgress";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -2363,6 +2364,10 @@ export default function AerialKitStatusSession({
                       <p>No waypoints are configured. This is an empty list, not missing hardware.</p>
                     )}
                     <AerialKitMissionProximity proximity={missionProximity} />
+                    <AerialKitMissionRouteProgress
+                      proximity={missionProximity}
+                      inventory={waypointInventory}
+                    />
                     {waypointInventory.slots.length > 0 && (
                       <ol aria-label="Board-reported waypoint coordinates">
                         {waypointInventory.slots.map((slot) => (

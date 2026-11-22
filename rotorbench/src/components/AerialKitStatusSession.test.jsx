@@ -1087,6 +1087,8 @@ test("reads a waypoint inventory from advertised parameters without upload contr
   expect(screen.getByText(/not a basemap or flown path/i)).toBeInTheDocument();
   expect(screen.getByText("Distance to active waypoint")).toBeInTheDocument();
   expect(screen.getByText(/WP 1 · STATUS position · fix 3/)).toBeInTheDocument();
+  expect(screen.getByText("Mission progress")).toBeInTheDocument();
+  expect(screen.getByText("Active target WP 1")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /upload waypoint/i }))
     .not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /save mission/i }))

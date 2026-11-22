@@ -3657,6 +3657,75 @@
   font-size: 10px;
 }
 
+.aerial-kit-mission-progress {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-mission-progress-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.aerial-kit-mission-progress-heading span {
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.aerial-kit-mission-progress-heading small {
+  color: var(--brand-strong);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.aerial-kit-mission-progress dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.aerial-kit-mission-progress dl > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-mission-progress dt {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.aerial-kit-mission-progress dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-mission-progress p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
 .aerial-kit-log-frames {
   display: grid;
   gap: 5px;

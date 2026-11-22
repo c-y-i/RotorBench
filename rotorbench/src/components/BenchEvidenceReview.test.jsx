@@ -632,7 +632,9 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText(/Fresh board position shown/i)).toBeInTheDocument();
   expect(screen.getByText(/WP 1 is the active target/i)).toBeInTheDocument();
   expect(screen.getByText("Distance to active waypoint")).toBeInTheDocument();
-  expect(screen.getByText("1.234 km")).toBeInTheDocument();
+  expect(screen.getAllByText("1.234 km").length).toBeGreaterThanOrEqual(2);
+  expect(screen.getByText("Mission progress")).toBeInTheDocument();
+  expect(screen.getByText("Active target WP 1")).toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();

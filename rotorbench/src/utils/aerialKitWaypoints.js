@@ -343,3 +343,78 @@ export function buildAerialKitMissionProximity({
     ),
   };
 }
+
+export function buildAerialKitMissionRouteProgress({
+  proximity = null,
+  inventory = null,
+} = {}) {
+  const base = {
+    activeWaypointIndex: null,
+    distanceToActiveM: null,
+    plannedAfterActiveM: null,
+    totalRemainingM: null,
+    remainingLegs: [],
+    remainingWaypointCount: null,
+    boundaries: {
+      geometricEstimate: true,
+      terrainNotConsidered: true,
+      flownProgressNotObserved: true,
+      returnToHomeIncluded: false,
+    },
+  };
+  if (!proximity || proximity.status !== "ok" || !Number.isFinite(proximity.distanceM)) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "proximity-unavailable",
+    };
+  }
+  if (!inventory || inventory.status !== "ok" || inventory.complete !== true) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "waypoint-inventory-unavailable",
+    };
+  }
+  const activeWaypointIndex = proximity.waypoint?.index;
+  const activeSlotIndex = inventory.slots.findIndex(
+    (slot) => slot.index === activeWaypointIndex && slot.complete,
+  );
+  if (activeSlotIndex < 0) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "active-waypoint-missing",
+    };
+  }
+  const remainingLegs = inventory.slots
+    .slice(activeSlotIndex + 1)
+    .map((slot, offset) => {
+      const from = inventory.slots[activeSlotIndex + offset];
+      return {
+        from: from.index,
+        to: slot.index,
+        distanceM: greatCircleDistanceM(
+          from.lat,
+          from.lon,
+          slot.lat,
+          slot.lon,
+        ),
+      };
+    });
+  const plannedAfterActiveM = remainingLegs.reduce(
+    (total, leg) => total + leg.distanceM,
+    0,
+  );
+  return {
+    ...base,
+    status: "ok",
+    reason: null,
+    activeWaypointIndex,
+    distanceToActiveM: proximity.distanceM,
+    plannedAfterActiveM,
+    totalRemainingM: proximity.distanceM + plannedAfterActiveM,
+    remainingLegs,
+    remainingWaypointCount: remainingLegs.length,
+  };
+}

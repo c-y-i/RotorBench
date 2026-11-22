@@ -3,6 +3,7 @@ import {
   buildAerialKitRouteSummary,
   buildAerialKitWaypointInventory,
   buildAerialKitMissionProximity,
+  buildAerialKitMissionRouteProgress,
   greatCircleDistanceM,
 } from "./aerialKitWaypoints";
 
@@ -296,5 +297,62 @@ test("measures mission proximity only with a fresh position-bearing fix", () => 
   })).toMatchObject({
     status: "unavailable",
     reason: "active-waypoint-missing",
+  });
+});
+
+test("separates distance to the active target from the remaining planned legs", () => {
+  const inventory = buildAerialKitWaypointInventory([
+    { name: "wp_count", value: "3" },
+    { name: "wp0_lat", value: "0" },
+    { name: "wp0_lon", value: "0" },
+    { name: "wp1_lat", value: "0" },
+    { name: "wp1_lon", value: "0.1" },
+    { name: "wp2_lat", value: "0.1" },
+    { name: "wp2_lon", value: "0.1" },
+  ]);
+  const progress = buildAerialKitMissionRouteProgress({
+    inventory,
+    proximity: {
+      status: "ok",
+      waypoint: { index: 1, lat: 0, lon: 0.1 },
+      distanceM: 2500,
+    },
+  });
+  expect(progress).toMatchObject({
+    status: "ok",
+    activeWaypointIndex: 1,
+    distanceToActiveM: 2500,
+    remainingWaypointCount: 1,
+    boundaries: {
+      geometricEstimate: true,
+      terrainNotConsidered: true,
+      flownProgressNotObserved: true,
+      returnToHomeIncluded: false,
+    },
+  });
+  expect(progress.plannedAfterActiveM).toBeCloseTo(11119.508, 2);
+  expect(progress.totalRemainingM).toBeCloseTo(13619.508, 2);
+  expect(progress.remainingLegs).toEqual([
+    expect.objectContaining({ from: 1, to: 2 }),
+  ]);
+  expect(buildAerialKitMissionRouteProgress({
+    inventory,
+    proximity: {
+      status: "ok",
+      waypoint: { index: 2, lat: 0.1, lon: 0.1 },
+      distanceM: 10,
+    },
+  })).toMatchObject({
+    status: "ok",
+    plannedAfterActiveM: 0,
+    totalRemainingM: 10,
+    remainingLegs: [],
+  });
+  expect(buildAerialKitMissionRouteProgress({
+    inventory,
+    proximity: { status: "unavailable", reason: "position-stale" },
+  })).toMatchObject({
+    status: "unavailable",
+    reason: "proximity-unavailable",
   });
 });
