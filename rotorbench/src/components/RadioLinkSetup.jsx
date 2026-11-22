@@ -41,6 +41,7 @@ import {
   getRadioPowerLevels,
   getRadioPowerSpec,
   getRadioReceiverBandCompatibility,
+  getSuggestedRadioTargetForReceiver,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioTarget,
@@ -150,6 +151,10 @@ export default function RadioLinkSetup({
   const powerSpec = getRadioPowerSpec(target.id);
   const regulatoryOptions = getRadioRegulatoryOptions(target.id);
   const receiverBandCompatibility = getRadioReceiverBandCompatibility(
+    target.id,
+    selectedReceiver,
+  );
+  const suggestedTarget = getSuggestedRadioTargetForReceiver(
     target.id,
     selectedReceiver,
   );
@@ -603,6 +608,24 @@ export default function RadioLinkSetup({
                 </em>
               </div>
             )}
+            {receiverBandCompatibility.status === "conflict"
+              && suggestedTarget
+              && suggestedTarget.id !== target.id && (
+                <div className="radio-target-suggestion" role="status">
+                  <RadioTower size={16} aria-hidden="true" />
+                  <span>
+                    <small>Receiver-compatible transmitter</small>
+                    <strong>{suggestedTarget.name}</strong>
+                    <small>{suggestedTarget.frequency} · local plan change only</small>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => update("targetId", suggestedTarget.id)}
+                  >
+                    Use target
+                  </button>
+                </div>
+              )}
             <p className="radio-endpoint-note">
               {config.role === "tx"
                 ? "Transmitter endpoint: host-side USB traffic is not proof that the aircraft received it."

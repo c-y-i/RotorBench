@@ -19,6 +19,7 @@ import {
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioReceiverBandCompatibility,
+  getSuggestedRadioTargetForReceiver,
   getRadioTarget,
   getRadioTargetForRole,
   getSuggestedTelemetryRatio,
@@ -207,6 +208,26 @@ test("Bandit family preserves sub-GHz bands, packet rates, and module formats", 
     "radiomaster-boxer",
     nano.defaultHostBay,
   ).status).toBe("conflict");
+});
+
+test("a receiver with no shared current band suggests a compatible source-backed target", () => {
+  const br3 = componentsData.receivers.find(
+    (receiver) => receiver.id === "rx-radiomaster-bandit-br3-900",
+  );
+  expect(getSuggestedRadioTargetForReceiver(
+    "aerialkit-elrs-rev-a3",
+    br3,
+  )).toMatchObject({
+    id: "radiomaster-bandit-nano-915-tx",
+    frequencyBands: ["Sub-G 900 MHz"],
+  });
+  expect(getSuggestedRadioTargetForReceiver(
+    "aerialkit-elrs-rev-a3",
+    {
+      id: "rx-24",
+      frequencyBands: ["2.4 GHz"],
+    },
+  ).id).toBe("aerialkit-elrs-rev-a3");
 });
 
 test("Ranger module-bay plans reject a physically incompatible handset", () => {

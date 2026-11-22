@@ -182,6 +182,35 @@ test("Bandit Nano exposes its sub-GHz packet range and Nano bay", () => {
     .toBeInTheDocument();
 });
 
+test("sub-GHz receiver mismatch offers an explicit compatible target", () => {
+  render(
+    <RadioLinkSetup
+      selectedReceiver={{
+        id: "rx-radiomaster-bandit-br3-900",
+        name: "RadioMaster Bandit BR3 ExpressLRS 900MHz Receiver",
+        protocol: "CRSF",
+        frequencyBands: ["Sub-G 900 MHz"],
+      }}
+    />,
+  );
+
+  expect(screen.getByText("Receiver-compatible transmitter"))
+    .toBeInTheDocument();
+  expect(screen.getAllByText(/RadioMaster Bandit Nano Sub-G 900 MHz ELRS/).length)
+    .toBeGreaterThan(0);
+  expect(screen.getByText("No shared band")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Use target" }));
+
+  expect(screen.getByLabelText("Device")).toHaveValue(
+    "radiomaster-bandit-nano-915-tx",
+  );
+  expect(screen.getByLabelText("Packet rate")).toHaveValue("200");
+  expect(screen.getByText(/Shared Sub-G 900 MHz/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Use target" }))
+    .not.toBeInTheDocument();
+});
+
 test("handset profiles expose source-backed bay mismatches before power", () => {
   render(<RadioLinkSetup />);
   fireEvent.change(screen.getByLabelText("Device"), {

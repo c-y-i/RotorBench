@@ -465,6 +465,65 @@
   color: var(--warn);
 }
 
+.radio-target-suggestion {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.radio-target-suggestion > svg {
+  color: var(--brand);
+}
+
+.radio-target-suggestion > span {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.radio-target-suggestion small {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.radio-target-suggestion strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.radio-target-suggestion button {
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.radio-target-suggestion button:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
+.radio-target-suggestion button:focus-visible {
+  border-color: var(--brand);
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 1px;
+}
+
 .radio-source-note {
   margin: 12px 0 0;
   color: var(--ink-faint);
@@ -1024,6 +1083,15 @@
   .radio-receiver-band em {
     grid-column: 2;
     width: max-content;
+  }
+
+  .radio-target-suggestion {
+    grid-template-columns: 16px minmax(0, 1fr);
+  }
+
+  .radio-target-suggestion button {
+    grid-column: 2;
+    justify-self: start;
   }
 
   .radio-role-legend,

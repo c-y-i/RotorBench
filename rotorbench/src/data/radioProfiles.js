@@ -580,6 +580,19 @@ export function getRadioReceiverBandCompatibility(targetId, receiver = null) {
   };
 }
 
+export function getSuggestedRadioTargetForReceiver(targetId, receiver = null) {
+  const current = getRadioTarget(targetId);
+  const currentBands = getRadioReceiverBandCompatibility(current.id, receiver);
+  if (current.roles.includes("tx") && currentBands.status === "compatible") {
+    return current;
+  }
+  return RADIO_TARGETS.find((target) => (
+    target.roles.includes("tx")
+    && !target.allowUnverifiedHostTransports
+    && getRadioReceiverBandCompatibility(target.id, receiver).status === "compatible"
+  )) || null;
+}
+
 export function getRadioHostTransports(targetId) {
   const target = getRadioTarget(targetId);
   if (target.allowUnverifiedHostTransports) return [...RADIO_HOST_TRANSPORTS];
