@@ -42,6 +42,7 @@ import {
   hasWebSerial,
   serialCaptureErrorMessage,
 } from "../utils/webSerialCapture";
+import AerialKitSensorReadings from "./AerialKitSensorReadings";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -1083,10 +1084,10 @@ export default function AerialKitStatusSession({
                   </span>
                 </div>
                 <p>
-                  Sensor rows report only whether the firmware says a topic exists,
-                  whether the board has it fitted, and the fixed-width driver name.
-                  Output rows report the board&apos;s descriptor list and servo linkage.
-                  No reading, calibration, output test, or safe-state claim is made.
+                  Sensor rows preserve the board&apos;s fitted-or-absent answer and
+                  the readings carried with a present topic. Output rows report the
+                  board&apos;s descriptor list and servo linkage. These observations
+                  do not establish calibration, an output test, or a safe state.
                 </p>
                 {sensorError && (
                   <div className="aerial-kit-rc-unavailable" role="note">
@@ -1109,7 +1110,10 @@ export default function AerialKitStatusSession({
                               ? "Absent"
                               : "No such topic"}</em>
                         </dt>
-                        <dd>{sensor.driver || "No driver reported"}</dd>
+                        <dd>
+                          <span>{sensor.driver || "No driver reported"}</span>
+                          <AerialKitSensorReadings sensor={sensor} />
+                        </dd>
                       </div>
                     ))}
                   </dl>

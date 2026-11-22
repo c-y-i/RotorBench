@@ -143,7 +143,11 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC) {
         const topic = frame[5];
         if (topic === 0) {
           const body = new Uint8Array(46);
+          const view = new DataView(body.buffer);
           body.set(Buffer.from("BMI270"), 0);
+          [0, 0, 1000, 2, 3, 4].forEach((value, index) => {
+            view.setInt16(14 + index * 2, value, true);
+          });
           deliver(buildAerialKitFrame(
             0x8e,
             Uint8Array.from([0, 0, 1, ...body]),
@@ -372,6 +376,8 @@ test("reads sensor presence and output descriptors without testing outputs", asy
   }));
   expect(await screen.findByText("Present")).toBeInTheDocument();
   expect(screen.getByText("BMI270")).toBeInTheDocument();
+  expect(screen.getByText("0 / 0 / 1000 mg")).toBeInTheDocument();
+  expect(screen.getByText("2 / 3 / 4 mrad/s")).toBeInTheDocument();
   expect(screen.getByText("No such topic")).toBeInTheDocument();
 
   await userEvent.click(screen.getByRole("button", {

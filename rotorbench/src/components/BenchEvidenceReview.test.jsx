@@ -306,6 +306,18 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
           status: "present",
           present: true,
           driver: "BMI270",
+          body: {
+            driver: "BMI270",
+            absent: 0,
+            absentReason: null,
+            whoami: 66,
+            accelMg: [0, 0, 1000],
+            gyroMradS: [2, 3, 4],
+            alignDeg: [0, 0, 0],
+            gyroBiasMdps: [0, 0, 0],
+            samples: 1234,
+            errors: 2,
+          },
         },
         {
           topic: 1,
@@ -340,6 +352,8 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
     .toBeInTheDocument();
   expect(screen.getByText(/Sets the DShot output rate/i)).toBeInTheDocument();
   expect(screen.getByText("BMI270")).toBeInTheDocument();
+  expect(screen.getByText("0 / 0 / 1000 mg")).toBeInTheDocument();
+  expect(screen.getByText("2 / 3 / 4 mrad/s")).toBeInTheDocument();
   expect(screen.getByText(/4 motors, 0 servos, 15% test cap/i))
     .toBeInTheDocument();
 });

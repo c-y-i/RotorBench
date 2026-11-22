@@ -238,6 +238,210 @@ test("parses sensor presence without inventing a body for an absent sensor", () 
   });
 });
 
+test("decodes every SENSOR_INFO body with exact wire lengths and units", () => {
+  const imu = new Uint8Array(46);
+  const imuView = new DataView(imu.buffer);
+  imu.set(Buffer.from("BMI270"), 0);
+  imu[12] = 3;
+  imu[13] = 0x42;
+  [12, -34, 1000, 1, 2, 3].forEach((value, index) => {
+    imuView.setInt16(14 + index * 2, value, true);
+  });
+  [4, 5, 6, -7, -8, -9].forEach((value, index) => {
+    imuView.setInt16(26 + index * 2, value, true);
+  });
+  imuView.setUint32(38, 1234, true);
+  imuView.setUint32(42, 2, true);
+  expect(parseAerialKitSensorInfo(Uint8Array.from([0, 0, 1, ...imu])))
+    .toMatchObject({
+      status: "present",
+      driver: "BMI270",
+      body: {
+        driver: "BMI270",
+        absent: 3,
+        absentReason: "known part would not configure",
+        whoami: 0x42,
+        accelMg: [12, -34, 1000],
+        gyroMradS: [1, 2, 3],
+        alignDeg: [4, 5, 6],
+        gyroBiasMdps: [-7, -8, -9],
+        samples: 1234,
+        errors: 2,
+      },
+    });
+
+  const baro = new Uint8Array(52);
+  const baroView = new DataView(baro.buffer);
+  baro.set(Buffer.from("DPS310"), 0);
+  baroView.setInt32(12, 101325, true);
+  baroView.setInt16(16, 2150, true);
+  baro[18] = 1;
+  baroView.setInt32(19, 101000, true);
+  baroView.setInt32(23, 320, true);
+  baro[27] = 1;
+  baroView.setInt32(28, 315, true);
+  [10, 1, 2, 8, 2].forEach((value, index) => {
+    baroView.setUint32(32 + index * 4, value, true);
+  });
+  expect(parseAerialKitSensorInfo(Uint8Array.from([0, 1, 1, ...baro])))
+    .toMatchObject({
+      driver: "DPS310",
+      body: {
+        pressurePa: 101325,
+        temperatureC: 21.5,
+        haveReference: true,
+        referencePa: 101000,
+        heightCm: 320,
+        haveGpsReference: true,
+        fusedCm: 315,
+        samples: 10,
+        errors: 1,
+        fails: 2,
+        baroSamples: 8,
+        gpsSamples: 2,
+      },
+    });
+
+  const range = new Uint8Array(49);
+  const rangeView = new DataView(range.buffer);
+  range.set(Buffer.from("VL53L1X"), 0);
+  range[12] = 0x29;
+  rangeView.setUint16(13, 4000, true);
+  rangeView.setInt32(15, -1, true);
+  [20, 30, 2, 1, 3, 4, 5].forEach((value, index) => {
+    rangeView.setUint32(19 + index * 4, value, true);
+  });
+  rangeView.setUint16(47, 7, true);
+  expect(parseAerialKitSensorInfo(Uint8Array.from([0, 2, 1, ...range])))
+    .toMatchObject({
+      driver: "VL53L1X",
+      body: {
+        address: 0x29,
+        maxMm: 4000,
+        distanceMm: -1,
+        ageMs: 20,
+        samples: 30,
+        outOfRange: 2,
+        rejected: 1,
+        faults: 3,
+        fails: 4,
+        landMm: 5,
+      },
+    });
+
+  const battery = new Uint8Array(29);
+  const batteryView = new DataView(battery.buffer);
+  battery.set([1, 1, 1, 4], 0);
+  batteryView.setUint16(4, 1580, true);
+  batteryView.setUint16(6, 395, true);
+  batteryView.setInt16(8, -1, true);
+  batteryView.setUint16(10, 1000, true);
+  battery[12] = 0;
+  batteryView.setUint16(13, 3500, true);
+  batteryView.setUint16(15, 3200, true);
+  [40, 1, 2].forEach((value, index) => {
+    batteryView.setUint32(17 + index * 4, value, true);
+  });
+  expect(parseAerialKitSensorInfo(Uint8Array.from([0, 3, 1, ...battery])))
+    .toMatchObject({
+      driver: null,
+      body: {
+        ready: true,
+        haveReading: true,
+        state: 1,
+        stateName: "ok",
+        cells: 4,
+        volts: 15.8,
+        voltsPerCell: 3.95,
+        pinMv: -1,
+        ratio: 1,
+        rth: false,
+        warnCellV: 3.5,
+        criticalCellV: 3.2,
+        samples: 40,
+        rejected: 1,
+        returns: 2,
+      },
+    });
+
+  const gps = new Uint8Array(56);
+  const gpsView = new DataView(gps.buffer);
+  gps.set([1, 3, 1, 12, 1], 0);
+  gpsView.setInt32(5, 376774000, true);
+  gpsView.setInt32(9, -1224194000, true);
+  gpsView.setInt32(13, 15240, true);
+  gpsView.setInt32(17, 2500, true);
+  gpsView.setInt32(21, 1234500, true);
+  gps[25] = 1;
+  gpsView.setInt32(26, 376770000, true);
+  gpsView.setInt32(30, -1224190000, true);
+  gpsView.setInt32(34, 42, true);
+  gpsView.setInt32(38, 9000, true);
+  gps.set([1, 1], 42);
+  [20, 3, 1].forEach((value, index) => {
+    gpsView.setUint32(44 + index * 4, value, true);
+  });
+  expect(parseAerialKitSensorInfo(Uint8Array.from([0, 4, 1, ...gps])))
+    .toMatchObject({
+      driver: null,
+      body: {
+        haveFix: true,
+        fixType: 3,
+        fixName: "3D fix",
+        fixOk: true,
+        satellites: 12,
+        validNow: true,
+        lat: 37.6774,
+        lon: -122.4194,
+        altMslMm: 15240,
+        speedMmS: 2500,
+        courseDeg: 12.345,
+        haveHome: true,
+        homeLat: 37.677,
+        homeLon: -122.419,
+        homeDistanceM: 42,
+        homeBearingDeg: 90,
+        returning: true,
+        rthEnabled: true,
+        fixes: 20,
+        dropped: 3,
+        configSends: 1,
+      },
+    });
+});
+
+test("keeps zero readings distinct from absent hardware and rejects bad lengths", () => {
+  const zeroBaro = new Uint8Array(52);
+  zeroBaro.set(Buffer.from("DPS310"), 0);
+  expect(parseAerialKitSensorInfo(Uint8Array.from([0, 1, 1, ...zeroBaro])))
+    .toMatchObject({
+      status: "present",
+      present: true,
+      body: {
+        pressurePa: 0,
+        temperatureC: 0,
+        haveReference: false,
+      },
+    });
+  expect(parseAerialKitSensorInfo(Uint8Array.of(0, 1, 0))).toEqual({
+    status: "absent",
+    topic: 1,
+    topicName: "Barometer",
+    present: false,
+    driver: null,
+  });
+  expect(parseAerialKitSensorInfo(Uint8Array.of(1, 99, 0))).toEqual({
+    status: "no-such-topic",
+    topic: 99,
+    topicName: "Topic 99",
+    present: false,
+    driver: null,
+  });
+  expect(() => parseAerialKitSensorInfo(
+    Uint8Array.from([0, 1, 1, ...new Uint8Array(51)]),
+  )).toThrow(/Barometer must carry a 52-byte body/i);
+});
+
 test("parses output descriptors and preserves servo linkage only for servos", () => {
   const bytes = new Uint8Array(5 + 2 * 7);
   const view = new DataView(bytes.buffer);

@@ -68,6 +68,120 @@ function finiteNumber(value, fallback = null) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function sensorNumber(value) {
+  return finiteNumber(value, null);
+}
+
+function sensorBoolean(value) {
+  return value === true;
+}
+
+function sensorVector(value, length = 3) {
+  if (!Array.isArray(value) || value.length !== length) return null;
+  const numbers = value.map(sensorNumber);
+  return numbers.every((number) => number != null) ? numbers : null;
+}
+
+function sensorString(value) {
+  return typeof value === "string" ? value : null;
+}
+
+function normalizedSensorBody(topic, body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  if (topic === 0) {
+    return {
+      driver: sensorString(body.driver),
+      absent: sensorNumber(body.absent),
+      absentReason: sensorString(body.absentReason),
+      whoami: sensorNumber(body.whoami),
+      accelMg: sensorVector(body.accelMg),
+      gyroMradS: sensorVector(body.gyroMradS),
+      alignDeg: sensorVector(body.alignDeg),
+      gyroBiasMdps: sensorVector(body.gyroBiasMdps),
+      samples: sensorNumber(body.samples),
+      errors: sensorNumber(body.errors),
+    };
+  }
+  if (topic === 1) {
+    return {
+      driver: sensorString(body.driver),
+      pressurePa: sensorNumber(body.pressurePa),
+      temperatureC: sensorNumber(body.temperatureC),
+      haveReference: sensorBoolean(body.haveReference),
+      referencePa: sensorNumber(body.referencePa),
+      heightCm: sensorNumber(body.heightCm),
+      haveGpsReference: sensorBoolean(body.haveGpsReference),
+      fusedCm: sensorNumber(body.fusedCm),
+      samples: sensorNumber(body.samples),
+      errors: sensorNumber(body.errors),
+      fails: sensorNumber(body.fails),
+      baroSamples: sensorNumber(body.baroSamples),
+      gpsSamples: sensorNumber(body.gpsSamples),
+    };
+  }
+  if (topic === 2) {
+    return {
+      driver: sensorString(body.driver),
+      address: sensorNumber(body.address),
+      maxMm: sensorNumber(body.maxMm),
+      distanceMm: sensorNumber(body.distanceMm),
+      ageMs: sensorNumber(body.ageMs),
+      samples: sensorNumber(body.samples),
+      outOfRange: sensorNumber(body.outOfRange),
+      rejected: sensorNumber(body.rejected),
+      faults: sensorNumber(body.faults),
+      fails: sensorNumber(body.fails),
+      landMm: sensorNumber(body.landMm),
+      agreeCm: sensorNumber(body.agreeCm),
+    };
+  }
+  if (topic === 3) {
+    return {
+      ready: sensorBoolean(body.ready),
+      haveReading: sensorBoolean(body.haveReading),
+      state: sensorNumber(body.state),
+      stateName: sensorString(body.stateName),
+      cells: sensorNumber(body.cells),
+      volts: sensorNumber(body.volts),
+      voltsPerCell: sensorNumber(body.voltsPerCell),
+      pinMv: sensorNumber(body.pinMv),
+      ratio: sensorNumber(body.ratio),
+      rth: sensorBoolean(body.rth),
+      warnCellV: sensorNumber(body.warnCellV),
+      criticalCellV: sensorNumber(body.criticalCellV),
+      samples: sensorNumber(body.samples),
+      rejected: sensorNumber(body.rejected),
+      returns: sensorNumber(body.returns),
+    };
+  }
+  if (topic === 4) {
+    return {
+      haveFix: sensorBoolean(body.haveFix),
+      fixType: sensorNumber(body.fixType),
+      fixName: sensorString(body.fixName),
+      fixOk: sensorBoolean(body.fixOk),
+      satellites: sensorNumber(body.satellites),
+      validNow: sensorBoolean(body.validNow),
+      lat: sensorNumber(body.lat),
+      lon: sensorNumber(body.lon),
+      altMslMm: sensorNumber(body.altMslMm),
+      speedMmS: sensorNumber(body.speedMmS),
+      courseDeg: sensorNumber(body.courseDeg),
+      haveHome: sensorBoolean(body.haveHome),
+      homeLat: sensorNumber(body.homeLat),
+      homeLon: sensorNumber(body.homeLon),
+      homeDistanceM: sensorNumber(body.homeDistanceM),
+      homeBearingDeg: sensorNumber(body.homeBearingDeg),
+      returning: sensorBoolean(body.returning),
+      rthEnabled: sensorBoolean(body.rthEnabled),
+      fixes: sensorNumber(body.fixes),
+      dropped: sensorNumber(body.dropped),
+      configSends: sensorNumber(body.configSends),
+    };
+  }
+  return null;
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -310,15 +424,21 @@ export function parseAerialKitLiveStatusJson(payload) {
   const sensorMetadata = Array.isArray(payload.sensorMetadata)
     ? payload.sensorMetadata
         .filter((sensor) => sensor && Number.isInteger(sensor.topic))
-        .map((sensor) => ({
-          topic: sensor.topic,
-          topicName: typeof sensor.topicName === "string" ? sensor.topicName : null,
-          status: ["present", "absent", "no-such-topic"].includes(sensor.status)
-            ? sensor.status
-            : "unknown",
-          present: sensor.present === true,
-          driver: typeof sensor.driver === "string" ? sensor.driver : null,
-        }))
+        .map((sensor) => {
+          const body = normalizedSensorBody(sensor.topic, sensor.body);
+          return {
+            topic: sensor.topic,
+            topicName: typeof sensor.topicName === "string" ? sensor.topicName : null,
+            status: ["present", "absent", "no-such-topic"].includes(sensor.status)
+              ? sensor.status
+              : "unknown",
+            present: sensor.present === true,
+            driver: typeof sensor.driver === "string"
+              ? sensor.driver
+              : sensorString(body?.driver),
+            body,
+          };
+        })
     : null;
   const outputMetadata = payload.outputMetadata
     && typeof payload.outputMetadata === "object"

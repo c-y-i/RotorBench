@@ -134,6 +134,18 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       status: "present",
       present: true,
       driver: "BMI270",
+      body: {
+        driver: "BMI270",
+        absent: 0,
+        absentReason: null,
+        whoami: 66,
+        accelMg: [0, 0, 1000],
+        gyroMradS: [2, 3, 4],
+        alignDeg: [0, 0, 0],
+        gyroBiasMdps: [0, 0, 0],
+        samples: 1234,
+        errors: 2,
+      },
     }],
     outputMetadata: {
       status: "ok",
@@ -179,6 +191,11 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
     sensorMetadata: [{
       topicName: "IMU",
       driver: "BMI270",
+      body: {
+        driver: "BMI270",
+        accelMg: [0, 0, 1000],
+        samples: 1234,
+      },
     }],
     outputMetadata: {
       motors: 4,

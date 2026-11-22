@@ -23,6 +23,7 @@ import {
 } from "../utils/benchEvidenceAttachment";
 import FcParameterSnapshot from "./FcParameterSnapshot";
 import RadioParameterSnapshot from "./RadioParameterSnapshot";
+import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -1121,7 +1122,10 @@ export default function BenchEvidenceReview({
                               : "No such topic"}
                         </em>
                       </dt>
-                      <dd>{sensor.driver || "No driver reported"}</dd>
+                      <dd>
+                        <span>{sensor.driver || "No driver reported"}</span>
+                        <AerialKitSensorReadings sensor={sensor} />
+                      </dd>
                     </div>
                   ))}
                 </dl>

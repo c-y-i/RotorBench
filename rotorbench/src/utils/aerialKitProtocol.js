@@ -38,6 +38,28 @@ const OUTPUT_KIND_NAMES = Object.freeze({
   1: "servo",
 });
 
+const IMU_ABSENT_REASONS = Object.freeze({
+  1: "nothing answered on the bus",
+  2: "unknown part answered",
+  3: "known part would not configure",
+});
+
+const BATTERY_STATE_NAMES = Object.freeze({
+  0: "absent",
+  1: "ok",
+  2: "warn",
+  3: "critical",
+});
+
+const GPS_FIX_NAMES = Object.freeze({
+  0: "no fix",
+  1: "dead reckoning only",
+  2: "2D fix",
+  3: "3D fix",
+  4: "3D fix with dead reckoning",
+  5: "time only, no position",
+});
+
 export const AERIAL_KIT_PARAMETER_TYPES = Object.freeze({
   0: "float",
   1: "u32",
@@ -566,14 +588,173 @@ export function parseAerialKitSensorInfo(payload) {
       `${definition.name} must carry a ${definition.bodyLength}-byte body.`,
     );
   }
-  const driverBytes = bytes.slice(3, 15);
+  const body = decodeAerialKitSensorBody(topic, bytes.subarray(3));
   return {
     status: "present",
     topic,
     topicName: definition.name,
     present: true,
-    driver: decodeAscii(driverBytes).replace(/\0+$/, "") || null,
+    driver: typeof body.driver === "string" && body.driver
+      ? body.driver
+      : null,
+    body,
   };
+}
+
+function sensorCursor(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 0;
+  const require = (count) => {
+    if (offset + count > bytes.length) {
+      throw new Error("SENSOR_INFO body ended before its declared fields.");
+    }
+  };
+  return {
+    u8() {
+      require(1);
+      return bytes[offset++];
+    },
+    u16() {
+      require(2);
+      const value = view.getUint16(offset, true);
+      offset += 2;
+      return value;
+    },
+    i16() {
+      require(2);
+      const value = view.getInt16(offset, true);
+      offset += 2;
+      return value;
+    },
+    u32() {
+      require(4);
+      const value = view.getUint32(offset, true);
+      offset += 4;
+      return value;
+    },
+    i32() {
+      require(4);
+      const value = view.getInt32(offset, true);
+      offset += 4;
+      return value;
+    },
+    fixedName() {
+      require(12);
+      const value = decodeAscii(bytes.subarray(offset, offset + 12))
+        .replace(/\0+$/, "");
+      offset += 12;
+      return value;
+    },
+    vector16() {
+      return [this.i16(), this.i16(), this.i16()];
+    },
+    done() {
+      return offset === bytes.length;
+    },
+  };
+}
+
+function decodeAerialKitSensorBody(topic, body) {
+  const cursor = sensorCursor(body);
+  let value;
+  if (topic === 0) {
+    const driver = cursor.fixedName();
+    const absent = cursor.u8();
+    value = {
+      driver,
+      absent,
+      absentReason: IMU_ABSENT_REASONS[absent] || null,
+      whoami: cursor.u8(),
+      accelMg: cursor.vector16(),
+      gyroMradS: cursor.vector16(),
+      alignDeg: cursor.vector16(),
+      gyroBiasMdps: cursor.vector16(),
+      samples: cursor.u32(),
+      errors: cursor.u32(),
+    };
+  } else if (topic === 1) {
+    value = {
+      driver: cursor.fixedName(),
+      pressurePa: cursor.i32(),
+      temperatureC: cursor.i16() / 100,
+      haveReference: cursor.u8() !== 0,
+      referencePa: cursor.i32(),
+      heightCm: cursor.i32(),
+      haveGpsReference: cursor.u8() !== 0,
+      fusedCm: cursor.i32(),
+      samples: cursor.u32(),
+      errors: cursor.u32(),
+      fails: cursor.u32(),
+      baroSamples: cursor.u32(),
+      gpsSamples: cursor.u32(),
+    };
+  } else if (topic === 2) {
+    value = {
+      driver: cursor.fixedName(),
+      address: cursor.u8(),
+      maxMm: cursor.u16(),
+      distanceMm: cursor.i32(),
+      ageMs: cursor.u32(),
+      samples: cursor.u32(),
+      outOfRange: cursor.u32(),
+      rejected: cursor.u32(),
+      faults: cursor.u32(),
+      fails: cursor.u32(),
+      landMm: cursor.u32(),
+      agreeCm: cursor.u16(),
+    };
+  } else if (topic === 3) {
+    const ready = cursor.u8() !== 0;
+    const haveReading = cursor.u8() !== 0;
+    const state = cursor.u8();
+    value = {
+      ready,
+      haveReading,
+      state,
+      stateName: BATTERY_STATE_NAMES[state] || null,
+      cells: cursor.u8(),
+      volts: cursor.u16() / 100,
+      voltsPerCell: cursor.u16() / 100,
+      pinMv: cursor.i16(),
+      ratio: cursor.u16() / 1000,
+      rth: cursor.u8() !== 0,
+      warnCellV: cursor.u16() / 1000,
+      criticalCellV: cursor.u16() / 1000,
+      samples: cursor.u32(),
+      rejected: cursor.u32(),
+      returns: cursor.u32(),
+    };
+  } else if (topic === 4) {
+    const haveFix = cursor.u8() !== 0;
+    const fixType = cursor.u8();
+    value = {
+      haveFix,
+      fixType,
+      fixName: GPS_FIX_NAMES[fixType] || null,
+      fixOk: cursor.u8() !== 0,
+      satellites: cursor.u8(),
+      validNow: cursor.u8() !== 0,
+      lat: cursor.i32() / 1e7,
+      lon: cursor.i32() / 1e7,
+      altMslMm: cursor.i32(),
+      speedMmS: cursor.i32(),
+      courseDeg: cursor.i32() / 1e5,
+      haveHome: cursor.u8() !== 0,
+      homeLat: cursor.i32() / 1e7,
+      homeLon: cursor.i32() / 1e7,
+      homeDistanceM: cursor.i32(),
+      homeBearingDeg: cursor.i32() / 100,
+      returning: cursor.u8() !== 0,
+      rthEnabled: cursor.u8() !== 0,
+      fixes: cursor.u32(),
+      dropped: cursor.u32(),
+      configSends: cursor.u32(),
+    };
+  } else {
+    throw new Error(`SENSOR_INFO topic ${topic} has no body decoder.`);
+  }
+  if (!cursor.done()) throw new Error("SENSOR_INFO body has unexpected trailing bytes.");
+  return value;
 }
 
 export function parseAerialKitOutputInfo(payload) {
