@@ -43,6 +43,7 @@ const evidenceKindLabels = {
   diagnostics: "Endpoint boot diagnostics",
   "fc-evidence": "Flight-controller status + preflight",
   "fc-live-status": "Aerial Kit live status + RC",
+  "fc-log-sample": "Aerial Kit bounded log sample",
   "fc-identity": "Aerial Kit identity + capabilities",
   "fc-rc": "Flight-controller RC observation",
   "fc-parameters": "Flight-controller parameter snapshot",
@@ -385,6 +386,7 @@ export default function BenchEvidenceReview({
     || evidence?.fcEvidence?.rc
     || evidence?.fcEvidence?.preflight
     || evidence?.fcEvidence?.parameters
+    || evidence?.fcEvidence?.logSample
     || evidence?.bundle?.fcEvidenceCount,
   );
   const radioEvidencePresent = Boolean(
@@ -640,6 +642,26 @@ export default function BenchEvidenceReview({
         : null,
     },
     {
+      label: "Log source",
+      value: evidence.fcEvidence?.logSample?.sourceName || null,
+    },
+    {
+      label: "Log records / holes",
+      value: evidence.fcEvidence?.logSample
+        ? `${evidence.fcEvidence.logSample.records} / ${evidence.fcEvidence.logSample.holes}`
+        : null,
+    },
+    {
+      label: "Log completion",
+      value: evidence.fcEvidence?.logSample
+        ? evidence.fcEvidence.logSample.noStream
+          ? "No stream"
+          : evidence.fcEvidence.logSample.manifest.delivery.complete
+            ? "DONE"
+            : "Incomplete"
+        : null,
+    },
+    {
       label: "Radio status reports",
       value: evidence.radioDeviceEvidence?.reports?.length
         ? String(evidence.radioDeviceEvidence.reports.length)
@@ -682,6 +704,7 @@ export default function BenchEvidenceReview({
     && !fcEvidenceComplete;
   const fcIdentityEvidence = evidence?.kind === "fc-identity";
   const fcLiveStatusEvidence = evidence?.kind === "fc-live-status";
+  const fcLogSampleEvidence = evidence?.kind === "fc-log-sample";
   const radioMenuEvidence = evidence?.kind === "radio-menu-inventory";
   const fcRcEvidence = evidence?.kind === "fc-rc";
   const fcRcComplete = evidence?.fcEvidence?.rcEvidenceComplete === true;
@@ -921,6 +944,7 @@ export default function BenchEvidenceReview({
               || fcRcComplete
               || fcIdentityEvidence
               || fcLiveStatusEvidence
+              || fcLogSampleEvidence
               || radioEvidenceComplete
               || radioMenuEvidence
               ? <FileCheck2 size={19} aria-hidden="true" />
@@ -943,6 +967,10 @@ export default function BenchEvidenceReview({
                         ? "Live AKP status reviewed; board reports no preflight checklist"
                         : "Live AKP status and board preflight reviewed; hardware remains unverified"
                       : "Live AKP status and RC reviewed; board preflight not observed"
+                    : fcLogSampleEvidence
+                      ? evidence.fcEvidence?.logSample?.holes
+                        ? "Bounded AKP log sample validated with retained holes; hardware remains unverified"
+                        : "Bounded AKP log sample and manifest validated; hardware remains unverified"
                     : fcEvidenceComplete
                     ? "FC status and preflight are complete; hardware remains unverified"
                     : fcEvidenceIncomplete
@@ -988,6 +1016,9 @@ export default function BenchEvidenceReview({
                   ? evidence.fcEvidence?.preflight
                     ? " The live status, board preflight, and RC readback are time-bounded observations. Persistence, RF performance, and flight readiness remain unverified."
                     : " The live status, arming state, and RC readback are time-bounded observations. Board preflight, persistence, RF performance, and flight readiness remain unverified."
+                  : ""}
+                {evidence.kind === "fc-log-sample"
+                  ? " The manifest was checked against every exported frame. It covers only the bounded sample, not the aircraft's full log."
                   : ""}
                 {evidence.kind === "fc-identity"
                   ? " The capability word is a compiled-firmware claim from HELLO, not proof that RotorBench exercised any capability."
@@ -1402,6 +1433,69 @@ export default function BenchEvidenceReview({
               <AerialKitLogReadings
                 inventory={evidence.fcEvidence.liveStatus.logInventory}
                 sample={evidence.fcEvidence.liveStatus.logSample}
+                sourceLabels={["Fast ring", "Long ring", "Flash log"]}
+              />
+            </section>
+          )}
+
+          {evidence.kind === "fc-log-sample"
+            && evidence.fcEvidence?.logSample && (
+            <section
+              className="aerial-kit-logs"
+              aria-label="Imported bounded Aerial Kit log artifact"
+            >
+              <div className="aerial-kit-section-heading">
+                <strong>Validated log-sample manifest</strong>
+                <span>
+                  {evidence.fcEvidence.logSample.records} records ·{" "}
+                  {evidence.fcEvidence.logSample.holes} holes
+                </span>
+              </div>
+              <p>
+                The declared source, range, delivery counts, completion, holes,
+                and record versions agree with every frame in this artifact. It
+                is a bounded sample, not the aircraft&apos;s full log.
+              </p>
+              <dl
+                className="aerial-kit-log-manifest"
+                aria-label="Validated log sample manifest"
+              >
+                <div>
+                  <dt>Source</dt>
+                  <dd>{evidence.fcEvidence.logSample.sourceName || "Unknown"}</dd>
+                </div>
+                <div>
+                  <dt>Requested range</dt>
+                  <dd>
+                    #{evidence.fcEvidence.logSample.first} ·{" "}
+                    {evidence.fcEvidence.logSample.count} records ·{" "}
+                    {evidence.fcEvidence.logSample.hz} Hz
+                  </dd>
+                </div>
+                <div>
+                  <dt>Delivery</dt>
+                  <dd>
+                    {evidence.fcEvidence.logSample.noStream
+                      ? "No stream"
+                      : evidence.fcEvidence.logSample.done
+                        ? "Terminal DONE"
+                        : "Incomplete"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Record versions</dt>
+                  <dd>
+                    v2 {evidence.fcEvidence.logSample.manifest.recordVersions["2"]}
+                    {" · "}
+                    v3 {evidence.fcEvidence.logSample.manifest.recordVersions["3"]}
+                    {" · "}
+                    v4 {evidence.fcEvidence.logSample.manifest.recordVersions["4"]}
+                  </dd>
+                </div>
+              </dl>
+              <AerialKitLogReadings
+                inventory={evidence.fcEvidence.logSample.inventory}
+                sample={evidence.fcEvidence.logSample}
                 sourceLabels={["Fast ring", "Long ring", "Flash log"]}
               />
             </section>

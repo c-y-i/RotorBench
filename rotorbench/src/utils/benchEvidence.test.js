@@ -4,6 +4,7 @@ import {
   parseRadioDiagJson,
   parseRadioParameterText,
 } from "./benchEvidence";
+import { createAerialKitLogExport } from "./aerialKitLogExport";
 
 const pairEvidence = {
   expected_uid: "10:73:A1:1F:A8:0F",
@@ -1174,4 +1175,97 @@ test("radio status evidence correlates identity without retaining device paths",
     .toBe("pass");
   expect(JSON.stringify(bundle)).not.toContain("/dev/tty");
   expect(JSON.stringify(bundle)).not.toContain("SER123");
+});
+
+test("validates a standalone bounded Aerial Kit log artifact against its frames", () => {
+  const record = {
+    status: "record",
+    source: 0,
+    sourceName: "fast",
+    index: 0,
+    record: {
+      index: 0,
+      version: 4,
+      bytes: 87,
+      timeMs: 100,
+      gyro: [1, 2, 3],
+      accel: [4, 5, 6],
+      rollDeg: 1,
+      pitchDeg: 2,
+      yawDeg: 3,
+      altMm: 1000,
+      stick: [10, 20, 30, 40],
+      torque: [1, 2, 3],
+      motors: [11, 12, 13, 14],
+      state: 0,
+      flags: 0x10,
+      lat: 0,
+      lon: 0,
+      gyroFiltered: [7, 8, 9],
+      notchHz: [120, 130, 140],
+      notchEngaged: [1, 0, 2],
+      timeUs: 987654,
+      rateSetpoint: [10, 20, 30],
+      pidP: [1, 2, 3],
+      pidI: [4, 5, 6],
+      pidD: [7, 8, 9],
+      vbatMv: 15800,
+    },
+  };
+  const exported = createAerialKitLogExport({
+    targetName: "Aerial Kit F405",
+    inventory: [{
+      requestedSource: 0,
+      sourceName: "fast",
+      status: "available",
+      count: 1,
+    }],
+    sample: {
+      source: 0,
+      sourceName: "fast",
+      first: 0,
+      count: 1,
+      hz: 20,
+      frames: [
+        record,
+        {
+          status: "done",
+          source: 0,
+          sourceName: "fast",
+          index: 1,
+          record: null,
+        },
+      ],
+    },
+  });
+  const bundle = parseBenchEvidenceBundle([{
+    name: "log-sample.json",
+    text: JSON.stringify(exported),
+  }]);
+
+  expect(bundle).toMatchObject({
+    kind: "fc-log-sample",
+    fileOverall: "Bounded AKP log sample and manifest validated; hardware remains unverified",
+    fcEvidence: {
+      logSample: {
+        sourceName: "fast",
+        records: 1,
+        holes: 0,
+        done: true,
+      },
+    },
+  });
+  expect(bundle.checks.find((check) => check.id === "fc-log-manifest").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "fc-log-completion").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "fc-log-holes").status)
+    .toBe("pass");
+
+  const tampered = JSON.parse(JSON.stringify(exported));
+  tampered.manifest.delivery.records = 2;
+  expect(() => parseBenchEvidenceBundle([{
+    name: "tampered-log-sample.json",
+    text: JSON.stringify(tampered),
+  }])).toThrow(/manifest does not agree/i);
 });

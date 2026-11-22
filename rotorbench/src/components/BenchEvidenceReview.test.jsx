@@ -6,6 +6,7 @@ import {
   appendBenchEvidenceAttachmentHistory,
   createBenchEvidenceScope,
 } from "../utils/benchEvidenceAttachment";
+import { createAerialKitLogExport } from "../utils/aerialKitLogExport";
 
 const pairEvidence = {
   expected_uid: "10:73:A1:1F:A8:0F",
@@ -532,6 +533,86 @@ test("keeps a live snapshot with no preflight checklist unverified", async () =>
   )).not.toHaveLength(0);
   expect(screen.getByText(/does not turn that response into a pass/i))
     .toBeInTheDocument();
+});
+
+test("reviews a validated standalone bounded log artifact", async () => {
+  const exported = createAerialKitLogExport({
+    targetName: "Aerial Kit F405",
+    inventory: [{
+      requestedSource: 0,
+      sourceName: "fast",
+      status: "available",
+      count: 1,
+    }],
+    sample: {
+      source: 0,
+      sourceName: "fast",
+      first: 0,
+      count: 1,
+      hz: 20,
+      frames: [
+        {
+          status: "record",
+          source: 0,
+          sourceName: "fast",
+          index: 0,
+          record: {
+            index: 0,
+            version: 2,
+            bytes: 51,
+            timeMs: 100,
+            gyro: [1, 2, 3],
+            accel: [4, 5, 6],
+            rollDeg: 1,
+            pitchDeg: 2,
+            yawDeg: 3,
+            altMm: 1000,
+            stick: [10, 20, 30, 40],
+            torque: [1, 2, 3],
+            motors: [11, 12, 13, 14],
+            state: 0,
+            flags: 0,
+            lat: 0,
+            lon: 0,
+            gyroFiltered: null,
+            notchHz: null,
+            notchEngaged: null,
+            timeUs: null,
+            rateSetpoint: null,
+            pidP: null,
+            pidI: null,
+            pidD: null,
+            vbatMv: null,
+          },
+        },
+        {
+          status: "done",
+          source: 0,
+          sourceName: "fast",
+          index: 1,
+          record: null,
+        },
+      ],
+    },
+  });
+  render(<BenchEvidenceReview expectedFc={{ firmwareFamily: "aerialkit" }} />);
+
+  userEvent.upload(
+    screen.getByLabelText("Choose hardware evidence files"),
+    evidenceFile(exported, "log-sample.json"),
+  );
+
+  expect(await screen.findAllByText(
+    "Bounded AKP log sample and manifest validated; hardware remains unverified",
+  )).not.toHaveLength(0);
+  expect(screen.getByRole("region", {
+    name: "Imported bounded Aerial Kit log artifact",
+  })).toBeInTheDocument();
+  expect(screen.getByText("Validated log-sample manifest")).toBeInTheDocument();
+  expect(screen.getByText("Record #0")).toBeInTheDocument();
+  expect(screen.getByText("DONE at #1")).toBeInTheDocument();
+  expect(screen.getAllByText(/bounded sample, not the aircraft's full log/i).length)
+    .toBeGreaterThan(0);
 });
 
 test("reviews an RX ExpressLRS menu inventory without calling it TX", async () => {

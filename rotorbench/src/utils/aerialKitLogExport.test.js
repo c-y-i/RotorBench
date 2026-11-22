@@ -1,4 +1,11 @@
-import { createAerialKitLogExport } from "./aerialKitLogExport";
+import {
+  createAerialKitLogExport,
+  parseAerialKitLogExport,
+} from "./aerialKitLogExport";
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
 
 function recordFrame(index, version, bytes) {
   return {
@@ -106,6 +113,43 @@ test("exports a bounded sample with a source, range, holes, completion, and vers
   expect(exported).not.toHaveProperty("serialPort");
   expect(exported).not.toHaveProperty("serialNumber");
   expect(JSON.stringify(exported)).not.toMatch(/binding phrase/i);
+
+  expect(parseAerialKitLogExport(exported)).toMatchObject({
+    kind: "fc-log-sample",
+    observedAtMs: 2000,
+    targetName: "Aerial Kit F405",
+    manifest: {
+      source: { id: 0, name: "fast" },
+      delivery: {
+        status: "complete-with-holes",
+        records: 2,
+        holes: 1,
+        complete: true,
+      },
+      recordVersions: { 2: 1, 3: 0, 4: 1 },
+      holeIndexes: [1],
+    },
+  });
+
+  const hiddenHole = clone(exported);
+  hiddenHole.manifest.delivery.holes = 0;
+  expect(() => parseAerialKitLogExport(hiddenHole))
+    .toThrow(/manifest does not agree/i);
+
+  const inflatedRecords = clone(exported);
+  inflatedRecords.manifest.delivery.records = 3;
+  expect(() => parseAerialKitLogExport(inflatedRecords))
+    .toThrow(/manifest does not agree/i);
+
+  const changedVersionCount = clone(exported);
+  changedVersionCount.manifest.recordVersions["2"] = 2;
+  expect(() => parseAerialKitLogExport(changedVersionCount))
+    .toThrow(/manifest does not agree/i);
+
+  const missingCompletion = clone(exported);
+  missingCompletion.frames.pop();
+  expect(() => parseAerialKitLogExport(missingCompletion))
+    .toThrow(/manifest does not agree|incomplete/i);
 });
 
 test("marks a no-stream answer complete without inventing records", () => {
@@ -132,4 +176,14 @@ test("marks a no-stream answer complete without inventing records", () => {
     complete: true,
   });
   expect(exported.frames).toEqual([]);
+  expect(parseAerialKitLogExport(exported)).toMatchObject({
+    kind: "fc-log-sample",
+    manifest: {
+      delivery: {
+        status: "no-stream",
+        frames: 0,
+        complete: true,
+      },
+    },
+  });
 });

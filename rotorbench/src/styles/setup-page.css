@@ -3148,6 +3148,37 @@
   font-variant-numeric: tabular-nums;
 }
 
+.aerial-kit-log-manifest {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.aerial-kit-log-manifest > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-log-manifest dt {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.aerial-kit-log-manifest dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
 .aerial-kit-log-frames {
   display: grid;
   gap: 5px;
@@ -4985,6 +5016,10 @@
 
   .aerial-kit-log-inventory {
     grid-template-columns: 1fr;
+  }
+
+  .aerial-kit-log-manifest {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .aerial-kit-log-frames dl {

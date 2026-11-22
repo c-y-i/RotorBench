@@ -16,6 +16,7 @@ import {
   parseRadioStatusJson,
   radioStatusChecks,
 } from "./radioDeviceEvidence";
+import { parseAerialKitLogExport } from "./aerialKitLogExport";
 
 const MAX_EVIDENCE_BYTES = 1024 * 1024;
 
@@ -1057,6 +1058,7 @@ export function parseBenchEvidenceBundle(
   let singleReport = null;
   let elrsMenuInventory = null;
   let fcLiveStatus = null;
+  let fcLogSample = null;
   let fcIdentity = null;
   let fcStatus = null;
   let fcRc = null;
@@ -1105,6 +1107,11 @@ export function parseBenchEvidenceBundle(
         fcRc = fcLiveStatus.rc;
         fcParameters = fcLiveStatus.parameters;
         fcPreflight = fcLiveStatus.preflight;
+      } else if (payload?.schema === "rotorbench.aerial-kit-log-sample.v1") {
+        if (fcLogSample) {
+          throw new Error("More than one bounded Aerial Kit log sample was selected.");
+        }
+        fcLogSample = parseAerialKitLogExport(payload);
       } else if (payload?.fields?.role) {
         const diag = parseRadioDiagJson(document.text);
         if (diagnosticsByRole[diag.role]) {
@@ -1210,6 +1217,32 @@ export function parseBenchEvidenceBundle(
   const diagnosticsPresent = Boolean(txDiag || rxDiag);
   const checks = report ? [...report.checks] : [];
   if (elrsMenuInventory) checks.push(...elrsMenuInventory.checks);
+  if (fcLogSample) {
+    checks.push(
+      makeCheck(
+        "fc-log-manifest",
+        "Log sample manifest",
+        "pass",
+        `The manifest agrees with ${fcLogSample.frames.length} frames, ${fcLogSample.records} records, and ${fcLogSample.holes} holes.`,
+      ),
+      makeCheck(
+        "fc-log-completion",
+        "Log sample completion",
+        fcLogSample.manifest.delivery.complete ? "pass" : "fail",
+        fcLogSample.noStream
+          ? "The board reported that no stream would be sent; no records are claimed."
+          : `The terminal DONE frame is index ${fcLogSample.manifest.delivery.completion.index}.`,
+      ),
+      makeCheck(
+        "fc-log-holes",
+        "Log sample holes",
+        fcLogSample.holes > 0 ? "unverified" : "pass",
+        fcLogSample.holes > 0
+          ? `${fcLogSample.holes} record${fcLogSample.holes === 1 ? " was" : "s were"} refused by the board and retained as holes.`
+          : "No frame in the exported range was reported as a hole.",
+      ),
+    );
+  }
   if (diagnosticsPresent) {
     checks.push(
       diagCheck(txDiag, report, expectedBauds?.tx, expectedUid),
@@ -1360,6 +1393,7 @@ export function parseBenchEvidenceBundle(
   );
   const fcEvidence = {
     liveStatus: fcLiveStatus,
+    logSample: fcLogSample,
     identity: fcIdentity,
     status: fcStatus,
     rc: fcRc,
@@ -1419,7 +1453,8 @@ export function parseBenchEvidenceBundle(
         fcEvidenceCount: Number(Boolean(fcStatus))
           + Number(Boolean(fcRc))
           + Number(Boolean(fcPreflight))
-          + Number(Boolean(fcIdentity)),
+          + Number(Boolean(fcIdentity))
+          + Number(Boolean(fcLogSample)),
         radioStatusCount: radioStatusReports.length,
         txDiag,
         rxDiag,
@@ -1437,6 +1472,8 @@ export function parseBenchEvidenceBundle(
       ? "radio-menu-inventory"
       : fcLiveStatus
       ? "fc-live-status"
+      : fcLogSample
+        ? "fc-log-sample"
       : fcStatus || fcPreflight
       ? "fc-evidence"
       : fcIdentity
@@ -1454,6 +1491,10 @@ export function parseBenchEvidenceBundle(
           ? "Live AKP status reviewed; board reports no preflight checklist"
           : "Live AKP status and preflight reviewed; hardware remains unverified"
         : "Live AKP status reviewed; preflight not observed"
+      : fcLogSample
+        ? fcLogSample.holes
+          ? "Bounded AKP log sample reviewed with retained holes; hardware remains unverified"
+          : "Bounded AKP log sample and manifest validated; hardware remains unverified"
       : fcStatus || fcPreflight
       ? fcEvidenceComplete
         ? fcRc
@@ -1492,7 +1533,8 @@ export function parseBenchEvidenceBundle(
       fcEvidenceCount: Number(Boolean(fcStatus))
         + Number(Boolean(fcRc))
         + Number(Boolean(fcPreflight))
-        + Number(Boolean(fcIdentity)),
+        + Number(Boolean(fcIdentity))
+        + Number(Boolean(fcLogSample)),
       radioStatusCount: radioStatusReports.length,
       radioMenuCount: elrsMenuInventory ? elrsMenuInventory.parameters.length : 0,
       radioMenuParameters,
