@@ -1,5 +1,5 @@
-import React from "react";
-import { Box, Check } from "lucide-react";
+import React, { useState } from "react";
+import { Box, Check, Clipboard } from "lucide-react";
 import { resolveModelForComponent } from "../utils/modelAssets";
 
 const MODEL_PARTS = [
@@ -13,6 +13,7 @@ const MODEL_PARTS = [
 ];
 
 export default function ModelAssetAudit({ parts = {} }) {
+  const [message, setMessage] = useState("");
   const entries = MODEL_PARTS.flatMap(([key, label, category]) => {
     const part = parts[key];
     if (!part?.id) return [];
@@ -35,6 +36,19 @@ export default function ModelAssetAudit({ parts = {} }) {
     : catalogCount === 0
       ? "All fallback"
       : `${catalogCount} catalog / ${fallbackCount} fallback`;
+  const copyReport = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable.");
+      }
+      await navigator.clipboard.writeText(createModelSourceReport(parts));
+      setMessage(
+        "Model-source report copied. Planning geometry metadata only; no hardware verification.",
+      );
+    } catch {
+      setMessage("Could not copy the model-source report. Try again.");
+    }
+  };
 
   return (
     <details className="viewer-placement-audit viewer-model-asset-audit">
@@ -55,6 +69,21 @@ export default function ModelAssetAudit({ parts = {} }) {
           transforms; they are useful for placement review but are not
           product-exact meshes.
         </p>
+        <div className="viewer-model-source-actions">
+          <button
+            type="button"
+            className="action-btn secondary"
+            onClick={copyReport}
+          >
+            <Clipboard size={15} aria-hidden="true" />
+            Copy model sources
+          </button>
+          {message && (
+            <span className="visually-hidden" role="status">
+              {message}
+            </span>
+          )}
+        </div>
         <ul aria-label="Selected component model sources">
           {entries.map((entry) => (
             <li
@@ -82,4 +111,36 @@ export default function ModelAssetAudit({ parts = {} }) {
       </div>
     </details>
   );
+}
+
+export function createModelSourceReport(parts = {}) {
+  const entries = MODEL_PARTS.flatMap(([key, label, category]) => {
+    const part = parts[key];
+    if (!part?.id) return [];
+    const asset = resolveModelForComponent(category, part.id);
+    return [{
+      label,
+      part,
+      catalogModel: asset.kind === "catalog-glb",
+      provenance: asset.provenance,
+    }];
+  });
+  const catalogCount = entries.filter((entry) => entry.catalogModel).length;
+  const fallbackCount = entries.length - catalogCount;
+  return [
+    "RotorBench model source report",
+    "Local planning metadata only. No hardware verification is claimed.",
+    `Selected parts: ${entries.length}`,
+    `Catalog GLBs: ${catalogCount}`,
+    `Generated fallbacks: ${fallbackCount}`,
+    "",
+    ...entries.map((entry) => (
+      `- ${entry.label}: ${entry.part.name || entry.part.id} | ${
+        entry.catalogModel ? entry.provenance : "Generated fallback geometry"
+      }`
+    )),
+    "",
+    "Generated fallback geometry uses catalogued dimensions, mounting points, and shared assembly transforms.",
+    "It is useful for placement review but is not a product-exact mesh.",
+  ].join("\n");
 }

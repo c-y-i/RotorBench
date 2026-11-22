@@ -1262,6 +1262,32 @@
   list-style: none;
 }
 
+.viewer-model-source-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.viewer-model-source-actions .action-btn {
+  width: auto;
+  gap: 7px;
+  min-height: var(--control-min-height);
+  padding: 0 12px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.viewer-model-source-actions .action-btn:hover {
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
 .viewer-placement-audit-body li {
   display: grid;
   grid-template-columns: 15px minmax(0, 1fr) auto;
