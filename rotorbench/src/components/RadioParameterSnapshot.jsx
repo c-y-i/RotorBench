@@ -25,6 +25,12 @@ const STATUS_LABELS = {
   unverified: "Unverified",
 };
 
+const STATUS_FILTERS = [
+  { id: "all", label: "All" },
+  { id: "review", label: "Needs review" },
+  { id: "differences", label: "Differences" },
+];
+
 const CHECK_IDS = {
   "Packet Rate": "settings-packet-rate",
   "Telem Ratio": "settings-telemetry",
@@ -55,10 +61,41 @@ export function groupRadioParameters(entries = []) {
 
 export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
   const [query, setQuery] = useState("");
-  const [differencesOnly, setDifferencesOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
   const groups = useMemo(() => {
     const statusByCheckId = new Map(checks.map((check) => [check.id, check.status]));
-    return groupRadioParameters(entries).map((group) => ({
+    const grouped = groupRadioParameters(entries);
+    const observedCheckIds = new Set(
+      entries.map((entry) => CHECK_IDS[entry.name]).filter(Boolean),
+    );
+    const groupsById = new Map(grouped.map((group) => [group.id, group]));
+    checks
+      .filter((check) => (
+        Object.values(CHECK_IDS).includes(check.id)
+        && check.status === "unverified"
+        && !observedCheckIds.has(check.id)
+      ))
+      .forEach((check) => {
+        const name = Object.entries(CHECK_IDS)
+          .find(([, checkId]) => checkId === check.id)?.[0];
+        if (!name) return;
+        const groupDefinition = GROUPS.find((group) => group.names.has(name)) || {
+          id: "other",
+          label: "Other observed",
+        };
+        let group = groupsById.get(groupDefinition.id);
+        if (!group) {
+          group = { ...groupDefinition, entries: [] };
+          groupsById.set(groupDefinition.id, group);
+        }
+        group.entries.push({
+          id: `plan-gap-${check.id}`,
+          name,
+          value: "Not in snapshot",
+          type: "plan-check",
+        });
+      });
+    return [...groupsById.values()].map((group) => ({
       ...group,
       entries: group.entries.map((entry) => {
         const status = statusByCheckId.get(CHECK_IDS[entry.name]) || "observed";
@@ -74,6 +111,9 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
     .filter((entry) => entry.status === "pass").length;
   const differences = groups.flatMap((group) => group.entries)
     .filter((entry) => entry.status === "fail").length;
+  const unverified = groups.flatMap((group) => group.entries)
+    .filter((entry) => entry.status === "unverified").length;
+  const reviewCount = differences + unverified;
   const normalizedQuery = query.trim().toLowerCase();
   const visibleGroups = groups.map((group) => ({
     ...group,
@@ -83,9 +123,18 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
         || String(entry.value).toLowerCase().includes(normalizedQuery)
         || String(entry.type || "").toLowerCase().includes(normalizedQuery)
         || entry.statusLabel.toLowerCase().includes(normalizedQuery);
-      return matchesQuery && (!differencesOnly || entry.status === "fail");
+      const matchesStatus = statusFilter === "all"
+        || (statusFilter === "review" && ["fail", "unverified"].includes(entry.status))
+        || (statusFilter === "differences" && entry.status === "fail");
+      return matchesQuery && matchesStatus;
     }),
   })).filter((group) => group.entries.length > 0);
+  const visibleCount = groups.flatMap((group) => group.entries).length;
+  const filterCounts = {
+    all: visibleCount,
+    review: reviewCount,
+    differences,
+  };
 
   if (!entries.length) return null;
 
@@ -98,7 +147,7 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
           <small>
             {entries.length} read-only module value{entries.length === 1 ? "" : "s"}
             {checks.length
-              ? ` · ${matches} match${matches === 1 ? "" : "es"} · ${differences} differ${differences === 1 ? "s" : ""}`
+              ? ` · ${matches} match${matches === 1 ? "" : "es"} · ${differences} differ${differences === 1 ? "s" : ""} · ${unverified} unverified`
               : ""}
           </small>
         </span>
@@ -119,15 +168,25 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
           Values below are shown exactly as the imported ExpressLRS snapshot
           reported them. RotorBench did not write or save module parameters.
         </p>
-        {differences > 0 && (
-          <button
-            type="button"
-            className="fc-parameter-difference-filter"
-            aria-pressed={differencesOnly}
-            onClick={() => setDifferencesOnly((current) => !current)}
+        {checks.length > 0 && (
+          <div
+            className="fc-parameter-filter-bar"
+            role="group"
+            aria-label="Filter observed radio parameters by plan status"
           >
-            Differences only · {differences}
-          </button>
+            {STATUS_FILTERS.map((filter) => (
+              <button
+                type="button"
+                key={filter.id}
+                aria-label={`${filter.label} · ${filterCounts[filter.id]}`}
+                aria-pressed={statusFilter === filter.id}
+                onClick={() => setStatusFilter(filter.id)}
+              >
+                {filter.label}
+                <span>{filterCounts[filter.id]}</span>
+              </button>
+            ))}
+          </div>
         )}
         {visibleGroups.length ? (
           <div className="fc-parameter-groups">
@@ -154,15 +213,17 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
         ) : (
           <div className="fc-parameter-empty">
             <span>
-              {differencesOnly
-                ? "No imported radio parameters differ from the staged plan."
-                : `No observed radio parameters match “${query}”.`}
+              {statusFilter === "review"
+                ? "No imported radio parameters need review against the staged plan."
+                : statusFilter === "differences"
+                  ? "No imported radio parameters differ from the staged plan."
+                  : `No observed radio parameters match “${query}”.`}
             </span>
             <button
               type="button"
               onClick={() => {
                 setQuery("");
-                setDifferencesOnly(false);
+                setStatusFilter("all");
               }}
             >
               Clear filter

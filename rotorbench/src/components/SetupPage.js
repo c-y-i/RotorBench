@@ -732,6 +732,7 @@ export default function SetupPage() {
 
       <details
         className="setup-bench-tools"
+        data-testid="setup-bench-tools"
         open={setupBenchToolsOpen}
         onToggle={(event) => setSetupBenchToolsOpen(event.currentTarget.open)}
       >

@@ -54,7 +54,11 @@ export function RouteLoading() {
           <small>Preparing the workbench view.</small>
         </span>
       </div>
-      <div className="route-loading-skeleton" aria-hidden="true">
+      <div
+        className="route-loading-skeleton"
+        data-testid="route-loading-skeleton"
+        aria-hidden="true"
+      >
         <div className="route-loading-primary">
           <span className="route-loading-title-line" />
           <span className="route-loading-copy-line" />

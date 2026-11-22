@@ -782,9 +782,9 @@ test.each(FC_BOARD_PROFILES)(
     const mappedPorts = profile.serialPorts.map((port) => port.id);
 
     expect(mappedPorts).toContain(profile.receiverUart);
-    if (profile.gpsUart) {
-      expect(mappedPorts).toContain(profile.gpsUart);
-    }
+    expect(mappedPorts).toEqual(expect.arrayContaining(
+      [profile.receiverUart, profile.gpsUart].filter(Boolean),
+    ));
   },
 );
 

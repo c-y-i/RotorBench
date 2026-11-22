@@ -1573,24 +1573,51 @@
   line-height: 1.45;
 }
 
-.fc-parameter-difference-filter {
-  justify-self: start;
+.fc-parameter-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fc-parameter-filter-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   min-height: var(--control-min-height);
   padding: 0 10px;
-  color: var(--danger);
+  color: var(--ink);
   background: var(--surface-raised);
-  border: 1px solid #d6aaa1;
+  border: 1px solid var(--line);
   border-radius: 4px;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
 }
 
-.fc-parameter-difference-filter[aria-pressed="true"] {
-  color: #fff;
-  background: var(--danger);
-  border-color: var(--danger);
+.fc-parameter-filter-bar button span {
+  min-width: 20px;
+  padding: 2px 5px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border-radius: 3px;
+  font-size: 9px;
+  text-align: center;
+}
+
+.fc-parameter-filter-bar button[aria-pressed="true"] {
+  color: var(--signal-ink);
+  background: var(--signal);
+  border-color: var(--signal-lime-deep);
+}
+
+.fc-parameter-filter-bar button[aria-pressed="true"] span {
+  color: var(--signal-ink);
+  background: color-mix(in srgb, var(--signal-ink) 10%, transparent);
+}
+
+.fc-parameter-filter-bar button:hover:not([aria-pressed="true"]) {
+  border-color: var(--line-strong);
 }
 
 .fc-parameter-groups {

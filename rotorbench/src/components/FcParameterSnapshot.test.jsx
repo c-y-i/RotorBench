@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import FcParameterSnapshot, { groupFcParameters } from "./FcParameterSnapshot";
+import { getA11yViolations } from "../test/a11y";
 
 const values = {
   arm_channel: 5,
@@ -83,13 +84,14 @@ test("filters the snapshot and states the read-only boundary", async () => {
 });
 
 test("identifies plan matches and differences inline", async () => {
-  render(
+  const { container } = render(
     <FcParameterSnapshot
       values={values}
       checks={[
         { id: "fc-param-arm-channel", status: "pass" },
         { id: "fc-param-rc-min", status: "fail" },
         { id: "fc-param-mode-channel", status: "unverified" },
+        { id: "fc-param-serial7-protocol", status: "unverified" },
       ]}
     />,
   );
@@ -106,9 +108,28 @@ test("identifies plan matches and differences inline", async () => {
   expect(within(screen.getByRole("region", {
     name: "Hand launch parameters",
   })).getByText("Observed")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Needs review · 3" }))
+    .toBeInTheDocument();
 
   await userEvent.click(screen.getByRole("button", {
-    name: /Differences only · 1/,
+    name: "Needs review · 3",
+  }));
+  expect(within(screen.getByRole("region", {
+    name: "Arming and receiver parameters",
+  })).getByText("rc_min")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "Modes and channels parameters",
+  })).getByText("mode_channel")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "Arming and receiver parameters",
+  })).getByText("serial7_protocol")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "Arming and receiver parameters",
+  })).getByText("Not in snapshot")).toBeInTheDocument();
+  expect(screen.queryByText("arm_channel")).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Differences · 1",
   }));
   expect(within(screen.getByRole("region", {
     name: "Arming and receiver parameters",
@@ -116,6 +137,7 @@ test("identifies plan matches and differences inline", async () => {
   expect(screen.queryByText("arm_channel")).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Modes and channels parameters" }))
     .not.toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("shows the accepted parameter snapshot format", async () => {

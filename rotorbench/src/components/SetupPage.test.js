@@ -180,7 +180,7 @@ test("opens the evidence review from an ArduPilot parameter plan", () => {
   fireEvent.click(screen.getByRole("button", {
     name: "Review mock parameters",
   }));
-  expect(screen.getByText("Bench tools").closest("details"))
+  expect(screen.getByTestId("setup-bench-tools"))
     .toHaveAttribute("open");
   expect(screen.getByTestId("mock-bench-runbook")).toHaveAttribute(
     "data-open",
@@ -226,9 +226,7 @@ test("stages imported hardware plans until the user reviews and applies them", a
   };
   const input = screen.getByLabelText("Import combined hardware plan");
 
-  await act(async () => {
-    fireEvent.change(input, { target: { files: [file] } });
-  });
+  fireEvent.change(input, { target: { files: [file] } });
 
   const review = await screen.findByRole("region", {
     name: "Review imported hardware plan",
@@ -247,9 +245,7 @@ test("stages imported hardware plans until the user reviews and applies them", a
   expect(screen.getByText(/Flight controller panel: none.*arm 6/i))
     .toBeInTheDocument();
 
-  await act(async () => {
-    fireEvent.change(input, { target: { files: [file] } });
-  });
+  fireEvent.change(input, { target: { files: [file] } });
   const secondReview = await screen.findByRole("region", {
     name: "Review imported hardware plan",
   });
@@ -285,13 +281,11 @@ test("surfaces stale ArduPilot metadata without staging the plan", async () => {
     text: async () => JSON.stringify(plan),
   };
 
-  await act(async () => {
-    fireEvent.change(screen.getByLabelText("Import combined hardware plan"), {
-      target: { files: [file] },
-    });
+  fireEvent.change(screen.getByLabelText("Import combined hardware plan"), {
+    target: { files: [file] },
   });
 
-  expect(screen.getByRole("status")).toHaveTextContent(
+  expect(await screen.findByRole("status")).toHaveTextContent(
     /Could not import hardware plan:.*do not match the selected board profile.*Export a fresh plan/i,
   );
   expect(screen.queryByRole("region", {

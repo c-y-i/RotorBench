@@ -34,7 +34,7 @@ test('route loading exposes one status and hides decorative placeholders', async
   const { container } = render(<RouteLoading />);
 
   expect(screen.getByRole('status')).toHaveTextContent('Loading workspace');
-  expect(container.querySelector('.route-loading-skeleton'))
+  expect(screen.getByTestId('route-loading-skeleton'))
     .toHaveAttribute('aria-hidden', 'true');
   expect(await getA11yViolations(container)).toEqual([]);
 });

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import RadioParameterSnapshot, {
   groupRadioParameters,
 } from "./RadioParameterSnapshot";
+import { getA11yViolations } from "../test/a11y";
 
 const entries = [
   { id: 1, name: "Packet Rate", value: "3", type: "text_selection" },
@@ -47,13 +48,14 @@ test("filters TX parameters and preserves the read-only boundary", async () => {
 });
 
 test("identifies TX plan matches and differences inline", async () => {
-  render(
+  const { container } = render(
     <RadioParameterSnapshot
       entries={entries}
       checks={[
         { id: "settings-packet-rate", status: "pass" },
         { id: "settings-telemetry", status: "fail" },
         { id: "settings-power", status: "unverified" },
+        { id: "settings-link-mode", status: "unverified" },
       ]}
     />,
   );
@@ -68,9 +70,28 @@ test("identifies TX plan matches and differences inline", async () => {
   expect(within(screen.getByRole("region", {
     name: "Other observed radio parameters",
   })).getByText("Observed")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Needs review · 3" }))
+    .toBeInTheDocument();
 
   await userEvent.click(screen.getByRole("button", {
-    name: /Differences only · 1/,
+    name: "Needs review · 3",
+  }));
+  expect(within(screen.getByRole("region", {
+    name: "RF link radio parameters",
+  })).getByText("Telem Ratio")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "Power radio parameters",
+  })).getByText("Max Power")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "RF link radio parameters",
+  })).getByText("Link Mode")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "RF link radio parameters",
+  })).getByText("Not in snapshot")).toBeInTheDocument();
+  expect(screen.queryByText("Packet Rate")).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Differences · 1",
   }));
   expect(within(screen.getByRole("region", {
     name: "RF link radio parameters",
@@ -78,4 +99,5 @@ test("identifies TX plan matches and differences inline", async () => {
   expect(screen.queryByText("Packet Rate")).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: "Power radio parameters" }))
     .not.toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
 });
