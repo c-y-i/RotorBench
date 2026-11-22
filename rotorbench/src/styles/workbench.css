@@ -5577,6 +5577,40 @@
   border-color: var(--brand);
 }
 
+.starter-platform-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.starter-platform-sort label {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.starter-platform-sort select {
+  min-height: 44px;
+  min-width: min(100%, 210px);
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.starter-platform-sort select:focus-visible {
+  border-color: var(--brand);
+  outline: 3px solid color-mix(in srgb, var(--brand) 24%, transparent);
+  outline-offset: 1px;
+}
+
 .starter-platform-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5869,6 +5903,16 @@
 
   .starter-platform-filter {
     flex: 1 1 auto;
+  }
+
+  .starter-platform-sort {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .starter-platform-sort select {
+    width: 100%;
   }
 
   .starter-platform-option {

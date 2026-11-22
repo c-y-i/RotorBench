@@ -3,6 +3,8 @@ import { MemoryRouter, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import HomePage from "./HomePage";
 import { getA11yViolations } from "../test/a11y";
+import { PLATFORM_PRESETS } from "../data/platformPresets";
+import { summarizeBuild } from "../utils/buildComparison";
 
 jest.mock("./BabylonViewer", () => () => <div data-testid="home-assembly-viewer" />);
 jest.mock("./TwoDViewer", () => () => <div data-testid="home-two-d-viewer" />);
@@ -183,7 +185,7 @@ test("starter platform search matches components and resets cleanly", async () =
 });
 
 test("starter filters survive through shareable URL state", async () => {
-  renderHome(["/?q=F722&size=5&fit=verified"]);
+  renderHome(["/?q=F722&size=5&fit=verified&sort=price"]);
   await screen.findByTestId("home-assembly-viewer");
 
   expect(screen.getByLabelText("Search starter builds")).toHaveValue("F722");
@@ -191,12 +193,38 @@ test("starter filters survive through shareable URL state", async () => {
     .toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("button", { name: /^Verified only\s*12$/ }))
     .toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByLabelText("Sort starter builds")).toHaveValue("price");
   expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(2);
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS F722 900MHz build",
   })).toBeInTheDocument();
   expect(screen.getByTestId("location-path")).toHaveTextContent(
-    "/?q=F722&size=5&fit=verified",
+    "/?q=F722&size=5&fit=verified&sort=price",
+  );
+});
+
+test("starter sorting by catalog price uses full-build totals", async () => {
+  const expected = [...PLATFORM_PRESETS]
+    .sort((left, right) => {
+      const leftPrice = summarizeBuild({
+        componentIds: left.componentIds,
+      }).totalPrice;
+      const rightPrice = summarizeBuild({
+        componentIds: right.componentIds,
+      }).totalPrice;
+      return leftPrice - rightPrice || left.name.localeCompare(right.name);
+    })[0];
+  renderHome();
+  await screen.findByTestId("home-assembly-viewer");
+
+  fireEvent.change(screen.getByLabelText("Sort starter builds"), {
+    target: { value: "price" },
+  });
+
+  expect(screen.getAllByRole("button", { name: /^Open / })[0])
+    .toHaveAccessibleName(`Open ${expected.name}`);
+  expect(screen.getByTestId("location-path")).toHaveTextContent(
+    "/?sort=price",
   );
 });
 

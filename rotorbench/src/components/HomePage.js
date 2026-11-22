@@ -39,6 +39,7 @@ const PLATFORM_FIT_LABELS = {
   conflict: "Fit conflict",
   pending: "Fit unchecked",
 };
+const PLATFORM_SORT_MODES = new Set(["size", "name", "weight", "price"]);
 const PLATFORM_COMPONENT_CATEGORIES = {
   frameId: "frames",
   motorId: "motors",
@@ -112,6 +113,10 @@ export default function HomePage() {
     : "all";
   const verifiedPlatformsOnly = searchParams.get("fit") === "verified";
   const starterQuery = searchParams.get("q") || "";
+  const requestedPlatformSort = searchParams.get("sort") || "size";
+  const platformSort = PLATFORM_SORT_MODES.has(requestedPlatformSort)
+    ? requestedPlatformSort
+    : "size";
   const updateStarterFilters = (changes) => {
     const next = new URLSearchParams(searchParams);
     Object.entries(changes).forEach(([key, value]) => {
@@ -172,12 +177,27 @@ export default function HomePage() {
         queryTokens.length === 0
         || queryTokens.every((token) => starterPlatformSearchText(preset).includes(token))
       ))
-      .sort((left, right) => (
-        (Number.parseFloat(left.name.match(/^[\d.]+/)?.[0]) || 0)
-        - (Number.parseFloat(right.name.match(/^[\d.]+/)?.[0]) || 0)
-        || left.name.localeCompare(right.name)
-      ));
-  }, [platformSize, starterQuery, platformSummaries, verifiedPlatformsOnly]);
+      .sort((left, right) => {
+        const sizeComparison =
+          (Number.parseFloat(left.name.match(/^[\d.]+/)?.[0]) || 0)
+          - (Number.parseFloat(right.name.match(/^[\d.]+/)?.[0]) || 0)
+          || left.name.localeCompare(right.name);
+        if (platformSort === "name") return left.name.localeCompare(right.name);
+        if (platformSort === "weight" || platformSort === "price") {
+          const field = platformSort === "weight" ? "totalWeight" : "totalPrice";
+          const rawLeft = platformSummaries[left.id]?.[field];
+          const rawRight = platformSummaries[right.id]?.[field];
+          const normalizedLeft = rawLeft != null && Number.isFinite(Number(rawLeft))
+            ? Number(rawLeft)
+            : Number.POSITIVE_INFINITY;
+          const normalizedRight = rawRight != null && Number.isFinite(Number(rawRight))
+            ? Number(rawRight)
+            : Number.POSITIVE_INFINITY;
+          return normalizedLeft - normalizedRight || sizeComparison;
+        }
+        return sizeComparison;
+      });
+  }, [platformSize, platformSort, starterQuery, platformSummaries, verifiedPlatformsOnly]);
   const verifiedPlatformCount = useMemo(() => (
     PLATFORM_PRESETS.filter((preset) => (
       ["verified", "measured"].includes(
@@ -435,6 +455,22 @@ export default function HomePage() {
               Verified only
               <small>{verifiedPlatformCount}</small>
             </button>
+          </div>
+          <div className="starter-platform-sort">
+            <label htmlFor="starter-platform-sort">Sort</label>
+            <select
+              id="starter-platform-sort"
+              aria-label="Sort starter builds"
+              value={platformSort}
+              onChange={(event) => updateStarterFilters({
+                sort: event.target.value === "size" ? null : event.target.value,
+              })}
+            >
+              <option value="size">Size · ascending</option>
+              <option value="name">Name · A–Z</option>
+              <option value="weight">Total weight · low first</option>
+              <option value="price">Catalog price · low first</option>
+            </select>
           </div>
           <div className="starter-platform-list">
             {visiblePlatforms.length === 0 && (
