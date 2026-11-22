@@ -628,7 +628,9 @@ export default function RadioLinkSetup({
               )}
             <p className="radio-endpoint-note">
               {config.role === "tx"
-                ? "Transmitter endpoint: host-side USB traffic is not proof that the aircraft received it."
+                ? config.hostTransport === "internal-rf"
+                  ? "Transmitter endpoint: the handset's internal RF settings are a plan. RotorBench did not transmit or prove aircraft reception."
+                  : "Transmitter endpoint: host-side USB traffic is not proof that the aircraft received it."
                 : "Receiver endpoint: a completed FC-facing frame still does not prove RF acquisition."}
               {receiverLabel ? ` RotorBench receiver: ${receiverLabel}.` : ""}
             </p>
@@ -714,7 +716,11 @@ export default function RadioLinkSetup({
                       event.target.value,
                     )}
                   >
-                    <option value="verify">Verify fitted module</option>
+                    <option value="verify">
+                      {config.hostTransport === "internal-rf"
+                        ? "Verify fitted handset variant"
+                        : "Verify fitted module"}
+                    </option>
                     {regulatoryOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label} · {option.dbm} dBm / {option.mw} mW max
@@ -722,7 +728,9 @@ export default function RadioLinkSetup({
                     ))}
                   </select>
                   <small id="radio-region-help">
-                    Match the printed module variant and local rules.
+                    Match the printed {config.hostTransport === "internal-rf"
+                      ? "handset"
+                      : "module"} variant and local rules.
                     {selectedRegulatoryLimit
                       ? ` Selected ceiling: ${selectedRegulatoryLimit.dbm} dBm.`
                       : " RotorBench does not infer this from locale."}

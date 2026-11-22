@@ -182,6 +182,29 @@ test("Bandit Nano exposes its sub-GHz packet range and Nano bay", () => {
     .toBeInTheDocument();
 });
 
+test("RadioMaster Pocket selects its internal ELRS target without a host bay", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-pocket-elrs-24-tx" },
+  });
+
+  expect(screen.getByLabelText("Host transport")).toHaveValue("internal-rf");
+  expect(screen.getByText("Internal RF module")).toBeInTheDocument();
+  expect(screen.queryByLabelText("Handset")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Handset bay")).not.toBeInTheDocument();
+  expect(screen.getByText(/Internal 2.4 GHz ExpressLRS RF/i)).toBeInTheDocument();
+  expect(screen.getByText(/handset's internal RF settings are a plan/i))
+    .toBeInTheDocument();
+  expect(screen.getByRole("option", { name: "Verify fitted handset variant" }))
+    .toBeInTheDocument();
+  fireEvent.click(screen.getByText("Endpoint checklist"));
+  expect(screen.getByText("Configure the handset's internal RF module"))
+    .toBeInTheDocument();
+  expect(screen.getByRole("option", {
+    name: /LBT · 20 dBm \/ 100 mW max/i,
+  })).toBeInTheDocument();
+});
+
 test("sub-GHz receiver mismatch offers an explicit compatible target", () => {
   render(
     <RadioLinkSetup

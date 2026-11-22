@@ -279,6 +279,42 @@ export const RADIO_TARGETS = [
     sourceUrl: "https://radiomasterrc.com/products/bandit-expresslrs-rf-module",
   },
   {
+    id: "radiomaster-pocket-elrs-24-tx",
+    name: "RadioMaster Pocket ELRS 2.4 GHz",
+    description: "EdgeTX micro handset with internal ExpressLRS 2.4 GHz RF, a 288 g body, and a Nano-compatible external module bay for other targets.",
+    frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
+    defaultHostTransport: "internal-rf",
+    defaultHostBay: "verify",
+    supportedHostBays: [],
+    firmwareVersion: "EdgeTX with internal ExpressLRS",
+    roles: ["tx"],
+    packetRateModes: ["25", "50", "100-full", "150", "250", "500"],
+    serial: {
+      txBaud: null,
+      rxBaud: null,
+      frame: "Internal 2.4 GHz ExpressLRS RF; no external module-bay or host CRSF transport",
+      note: "USB is used for EdgeTX and firmware configuration. It is not the RF link and does not prove transmission.",
+    },
+    hostLink: {
+      internalRf: {
+        note: "Configure the handset's built-in RF module in EdgeTX. No target-local host baud or external module is part of this radio endpoint.",
+      },
+    },
+    power: {
+      defaultDbm: null,
+      defaultMw: null,
+      regulatoryMaxima: [
+        { region: "LBT", dbm: 20, mw: 100 },
+      ],
+      menuVerified: false,
+      note: "RadioMaster states that maximum power is hardware dependent and that the LBT/CE edition is limited to 100 mW. The FCC maximum and default drive value are not stated here.",
+    },
+    source: "RadioMaster Pocket product page and official user manual",
+    sourceUrl: "https://radiomasterrc.com/products/pocket-radio-controller-m2",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/Pocket_A1.8.pdf?v=1770617495",
+  },
+  {
     id: "generic-elrs-24-tx",
     name: "Generic ExpressLRS 2.4 GHz TX",
     description: "Planning profile for a handset or USB ExpressLRS transmitter.",
@@ -410,6 +446,11 @@ export const RADIO_HOST_TRANSPORTS = [
     value: "module-bay",
     label: "Handset module bay",
     note: "Seat the module in a compatible bay and verify its supply, ground, and CRSF pin direction against both devices.",
+  },
+  {
+    value: "internal-rf",
+    label: "Internal RF module",
+    note: "Configure the handset's built-in RF system; no external module or host CRSF wiring is part of the endpoint.",
   },
   {
     value: "unspecified",
@@ -602,6 +643,7 @@ export function getRadioHostTransports(targetId) {
     if (transport.value === "native-usb") return Boolean(target.hostLink?.nativeUsb);
     if (transport.value === "uart") return Boolean(target.hostLink?.uart);
     if (transport.value === "module-bay") return Boolean(target.hostLink?.moduleBay);
+    if (transport.value === "internal-rf") return Boolean(target.hostLink?.internalRf);
     return false;
   });
 }
@@ -969,8 +1011,11 @@ export function buildRadioWarnings(
         normalized.regulatoryRegion,
       );
       if (!normalized.regulatoryRegion || normalized.regulatoryRegion === "verify") {
+        const fittedHardware = target.hostLink?.internalRf
+          ? "handset RF edition"
+          : "module";
         warnings.push(
-          `Verify whether the fitted module is FCC or CE, and its local limit. Published maxima: ${maxima}.`,
+          `Verify whether the fitted ${fittedHardware} is FCC or CE, and its local limit. Published maxima: ${maxima}.`,
         );
       } else if (!regulatoryOptions.some(
         (option) => option.value === String(normalized.regulatoryRegion).toLowerCase(),

@@ -5,6 +5,7 @@ const revA3 = getRadioTarget("aerialkit-elrs-rev-a3");
 const genericTx = getRadioTarget("generic-elrs-24-tx");
 const rangerNano = getRadioTarget("radiomaster-ranger-nano-elrs-24-tx");
 const ranger = getRadioTarget("radiomaster-ranger-elrs-24-tx");
+const pocket = getRadioTarget("radiomaster-pocket-elrs-24-tx");
 
 test("native USB keeps baud semantics and RF evidence separate", () => {
   const plan = buildRadioEndpointPlan({
@@ -103,4 +104,25 @@ test("module-bay handoff names the selected handset and bay state", () => {
   expect(plan.copyText).toContain("# Handset bay: conflict");
   expect(plan.steps.find((step) => step.id === "host-module-bay").detail)
     .toMatch(/RadioMaster Boxer \(conflict\).*without forcing the bay/i);
+});
+
+test("Pocket internal ELRS uses an internal-RF endpoint without a module bay", () => {
+  const plan = buildRadioEndpointPlan({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: pocket.id,
+    role: "tx",
+    hostTransport: "internal-rf",
+    hostBay: "verify",
+  }, pocket);
+
+  expect(plan).toMatchObject({
+    documented: true,
+    hostTransportLabel: "Internal RF module",
+    roleLabel: "transmitter",
+    rfVerified: false,
+  });
+  expect(plan.steps.find((step) => step.id === "host-internal-rf").detail)
+    .toMatch(/built-in RF module in EdgeTX/i);
+  expect(plan.copyText).not.toContain("# Handset bay:");
+  expect(plan.copyText).toMatch(/no target-local host baud or external module/i);
 });

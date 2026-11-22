@@ -110,7 +110,7 @@ test("Ranger Nano keeps its manufacturer-published module-bay and power bounds",
     dbm: 20,
   });
   expect(getRadioHostTransports("generic-elrs-24-tx").map((transport) => transport.value))
-    .toEqual(["native-usb", "uart", "module-bay", "unspecified"]);
+    .toEqual(["native-usb", "uart", "module-bay", "internal-rf", "unspecified"]);
 });
 
 test("Ranger Nano warns on regional power bounds without inventing a menu", () => {
@@ -161,6 +161,48 @@ test("Ranger Micro and Ranger keep their published module-bay profiles", () => {
   expect(ranger.hostLink.moduleBay.pins).toMatch(/JR 5-pin and Nano 8-pin adapters/i);
   expect(isRadioHostBayCompatible(micro.id, "nano-8")).toBe(false);
   expect(isRadioHostBayCompatible(ranger.id, "nano-8")).toBe(true);
+});
+
+test("RadioMaster Pocket exposes its internal ELRS edition without a host bay", () => {
+  const target = getRadioTarget("radiomaster-pocket-elrs-24-tx");
+
+  expect(target).toMatchObject({
+    name: "RadioMaster Pocket ELRS 2.4 GHz",
+    frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
+    defaultHostTransport: "internal-rf",
+    defaultHostBay: "verify",
+    roles: ["tx"],
+    firmwareVersion: "EdgeTX with internal ExpressLRS",
+    sourceUrl: "https://radiomasterrc.com/products/pocket-radio-controller-m2",
+    power: {
+      defaultDbm: null,
+      menuVerified: false,
+      regulatoryMaxima: [
+        { region: "LBT", dbm: 20, mw: 100 },
+      ],
+    },
+  });
+  expect(target.hostLink.internalRf.note).toMatch(/built-in RF module in EdgeTX/i);
+  expect(target.serial.frame).toMatch(/Internal 2.4 GHz ExpressLRS RF/i);
+  expect(getRadioHostTransports(target.id).map((transport) => transport.value))
+    .toEqual(["internal-rf", "unspecified"]);
+  expect(getDefaultHostTransport(target.id)).toBe("internal-rf");
+  expect(getDefaultPowerDbm(target.id)).toBeNull();
+  expect(getPacketRatesForTarget(target.id).map((rate) => rate.value))
+    .toEqual(["25", "50", "100-full", "150", "250", "500"]);
+  expect(getRadioRegulatoryOptions(target.id)).toEqual([
+    { value: "lbt", label: "LBT", dbm: 20, mw: 100 },
+  ]);
+  expect(buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: target.id,
+    hostTransport: "internal-rf",
+    hostBay: "verify",
+    powerDbm: 20,
+  })).toEqual(expect.arrayContaining([
+    expect.stringMatching(/fitted handset RF edition is FCC or CE/i),
+  ]));
 });
 
 test("Bandit family preserves sub-GHz bands, packet rates, and module formats", () => {

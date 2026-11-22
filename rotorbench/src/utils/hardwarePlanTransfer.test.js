@@ -58,6 +58,49 @@ test("combined hardware plans round-trip without binding secrets", () => {
   });
 });
 
+test("internal-RF handset plans round-trip without inventing a module bay", () => {
+  const config = createDefaultFlightControllerConfig();
+  const exported = createCombinedHardwarePlan({
+    build: { id: "build-pocket", name: "Pocket ELRS", componentIds: {} },
+    flightController: {
+      config,
+      profile: getBoardProfile(config.profileId),
+      issues: validateFlightControllerConfig(config, getBoardProfile(config.profileId)),
+    },
+    radio: {
+      ...DEFAULT_RADIO_CONFIG,
+      targetId: "radiomaster-pocket-elrs-24-tx",
+      hostTransport: "internal-rf",
+      hostBay: "verify",
+      handsetId: "verify",
+      powerDbm: 20,
+      regulatoryRegion: "lbt",
+    },
+    generatedAt: "2026-05-01T00:00:00.000Z",
+  });
+
+  expect(exported.radio.target).toMatchObject({
+    id: "radiomaster-pocket-elrs-24-tx",
+    name: "RadioMaster Pocket ELRS 2.4 GHz",
+    hostLink: {
+      internalRf: {
+        note: expect.stringMatching(/built-in RF module in EdgeTX/i),
+      },
+    },
+  });
+  expect(exported.radio.configuration).toMatchObject({
+    hostTransport: "internal-rf",
+  });
+  const imported = parseCombinedHardwarePlanJson(JSON.stringify(exported));
+  expect(imported.radioPlan).toMatchObject({
+    targetId: "radiomaster-pocket-elrs-24-tx",
+    hostTransport: "internal-rf",
+    hostBay: "verify",
+    powerDbm: 20,
+    regulatoryRegion: "lbt",
+  });
+});
+
 test("combined hardware plans carry the documented receiver wiring checklist", () => {
   const profile = getBoardProfile("esp32dev");
   const config = {

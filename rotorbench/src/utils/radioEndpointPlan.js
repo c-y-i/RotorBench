@@ -18,6 +18,7 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
   const transport = transportOption(hostTransport);
   const hostUart = radioTarget.hostLink?.uart || null;
   const moduleBay = radioTarget.hostLink?.moduleBay || null;
+  const internalRf = radioTarget.hostLink?.internalRf || null;
   const handset = getRadioHandset(config.handsetId);
   const handsetBayCompatibility = getRadioHandsetBayCompatibility(
     config.handsetId,
@@ -29,7 +30,9 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
       ? Boolean(hostUart)
       : hostTransport === "module-bay"
         ? Boolean(moduleBay)
-        : false;
+        : hostTransport === "internal-rf"
+          ? Boolean(internalRf)
+          : false;
   const steps = [
     {
       id: "role",
@@ -68,6 +71,14 @@ export function buildRadioEndpointPlan(config = {}, target = null) {
       detail: moduleBay
         ? `${moduleBay.pins}; supply ${moduleBay.voltage}. Handset: ${handset.name} (${handsetBayCompatibility.status}). Confirm the handset pinout, ground, CRSF direction, and whether the module is seated without forcing the bay.`
         : "The target's handset module-bay pinout is not bundled. Verify the connector, supply voltage, ground, and CRSF direction before powering.",
+    });
+  } else if (hostTransport === "internal-rf") {
+    steps.push({
+      id: "host-internal-rf",
+      label: "Configure the handset's internal RF module",
+      detail: internalRf
+        ? internalRf.note
+        : "Internal RF module details are not bundled. Confirm the handset's RF edition, packet-rate support, and power menu before use.",
     });
   } else {
     steps.push({
