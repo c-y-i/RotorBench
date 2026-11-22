@@ -256,6 +256,24 @@ test("opens evidence review from the plan claim ledger", () => {
   );
 });
 
+test("opens the live Aerial Kit session from the plan claim ledger", async () => {
+  renderSetup();
+
+  const claimLedger = screen.getByRole("region", {
+    name: "What the plan can prove",
+  });
+  fireEvent.click(within(claimLedger).getByRole("button", {
+    name: "Live FC status",
+  }));
+
+  await waitFor(() => {
+    expect(document.getElementById("aerial-kit-status-session"))
+      .toHaveAttribute("open");
+  });
+  expect(screen.getByTestId("setup-bench-tools"))
+    .toHaveAttribute("open");
+});
+
 test("opens the evidence review from an ArduPilot parameter plan", () => {
   renderSetup();
 

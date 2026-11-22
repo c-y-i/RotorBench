@@ -20,10 +20,11 @@ The UI and Aerial Kit-inspired configuration work now reaches the planning/evide
 * The phone starter-platform filters scroll in one row so the first real source build is visible in the initial viewport.
 * Empty Analysis now uses the same open workbench header and page-edge grid as Compare instead of a detached white utility band with inset cards.
 * Radio warnings now say when a dual-band receiver has only one of its documented bands configured by the selected transmitter, even when some shared coverage exists.
+* Bench tools now include a separate, opt-in Aerial Kit AKP session. It selects a port explicitly, sends only `HELLO`, `STATUS`, and capability-gated `RC_CHANNELS` query frames, then polls status/RC at 2 Hz. It parses captured Aerial Kit fixtures, reports parser counters, distinguishes absent from zero capability words, shows fresh armed/autonomous/disarmed state, and converts stale or stopped sessions to `Unknown` rather than retaining an unsafe `Disarmed` display. A downloadable `rotorbench.aerial-kit-live-status.v1` snapshot excludes serial-port identity and marks hardware verification, RF verification, writes, persistence, and flight readiness false.
 
-Verification at this checkpoint: `66` frontend suites and `677` tests pass, the production build succeeds, and the Impeccable mechanical detector reports no findings. Latest relevant commits are `74f8e8d`, `e2dca58`, `3ce1b5f`, `716da97`, `860d8b2`, `8bb7e28`, `01f3506`, `64b2cfe`, and `162913e`.
+Verification at this checkpoint: `68` frontend suites and `688` tests pass, the production build succeeds, and the Impeccable mechanical detector reports no findings. The AKP session is protocol- and lifecycle-tested against captured hello/status frames, chunked frame decoding, capability-gated RC requests, explicit command whitelisting, stale state, closed read streams, Web Serial unavailability, firmware-family changes, a mocked serial port, and axe. It has not yet been qualified against a physical board.
 
-The next highest-value feature remains an explicit, opt-in, read-only Aerial Kit FC session for HELLO/STATUS/RC polling with stale-state handling. Do not fold that into the current local-plan or CRSF capture components, and do not add writes, arming, flashing, or RF-pass claims until the separate capability-gated session layer and hardware evidence support them.
+The next highest-value connection feature is a read-only device-reported parameter/menu explorer on top of this separate session layer. Keep writes in a future capability-gated phase; do not add writes, arming, flashing, output tests, or RF-pass claims until the session and hardware evidence support them.
 
 ## Current product state
 
@@ -634,6 +635,7 @@ A test build using the expanded catalog completed successfully and rendered a re
 | `rotorbench/src/components/BenchRunbook.jsx` | Copy-only hardware bench workflow |
 | `rotorbench/src/components/BenchEvidenceReview.jsx` | Read-only import and review of Aerial Kit JSON evidence |
 | `rotorbench/src/components/WebSerialCapture.jsx` | Explicit opt-in read-only serial byte capture |
+| `rotorbench/src/components/AerialKitStatusSession.jsx` | Opt-in AKP identity, STATUS, and RC readback with stale-state handling |
 | `rotorbench/src/components/ComparePage.js` | Two-build catalog comparison |
 | `rotorbench/src/data/flightControllerProfiles.js` | Board, firmware, channel, and validation profiles |
 | `rotorbench/src/data/radioProfiles.js` | Radio target, link, binding, and channel profiles |
@@ -655,6 +657,7 @@ A test build using the expanded catalog completed successfully and rendered a re
 | `rotorbench/src/utils/radioDeviceEvidence.js` | Sanitized `ak radio status` identity, role, baud, firmware, and product correlation |
 | `rotorbench/src/utils/benchEvidenceAttachment.js` | Sanitized build evidence storage, revision scope, copy, removal, and summaries |
 | `rotorbench/src/utils/webSerialCapture.js` | Web Serial capability, byte formatting, and error copy |
+| `rotorbench/src/utils/aerialKitProtocol.js` | AKP framing, CRC, reply parsing, and read-only request correlation |
 | `rotorbench/src/utils/crsfCapture.js` | Incremental CRSF framing, CRC, RC channels, and link statistics decoding |
 | `rotorbench/src/utils/hardwarePlanTransfer.js` | Validated combined FC/radio plan export/import |
 | `rotorbench/src/utils/hardwareReadiness.js` | Build-to-Setup hardware-plan restoration and readiness summary |
@@ -900,7 +903,7 @@ Add tests for:
 
 ### Priority 3: Optional hardware connection
 
-The Setup page is primarily a plan builder, with a separate read-only Web Serial capture base now present. The next connection phase should follow Aerial Kit's protocol boundaries:
+The Setup page is primarily a plan builder, with separate read-only CRSF capture and AKP status sessions now present. The next connection phase should follow Aerial Kit's protocol boundaries:
 
 * connect through Web Serial only after an explicit user action;
 * identify a board before sending writes;

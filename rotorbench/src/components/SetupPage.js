@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
+  Activity,
   ArrowRight,
   Check,
   CircleStop,
@@ -43,6 +44,7 @@ import {
 import FlightControllerSetup from "./FlightControllerSetup";
 import RadioLinkSetup from "./RadioLinkSetup";
 import BenchRunbook from "./BenchRunbook";
+import AerialKitStatusSession from "./AerialKitStatusSession";
 import WebSerialCapture from "./WebSerialCapture";
 import {
   createCombinedHardwarePlan,
@@ -144,6 +146,23 @@ export default function SetupPage() {
     setSetupBenchToolsOpen(true);
     setBenchRunbookOpen(true);
     setFocusBenchEvidence(true);
+  };
+
+  const openAerialKitSession = () => {
+    setSetupBenchToolsOpen(true);
+    requestAnimationFrame(() => {
+      const session = document.getElementById("aerial-kit-status-session");
+      if (!session) return;
+      session.open = true;
+      const reducedMotion = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      )?.matches;
+      session.scrollIntoView?.({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "center",
+      });
+      session.querySelector("summary")?.focus();
+    });
   };
 
   useEffect(() => {
@@ -823,10 +842,16 @@ export default function SetupPage() {
               A requested value, a device readback, a running change, and
               stored memory are separate facts.
             </p>
-              <button type="button" onClick={openEvidenceReview}>
-                Review readback
-                <ArrowRight size={15} aria-hidden="true" />
-              </button>
+              <div className="setup-claim-ledger-actions">
+                <button type="button" onClick={openAerialKitSession}>
+                  <Activity size={15} aria-hidden="true" />
+                  Live FC status
+                </button>
+                <button type="button" onClick={openEvidenceReview}>
+                  Review readback
+                  <ArrowRight size={15} aria-hidden="true" />
+                </button>
+              </div>
             </div>
             <ol className="setup-claim-ledger-items">
               <li className={unsavedPlanLabels.length > 0 ? "is-requested" : ""}>
@@ -1098,6 +1123,11 @@ export default function SetupPage() {
             onEvidenceChange={setReviewedEvidence}
             open={benchRunbookOpen}
             onOpenChange={setBenchRunbookOpen}
+          />
+          <AerialKitStatusSession
+            firmwareFamily={fcPlan.firmwareFamily}
+            targetName={selectedFlightController?.name || fcProfile.label}
+            channelMap={radioPlan.channelMap}
           />
           <div className="serial-capture-deck">
             <div className="serial-capture-deck-header">
