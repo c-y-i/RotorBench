@@ -80,6 +80,11 @@ test("wing frames expose wingspan and motor count instead of wheelbase copy", ()
         motorCount: 2,
         airframeShape: "wing",
         maxPropSize: 3.8,
+        flightEnvelope: {
+          takeoffWeightG: [350, 500],
+          minSpeedKmh: 25,
+          pnpThrustToWeightMax: 1.71,
+        },
         price: 87.9,
         sourceUrl: "https://www.heewing.com/products/t1-ranger-kit",
       }]}
@@ -91,7 +96,7 @@ test("wing frames expose wingspan and motor count instead of wheelbase copy", ()
   );
   fireEvent.click(screen.getByRole("button", { name: /choose a frame/i }));
   expect(screen.getByText(
-    "730 mm wingspan · 2 motors · 205 g · up to 3.8\" props",
+    "730 mm wingspan · 2 motors · 205 g · up to 3.8\" props · min 25 km/h",
   )).toBeInTheDocument();
 });
 

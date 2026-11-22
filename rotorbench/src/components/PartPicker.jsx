@@ -119,6 +119,9 @@ function getMeta(category, part) {
         `${part.motorCount || 4} motor${Number(part.motorCount) === 1 ? "" : "s"}`,
         `${part.weight} g`,
         `up to ${part.maxPropSize}" props`,
+        Number(part.flightEnvelope?.minSpeedKmh)
+          ? `min ${part.flightEnvelope.minSpeedKmh} km/h`
+          : null,
       ];
     case "motors":
       return [

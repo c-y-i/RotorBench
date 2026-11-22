@@ -621,6 +621,18 @@ export default function AnalysisPage() {
                     <dd>{hardwareReadiness.servoOutputCoverageLabel}</dd>
                   </div>
                 )}
+              {selectedFramePart?.flightEnvelope && (
+                <div className="analysis-hardware-envelope">
+                  <dt>Published envelope</dt>
+                  <dd>
+                    {selectedFramePart.flightEnvelope.takeoffWeightG.join("–")} g takeoff ·{" "}
+                    {selectedFramePart.flightEnvelope.minSpeedKmh} km/h minimum
+                    {selectedFramePart.flightEnvelope.pnpThrustToWeightMax
+                      ? ` · PNP ${selectedFramePart.flightEnvelope.pnpThrustToWeightMax}:1 T/W reference`
+                      : ""}
+                  </dd>
+                </div>
+              )}
               {hasHardwareSelection && navigationSafetyLabel && (
                 <div>
                   <dt>Navigation safety</dt>

@@ -169,6 +169,27 @@ class FrameServoHardware(ComponentCatalogMetadata):
         return value
 
 
+class FrameFlightEnvelope(ComponentCatalogMetadata):
+    takeoff_weight_g: List[float] = Field(..., alias="takeoffWeightG")
+    min_speed_kmh: float = Field(..., alias="minSpeedKmh", gt=0)
+    pnp_thrust_to_weight_max: Optional[float] = Field(
+        None,
+        alias="pnpThrustToWeightMax",
+        gt=0,
+    )
+    note: Optional[str] = None
+
+    class Config:
+        populate_by_name = True
+
+    @field_validator("takeoff_weight_g")
+    @classmethod
+    def validate_takeoff_weight(cls, value):
+        if len(value) != 2 or value[0] <= 0 or value[1] < value[0]:
+            raise ValueError("takeoffWeightG must be an ordered positive range")
+        return value
+
+
 class Frame(ComponentCatalogMetadata):
     id: str
     name: str
@@ -189,6 +210,10 @@ class Frame(ComponentCatalogMetadata):
     servo_hardware: Optional[FrameServoHardware] = Field(
         None,
         alias="servoHardware",
+    )
+    flight_envelope: Optional[FrameFlightEnvelope] = Field(
+        None,
+        alias="flightEnvelope",
     )
     max_prop_size: float = Field(..., alias="maxPropSize", description="Maximum propeller size in inches")
     stack_height: float = Field(..., alias="stackHeight", description="Stack mounting height in mm")

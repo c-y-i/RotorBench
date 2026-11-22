@@ -304,6 +304,9 @@ test("fixed-wing builds do not inherit multirotor performance claims", async () 
     .toBeInTheDocument();
   expect(screen.getByText("Servo map not saved")).toBeInTheDocument();
   expect(screen.getAllByText(/3 servos/i).length).toBeGreaterThan(0);
+  expect(screen.getByText(/350–500 g takeoff · 25 km\/h minimum/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/PNP 1\.71:1 T\/W reference/i)).toBeInTheDocument();
   const body = JSON.parse(global.fetch.mock.calls[0][1].body);
   expect(body.components.frame).toMatchObject({
     id: "frame-heewing-t1-ranger",

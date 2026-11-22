@@ -1430,6 +1430,12 @@
         "dataStatus": "source_backed_quantity_weight_price_cable_lengths_and_gear_estimated_placement_allocation_and_voltage",
         "estimatedFields": ["cable allocation", "voltage", "dimensionsMm", "positionsMm"]
       },
+      "flightEnvelope": {
+        "takeoffWeightG": [350, 500],
+        "minSpeedKmh": 25,
+        "pnpThrustToWeightMax": 1.71,
+        "note": "Manufacturer T1 Ranger KIT envelope; the thrust-to-weight reference applies only to the PNP configuration and is not a RotorBench build estimate."
+      },
       "model": null,
       "modelStatus": "not_available",
       "sourceUrl": "https://www.heewing.com/products/t1-ranger-kit",

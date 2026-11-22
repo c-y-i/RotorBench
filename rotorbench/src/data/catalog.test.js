@@ -791,6 +791,11 @@ test("HeeWing T1 Ranger adds a two-motor wing platform with explicit estimates",
     price: 87.9,
     motorPositionsMm: [[-230, 4.75, -240], [230, 4.75, -240]],
     dimensionsMm: [730, 140, 645],
+    flightEnvelope: {
+      takeoffWeightG: [350, 500],
+      minSpeedKmh: 25,
+      pnpThrustToWeightMax: 1.71,
+    },
     sourceUrl: "https://www.heewing.com/products/t1-ranger-kit",
   });
   expect(frame.estimatedFields).toEqual([

@@ -207,6 +207,16 @@
   white-space: normal;
 }
 
+.analysis-hardware-facts .analysis-hardware-envelope {
+  grid-column: 1 / -1;
+}
+
+.analysis-hardware-facts .analysis-hardware-envelope dd {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .analysis-hardware-state {
   display: grid;
   align-content: center;

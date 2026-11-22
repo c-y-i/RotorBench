@@ -116,6 +116,12 @@ export interface Frame extends ComponentCatalogMetadata {
     dataStatus?: string;
     estimatedFields?: string[];
   };
+  flightEnvelope?: {
+    takeoffWeightG: [number, number];
+    minSpeedKmh: number;
+    pnpThrustToWeightMax?: number | null;
+    note?: string;
+  };
   maxPropSize: number; // inches
   stackHeight: number; // mm (mounting hole spacing)
   price: number;
