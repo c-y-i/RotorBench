@@ -83,6 +83,29 @@ test("offers all complete source-backed platforms from an empty overview", async
   expect(await getA11yViolations(container)).toEqual([]);
 }, 10000);
 
+test("exposes a mobile starter-gallery expansion without removing builds from data", async () => {
+  renderHome();
+  await screen.findByTestId("home-assembly-viewer");
+
+  const showAll = screen.getByRole("button", {
+    name: "Show all 19 builds",
+  });
+  expect(showAll).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(showAll);
+  expect(screen.getByRole("button", { name: "Show fewer builds" }))
+    .toHaveAttribute("aria-expanded", "true");
+
+  const filters = screen.getByRole("group", {
+    name: "Filter starter platforms by frame size",
+  });
+  fireEvent.click(within(filters).getByRole("button", {
+    name: /^5-inch builds\s*9$/,
+  }));
+  expect(screen.getByRole("button", { name: "Show all 9 builds" }))
+    .toHaveAttribute("aria-expanded", "false");
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(9);
+});
+
 test("defers the 3D runtime until the preview approaches the viewport", async () => {
   const originalIntersectionObserver = global.IntersectionObserver;
   let intersectionCallback;

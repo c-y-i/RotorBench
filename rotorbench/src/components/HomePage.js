@@ -17,6 +17,7 @@ import {
   BatteryCharging,
   Box,
   ChartNoAxesCombined,
+  ChevronDown,
   ChevronRight,
   Cog,
   Cpu,
@@ -124,6 +125,7 @@ export default function HomePage() {
   const [clearedComponents, setClearedComponents] = useState([]);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
   const [previewInView, setPreviewInView] = useState(false);
+  const [starterExpanded, setStarterExpanded] = useState(false);
   const viewerContainerRef = useRef(null);
   const requestedPlatformSize = searchParams.get("size") || "all";
   const platformSize = requestedPlatformSize === "all"
@@ -145,6 +147,7 @@ export default function HomePage() {
         next.set(key, value === true ? "verified" : value);
       }
     });
+    setStarterExpanded(false);
     setSearchParams(next, { replace: true });
   };
   // Get component details from current build
@@ -164,6 +167,15 @@ export default function HomePage() {
   const hasBuild = currentBuild && motor && propeller && battery;
   const hasAnalysis = analysisResults && hasBuild;
   const [activeView, setActiveView] = useState("3D");
+
+  useEffect(() => {
+    setStarterExpanded(false);
+  }, [
+    platformSize,
+    platformSort,
+    starterQuery,
+    verifiedPlatformsOnly,
+  ]);
 
   useEffect(() => {
     if (previewInView) return undefined;
@@ -528,7 +540,12 @@ export default function HomePage() {
               <option value="price">Catalog price · low first</option>
             </select>
           </div>
-          <div className="starter-platform-list">
+          <div
+            id="starter-platform-list"
+            className={`starter-platform-list ${
+              starterExpanded ? "is-mobile-expanded" : ""
+            }`}
+          >
             {visiblePlatforms.length === 0 && (
               <div className="starter-platform-empty" role="status">
                 <strong>No starter builds match</strong>
@@ -633,6 +650,20 @@ export default function HomePage() {
               );
             })}
           </div>
+          {visiblePlatforms.length > 5 && (
+            <button
+              type="button"
+              className="starter-platform-expand"
+              aria-expanded={starterExpanded}
+              aria-controls="starter-platform-list"
+              onClick={() => setStarterExpanded((current) => !current)}
+            >
+              <ChevronDown size={16} aria-hidden="true" />
+              {starterExpanded
+                ? "Show fewer builds"
+                : `Show all ${visiblePlatforms.length} builds`}
+            </button>
+          )}
         </section>
       )}
 
