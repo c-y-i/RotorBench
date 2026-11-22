@@ -12,16 +12,16 @@ The product is RotorBench, an FPV drone build configurator and performance analy
 
 The UI and Aerial Kit-inspired configuration work now reaches the planning/evidence boundary directly:
 
-* Setup has a hardware claim ledger that keeps `Requested`, `Echoed`, `Applied`, and `Persisted` separate. Importing a reviewed device identity or parameter snapshot updates the `Echoed` fact; RotorBench still leaves application and persistence unestablished.
+* Setup has a hardware claim ledger that keeps `Requested`, `Echoed`, `Applied`, and `Persisted` separate. Importing a reviewed device identity or parameter snapshot updates the `Echoed` fact; RotorBench still leaves application and persistence unestablished. It stays open on desktop, collapses behind a native disclosure on phones, and keeps the current readback state visible in the summary.
 * Evidence review accepts a read-only Aerial Kit identity report containing `protocol: "akp"`, protocol version, product, parameter count, changed count, capability word, and configuration hash. `features: null` is rendered as an older firmware that cannot report its capability word; `features: 0` is rendered as a reported word with no known bits. The HELLO `version` is labelled as the protocol version, not a firmware release.
 * The capability panel names the compiled bits (`PARAM_INFO`, `APPLIES_ON_WRITE`, `GATES_ON_ARMED`, `RC_CHANNELS`, `PREFLIGHT`, and the rest), preserves unknown bits, and states that a capability claim does not prove a command was sent, applied, or persisted.
 * Flight-controller feature chips now name unavailable board-profile features in place, with visible reasons and accessible descriptions, instead of relying on hover titles.
 * The Build desktop command bar is in document flow rather than covering the canvas/manifest; its phone layout remains sticky above the bottom navigation.
 * The phone starter-platform filters scroll in one row so the first real source build is visible in the initial viewport.
-* Empty Analysis now uses the same open workbench header as Compare instead of a detached white utility band.
+* Empty Analysis now uses the same open workbench header and page-edge grid as Compare instead of a detached white utility band with inset cards.
 * Radio warnings now say when a dual-band receiver has only one of its documented bands configured by the selected transmitter, even when some shared coverage exists.
 
-Verification at this checkpoint: `66` frontend suites and `677` tests pass, the production build succeeds, and the Impeccable mechanical detector reports no findings. Latest relevant commits are `74f8e8d`, `e2dca58`, `3ce1b5f`, `716da97`, `860d8b2`, and `8bb7e28`.
+Verification at this checkpoint: `66` frontend suites and `677` tests pass, the production build succeeds, and the Impeccable mechanical detector reports no findings. Latest relevant commits are `74f8e8d`, `e2dca58`, `3ce1b5f`, `716da97`, `860d8b2`, `8bb7e28`, `01f3506`, `64b2cfe`, and `162913e`.
 
 The next highest-value feature remains an explicit, opt-in, read-only Aerial Kit FC session for HELLO/STATUS/RC polling with stale-state handling. Do not fold that into the current local-plan or CRSF capture components, and do not add writes, arming, flashing, or RF-pass claims until the separate capability-gated session layer and hardware evidence support them.
 
