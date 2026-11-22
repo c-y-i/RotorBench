@@ -43,6 +43,18 @@ test("creates a concise human-readable briefing without binding material", () =>
       wiringStatus: "documented",
       radioHostTransportLabel: "Native USB CDC",
       radioHostDocumented: true,
+      fcParameterRequirements: [
+        {
+          name: "BRD_ALT_CONFIG",
+          value: "1",
+          description: "true UART RX on UART6",
+        },
+        {
+          name: "SERIAL7_PROTOCOL",
+          value: "23",
+          description: "CRSF/ELRS on SERIAL7",
+        },
+      ],
       radioPlan: { bindingPhrase: "must-not-export", uid: "10:73:a1:1f:a8:0f" },
     },
     generatedAt: "2026-11-21T00:00:00.000Z",
@@ -54,6 +66,9 @@ test("creates a concise human-readable briefing without binding material", () =>
   expect(briefing.text).toContain("XT60 match");
   expect(briefing.text).toContain("Receiver wiring: Pins documented");
   expect(briefing.text).toContain("Radio host: Native USB CDC / documented");
+  expect(briefing.text).toContain(
+    "ArduPilot receiver parameters: BRD_ALT_CONFIG=1, SERIAL7_PROTOCOL=23 / no writes performed",
+  );
   expect(briefing.text).toContain("readiness are not verified");
   expect(briefing.text).not.toContain("must-not-export");
   expect(briefing.text).not.toContain("10:73:a1:1f:a8:0f");

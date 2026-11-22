@@ -60,6 +60,13 @@ test("creates a versioned analysis report without mutating the build", () => {
         protocolLabel: "CRSF / ExpressLRS",
         receiverUart: "UART1",
         receiverBaud: 420000,
+        fcParameterRequirements: [
+          {
+            name: "BRD_ALT_CONFIG",
+            value: "1",
+            description: "true UART RX on UART6",
+          },
+        ],
         radioTargetName: "Aerial Kit ELRS USB TX Rev A3",
         radioPlan: {
           bindingPhrase: "must-not-export",
@@ -186,6 +193,13 @@ test("creates a versioned analysis report without mutating the build", () => {
       assembledCount: 6,
     },
   });
+  expect(report.hardwarePlan.fcParameterRequirements).toEqual([
+    {
+      name: "BRD_ALT_CONFIG",
+      value: "1",
+      description: "true UART RX on UART6",
+    },
+  ]);
   expect(report.analysis).toEqual(analysis);
   expect(report.build.componentIds).not.toBe(build.componentIds);
   expect(report.hardwarePlan).not.toHaveProperty("radioPlan");

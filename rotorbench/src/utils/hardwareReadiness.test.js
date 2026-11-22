@@ -116,6 +116,66 @@ test("saved plans report review items and local completion independently", () =>
   expect(readiness.hardwareVerified).toBe(false);
 });
 
+test("H743 readiness retains source-backed ArduPilot receiver parameters", () => {
+  const selectedController = {
+    id: "fc-matek-h743-wing-v3",
+    name: "Matek H743-WING V3",
+    processor: "STM32H743VIT6",
+    imu: "ICM42688P",
+    firmware: ["ArduPilot"],
+  };
+  const selectedReceiver = {
+    id: "rx-h743-test",
+    name: "ELRS RX",
+    protocol: "CRSF",
+    frequencyBands: ["2.4 GHz"],
+  };
+  const base = "rotorbench:hardware-plan:build-h743";
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-h743",
+    flightController: selectedController,
+    receiver: selectedReceiver,
+    storage: memoryStorage({
+      [`${base}:fc`]: JSON.stringify({
+        planVersion: 3,
+        selectedFlightControllerId: selectedController.id,
+        selectedReceiverId: selectedReceiver.id,
+        firmwareFamily: "ardupilot",
+        profileId: "matek-h743-wing-v3-ardupilot",
+        receiverProtocol: "crsf",
+        receiverUart: "UART6",
+      }),
+    }),
+  });
+
+  expect(readiness.fcParameterRequirements).toEqual([
+    {
+      name: "BRD_ALT_CONFIG",
+      value: "1",
+      whenReceiverProtocol: "crsf",
+      description: "true UART RX on UART6",
+    },
+    {
+      name: "SERIAL7_PROTOCOL",
+      value: "23",
+      whenReceiverProtocol: "crsf",
+      description: "CRSF/ELRS on SERIAL7",
+    },
+  ]);
+  expect(sanitizeHardwareReadiness(readiness).fcParameterRequirements).toEqual([
+    {
+      name: "BRD_ALT_CONFIG",
+      value: "1",
+      description: "true UART RX on UART6",
+    },
+    {
+      name: "SERIAL7_PROTOCOL",
+      value: "23",
+      description: "CRSF/ELRS on SERIAL7",
+    },
+  ]);
+});
+
 test("documented board profiles expose a documented wiring readiness state", () => {
   const base = "rotorbench:hardware-plan:build-wiring";
   const storage = memoryStorage({

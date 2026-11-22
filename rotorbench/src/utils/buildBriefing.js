@@ -100,6 +100,13 @@ export function createBuildBriefing({
             `- Motor order: ${hardwareReadiness.fcMotorDirectionLabel} / ${hardwareReadiness.fcMotorOrder}`,
           ]
         : []),
+      ...(hardwareReadiness.fcParameterRequirements?.length
+        ? [
+            `- ArduPilot receiver parameters: ${hardwareReadiness.fcParameterRequirements
+              .map((requirement) => `${requirement.name}=${requirement.value}`)
+              .join(", ")} / no writes performed`,
+          ]
+        : []),
       ...(hardwareReadiness.servoOutputCoverageLabel
         ? [
             `- Servo output coverage: ${hardwareReadiness.servoOutputCoverageLabel} / ${hardwareReadiness.servoOutputCoverageDetail}`,

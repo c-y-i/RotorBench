@@ -6,6 +6,7 @@ import {
   RECEIVER_PROTOCOLS,
   createDefaultFlightControllerConfig,
   getAirframeMotorLayout,
+  getArdupilotParameterRequirements,
   getBoardProfile,
   getMotorOutputByCorner,
   getOrderedMotorOutputs,
@@ -100,6 +101,10 @@ export function summarizeHardwareReadiness({
     },
   });
   const profile = getBoardProfile(fcPlan.profileId, flightController);
+  const fcParameterRequirements = getArdupilotParameterRequirements(
+    fcPlan,
+    profile,
+  );
   const wiring = buildReceiverWiringPlan(fcPlan, profile, receiver);
   const fcIssues = validateFlightControllerConfig(fcPlan, profile, {
     buildMotorCount,
@@ -289,6 +294,7 @@ export function summarizeHardwareReadiness({
     fcBoardProfile: profile.id || null,
     fcBoardName: profile.board || null,
     fcBoardDocumented: profile.availability !== "custom",
+    fcParameterRequirements,
     protocolLabel: protocol?.label || fcPlan.receiverProtocol,
     receiverUart: fcPlan.receiverUart,
     receiverBaud: fcPlan.receiverBaud,
@@ -417,6 +423,13 @@ export function sanitizeHardwareReadiness(readiness) {
     fcBoardProfile: readiness.fcBoardProfile || null,
     fcBoardName: readiness.fcBoardName || null,
     fcBoardDocumented: Boolean(readiness.fcBoardDocumented),
+    fcParameterRequirements: Array.isArray(readiness.fcParameterRequirements)
+      ? readiness.fcParameterRequirements.map((requirement) => ({
+          name: String(requirement.name || ""),
+          value: String(requirement.value ?? ""),
+          description: String(requirement.description || ""),
+        }))
+      : [],
     receiverProtocol: readiness.protocolLabel || null,
     receiverUart: readiness.receiverUart || null,
     receiverBaud: readiness.receiverBaud ?? null,
