@@ -236,6 +236,34 @@ test("TX16S Mark II exposes its documented internal ELRS transmitter", () => {
   ]);
 });
 
+test("TX12 Mark II exposes its compact internal ELRS transmitter", () => {
+  const target = getRadioTarget("radiomaster-tx12-mkii-elrs-24-tx");
+
+  expect(target).toMatchObject({
+    name: "RadioMaster TX12 Mark II Internal ELRS 2.4 GHz",
+    frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
+    defaultHostTransport: "internal-rf",
+    defaultHostBay: "verify",
+    roles: ["tx"],
+    firmwareVersion: "EdgeTX with internal ExpressLRS",
+    sourceUrl: "https://radiomasterrc.com/products/tx12-mark-ii-radio-controller",
+    power: {
+      defaultDbm: null,
+      menuVerified: false,
+      regulatoryMaxima: [
+        { region: "LBT", dbm: 20, mw: 100 },
+      ],
+    },
+  });
+  expect(target.serial.frame).toMatch(/SX1280 RF/i);
+  expect(target.hostLink.internalRf.note).toMatch(/6\.6-8\.4 V.*310-350 mA/i);
+  expect(getRadioHostTransports(target.id).map((transport) => transport.value))
+    .toEqual(["internal-rf", "unspecified"]);
+  expect(getPacketRatesForTarget(target.id).map((rate) => rate.value))
+    .toEqual(["25", "50", "100-full", "150", "250", "500"]);
+});
+
 test("Bandit family preserves sub-GHz bands, packet rates, and module formats", () => {
   const nano = getRadioTarget("radiomaster-bandit-nano-915-tx");
   const micro = getRadioTarget("radiomaster-bandit-micro-915-tx");

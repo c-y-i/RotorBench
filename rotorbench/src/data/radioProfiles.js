@@ -351,6 +351,42 @@ export const RADIO_TARGETS = [
     manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX16SMKII_2.0.pdf?v=1770617496",
   },
   {
+    id: "radiomaster-tx12-mkii-elrs-24-tx",
+    name: "RadioMaster TX12 Mark II Internal ELRS 2.4 GHz",
+    description: "Compact EdgeTX handset with internal ExpressLRS 2.4 GHz RF using an SX1280 transmitter module.",
+    frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
+    defaultHostTransport: "internal-rf",
+    defaultHostBay: "verify",
+    supportedHostBays: [],
+    firmwareVersion: "EdgeTX with internal ExpressLRS",
+    roles: ["tx"],
+    packetRateModes: ["25", "50", "100-full", "150", "250", "500"],
+    serial: {
+      txBaud: null,
+      rxBaud: null,
+      frame: "Internal 2.4 GHz ExpressLRS SX1280 RF; no external module-bay or host CRSF transport",
+      note: "USB and SD card are used for EdgeTX and firmware configuration. They are not the RF link and do not prove transmission.",
+    },
+    hostLink: {
+      internalRf: {
+        note: "Configure the fitted TX12 Mark II internal ELRS module in EdgeTX. The radio's 6.6-8.4 V supply and 310-350 mA ELRS working current are handset electrical values, not an aircraft power-path specification.",
+      },
+    },
+    power: {
+      defaultDbm: null,
+      defaultMw: null,
+      regulatoryMaxima: [
+        { region: "LBT", dbm: 20, mw: 100 },
+      ],
+      menuVerified: false,
+      note: "RadioMaster states that FCC maximum power depends on the installed hardware and that the LBT/CE edition is limited to 100 mW. The default drive value is not published here.",
+    },
+    source: "RadioMaster TX12 Mark II product page, comparison chart, and official manual",
+    sourceUrl: "https://radiomasterrc.com/products/tx12-mark-ii-radio-controller",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX12MKII_A2.0.pdf?v=1770617495",
+  },
+  {
     id: "generic-elrs-24-tx",
     name: "Generic ExpressLRS 2.4 GHz TX",
     description: "Planning profile for a handset or USB ExpressLRS transmitter.",
