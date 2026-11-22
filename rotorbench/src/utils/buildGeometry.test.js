@@ -5,9 +5,11 @@ import {
   applyMeasuredGeometryToAssemblySpec,
   clearMeasuredGeometry,
   geometryProvenance,
+  measuredAssemblyCenterOfGravity,
   measuredGeometryForPart,
   normalizeGeometryOverrides,
   placementCheckMeasurementTarget,
+  setMeasuredAssemblyCenterOfGravity,
   setMeasuredGeometryValue,
   summarizeMeasuredGeometry,
 } from "./buildGeometry";
@@ -116,6 +118,7 @@ test("summarizes named measured fields with catalog provenance for export", () =
   expect(summary).toEqual({
     schema: "rotorbench.measured-geometry-summary.v1",
     scope: "build-local measurement; not hardware verification",
+    assemblyCenterOfGravityMm: null,
     partCount: 1,
     fieldCount: 1,
     parts: [{
@@ -131,6 +134,19 @@ test("summarizes named measured fields with catalog provenance for export", () =
       }],
     }],
   });
+});
+
+test("stores a signed build-local measured center of gravity", () => {
+  let overrides = setMeasuredAssemblyCenterOfGravity(
+    normalizeGeometryOverrides(null),
+    [-1.5, -8.25],
+  );
+  expect(measuredAssemblyCenterOfGravity(overrides)).toEqual([-1.5, -8.25]);
+  expect(summarizeMeasuredGeometry({}, overrides).assemblyCenterOfGravityMm)
+    .toEqual([-1.5, -8.25]);
+
+  overrides = setMeasuredAssemblyCenterOfGravity(overrides, [1]);
+  expect(measuredAssemblyCenterOfGravity(overrides)).toBeNull();
 });
 
 test("supports a measured usable battery deck footprint", () => {

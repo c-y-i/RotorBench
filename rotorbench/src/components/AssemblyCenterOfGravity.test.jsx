@@ -42,11 +42,18 @@ test("renders and copies a transparent catalog-mass CG estimate", async () => {
     configurable: true,
     value: { writeText },
   });
+  const onMeasuredCgChange = jest.fn();
   const { container } = render(
-    <AssemblyCenterOfGravity parts={parts} buildName="CG test" />,
+    <AssemblyCenterOfGravity
+      parts={parts}
+      buildName="CG test"
+      measuredCg={[-1.2, -7.5]}
+      onMeasuredCgChange={onMeasuredCgChange}
+    />,
   );
 
   expect(screen.getByText(/248 g placed/)).toBeInTheDocument();
+  expect(screen.getAllByText("Measured").length).toBeGreaterThan(0);
   fireEvent.click(screen.getByText("Center of gravity"));
   const plot = screen.getByRole("img", {
     name: /^Estimated center-of-gravity offset/,
@@ -56,11 +63,22 @@ test("renders and copies a transparent catalog-mass CG estimate", async () => {
   );
   expect(screen.getByText(/50 g build allowance is excluded/i))
     .toBeInTheDocument();
+  expect(screen.getByLabelText("Lateral X (mm)")).toHaveValue(-1.2);
+  expect(screen.getByLabelText("Fore / aft Z (mm)")).toHaveValue(-7.5);
+  expect(screen.getByText("Measured − estimate")).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Lateral X (mm)"), {
+    target: { value: "-2" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Update measurement" }));
+  expect(onMeasuredCgChange).toHaveBeenCalledWith([-2, -7.5]);
 
   fireEvent.click(screen.getByRole("button", { name: "Copy CG estimate" }));
   await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
   expect(writeText.mock.calls[0][0]).toContain("# Build: CG test");
   expect(writeText.mock.calls[0][0]).toContain("Longitudinal offset (Z");
+  expect(writeText.mock.calls[0][0]).toContain("Measured lateral X: -1.2 mm");
+  expect(writeText.mock.calls[0][0]).toContain("Measured minus estimate");
   expect(writeText.mock.calls[0][0]).toContain("not a measured aircraft CG");
   expect(await getA11yViolations(container)).toEqual([]);
 });

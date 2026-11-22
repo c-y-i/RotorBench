@@ -1,4 +1,9 @@
 export const BUILD_GEOMETRY_SCHEMA = "rotorbench.measured-geometry.v1";
+export const ASSEMBLY_CENTER_OF_GRAVITY_FIELD = Object.freeze({
+  key: "centerOfGravityMm",
+  label: "Measured center of gravity",
+  kind: "vector2",
+});
 
 export const GEOMETRY_CATEGORY_FIELDS = Object.freeze({
   frames: [
@@ -43,7 +48,7 @@ function positiveNumber(value) {
 }
 
 function cloneGeometryOverrides(value) {
-  return {
+  const cloned = {
     schema: BUILD_GEOMETRY_SCHEMA,
     categories: Object.fromEntries(
       Object.entries(value.categories || {}).map(([category, parts]) => [
@@ -62,6 +67,18 @@ function cloneGeometryOverrides(value) {
       ]),
     ),
   };
+  if (value.assembly?.centerOfGravityMm) {
+    cloned.assembly = {
+      centerOfGravityMm: [...value.assembly.centerOfGravityMm],
+    };
+  }
+  return cloned;
+}
+
+function signedVector2(value) {
+  if (!Array.isArray(value) || value.length !== 2) return null;
+  const normalized = value.map(Number);
+  return normalized.every(Number.isFinite) ? normalized : null;
 }
 
 export function normalizeGeometryValue(field, value) {
@@ -73,11 +90,11 @@ export function normalizeGeometryValue(field, value) {
 }
 
 export function normalizeGeometryOverrides(value) {
-  if (value?.schema !== BUILD_GEOMETRY_SCHEMA || !value.categories) {
+  if (value?.schema !== BUILD_GEOMETRY_SCHEMA) {
     return { schema: BUILD_GEOMETRY_SCHEMA, categories: {} };
   }
   const categories = {};
-  Object.entries(value.categories).forEach(([category, parts]) => {
+  Object.entries(value.categories || {}).forEach(([category, parts]) => {
     const fields = GEOMETRY_CATEGORY_FIELDS[category];
     if (!fields || !parts || typeof parts !== "object") return;
     const normalizedParts = {};
@@ -94,7 +111,14 @@ export function normalizeGeometryOverrides(value) {
     });
     if (Object.keys(normalizedParts).length) categories[category] = normalizedParts;
   });
-  return { schema: BUILD_GEOMETRY_SCHEMA, categories };
+  const normalized = { schema: BUILD_GEOMETRY_SCHEMA, categories };
+  const centerOfGravityMm = signedVector2(
+    value.assembly?.centerOfGravityMm,
+  );
+  if (centerOfGravityMm) {
+    normalized.assembly = { centerOfGravityMm };
+  }
+  return normalized;
 }
 
 export function measuredGeometryForPart(overrides, category, partId) {
@@ -145,6 +169,22 @@ export function clearMeasuredGeometry(overrides, category, partId) {
     if (!Object.keys(next.categories[category]).length) {
       delete next.categories[category];
     }
+  }
+  return next;
+}
+
+export function measuredAssemblyCenterOfGravity(overrides) {
+  return normalizeGeometryOverrides(overrides).assembly?.centerOfGravityMm || null;
+}
+
+export function setMeasuredAssemblyCenterOfGravity(overrides, value) {
+  const normalized = normalizeGeometryOverrides(overrides);
+  const next = cloneGeometryOverrides(normalized);
+  const centerOfGravityMm = signedVector2(value);
+  if (centerOfGravityMm) {
+    next.assembly = { centerOfGravityMm };
+  } else if (next.assembly) {
+    delete next.assembly;
   }
   return next;
 }
@@ -229,6 +269,8 @@ export function summarizeMeasuredGeometry(assemblySpec = {}, overrides) {
   return {
     schema: "rotorbench.measured-geometry-summary.v1",
     scope: "build-local measurement; not hardware verification",
+    assemblyCenterOfGravityMm:
+      normalized.assembly?.centerOfGravityMm || null,
     partCount: parts.length,
     fieldCount: parts.reduce((total, part) => total + part.fields.length, 0),
     parts,

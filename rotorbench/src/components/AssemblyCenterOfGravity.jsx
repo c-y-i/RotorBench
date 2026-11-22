@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Clipboard, Crosshair, TriangleAlert } from "lucide-react";
 import {
   buildCenterOfGravityReport,
@@ -88,12 +88,41 @@ function CgPlot({ estimate }) {
   );
 }
 
-export default function AssemblyCenterOfGravity({ parts = {}, buildName = "" }) {
+export default function AssemblyCenterOfGravity({
+  parts = {},
+  buildName = "",
+  measuredCg = null,
+  onMeasuredCgChange,
+}) {
   const estimate = useMemo(
     () => estimateAssemblyCenterOfGravity(parts),
     [parts],
   );
   const [message, setMessage] = useState("");
+  const [measuredX, setMeasuredX] = useState(
+    measuredCg ? String(measuredCg[0]) : "",
+  );
+  const [measuredZ, setMeasuredZ] = useState(
+    measuredCg ? String(measuredCg[1]) : "",
+  );
+  useEffect(() => {
+    setMeasuredX(measuredCg ? String(measuredCg[0]) : "");
+    setMeasuredZ(measuredCg ? String(measuredCg[1]) : "");
+  }, [measuredCg]);
+  const measuredValuesValid = measuredX !== ""
+    && measuredZ !== ""
+    && Number.isFinite(Number(measuredX))
+    && Number.isFinite(Number(measuredZ));
+  const measuredDelta = measuredCg && estimate.planarOffsetMm
+    ? {
+        lateral: Math.round(
+          (Number(measuredCg[0]) - estimate.planarOffsetMm.lateral) * 10,
+        ) / 10,
+        longitudinal: Math.round(
+          (Number(measuredCg[1]) - estimate.planarOffsetMm.longitudinal) * 10,
+        ) / 10,
+      }
+    : null;
   const copyReport = async () => {
     if (!navigator.clipboard?.writeText) {
       setMessage("Clipboard access is unavailable in this browser.");
@@ -101,9 +130,17 @@ export default function AssemblyCenterOfGravity({ parts = {}, buildName = "" }) 
     }
     try {
       await navigator.clipboard.writeText(
-        buildCenterOfGravityReport(estimate, buildName || "Untitled build"),
+        buildCenterOfGravityReport(
+          estimate,
+          buildName || "Untitled build",
+          measuredCg,
+        ),
       );
-      setMessage("CG estimate copied. It remains a planning calculation, not a measured balance.");
+      setMessage(
+        measuredCg
+          ? "CG comparison copied. The measured point remains build-local evidence."
+          : "CG estimate copied. It remains a planning calculation, not a measured balance.",
+      );
     } catch {
       setMessage("The browser refused clipboard access.");
     }
@@ -122,7 +159,9 @@ export default function AssemblyCenterOfGravity({ parts = {}, buildName = "" }) 
           </small>
         </span>
         <em className={`is-${estimate.status}`}>
-          {estimate.status === "available"
+          {measuredCg
+            ? "Measured"
+            : estimate.status === "available"
             ? "Estimated"
             : estimate.status === "partial"
               ? "Partial"
@@ -158,6 +197,70 @@ export default function AssemblyCenterOfGravity({ parts = {}, buildName = "" }) 
                 </div>
               </dl>
             </div>
+
+            <fieldset className="assembly-cg-measured">
+              <legend>Measured balance point</legend>
+              <p>
+                Optional build-local measurement. Use the same X/Z datum shown
+                above and record the physical balance point with the aircraft
+                assembled.
+              </p>
+              <div className="assembly-cg-measured-fields">
+                <label>
+                  <span>Lateral X (mm)</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={measuredX}
+                    onChange={(event) => setMeasuredX(event.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>Fore / aft Z (mm)</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={measuredZ}
+                    onChange={(event) => setMeasuredZ(event.target.value)}
+                  />
+                </label>
+              </div>
+              {measuredCg && (
+                <dl className="assembly-cg-delta">
+                  <div>
+                    <dt>Measured</dt>
+                    <dd>X {measuredCg[0]} / Z {measuredCg[1]} mm</dd>
+                  </div>
+                  <div>
+                    <dt>Measured − estimate</dt>
+                    <dd>
+                      X {measuredDelta.lateral} / Z{" "}
+                      {measuredDelta.longitudinal} mm
+                    </dd>
+                  </div>
+                </dl>
+              )}
+              <div className="assembly-cg-measured-actions">
+                <button
+                  type="button"
+                  disabled={!measuredValuesValid || !onMeasuredCgChange}
+                  onClick={() => onMeasuredCgChange?.([
+                    Number(measuredX),
+                    Number(measuredZ),
+                  ])}
+                >
+                  {measuredCg ? "Update measurement" : "Save measurement"}
+                </button>
+                {measuredCg && (
+                  <button
+                    type="button"
+                    onClick={() => onMeasuredCgChange?.(null)}
+                  >
+                    Clear measurement
+                  </button>
+                )}
+              </div>
+            </fieldset>
 
             {(estimate.missingWeights.length > 0
               || estimate.missingPlacements.length > 0) && (
@@ -197,7 +300,8 @@ export default function AssemblyCenterOfGravity({ parts = {}, buildName = "" }) 
         <p>
           Catalog masses are placed at inferred or measured assembly origins.
           The 50 g build allowance is excluded because its location is unknown.
-          Balance the physical aircraft before flight.
+          A measured balance point is build-local evidence, not hardware
+          verification. Balance the physical aircraft before flight.
         </p>
         <div className="assembly-cg-actions">
           <button type="button" onClick={copyReport}>

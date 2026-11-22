@@ -4470,6 +4470,114 @@
   font-weight: 650;
 }
 
+.assembly-cg-measured {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.assembly-cg-measured legend {
+  padding: 0 4px;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.assembly-cg-measured > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.assembly-cg-measured-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.assembly-cg-measured-fields label {
+  display: grid;
+  gap: 4px;
+}
+
+.assembly-cg-measured-fields span {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.assembly-cg-measured-fields input {
+  min-height: 44px;
+  padding: 0 9px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+}
+
+.assembly-cg-delta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0;
+}
+
+.assembly-cg-delta > div {
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  background: var(--brand-soft);
+  border-radius: 4px;
+}
+
+.assembly-cg-delta dt {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.assembly-cg-delta dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.assembly-cg-measured-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.assembly-cg-measured-actions button {
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.assembly-cg-measured-actions button:disabled {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
 .assembly-cg-gaps,
 .assembly-cg-unavailable {
   display: flex;

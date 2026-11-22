@@ -42,8 +42,10 @@ import { createBuildBriefing } from "../utils/buildBriefing";
 import {
   applyMeasuredGeometryToAssemblySpec,
   clearMeasuredGeometry,
+  measuredAssemblyCenterOfGravity,
   normalizeGeometryOverrides,
   placementCheckMeasurementTarget,
+  setMeasuredAssemblyCenterOfGravity,
   setMeasuredGeometryValue,
 } from "../utils/buildGeometry";
 import {
@@ -1697,6 +1699,12 @@ export default function BuildPage() {
           <AssemblyCenterOfGravity
             parts={assemblySpec}
             buildName={workingBuildName}
+            measuredCg={measuredAssemblyCenterOfGravity(geometryOverrides)}
+            onMeasuredCgChange={(value) => {
+              setGeometryOverrides((current) => (
+                setMeasuredAssemblyCenterOfGravity(current, value)
+              ));
+            }}
           />
           <MeasuredGeometryPanel
             parts={measuredGeometryParts}

@@ -226,7 +226,11 @@ export function estimateAssemblyCenterOfGravity(parts = {}) {
   };
 }
 
-export function buildCenterOfGravityReport(estimate, buildName = "Untitled build") {
+export function buildCenterOfGravityReport(
+  estimate,
+  buildName = "Untitled build",
+  measuredCg = null,
+) {
   if (!estimate || estimate.status === "unavailable") {
     return [
       "# RotorBench center-of-gravity estimate",
@@ -242,6 +246,13 @@ export function buildCenterOfGravityReport(estimate, buildName = "Untitled build
     `# Lateral offset (X): ${estimate.planarOffsetMm.lateral} mm`,
     `# Longitudinal offset (Z, positive toward tail): ${estimate.planarOffsetMm.longitudinal} mm`,
     `# Planar offset magnitude: ${estimate.planarOffsetMm.magnitude} mm`,
+    ...(measuredCg
+      ? [
+          `# Measured lateral X: ${measuredCg[0]} mm`,
+          `# Measured longitudinal Z: ${measuredCg[1]} mm`,
+          `# Measured minus estimate: X ${round(measuredCg[0] - estimate.planarOffsetMm.lateral, 1)} mm / Z ${round(measuredCg[1] - estimate.planarOffsetMm.longitudinal, 1)} mm`,
+        ]
+      : ["# Measured center of gravity: not recorded"]),
     "",
     "## Contributions",
     ...estimate.contributions.map((item) => (

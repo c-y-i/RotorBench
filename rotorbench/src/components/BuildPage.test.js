@@ -492,6 +492,19 @@ test("a starter-platform deep link selects all seven components and consumes the
     name: /^Estimated center-of-gravity offset/,
   })).toBeVisible();
   expect(screen.getByText(/50 g build allowance is excluded/i)).toBeVisible();
+  fireEvent.change(screen.getByLabelText("Lateral X (mm)"), {
+    target: { value: "-1.2" },
+  });
+  fireEvent.change(screen.getByLabelText("Fore / aft Z (mm)"), {
+    target: { value: "-7.5" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Save measurement" }));
+  expect(screen.getByText("Measured − estimate")).toBeInTheDocument();
+  await waitFor(() => {
+    expect(JSON.parse(
+      localStorage.getItem("rotorbench:build-draft:v1"),
+    ).geometryOverrides.assembly.centerOfGravityMm).toEqual([-1.2, -7.5]);
+  });
   fireEvent.click(screen.getByText("Viewer placement"));
   expect(screen.getByRole("list", { name: "Viewer placement checks" })).toHaveTextContent(
     "Propeller-to-shaft alignment",
