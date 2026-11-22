@@ -83,6 +83,22 @@ test("creates a versioned analysis report without mutating the build", () => {
         checkCounts: { pass: 8, fail: 0, unverified: 2 },
         failedChecks: [],
         unverifiedChecks: ["Last-frame freshness"],
+        planComparison: {
+          targetName: "SpeedyBee F405 V5",
+          firmwareFamily: "aerialkit",
+          profileId: "speedybee-f405-v5",
+          generatedAt: "2026-11-20T10:55:00.000Z",
+          currentPlanMatches: true,
+          planFingerprint: "fnv1a-12345678",
+          compared: 38,
+          matched: 1,
+          differing: 1,
+          notObserved: 36,
+          parameterValuesRead: true,
+          parameterMetadataRead: true,
+          parameters: [{ parameter: "arm_channel", expected: "6" }],
+          observedValue: "5",
+        },
         importTrust: "locally selected file; authenticity not independently verified",
         rawFiles: ["pair.json"],
         serialPath: "/dev/ttyACM0",
@@ -205,6 +221,24 @@ test("creates a versioned analysis report without mutating the build", () => {
   expect(report.hardwarePlan).not.toHaveProperty("radioPlan");
   expect(JSON.stringify(report)).not.toContain("must-not-export");
   expect(report.importedEvidence).not.toHaveProperty("rawFiles");
+  expect(report.importedEvidence.planComparison).toEqual({
+    scope: "sanitized plan identity and counts; raw parameter values excluded",
+    targetName: "SpeedyBee F405 V5",
+    firmwareFamily: "aerialkit",
+    profileId: "speedybee-f405-v5",
+    generatedAt: "2026-11-20T10:55:00.000Z",
+    currentPlanMatches: true,
+    planFingerprint: "fnv1a-12345678",
+    compared: 38,
+    matched: 1,
+    differing: 1,
+    notObserved: 36,
+    parameterValuesRead: true,
+    parameterMetadataRead: true,
+    hardwareVerified: false,
+  });
+  expect(report.importedEvidence.planComparison).not.toHaveProperty("parameters");
+  expect(report.importedEvidence.planComparison).not.toHaveProperty("observedValue");
   expect(JSON.stringify(report)).not.toContain("/dev/tty");
 });
 

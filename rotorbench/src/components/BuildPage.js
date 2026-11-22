@@ -1048,25 +1048,30 @@ export default function BuildPage() {
   const compatibilityConflict = !physicalFit.ok || !electricalFit.ok;
 
   const copyBuildBriefing = async () => {
-    const briefing = createBuildBriefing({
-      build: {
-        id: workingBuildId,
-        name: workingBuildName,
-        note: buildNote,
-        componentIds: {
-          frameId: selectedFrame || null,
-          motorId: selectedMotor || null,
-          propellerId: selectedPropeller || null,
-          escId: selectedESC || null,
-          flightControllerId: selectedFC || null,
-          batteryId: selectedBattery || null,
-          receiverId: selectedReceiver || null,
-        },
-        geometryOverrides,
+    const exportedBuild = {
+      id: workingBuildId,
+      name: workingBuildName,
+      note: buildNote,
+      componentIds: {
+        frameId: selectedFrame || null,
+        motorId: selectedMotor || null,
+        propellerId: selectedPropeller || null,
+        escId: selectedESC || null,
+        flightControllerId: selectedFC || null,
+        batteryId: selectedBattery || null,
+        receiverId: selectedReceiver || null,
       },
+      geometryOverrides,
+    };
+    const briefing = createBuildBriefing({
+      build: exportedBuild,
       assemblySpec,
       viewerPlacement: viewerPlacementAudit,
       hardwareReadiness,
+      importedEvidence: summarizeBenchEvidenceAttachment(
+        readBenchEvidenceAttachment(exportedBuild.id),
+        readCurrentBenchEvidenceScope(exportedBuild),
+      ),
     });
     if (!navigator.clipboard?.writeText) {
       setMessage({

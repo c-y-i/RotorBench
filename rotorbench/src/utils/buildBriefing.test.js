@@ -139,6 +139,48 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
   expect(briefing.text).toContain("readiness are not verified");
 });
 
+test("briefs sanitized plan-comparison history without raw values", () => {
+  const briefing = createBuildBriefing({
+    build: { name: "Plan review quad" },
+    assemblySpec: {},
+    importedEvidence: {
+      configured: true,
+      label: "FC plan comparison matched",
+      scopeStatus: "matched",
+      identityStatus: "not-recorded",
+      checkCounts: { pass: 5, fail: 0, unverified: 0 },
+      importTrust: "locally selected file; authenticity not independently verified",
+      planComparison: {
+        targetName: "SpeedyBee F405 V5",
+        firmwareFamily: "aerialkit",
+        profileId: "speedybee-f405-v5",
+        currentPlanMatches: true,
+        planFingerprint: "fnv1a-12345678",
+        compared: 38,
+        matched: 1,
+        differing: 1,
+        notObserved: 36,
+        parameterValuesRead: true,
+        parameterMetadataRead: true,
+        parameters: [{ parameter: "arm_channel", expected: "6" }],
+        observedValue: "5",
+      },
+    },
+  });
+
+  expect(briefing.text).toContain("## Imported evidence");
+  expect(briefing.text).toContain("FC plan target: SpeedyBee F405 V5");
+  expect(briefing.text).toContain(
+    "FC plan comparison: 1 match / 1 differ / 36 not observed across 38 checked",
+  );
+  expect(briefing.text).toContain(
+    "current staged plan matched / fingerprint fnv1a-12345678",
+  );
+  expect(briefing.text).toContain("Raw parameter values: excluded");
+  expect(briefing.text).not.toContain("arm_channel");
+  expect(briefing.text).not.toContain("observedValue");
+});
+
 test("briefs planning weight and a published takeoff-envelope fit", () => {
   const briefing = createBuildBriefing({
     build: {

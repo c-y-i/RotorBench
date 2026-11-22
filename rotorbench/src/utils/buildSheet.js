@@ -15,6 +15,7 @@ import {
 } from "./buildGeometry";
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
 import { summarizeBuildPlanning } from "./planningSummary";
+import { sanitizePlanComparisonMetadata } from "./benchEvidenceAttachment";
 
 function selectedPhysicalChecks(assemblySpec) {
   return [
@@ -107,6 +108,9 @@ export function createBuildSheet({
             fail: Number(importedEvidence.checkCounts?.fail) || 0,
             unverified: Number(importedEvidence.checkCounts?.unverified) || 0,
           },
+          planComparison: sanitizePlanComparisonMetadata(
+            importedEvidence.planComparison,
+          ),
           hardwareVerified: false,
           authenticityVerified: false,
         }

@@ -5,6 +5,7 @@ import {
   summarizeMeasuredGeometry,
 } from "./buildGeometry";
 import { summarizePowerPath } from "./physicalCompatibility";
+import { sanitizePlanComparisonMetadata } from "./benchEvidenceAttachment";
 
 export const ANALYSIS_REPORT_SCHEMA = "rotorbench.analysis-report.v1";
 
@@ -27,6 +28,7 @@ function sanitizeImportedEvidence(evidence) {
     unverifiedChecks: Array.isArray(evidence.unverifiedChecks)
       ? evidence.unverifiedChecks.map(String)
       : [],
+    planComparison: sanitizePlanComparisonMetadata(evidence.planComparison),
     importTrust: evidence.importTrust || "locally selected file; authenticity not independently verified",
     hardwareVerified: false,
     authenticityVerified: false,

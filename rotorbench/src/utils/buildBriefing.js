@@ -22,6 +22,7 @@ export function createBuildBriefing({
   assemblySpec = {},
   viewerPlacement = null,
   hardwareReadiness = null,
+  importedEvidence = null,
   generatedAt = new Date().toISOString(),
 }) {
   const placement = viewerPlacement || {};
@@ -149,6 +150,32 @@ export function createBuildBriefing({
           ]
         : []),
     );
+  }
+
+  if (importedEvidence?.configured) {
+    lines.push(
+      "",
+      "## Imported evidence",
+      `- Status: ${importedEvidence.label || "Imported evidence"}`,
+      `- Scope: ${importedEvidence.scopeStatus || "unchecked"} / ${importedEvidence.identityStatus || "identity not recorded"}`,
+      `- Checks: ${importedEvidence.checkCounts?.pass || 0} pass / ${importedEvidence.checkCounts?.fail || 0} fail / ${importedEvidence.checkCounts?.unverified || 0} unverified`,
+      `- Trust: ${importedEvidence.importTrust || "locally selected file; authenticity not independently verified"}`,
+    );
+    if (importedEvidence.planComparison) {
+      const comparison = importedEvidence.planComparison;
+      lines.push(
+        `- FC plan target: ${comparison.targetName || "Unknown target"} / ${comparison.firmwareFamily || "firmware unknown"} / ${comparison.profileId || "profile unknown"}`,
+        `- FC plan comparison: ${comparison.matched} match / ${comparison.differing} differ / ${comparison.notObserved} not observed across ${comparison.compared} checked`,
+        `- FC plan identity: ${
+          comparison.currentPlanMatches === false
+            ? "different staged plan"
+            : comparison.currentPlanMatches
+              ? "current staged plan matched"
+              : "current plan not supplied"
+        } / fingerprint ${comparison.planFingerprint || "not recorded"}`,
+        `- Raw parameter values: excluded / values read ${comparison.parameterValuesRead ? "yes" : "no"} / metadata read ${comparison.parameterMetadataRead ? "yes" : "no"}`,
+      );
+    }
   }
 
   lines.push(

@@ -170,6 +170,21 @@ test("build sheets include sanitized local hardware-plan context", () => {
       identityStatus: "not-staged",
       attachedAt: "2026-11-20T11:00:00.000Z",
       checkCounts: { pass: 8, fail: 0, unverified: 2 },
+      planComparison: {
+        targetName: "SpeedyBee F405 V5",
+        firmwareFamily: "aerialkit",
+        profileId: "speedybee-f405-v5",
+        generatedAt: "2026-11-20T10:55:00.000Z",
+        currentPlanMatches: true,
+        planFingerprint: "fnv1a-12345678",
+        compared: 38,
+        matched: 1,
+        differing: 1,
+        notObserved: 36,
+        parameterValuesRead: true,
+        parameterMetadataRead: true,
+        parameters: [{ parameter: "arm_channel", expected: "6" }],
+      },
       rawFiles: ["pair.json"],
     },
     viewerPlacement: {
@@ -243,6 +258,22 @@ test("build sheets include sanitized local hardware-plan context", () => {
       scopeStatus: "matched",
       identityStatus: "not-staged",
       checkCounts: { pass: 8, fail: 0, unverified: 2 },
+      planComparison: {
+        scope: "sanitized plan identity and counts; raw parameter values excluded",
+        targetName: "SpeedyBee F405 V5",
+        firmwareFamily: "aerialkit",
+        profileId: "speedybee-f405-v5",
+        generatedAt: "2026-11-20T10:55:00.000Z",
+        currentPlanMatches: true,
+        planFingerprint: "fnv1a-12345678",
+        compared: 38,
+        matched: 1,
+        differing: 1,
+        notObserved: 36,
+        parameterValuesRead: true,
+        parameterMetadataRead: true,
+        hardwareVerified: false,
+      },
       hardwareVerified: false,
       authenticityVerified: false,
     },
@@ -259,6 +290,7 @@ test("build sheets include sanitized local hardware-plan context", () => {
     },
   });
   expect(sheet.hardwarePlan).not.toHaveProperty("radioPlan");
+  expect(sheet.importedEvidence.planComparison).not.toHaveProperty("parameters");
   expect(JSON.stringify(sheet)).not.toContain("must-not-export");
   expect(JSON.stringify(sheet)).not.toContain("pair.json");
 });

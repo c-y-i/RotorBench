@@ -103,6 +103,28 @@ function pairingFingerprint(uid) {
   return stableFingerprint(compact);
 }
 
+export function sanitizePlanComparisonMetadata(value) {
+  if (!value || typeof value !== "object") return null;
+  return {
+    scope: "sanitized plan identity and counts; raw parameter values excluded",
+    targetName: value.targetName || null,
+    firmwareFamily: value.firmwareFamily || null,
+    profileId: value.profileId || null,
+    generatedAt: value.generatedAt || null,
+    currentPlanMatches: typeof value.currentPlanMatches === "boolean"
+      ? value.currentPlanMatches
+      : null,
+    planFingerprint: value.planFingerprint || null,
+    compared: Number(value.compared) || 0,
+    matched: Number(value.matched) || 0,
+    differing: Number(value.differing) || 0,
+    notObserved: Number(value.notObserved) || 0,
+    parameterValuesRead: value.parameterValuesRead === true,
+    parameterMetadataRead: value.parameterMetadataRead === true,
+    hardwareVerified: false,
+  };
+}
+
 function checkSetFingerprint(checks) {
   const identifiers = (Array.isArray(checks) ? checks : [])
     .map((check) => check.id || check.label || "")
@@ -904,6 +926,7 @@ export function summarizeBenchEvidenceAttachment(attachment, currentScope = null
     failedChecks: attachment.failedChecks,
     unverifiedChecks: attachment.unverifiedChecks,
     importTrust: attachment.importTrust,
+    planComparison: sanitizePlanComparisonMetadata(attachment.planComparison),
     hardwareVerified: false,
   };
 }
