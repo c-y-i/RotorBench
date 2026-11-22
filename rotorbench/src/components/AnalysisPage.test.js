@@ -3,7 +3,9 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
-import AnalysisPage from "./AnalysisPage";
+import AnalysisPage, {
+  ANALYSIS_PLAN_RETURN_FOCUS_KEY,
+} from "./AnalysisPage";
 import { createBenchEvidenceScope } from "../utils/benchEvidenceAttachment";
 
 jest.mock("recharts", () => {
@@ -96,6 +98,7 @@ function renderAnalysisWithoutRouteState() {
 
 beforeEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
     value: jest.fn(() => "blob:analysis-report"),
@@ -402,6 +405,10 @@ test("shows imported bench evidence without changing hardware verification", asy
 });
 
 test("shows imported plan-comparison metadata without hardware verification", async () => {
+  sessionStorage.setItem(ANALYSIS_PLAN_RETURN_FOCUS_KEY, JSON.stringify({
+    buildId: build.id,
+    at: Date.now(),
+  }));
   renderAnalysis({
     ...build,
     importedEvidence: {
@@ -437,9 +444,13 @@ test("shows imported plan-comparison metadata without hardware verification", as
     "Portable plan metadata · not hardware evidence",
   )).toBeInTheDocument();
   expect(within(hardwareSection).getByText(/hardware not tested/i)).toBeInTheDocument();
-  await userEvent.click(within(hardwareSection).getByRole("button", {
+  const reviewPlan = within(hardwareSection).getByRole("button", {
     name: "Review current plan",
-  }));
+  });
+  await waitFor(() => expect(reviewPlan).toHaveFocus());
+  expect(sessionStorage.getItem(ANALYSIS_PLAN_RETURN_FOCUS_KEY)).toBeNull();
+  await userEvent.click(reviewPlan);
+  expect(sessionStorage.getItem(ANALYSIS_PLAN_RETURN_FOCUS_KEY)).not.toBeNull();
   expect(screen.getByText("Hardware setup route")).toBeInTheDocument();
 });
 

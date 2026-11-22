@@ -68,6 +68,9 @@ import {
   Zap,
 } from "lucide-react";
 
+export const ANALYSIS_PLAN_RETURN_FOCUS_KEY =
+  "rotorbench:analysis-plan-return-focus:v1";
+
 export default function AnalysisPage() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -78,6 +81,7 @@ export default function AnalysisPage() {
   const { currentBuild, updateAnalysis } = useBuild();
   const build = location.state?.build || currentBuild;
   const hasAnalyzed = useRef(false);
+  const analysisPlanActionRef = useRef(null);
 
   const hydrateBuild = useCallback((buildConfig) => {
     const getComponentById = (type, id) => {
@@ -296,6 +300,42 @@ export default function AnalysisPage() {
     () => sanitizePlanComparisonMetadata(build?.importedEvidence?.planComparison),
     [build?.importedEvidence?.planComparison],
   );
+  useEffect(() => {
+    if (!analysis || !portablePlanComparison || !analysisPlanActionRef.current) {
+      return undefined;
+    }
+    let marker = null;
+    try {
+      marker = JSON.parse(
+        window.sessionStorage.getItem(ANALYSIS_PLAN_RETURN_FOCUS_KEY) || "null",
+      );
+    } catch {
+      marker = null;
+    }
+    const buildId = build?.id || "standalone";
+    const ageMs = marker?.at == null ? null : Date.now() - Number(marker.at);
+    if (
+      marker?.buildId !== buildId
+      || ageMs == null
+      || !Number.isFinite(ageMs)
+      || ageMs < 0
+      || ageMs > 120000
+    ) {
+      return undefined;
+    }
+    const frame = requestAnimationFrame(() => {
+      analysisPlanActionRef.current?.scrollIntoView?.({
+        block: "center",
+      });
+      analysisPlanActionRef.current?.focus({ preventScroll: true });
+      try {
+        window.sessionStorage.removeItem(ANALYSIS_PLAN_RETURN_FOCUS_KEY);
+      } catch {
+        // Focus restoration still succeeds when session storage is unavailable.
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [analysis, build?.id, portablePlanComparison]);
   const assemblySpec = useMemo(() => ({
     frame: componentRows[0]?.part,
     motor: componentRows[1]?.part,
@@ -748,18 +788,34 @@ export default function AnalysisPage() {
               </div>
               <button
                 type="button"
+                ref={analysisPlanActionRef}
                 className="analysis-hardware-action"
-                onClick={() => navigate("/setup", {
-                  state: {
-                    build,
-                    ...(portablePlanComparison
-                      ? {
-                          focus: "fc-plan-summary",
-                          returnTo: "analysis",
-                        }
-                      : {}),
-                  },
-                })}
+                onClick={() => {
+                  if (portablePlanComparison) {
+                    try {
+                      window.sessionStorage.setItem(
+                        ANALYSIS_PLAN_RETURN_FOCUS_KEY,
+                        JSON.stringify({
+                          buildId: build?.id || "standalone",
+                          at: Date.now(),
+                        }),
+                      );
+                    } catch {
+                      // Navigation still works when session storage is unavailable.
+                    }
+                  }
+                  navigate("/setup", {
+                    state: {
+                      build,
+                      ...(portablePlanComparison
+                        ? {
+                            focus: "fc-plan-summary",
+                            returnTo: "analysis",
+                          }
+                        : {}),
+                    },
+                  });
+                }}
               >
                 {portablePlanComparison ? "Review current plan" : "Review setup"}
               </button>
