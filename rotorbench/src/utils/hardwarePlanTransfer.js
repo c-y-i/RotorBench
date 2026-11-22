@@ -90,6 +90,17 @@ export function createCombinedHardwarePlan({
   };
 }
 
+function parameterRequirementSignature(requirements) {
+  return (Array.isArray(requirements) ? requirements : [])
+    .map((requirement) => [
+      String(requirement?.name || ""),
+      String(requirement?.value ?? ""),
+      String(requirement?.whenReceiverProtocol || ""),
+      String(requirement?.description || ""),
+    ])
+    .sort(([left], [right]) => left.localeCompare(right));
+}
+
 export function parseCombinedHardwarePlanJson(text) {
   let plan;
   try {
@@ -249,8 +260,31 @@ export function parseCombinedHardwarePlanJson(text) {
   )) {
     throw new Error("The flight-controller motor direction is unsupported.");
   }
-  if (!getBoardProfile(fcPlan.profileId) && !fcPlan.profileId) {
+  if (!fcPlan.profileId) {
     throw new Error("The flight-controller profile ID is missing.");
+  }
+  const selectedProfile = getBoardProfile(fcPlan.profileId);
+  if (!selectedProfile || selectedProfile.id !== fcPlan.profileId) {
+    throw new Error(`Unknown flight-controller profile: ${fcPlan.profileId}`);
+  }
+  if (plan.flightController.parameterRequirements !== undefined) {
+    if (!Array.isArray(plan.flightController.parameterRequirements)) {
+      throw new Error("The flight-controller parameter requirements are invalid.");
+    }
+    const expectedRequirements = getArdupilotParameterRequirements(
+      fcPlan,
+      selectedProfile,
+    );
+    if (
+      JSON.stringify(parameterRequirementSignature(
+        plan.flightController.parameterRequirements,
+      ))
+      !== JSON.stringify(parameterRequirementSignature(expectedRequirements))
+    ) {
+      throw new Error(
+        "The portable plan's parameter requirements do not match the selected board profile. Export a fresh plan.",
+      );
+    }
   }
   const radioPlan = normalizeRadioConfig({
     ...DEFAULT_RADIO_CONFIG,

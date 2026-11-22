@@ -241,6 +241,25 @@ test("combined hardware plans carry ArduPilot receiver parameter requirements", 
   ]);
   expect(exported.flightController.summary.join("\n"))
     .toContain("BRD_ALT_CONFIG=1, SERIAL7_PROTOCOL=23");
+  expect(parseCombinedHardwarePlanJson(JSON.stringify(exported)).fcPlan)
+    .toMatchObject({ profileId: "matek-h743-wing-v3-ardupilot" });
+
+  const stale = JSON.parse(JSON.stringify(exported));
+  stale.flightController.parameterRequirements[0].value = "0";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(stale)))
+    .toThrow(/do not match the selected board profile/i);
+});
+
+test("rejects unknown controller profiles and malformed parameter requirements", () => {
+  const unknown = samplePlan();
+  unknown.flightController.config.profileId = "removed-profile";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(unknown)))
+    .toThrow(/Unknown flight-controller profile/i);
+
+  const malformed = samplePlan();
+  malformed.flightController.parameterRequirements = "not-an-array";
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(malformed)))
+    .toThrow(/parameter requirements are invalid/i);
 });
 
 test("combined hardware plans preserve servo output setup", () => {
