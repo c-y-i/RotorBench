@@ -1369,6 +1369,104 @@ export default function BenchEvidenceReview({
             </section>
           )}
 
+          {evidence.fcEvidence?.liveStatus?.telemetryStream && (
+            <section
+              className="aerial-kit-telemetry-stream"
+              aria-label="Imported Aerial Kit telemetry stream"
+            >
+              <div className="aerial-kit-section-heading">
+                <strong>Imported telemetry stream</strong>
+                <span>
+                  {evidence.fcEvidence.liveStatus.telemetryStream.requestedHz}
+                  {" → "}
+                  {evidence.fcEvidence.liveStatus.telemetryStream.agreedHz} Hz
+                </span>
+              </div>
+              <dl className="aerial-kit-telemetry-health">
+                <div>
+                  <dt>Frames</dt>
+                  <dd>{evidence.fcEvidence.liveStatus.telemetryStream.frameCount}</dd>
+                </div>
+                <div>
+                  <dt>Last observed</dt>
+                  <dd>
+                    {evidence.fcEvidence.liveStatus.telemetryStream.lastObservedAtMs
+                      ? observationTime(new Date(
+                        evidence.fcEvidence.liveStatus.telemetryStream.lastObservedAtMs,
+                      ).toISOString())
+                      : "No frame"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Uptime wraps / regressions</dt>
+                  <dd>
+                    {evidence.fcEvidence.liveStatus.telemetryStream.uptimeWraps}
+                    {" / "}
+                    {evidence.fcEvidence.liveStatus.telemetryStream.uptimeRegressions}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Observed stream span</dt>
+                  <dd>
+                    {evidence.fcEvidence.liveStatus.telemetryStream.uptimeElapsedMs == null
+                      ? "None"
+                      : `${(evidence.fcEvidence.liveStatus.telemetryStream.uptimeElapsedMs / 1000).toFixed(3)} s`}
+                  </dd>
+                </div>
+              </dl>
+              {evidence.fcEvidence.liveStatus.telemetryStream.latest && (
+                <dl className="aerial-kit-telemetry-latest">
+                  <div>
+                    <dt>Uptime</dt>
+                    <dd>
+                      {(evidence.fcEvidence.liveStatus.telemetryStream.latest.uptimeMs / 1000).toFixed(3)} s
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Flight state</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.telemetryStream.latest.flightState}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Link</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.telemetryStream.latest.linkLive
+                        ? "Live"
+                        : "Not live"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Attitude</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.telemetryStream.latest.rollDeg.toFixed(1)} /{" "}
+                      {evidence.fcEvidence.liveStatus.telemetryStream.latest.pitchDeg.toFixed(1)} /{" "}
+                      {evidence.fcEvidence.liveStatus.telemetryStream.latest.yawDeg.toFixed(1)}°
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>GPS</dt>
+                    <dd>
+                      fix {evidence.fcEvidence.liveStatus.telemetryStream.latest.gpsFixType} ·{" "}
+                      {evidence.fcEvidence.liveStatus.telemetryStream.latest.gpsSatellites} satellites
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Motors</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.telemetryStream.latest.motors.join(" / ")}
+                    </dd>
+                  </div>
+                </dl>
+              )}
+              <p>
+                Imported stream timing is historical. Uptime regressions are
+                preserved as anomalies, and a stream absence is not treated as a
+                live aircraft state.
+              </p>
+            </section>
+          )}
+
           {evidence.fcEvidence?.liveStatus?.motorTelemetry && (
             <section
               className="aerial-kit-motors"

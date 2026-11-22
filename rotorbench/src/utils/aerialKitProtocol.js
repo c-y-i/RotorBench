@@ -24,10 +24,12 @@ export const AERIAL_KIT_PERF_SECTIONS = 5;
 export const AERIAL_KIT_MOTOR_MAX = 4;
 export const AERIAL_KIT_MOTOR_ENTRY_BYTES = 19;
 export const AERIAL_KIT_LOG_STREAM_MAX_HZ = 50;
+export const AERIAL_KIT_TELEMETRY_MAX_HZ = 50;
 export const AERIAL_KIT_COMMANDS = Object.freeze({
   hello: 0x01,
   paramGet: 0x02,
   status: 0x05,
+  telemetry: 0x08,
   paramInfo: 0x0a,
   paramHelp: 0x0b,
   rcChannels: 0x0d,
@@ -425,6 +427,27 @@ export function parseAerialKitStatus(payload) {
     longitude: view.getInt32(14, true) / 1e7,
     motors: Array.from(bytes.slice(18, 22)),
   };
+}
+
+export function parseAerialKitTelemetry(payload) {
+  const bytes = asBytes(payload);
+  if (bytes.length !== 26) {
+    throw new Error(
+      `Aerial Kit TELEMETRY frame must carry 26 bytes; this one carries ${bytes.length}.`,
+    );
+  }
+  return {
+    uptimeMs: u32le(bytes, 0, "TELEMETRY uptime"),
+    ...parseAerialKitStatus(bytes.subarray(4)),
+  };
+}
+
+export function parseAerialKitTelemetryRate(payload) {
+  const bytes = asBytes(payload);
+  if (bytes.length !== 1 || bytes[0] > AERIAL_KIT_TELEMETRY_MAX_HZ) {
+    throw new Error("TELEMETRY subscription reply must carry one rate from 0 to 50 Hz.");
+  }
+  return bytes[0];
 }
 
 export function parseAerialKitParamGet(payload, index) {
@@ -1397,6 +1420,7 @@ export function createAerialKitStatusEvidence({
   motorTelemetry = null,
   logInventory = null,
   logSample = null,
+  telemetryStream = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -1440,6 +1464,7 @@ export function createAerialKitStatusEvidence({
         ...(motorTelemetry ? ["MOTOR_TELEMETRY"] : []),
         ...(logInventory ? ["LOG_SOURCE"] : []),
         ...(logSample ? ["LOG_STREAM"] : []),
+        ...(telemetryStream ? ["TELEMETRY"] : []),
       ],
     },
     hello,
@@ -1502,6 +1527,20 @@ export function createAerialKitStatusEvidence({
             : null,
         }
       : null,
+    telemetryStream: telemetryStream
+      ? {
+          ...telemetryStream,
+          startedAt: Number.isFinite(telemetryStream.startedAtMs)
+            ? new Date(telemetryStream.startedAtMs).toISOString()
+            : null,
+          stoppedAt: Number.isFinite(telemetryStream.stoppedAtMs)
+            ? new Date(telemetryStream.stoppedAtMs).toISOString()
+            : null,
+          lastObservedAt: Number.isFinite(telemetryStream.lastObservedAtMs)
+            ? new Date(telemetryStream.lastObservedAtMs).toISOString()
+            : null,
+        }
+      : null,
     parser: protocolStats,
     boundaries: {
       readOnlyQueriesOnly: true,
@@ -1522,6 +1561,7 @@ export class AerialKitReadOnlySession {
     onIssue = null,
     onClose = null,
     onLogFrame = null,
+    onTelemetry = null,
   }) {
     this.reader = reader;
     this.writer = writer;
@@ -1529,6 +1569,7 @@ export class AerialKitReadOnlySession {
     this.onIssue = onIssue;
     this.onClose = onClose;
     this.onLogFrame = onLogFrame;
+    this.onTelemetry = onTelemetry;
     this.decoder = new AerialKitFrameDecoder();
     this.pending = null;
     this.active = true;
@@ -1573,6 +1614,14 @@ export class AerialKitReadOnlySession {
       if (frame.command === AERIAL_KIT_COMMANDS.logStream) {
         try {
           this.onLogFrame?.(parseAerialKitLogStreamFrame(frame.payload));
+        } catch (error) {
+          this.onIssue?.(error.message);
+        }
+        return;
+      }
+      if (frame.command === AERIAL_KIT_COMMANDS.telemetry) {
+        try {
+          this.onTelemetry?.(parseAerialKitTelemetry(frame.payload));
         } catch (error) {
           this.onIssue?.(error.message);
         }

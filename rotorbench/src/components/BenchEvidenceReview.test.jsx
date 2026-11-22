@@ -400,6 +400,32 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
           },
         ],
       },
+      telemetryStream: {
+        requestedHz: 20,
+        agreedHz: 20,
+        frameCount: 2,
+        firstUptimeMs: 1000,
+        lastUptimeMs: 1050,
+        uptimeElapsedMs: 50,
+        uptimeWraps: 0,
+        uptimeRegressions: 0,
+        startedAt: new Date().toISOString(),
+        stoppedAt: null,
+        lastObservedAt: new Date().toISOString(),
+        latest: {
+          uptimeMs: 1050,
+          flightState: 1,
+          linkLive: 1,
+          gpsFixType: 3,
+          gpsSatellites: 11,
+          rollDeg: 13.5,
+          pitchDeg: -2.5,
+          yawDeg: 90,
+          latitude: 37.6774,
+          longitude: -122.4194,
+          motors: [10, 20, 30, 40],
+        },
+      },
       logInventory: [{
         status: "available",
         requestedSource: 0,
@@ -489,6 +515,11 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("100000 eRPM")).toBeInTheDocument();
   expect(screen.getByText("7142 RPM")).toBeInTheDocument();
   expect(screen.getByText("Not heard")).toBeInTheDocument();
+  expect(screen.getByRole("region", {
+    name: "Imported Aerial Kit telemetry stream",
+  })).toBeInTheDocument();
+  expect(screen.getByText("20 → 20 Hz")).toBeInTheDocument();
+  expect(screen.getByText("13.5 / -2.5 / 90.0°")).toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();

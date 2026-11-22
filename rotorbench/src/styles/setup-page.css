@@ -2798,6 +2798,7 @@
 .aerial-kit-perf,
 .aerial-kit-motors,
 .aerial-kit-logs,
+.aerial-kit-telemetry-stream,
 .aerial-kit-parameters,
 .aerial-kit-hardware {
   display: grid;
@@ -3171,6 +3172,55 @@
 }
 
 .aerial-kit-log-manifest dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-telemetry-stream > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.aerial-kit-telemetry-health,
+.aerial-kit-telemetry-latest {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.aerial-kit-telemetry-health {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.aerial-kit-telemetry-latest {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.aerial-kit-telemetry-health > div,
+.aerial-kit-telemetry-latest > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-telemetry-health dt,
+.aerial-kit-telemetry-latest dt {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+
+.aerial-kit-telemetry-health dd,
+.aerial-kit-telemetry-latest dd {
   overflow-wrap: anywhere;
   margin: 0;
   color: var(--ink);
@@ -5019,6 +5069,11 @@
   }
 
   .aerial-kit-log-manifest {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aerial-kit-telemetry-health,
+  .aerial-kit-telemetry-latest {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

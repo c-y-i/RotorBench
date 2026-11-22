@@ -27,6 +27,8 @@ import {
   AERIAL_KIT_FEATURE_MOTOR_TELEMETRY,
   AERIAL_KIT_FEATURE_LOG_STREAM,
   AERIAL_KIT_LOG_STREAM_MAX_HZ,
+  AERIAL_KIT_FLIGHT_STATES,
+  AERIAL_KIT_TELEMETRY_MAX_HZ,
   AERIAL_KIT_PARAMETER_READ_LIMIT,
   AERIAL_KIT_SENSOR_TOPICS,
   AerialKitReadOnlySession,
@@ -43,6 +45,7 @@ import {
   parseAerialKitPerf,
   parseAerialKitPreflightPage,
   parseAerialKitSensorInfo,
+  parseAerialKitTelemetryRate,
   parseAerialKitOutputInfo,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
@@ -183,6 +186,10 @@ export default function AerialKitStatusSession({
   const [logState, setLogState] = useState("idle");
   const [logError, setLogError] = useState("");
   const [logSample, setLogSample] = useState(null);
+  const [telemetryRequestedHz, setTelemetryRequestedHz] = useState(20);
+  const [telemetryState, setTelemetryState] = useState("idle");
+  const [telemetryError, setTelemetryError] = useState("");
+  const [telemetryStream, setTelemetryStream] = useState(null);
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -193,6 +200,7 @@ export default function AerialKitStatusSession({
   const pollTimerRef = useRef(null);
   const observationRef = useRef(null);
   const logCollectorRef = useRef(null);
+  const telemetryStreamingRef = useRef(false);
 
   useEffect(() => {
     if (!["monitoring", "connecting"].includes(sessionState)) return undefined;
@@ -262,6 +270,11 @@ export default function AerialKitStatusSession({
     setLogError("");
     setLogSample(null);
     logCollectorRef.current = null;
+    setTelemetryRequestedHz(20);
+    setTelemetryState("idle");
+    setTelemetryError("");
+    setTelemetryStream(null);
+    telemetryStreamingRef.current = false;
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -269,6 +282,17 @@ export default function AerialKitStatusSession({
   const closeSession = useCallback(async (nextState = "stopped") => {
     activeRef.current = false;
     logCollectorRef.current = null;
+    if (telemetryStreamingRef.current && sessionRef.current?.active) {
+      try {
+        await sessionRef.current.request(
+          AERIAL_KIT_COMMANDS.telemetry,
+          Uint8Array.of(0),
+        );
+      } catch {
+        // Closing the port still ends the transport even if the stop reply is lost.
+      }
+    }
+    telemetryStreamingRef.current = false;
     if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     pollTimerRef.current = null;
     if (sessionRef.current) setProtocolStats({ ...sessionRef.current.stats });
@@ -375,6 +399,152 @@ export default function AerialKitStatusSession({
       }
       schedulePoll(session, helloValue);
     }, 500);
+  };
+
+  const handleTelemetryFrame = (frame) => {
+    if (!telemetryStreamingRef.current || !mountedRef.current) return;
+    const observedAtMs = Date.now();
+    setTelemetryStream((current) => {
+      if (!current) return current;
+      let uptimeWraps = current.uptimeWraps || 0;
+      let uptimeRegressions = current.uptimeRegressions || 0;
+      if (current.lastUptimeMs != null && frame.uptimeMs < current.lastUptimeMs) {
+        if (current.lastUptimeMs - frame.uptimeMs > 0x80000000) uptimeWraps += 1;
+        else uptimeRegressions += 1;
+      }
+      const firstUptimeMs = current.firstUptimeMs ?? frame.uptimeMs;
+      return {
+        ...current,
+        frameCount: current.frameCount + 1,
+        firstUptimeMs,
+        lastUptimeMs: frame.uptimeMs,
+        uptimeElapsedMs: frame.uptimeMs
+          + uptimeWraps * 0x100000000
+          - firstUptimeMs,
+        uptimeWraps,
+        uptimeRegressions,
+        lastObservedAtMs: observedAtMs,
+        latest: frame,
+      };
+    });
+  };
+
+  const startTelemetry = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session || telemetryStreamingRef.current) return;
+    if (pollBusyRef.current) {
+      setTelemetryError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setTelemetryError("");
+    setTelemetryState("subscribing");
+    telemetryStreamingRef.current = true;
+    setTelemetryStream({
+      requestedHz: telemetryRequestedHz,
+      agreedHz: null,
+      frameCount: 0,
+      firstUptimeMs: null,
+      lastUptimeMs: null,
+      uptimeElapsedMs: null,
+      uptimeWraps: 0,
+      uptimeRegressions: 0,
+      startedAtMs: Date.now(),
+      stoppedAtMs: null,
+      lastObservedAtMs: null,
+      latest: null,
+    });
+    let agreedHz = 0;
+    try {
+      agreedHz = parseAerialKitTelemetryRate(
+        await session.request(
+          AERIAL_KIT_COMMANDS.telemetry,
+          Uint8Array.of(telemetryRequestedHz),
+        ),
+      );
+      if (!mountedRef.current) return;
+      if (agreedHz === 0) {
+        telemetryStreamingRef.current = false;
+        setTelemetryStream({
+          requestedHz: telemetryRequestedHz,
+          agreedHz: 0,
+          frameCount: 0,
+          firstUptimeMs: null,
+          lastUptimeMs: null,
+          uptimeElapsedMs: null,
+          uptimeWraps: 0,
+          uptimeRegressions: 0,
+          startedAtMs: null,
+          stoppedAtMs: null,
+          lastObservedAtMs: null,
+          latest: null,
+        });
+        setTelemetryState("unavailable");
+        setMessage(
+          "The board declined the telemetry stream with 0 Hz; no pushed frames are expected.",
+        );
+        return;
+      }
+      setTelemetryStream((current) => current && ({
+        ...current,
+        requestedHz: telemetryRequestedHz,
+        agreedHz,
+        startedAtMs: current.startedAtMs ?? Date.now(),
+      }));
+      setTelemetryState("streaming");
+      setMessage(
+        `The board agreed to ${agreedHz} Hz pushed telemetry; STATUS/RC polling is paused while the stream runs.`,
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      telemetryStreamingRef.current = false;
+      setTelemetryState("error");
+      setTelemetryError(readError.message);
+    } finally {
+      pollBusyRef.current = false;
+      if (!telemetryStreamingRef.current && activeRef.current) {
+        schedulePoll(session, hello);
+      }
+    }
+  };
+
+  const stopTelemetry = async () => {
+    const session = sessionRef.current;
+    if (!session || !telemetryStreamingRef.current) return;
+    if (pollBusyRef.current) {
+      setTelemetryError("Wait for the current request to finish before stopping telemetry.");
+      return;
+    }
+    pollBusyRef.current = true;
+    setTelemetryState("stopping");
+    setTelemetryError("");
+    try {
+      const agreedHz = parseAerialKitTelemetryRate(
+        await session.request(
+          AERIAL_KIT_COMMANDS.telemetry,
+          Uint8Array.of(0),
+        ),
+      );
+      if (agreedHz !== 0) {
+        throw new Error(`The board answered ${agreedHz} Hz to a stop request.`);
+      }
+      setTelemetryState("stopped");
+      setMessage("Telemetry stream stopped and STATUS/RC polling resumed.");
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setTelemetryState("error");
+      setTelemetryError(readError.message);
+    } finally {
+      telemetryStreamingRef.current = false;
+      setTelemetryStream((current) => current && ({
+        ...current,
+        stoppedAtMs: Date.now(),
+      }));
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
   };
 
   const readParameters = async () => {
@@ -1187,6 +1357,7 @@ export default function AerialKitStatusSession({
         writer,
         onIssue: addIssue,
         onLogFrame: (frame) => logCollectorRef.current?.(frame),
+        onTelemetry: handleTelemetryFrame,
         onClose: (reason) => {
           if (!mountedRef.current || !activeRef.current) return;
           activeRef.current = false;
@@ -1262,6 +1433,7 @@ export default function AerialKitStatusSession({
       motorTelemetry,
       logInventory,
       logSample,
+      telemetryStream,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -1322,6 +1494,25 @@ export default function AerialKitStatusSession({
     connectionActive: sessionState === "monitoring",
   });
   const rcAgeMs = lastRcAt == null ? null : Math.max(0, clockNow - lastRcAt);
+  const telemetryAgeMs = telemetryStream?.lastObservedAtMs == null
+    ? null
+    : Math.max(0, clockNow - telemetryStream.lastObservedAtMs);
+  const telemetryFreshAfterMs = Math.max(
+    1000,
+    3000 / Math.max(1, telemetryStream?.agreedHz || telemetryRequestedHz),
+  );
+  const telemetryFresh = telemetryStream?.latest != null
+    && telemetryAgeMs != null
+    && telemetryAgeMs <= telemetryFreshAfterMs;
+  const telemetryStale = telemetryState === "streaming"
+    && !telemetryFresh
+    && (
+      telemetryStream?.lastObservedAtMs != null
+      || (
+        telemetryStream?.startedAtMs != null
+        && clockNow - telemetryStream.startedAtMs > telemetryFreshAfterMs
+      )
+    );
   const canDownload = Boolean(
     hello
       || liveStatus
@@ -1329,7 +1520,8 @@ export default function AerialKitStatusSession({
       || preflight
       || performance
       || motorTelemetry
-      || logInventory,
+      || logInventory
+      || telemetryStream,
   );
   const metadataClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) !== 0;
@@ -1570,6 +1762,190 @@ export default function AerialKitStatusSession({
                     </dd>
                   </div>
                 </dl>
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-telemetry-stream"
+                aria-label="Aerial Kit live telemetry stream"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Live telemetry stream</strong>
+                  <span>
+                    {telemetryState === "subscribing"
+                      ? "Negotiating"
+                      : telemetryState === "stopping"
+                        ? "Stopping"
+                        : telemetryState === "streaming"
+                          ? telemetryStale
+                            ? "Stream stale"
+                            : `${telemetryStream?.agreedHz || 0} Hz`
+                          : telemetryState === "unavailable"
+                            ? "No stream"
+                            : telemetryState === "stopped"
+                              ? "Stopped"
+                              : telemetryState === "error"
+                                ? "Stream error"
+                                : "Not streaming"}
+                  </span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <label className="aerial-kit-log-source">
+                    <span>Requested rate</span>
+                    <select
+                      value={telemetryRequestedHz}
+                      disabled={telemetryState === "streaming"
+                        || telemetryState === "subscribing"
+                        || telemetryState === "stopping"}
+                      onChange={(event) => {
+                        setTelemetryRequestedHz(Number(event.target.value));
+                      }}
+                    >
+                      {[5, 10, 20, AERIAL_KIT_TELEMETRY_MAX_HZ].map((rate) => (
+                        <option key={rate} value={rate}>{rate} Hz</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || telemetryState === "streaming"
+                      || telemetryState === "subscribing"
+                      || telemetryState === "stopping"
+                    }
+                    onClick={startTelemetry}
+                  >
+                    <Activity size={15} aria-hidden="true" />
+                    Start telemetry
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      telemetryState !== "streaming"
+                      || telemetryState === "stopping"
+                    }
+                    onClick={stopTelemetry}
+                  >
+                    <CircleStop size={15} aria-hidden="true" />
+                    Stop telemetry
+                  </button>
+                </div>
+                <p>
+                  The board answers with the rate it will actually send. A zero
+                  means no stream will arrive; silence while streaming is shown as
+                  stale, not as live data.
+                </p>
+                {telemetryError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Telemetry stream unavailable</strong>
+                      <small>{telemetryError}</small>
+                    </span>
+                  </div>
+                )}
+                {telemetryState === "unavailable" && (
+                  <div className="aerial-kit-preflight-empty" role="note">
+                    <Activity size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Board declined the stream</strong>
+                      <small>
+                        Requested {telemetryStream?.requestedHz} Hz and received
+                        0 Hz. No pushed frames are expected.
+                      </small>
+                    </span>
+                  </div>
+                )}
+                {telemetryStream && telemetryState !== "unavailable" && (
+                  <>
+                    <dl className="aerial-kit-telemetry-health">
+                      <div>
+                        <dt>Requested / agreed</dt>
+                        <dd>
+                          {telemetryStream.requestedHz} / {telemetryStream.agreedHz} Hz
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Frames</dt>
+                        <dd>{telemetryStream.frameCount}</dd>
+                      </div>
+                      <div>
+                        <dt>Latest frame</dt>
+                        <dd>
+                          {telemetryAgeMs == null
+                            ? "None yet"
+                            : `${(telemetryAgeMs / 1000).toFixed(2)} s ago`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Uptime progression</dt>
+                        <dd>
+                          {telemetryStream.uptimeRegressions
+                            ? `${telemetryStream.uptimeRegressions} regression${telemetryStream.uptimeRegressions === 1 ? "" : "s"}`
+                            : `${telemetryStream.uptimeWraps || 0} wrap${telemetryStream.uptimeWraps === 1 ? "" : "s"}`}
+                        </dd>
+                      </div>
+                    </dl>
+                    {telemetryStream.latest && (
+                      <dl className="aerial-kit-telemetry-latest">
+                        <div>
+                          <dt>Uptime</dt>
+                          <dd>
+                            {(telemetryStream.latest.uptimeMs / 1000).toFixed(3)} s
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Flight state</dt>
+                          <dd>
+                            {AERIAL_KIT_FLIGHT_STATES[
+                              telemetryStream.latest.flightState
+                            ] || `state ${telemetryStream.latest.flightState}`}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Link</dt>
+                          <dd>
+                            {telemetryStream.latest.linkLive === 1 ? "Live" : "Not live"}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Attitude</dt>
+                          <dd>
+                            {telemetryStream.latest.rollDeg.toFixed(1)} /{" "}
+                            {telemetryStream.latest.pitchDeg.toFixed(1)} /{" "}
+                            {telemetryStream.latest.yawDeg.toFixed(1)}°
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>GPS</dt>
+                          <dd>
+                            fix {telemetryStream.latest.gpsFixType} ·{" "}
+                            {telemetryStream.latest.gpsSatellites} satellites
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Motors</dt>
+                          <dd>{telemetryStream.latest.motors.join(" / ")}</dd>
+                        </div>
+                      </dl>
+                    )}
+                  </>
+                )}
+                {telemetryStale && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Telemetry stream is stale</strong>
+                      <small>
+                        No frame arrived within the freshness window. The last
+                        observation remains historical; stop and restart if needed.
+                      </small>
+                    </span>
+                  </div>
+                )}
               </section>
             )}
 

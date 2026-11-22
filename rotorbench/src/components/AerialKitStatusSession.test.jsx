@@ -71,6 +71,24 @@ function motorTelemetryReply(status = 0) {
   return buildAerialKitFrame(0x96, payload);
 }
 
+function telemetryFrame(uptimeMs, {
+  rollDeg = 12.5,
+  pitchDeg = -2.5,
+  yawDeg = 90,
+} = {}) {
+  const payload = new Uint8Array(26);
+  const view = new DataView(payload.buffer);
+  view.setUint32(0, uptimeMs, true);
+  payload.set([1, 1, 3, 11], 4);
+  view.setInt16(8, Math.round(rollDeg * 10), true);
+  view.setInt16(10, Math.round(pitchDeg * 10), true);
+  view.setInt16(12, Math.round(yawDeg * 10), true);
+  view.setInt32(14, 376774000, true);
+  view.setInt32(18, -1224194000, true);
+  payload.set([10, 20, 30, 40], 22);
+  return buildAerialKitFrame(0x08, payload);
+}
+
 function logRecordBody(bytes, timeMs) {
   const payload = new Uint8Array(bytes);
   const view = new DataView(payload.buffer);
@@ -100,6 +118,8 @@ function logRecordBody(bytes, timeMs) {
 function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   perfStatus = 0,
   motorStatus = 0,
+  telemetryAgreedHz = 20,
+  telemetryPushCount = 2,
 } = {}) {
   const waiters = [];
   const queued = [];
@@ -287,6 +307,18 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
       }
       else if (command === 0x16) {
         deliver(motorTelemetryReply(motorStatus));
+      }
+      else if (command === 0x08) {
+        const requested = frame[5];
+        const agreed = requested === 0 ? 0 : telemetryAgreedHz;
+        deliver(buildAerialKitFrame(0x88, Uint8Array.of(agreed)));
+        if (agreed > 0) {
+          for (let index = 0; index < telemetryPushCount; index += 1) {
+            deliver(telemetryFrame(1000 + index * 50, {
+              rollDeg: 12.5 + index,
+            }));
+          }
+        }
       }
       else if (command === 0x09) {
         const source = frame[5];
@@ -694,6 +726,99 @@ test("keeps a missing ESC telemetry path distinct from stopped motors", async ()
   expect(screen.getByText(/does not replace that answer with a list of stopped motors/i))
     .toBeInTheDocument();
   expect(screen.queryByText("Motor 1")).not.toBeInTheDocument();
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("streams telemetry at the agreed rate and stops explicitly", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_WITH_MOTORS);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Start telemetry",
+  }));
+
+  expect(await screen.findByText("20 / 20 Hz")).toBeInTheDocument();
+  expect(screen.getByText("10 / 20 / 30 / 40")).toBeInTheDocument();
+  expect(screen.getByText("13.5 / -2.5 / 90.0°")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Stop telemetry",
+  }));
+  expect(await screen.findByText("Stopped")).toBeInTheDocument();
+  expect(screen.getByText(/Telemetry stream stopped and STATUS\/RC polling resumed/i))
+    .toBeInTheDocument();
+
+  const telemetryRequests = writer.write.mock.calls
+    .map(([frame]) => frame)
+    .filter((frame) => frame[3] === 0x08)
+    .map((frame) => frame[5]);
+  expect(telemetryRequests).toEqual([20, 0]);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("keeps a declined telemetry stream distinct from a running stream", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_WITH_MOTORS, {
+    telemetryAgreedHz: 0,
+    telemetryPushCount: 0,
+  });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Start telemetry",
+  }));
+
+  expect(await screen.findByText("Board declined the stream"))
+    .toBeInTheDocument();
+  expect(screen.getAllByText(/No pushed frames are expected/i).length)
+    .toBeGreaterThan(0);
+  expect(screen.queryByText("20 / 20 Hz")).not.toBeInTheDocument();
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("marks a silent telemetry stream stale instead of keeping it live", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_WITH_MOTORS, {
+    telemetryPushCount: 1,
+  });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Start telemetry",
+  }));
+  expect(await screen.findByText("20 / 20 Hz")).toBeInTheDocument();
+  expect(await screen.findByText(
+    "Telemetry stream is stale",
+    {},
+    { timeout: 2500 },
+  )).toBeInTheDocument();
+  expect(screen.getByText(/last observation remains historical/i))
+    .toBeInTheDocument();
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

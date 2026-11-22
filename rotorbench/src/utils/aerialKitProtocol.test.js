@@ -22,6 +22,8 @@ import {
   parseAerialKitRcChannels,
   parseAerialKitStatus,
   parseAerialKitSensorInfo,
+  parseAerialKitTelemetry,
+  parseAerialKitTelemetryRate,
 } from "./aerialKitProtocol";
 
 const HELLO_REQUEST = "aa550101009dc8";
@@ -78,6 +80,38 @@ test("builds source-compatible HELLO and STATUS requests", () => {
   expect(buildAerialKitFrame(AERIAL_KIT_COMMANDS.status)).toEqual(
     bytes(STATUS_REQUEST),
   );
+});
+
+test("parses telemetry uptime, status, and negotiated stream rates", () => {
+  const bytes = new Uint8Array(26);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 987654, true);
+  bytes.set([1, 1, 3, 11], 4);
+  view.setInt16(8, 125, true);
+  view.setInt16(10, -25, true);
+  view.setInt16(12, 900, true);
+  view.setInt32(14, 376774000, true);
+  view.setInt32(18, -1224194000, true);
+  bytes.set([10, 20, 30, 40], 22);
+  expect(parseAerialKitTelemetry(bytes)).toEqual({
+    uptimeMs: 987654,
+    flightState: 1,
+    linkLive: 1,
+    gpsFixType: 3,
+    gpsSatellites: 11,
+    rollDeg: 12.5,
+    pitchDeg: -2.5,
+    yawDeg: 90,
+    latitude: 37.6774,
+    longitude: -122.4194,
+    motors: [10, 20, 30, 40],
+  });
+  expect(parseAerialKitTelemetryRate(Uint8Array.of(20))).toBe(20);
+  expect(parseAerialKitTelemetryRate(Uint8Array.of(0))).toBe(0);
+  expect(() => parseAerialKitTelemetryRate(Uint8Array.of(51)))
+    .toThrow(/0 to 50 Hz/i);
+  expect(() => parseAerialKitTelemetry(new Uint8Array(25)))
+    .toThrow(/26 bytes/i);
 });
 
 test("decodes captured HELLO and STATUS replies independent of chunking", () => {
@@ -944,6 +978,20 @@ test("creates a sanitized live-status evidence boundary", () => {
       }],
       observedAtMs: 1250,
     },
+    telemetryStream: {
+      requestedHz: 20,
+      agreedHz: 20,
+      frameCount: 2,
+      firstUptimeMs: 1000,
+      lastUptimeMs: 1050,
+      uptimeElapsedMs: 50,
+      uptimeWraps: 0,
+      uptimeRegressions: 0,
+      startedAtMs: 1000,
+      stoppedAtMs: 1500,
+      lastObservedAtMs: 1250,
+      latest: null,
+    },
     logInventory: [{
       status: "available",
       requestedSource: 0,
@@ -1016,6 +1064,7 @@ test("creates a sanitized live-status evidence boundary", () => {
         "MOTOR_TELEMETRY",
         "LOG_SOURCE",
         "LOG_STREAM",
+        "TELEMETRY",
       ],
     },
     status: {
@@ -1056,6 +1105,14 @@ test("creates a sanitized live-status evidence boundary", () => {
         measured: true,
         rpm: 7142,
       }],
+    },
+    telemetryStream: {
+      requestedHz: 20,
+      agreedHz: 20,
+      frameCount: 2,
+      startedAt: "1970-01-01T00:00:01.000Z",
+      stoppedAt: "1970-01-01T00:00:01.500Z",
+      lastObservedAt: "1970-01-01T00:00:01.250Z",
     },
     logInventory: [{
       requestedSource: 0,

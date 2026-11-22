@@ -433,6 +433,72 @@ function normalizedLogSample(value) {
   };
 }
 
+function normalizedTelemetryStream(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const requestedHz = sensorNumber(value.requestedHz);
+  const agreedHz = sensorNumber(value.agreedHz);
+  const frameCount = sensorNumber(value.frameCount);
+  const uptimeWraps = sensorNumber(value.uptimeWraps);
+  const uptimeRegressions = sensorNumber(value.uptimeRegressions);
+  if (
+    !Number.isInteger(requestedHz)
+    || requestedHz < 0
+    || requestedHz > 50
+    || !Number.isInteger(agreedHz)
+    || agreedHz < 0
+    || agreedHz > 50
+    || !Number.isInteger(frameCount)
+    || frameCount < 0
+    || !Number.isInteger(uptimeWraps)
+    || uptimeWraps < 0
+    || !Number.isInteger(uptimeRegressions)
+    || uptimeRegressions < 0
+  ) {
+    throw new Error("The Aerial Kit telemetry stream has invalid rate or counters.");
+  }
+  const latestValue = value.latest;
+  const latest = latestValue
+    ? {
+        uptimeMs: sensorNumber(latestValue.uptimeMs),
+        flightState: sensorNumber(latestValue.flightState),
+        linkLive: sensorNumber(latestValue.linkLive),
+        gpsFixType: sensorNumber(latestValue.gpsFixType),
+        gpsSatellites: sensorNumber(latestValue.gpsSatellites),
+        rollDeg: sensorNumber(latestValue.rollDeg),
+        pitchDeg: sensorNumber(latestValue.pitchDeg),
+        yawDeg: sensorNumber(latestValue.yawDeg),
+        latitude: sensorNumber(latestValue.latitude),
+        longitude: sensorNumber(latestValue.longitude),
+        motors: sensorVector(latestValue.motors, 4),
+      }
+    : null;
+  if (
+    latest
+    && Object.entries(latest).some(([field, fieldValue]) => (
+      field !== "motors" && fieldValue == null
+    ))
+  ) {
+    throw new Error("The Aerial Kit telemetry stream has an incomplete latest frame.");
+  }
+  if (latest && !latest.motors) {
+    throw new Error("The Aerial Kit telemetry stream is missing motor outputs.");
+  }
+  return {
+    requestedHz,
+    agreedHz,
+    frameCount,
+    firstUptimeMs: sensorNumber(value.firstUptimeMs),
+    lastUptimeMs: sensorNumber(value.lastUptimeMs),
+    uptimeElapsedMs: sensorNumber(value.uptimeElapsedMs),
+    uptimeWraps,
+    uptimeRegressions,
+    startedAtMs: timestampMilliseconds(value.startedAt),
+    stoppedAtMs: timestampMilliseconds(value.stoppedAt),
+    lastObservedAtMs: timestampMilliseconds(value.lastObservedAt),
+    latest,
+  };
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -743,6 +809,7 @@ export function parseAerialKitLiveStatusJson(payload) {
   const motorTelemetry = normalizedMotorTelemetry(payload.motorTelemetry);
   const logInventory = normalizedLogInventory(payload.logInventory);
   const logSample = normalizedLogSample(payload.logSample);
+  const telemetryStream = normalizedTelemetryStream(payload.telemetryStream);
   return {
     kind: "fc-live-status",
     identity,
@@ -763,6 +830,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     motorTelemetry,
     logInventory,
     logSample,
+    telemetryStream,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };
