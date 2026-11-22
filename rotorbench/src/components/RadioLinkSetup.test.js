@@ -258,6 +258,7 @@ test("GX12 exposes simultaneous dual-band internal RF without inventing power de
   expect(screen.getByLabelText("Host transport")).toHaveValue("internal-rf");
   expect(screen.getByText(/Internal dual-band Gemini-XROSSBAND ExpressLRS RF/i))
     .toBeInTheDocument();
+  expect(screen.getByText("Simultaneous bands")).toBeInTheDocument();
   expect(screen.getByText("1000 mW published max")).toBeInTheDocument();
   expect(screen.getByText(/Published hardware maximum: 1000 mW per transmitter/i))
     .toBeInTheDocument();
@@ -272,13 +273,27 @@ test("GX12 exposes simultaneous dual-band internal RF without inventing power de
 });
 
 test("TX15 Max is described as one selected band rather than Gemini-XROSSBAND", () => {
-  render(<RadioLinkSetup />);
+  render(
+    <RadioLinkSetup
+      selectedReceiver={{
+        id: "rx-dual-band",
+        name: "Dual-band receiver",
+        protocol: "CRSF",
+        frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+      }}
+    />,
+  );
   fireEvent.change(screen.getByLabelText("Device"), {
     target: { value: "radiomaster-tx15-max-elrs-xrossband-tx" },
   });
 
   expect(screen.getByLabelText("Host transport")).toHaveValue("internal-rf");
   expect(screen.getByText(/LR1121 transceiver; one band selected at a time/i))
+    .toBeInTheDocument();
+  expect(screen.getByText("Selectable band")).toBeInTheDocument();
+  expect(screen.getByText(/Selectable 2\.4 GHz \/ Sub-G 900 MHz/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/does not transmit both simultaneously/i))
     .toBeInTheDocument();
   expect(screen.getByText(/2\.4 GHz or Sub-G 900 MHz \(selected band\)/i))
     .toBeInTheDocument();

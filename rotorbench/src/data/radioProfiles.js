@@ -320,6 +320,7 @@ export const RADIO_TARGETS = [
     description: "EdgeTX handset with an LR1121 ExpressLRS transmitter that selects either 2.4 GHz or Sub-G 900 MHz; it does not document simultaneous dual-band transmission.",
     frequency: "2.4 GHz or Sub-G 900 MHz (selected band)",
     frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    bandMode: "selectable",
     defaultHostTransport: "internal-rf",
     defaultHostBay: "verify",
     supportedHostBays: [],
@@ -354,6 +355,7 @@ export const RADIO_TARGETS = [
     description: "EdgeTX handset with dual 1 W Gemini-XROSSBAND ExpressLRS transmitters for simultaneous 2.4 GHz and Sub-G 900 MHz operation.",
     frequency: "2.4 GHz / Sub-G 900 MHz (Gemini Xrossband)",
     frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    bandMode: "simultaneous",
     defaultHostTransport: "internal-rf",
     defaultHostBay: "verify",
     supportedHostBays: [],
@@ -469,6 +471,7 @@ export const RADIO_TARGETS = [
     description: "Dual LR1121 module for simultaneous 2.4 GHz and 868/900 MHz Gemini Xrossband transmission, with JR micro and Nano bay adapters.",
     frequency: "2.4 GHz / Sub-G 900 MHz (Gemini Xrossband)",
     frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    bandMode: "simultaneous",
     defaultHostTransport: "module-bay",
     defaultHostBay: "jr-micro-5",
     supportedHostBays: ["jr-micro-5", "nano-8"],
@@ -851,12 +854,24 @@ export function getRadioTargetsForRole(role) {
   return RADIO_TARGETS.filter((target) => target.roles.includes(role));
 }
 
+export function getRadioTargetBandMode(targetOrId) {
+  const target = typeof targetOrId === "string"
+    ? getRadioTarget(targetOrId)
+    : targetOrId;
+  if (target?.bandMode) return target.bandMode;
+  if (target?.packetRateModes?.some((mode) => mode.startsWith("x"))) {
+    return "simultaneous";
+  }
+  return (target?.frequencyBands?.length || 0) > 1 ? "selectable" : "single";
+}
+
 function normalizedFrequencyBand(value) {
   return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
 export function getRadioReceiverBandCompatibility(targetId, receiver = null) {
   const target = getRadioTarget(targetId);
+  const targetBandMode = getRadioTargetBandMode(target);
   const targetBandLabels = Array.isArray(target.frequencyBands)
     ? target.frequencyBands.filter(Boolean)
     : [];
@@ -874,6 +889,8 @@ export function getRadioReceiverBandCompatibility(targetId, receiver = null) {
       targetBandLabels,
       receiverBandLabels,
       sharedBandLabels: [],
+      targetBandMode,
+      simultaneousCoverage: false,
     };
   }
   const sharedBands = targetBands.filter((band) => receiverBands.includes(band));
@@ -891,6 +908,11 @@ export function getRadioReceiverBandCompatibility(targetId, receiver = null) {
     receiverBandLabels,
     sharedBandLabels,
     receiverBandCoverageComplete,
+    targetBandMode,
+    simultaneousCoverage: (
+      receiverBandCoverageComplete
+      && targetBandMode === "simultaneous"
+    ),
   };
 }
 
@@ -1281,6 +1303,15 @@ export function buildRadioWarnings(
     );
     warnings.push(
       `${target.name} covers ${bandCompatibility.sharedBandLabels.join(" / ")} but does not configure the receiver's ${uncoveredBands.join(" / ")} band${uncoveredBands.length === 1 ? "" : "s"}.`,
+    );
+  } else if (
+    bandCompatibility.status === "compatible"
+    && bandCompatibility.receiverBandCoverageComplete
+    && bandCompatibility.targetBandMode === "selectable"
+    && bandCompatibility.targetBands.length > 1
+  ) {
+    warnings.push(
+      `${target.name} can select either ${bandCompatibility.targetBandLabels.join(" or ")} but does not transmit both simultaneously. The receiver may still operate on the selected shared band.`,
     );
   }
   if (!packetRates.some((rate) => rate.value === normalized.packetRateMode)) {

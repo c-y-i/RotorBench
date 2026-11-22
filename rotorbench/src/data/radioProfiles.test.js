@@ -24,6 +24,7 @@ import {
   getRadioReceiverBandCompatibility,
   getSuggestedRadioTargetForReceiver,
   getRadioTarget,
+  getRadioTargetBandMode,
   getRadioTargetForRole,
   getRadioTargetsForRole,
   getSuggestedTelemetryRatio,
@@ -252,6 +253,7 @@ test("TX15 Max and GX12 keep their internal-RF band behavior distinct", () => {
     .toMatch(/do not describe.*simultaneous/i);
   expect(getPacketRatesForTarget(tx15.id).map((rate) => rate.value))
     .toEqual(["25", "50", "100-full", "150", "250", "500"]);
+  expect(getRadioTargetBandMode(tx15.id)).toBe("selectable");
 
   expect(gx12).toMatchObject({
     frequency: "2.4 GHz / Sub-G 900 MHz (Gemini Xrossband)",
@@ -265,8 +267,42 @@ test("TX15 Max and GX12 keep their internal-RF band behavior distinct", () => {
   });
   expect(gx12.description)
     .toMatch(/simultaneous 2\.4 GHz and Sub-G 900 MHz/i);
+  expect(getRadioTargetBandMode(gx12.id)).toBe("simultaneous");
   expect(getPacketRatesForTarget(gx12.id).map((rate) => rate.value))
     .toEqual(expect.arrayContaining(["x100-full", "x150"]));
+
+  const dualBandReceiver = {
+    id: "rx-dual",
+    name: "Dual-band receiver",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+  };
+  expect(getRadioReceiverBandCompatibility(
+    tx15.id,
+    dualBandReceiver,
+  )).toMatchObject({
+    receiverBandCoverageComplete: true,
+    targetBandMode: "selectable",
+    simultaneousCoverage: false,
+  });
+  expect(getRadioReceiverBandCompatibility(
+    gx12.id,
+    dualBandReceiver,
+  )).toMatchObject({
+    receiverBandCoverageComplete: true,
+    targetBandMode: "simultaneous",
+    simultaneousCoverage: true,
+  });
+  expect(buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+    targetId: tx15.id,
+    hostTransport: "internal-rf",
+    hostBay: "verify",
+    powerDbm: 20,
+  }, {
+    receiver: dualBandReceiver,
+  })).toEqual(expect.arrayContaining([
+    expect.stringMatching(/TX15 Max.*does not transmit both simultaneously/i),
+  ]));
 });
 
 test("TX16S Mark II exposes its documented internal ELRS transmitter", () => {

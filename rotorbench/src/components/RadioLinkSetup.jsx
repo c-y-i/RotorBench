@@ -47,6 +47,7 @@ import {
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioTarget,
+  getRadioTargetBandMode,
   groupRadioTargets,
   getRadioTargetForRole,
   getRadioTargetsForRole,
@@ -166,6 +167,7 @@ export default function RadioLinkSetup({
     target.id,
     selectedReceiver,
   );
+  const targetBandMode = getRadioTargetBandMode(target);
   const suggestedTarget = getSuggestedRadioTargetForReceiver(
     target.id,
     selectedReceiver,
@@ -591,6 +593,13 @@ export default function RadioLinkSetup({
 
             <div className="radio-target-summary">
               <span><strong>{target.frequency}</strong> link</span>
+              {(target.frequencyBands?.length || 0) > 1 && (
+                <span>
+                  {targetBandMode === "simultaneous"
+                    ? "Simultaneous bands"
+                    : "Selectable band"}
+                </span>
+              )}
               <span>{powerSpec?.regulatoryMaxima?.length
                 ? powerSpec.defaultDbm != null
                   ? `${powerSpec.defaultDbm} dBm default`
@@ -613,7 +622,12 @@ export default function RadioLinkSetup({
                 </span>
                 <em>
                   {receiverBandCompatibility.status === "compatible"
-                    ? `${receiverBandCompatibility.receiverBandCoverageComplete ? "Shared" : "Partial"} ${receiverBandCompatibility.sharedBandLabels.join(" / ")}`
+                    ? `${receiverBandCompatibility.receiverBandCoverageComplete
+                      ? targetBandMode === "selectable"
+                        && receiverBandCompatibility.targetBands.length > 1
+                        ? "Selectable"
+                        : "Shared"
+                      : "Partial"} ${receiverBandCompatibility.sharedBandLabels.join(" / ")}`
                     : receiverBandCompatibility.status === "conflict"
                       ? "No shared band"
                       : "Verify bands"}
