@@ -38,6 +38,7 @@ import {
   getRadioHostBay,
   getRadioHandset,
   getRadioHandsetBayCompatibility,
+  getRadioBindingValidationMessage,
   getRadioPowerLevels,
   getRadioPowerSpec,
   getRadioReceiverBandCompatibility,
@@ -140,6 +141,7 @@ export default function RadioLinkSetup({
   );
   const bindingStaged = hasStagedBinding(config);
   const bindingIdentity = getBindingIdentity(config);
+  const bindingValidationMessage = getRadioBindingValidationMessage(config);
   const uidInvalid = Boolean(config.uid) && !isValidUidFormat(config.uid);
   const phraseTooLong = bindingPhraseByteLength(config.bindingPhrase) > 48;
   const bindingConflict = Boolean(String(config.bindingPhrase || "").trim() && config.uid);
@@ -328,14 +330,8 @@ export default function RadioLinkSetup({
   };
 
   const savePlan = () => {
-    if (uidInvalid || bindingConflict || phraseTooLong) {
-      setMessage(
-        bindingConflict
-          ? "Choose either a binding phrase or a direct UID before saving."
-          : phraseTooLong
-            ? "Shorten the binding phrase to 48 UTF-8 bytes or less before saving."
-          : "Correct the UID format before saving.",
-      );
+    if (bindingValidationMessage) {
+      setMessage(bindingValidationMessage);
       return;
     }
     try {

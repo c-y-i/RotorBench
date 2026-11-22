@@ -959,6 +959,21 @@ export function isValidUidFormat(value) {
   return /^[0-9a-f]{12}$/i.test(raw.replace(/[:\s-]/g, ""));
 }
 
+export function getRadioBindingValidationMessage(config = {}) {
+  const phrase = String(config.bindingPhrase || "").trim();
+  const uid = String(config.uid || "").trim();
+  if (phrase && uid) {
+    return "Choose either a binding phrase or a direct UID before saving.";
+  }
+  if (bindingPhraseByteLength(phrase) > 48) {
+    return "Shorten the binding phrase to 48 UTF-8 bytes or less before saving.";
+  }
+  if (uid && !isValidUidFormat(uid)) {
+    return "Correct the UID format before saving.";
+  }
+  return "";
+}
+
 export function isUnboundUid(value) {
   const uid = normalizedUid(value);
   return uid.length === 12 && /^0{12}$/.test(uid);

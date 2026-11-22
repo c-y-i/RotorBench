@@ -38,10 +38,20 @@ jest.mock("./FlightControllerSetup", () => function MockFlightControllerSetup(pr
   );
 });
 jest.mock("./RadioLinkSetup", () => function MockRadioLinkSetup(props = {}) {
-  const { receiverName, controlRoles, value } = props;
+  const { receiverName, controlRoles, value, onChange } = props;
   return (
     <div>
       Radio panel: {receiverName || "none"} / roles {(controlRoles || []).join(",") || "all"} / packet {value?.packetRateMode || "none"}
+      <button
+        type="button"
+        onClick={() => onChange?.({
+          ...value,
+          bindingPhrase: "conflicting phrase",
+          uid: "10:73:a1:1f:a8:0f",
+        })}
+      >
+        Set invalid radio binding
+      </button>
     </div>
   );
 });
@@ -528,6 +538,23 @@ test("restores an unsaved local setup draft after remounting", async () => {
     .toBeInTheDocument();
   expect(screen.getByRole("tab", { name: "Flight controller" }))
     .toHaveClass("has-unsaved");
+});
+
+test("blocks the combined save before writing invalid radio binding data", () => {
+  renderSetup();
+
+  fireEvent.click(screen.getByRole("tab", { name: "Radio link" }));
+  fireEvent.click(screen.getByRole("button", { name: "Adopt mock radio values" }));
+  fireEvent.click(screen.getByRole("button", { name: "Set invalid radio binding" }));
+  expect(screen.getByRole("button", { name: "Save changed plans" })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Save changed plans" }));
+
+  expect(screen.getByText(
+    "Choose either a binding phrase or a direct UID before saving.",
+  )).toBeInTheDocument();
+  expect(localStorage.getItem("rotorbench:hardware-plan:standalone:fc")).toBeNull();
+  expect(localStorage.getItem("rotorbench:hardware-plan:standalone:radio")).toBeNull();
 });
 
 test("uses the selected build controller and receiver", () => {

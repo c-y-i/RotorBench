@@ -16,6 +16,7 @@ import {
   getRadioHostBay,
   getRadioHandset,
   getRadioHandsetBayCompatibility,
+  getRadioBindingValidationMessage,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioReceiverBandCompatibility,
@@ -654,6 +655,27 @@ test("binding phrases report the firmware's 48-byte limit", () => {
   expect(warnings).toEqual(expect.arrayContaining([
     expect.stringMatching(/48 UTF-8 bytes/i),
   ]));
+});
+
+test("shared binding validation blocks conflicting or invalid identity input", () => {
+  expect(getRadioBindingValidationMessage({
+    ...DEFAULT_RADIO_CONFIG,
+    bindingPhrase: "shared phrase",
+    uid: "1073a11fa80f",
+  })).toMatch(/either a binding phrase or a direct UID/i);
+  expect(getRadioBindingValidationMessage({
+    ...DEFAULT_RADIO_CONFIG,
+    bindingPhrase: "x".repeat(49),
+  })).toMatch(/48 UTF-8 bytes/i);
+  expect(getRadioBindingValidationMessage({
+    ...DEFAULT_RADIO_CONFIG,
+    uid: "1073a11fa80z",
+  })).toMatch(/UID format/i);
+  expect(getRadioBindingValidationMessage({
+    ...DEFAULT_RADIO_CONFIG,
+    bindingPhrase: "",
+    uid: "10:73:a1:1f:a8:0f",
+  })).toBe("");
 });
 
 test("cross-plan mapping reports arm, mode, and beeper differences", () => {

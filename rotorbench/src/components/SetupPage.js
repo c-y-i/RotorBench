@@ -32,12 +32,11 @@ import {
 import {
   DEFAULT_RADIO_CONFIG,
   applyFlightControllerChannelMap,
-  bindingPhraseByteLength,
   buildChannelMappingWarnings,
   buildRadioWarnings,
+  getRadioBindingValidationMessage,
   getRadioChannelRoles,
   getRadioTarget,
-  isValidUidFormat,
   normalizeRadioConfig,
   sanitizeRadioChannelMap,
 } from "../data/radioProfiles";
@@ -514,21 +513,7 @@ export default function SetupPage() {
   };
 
   const radioBindingValidationMessage = () => {
-    const bindingConflict = Boolean(
-      String(radioPlan.bindingPhrase || "").trim() && radioPlan.uid,
-    );
-    const phraseTooLong = bindingPhraseByteLength(radioPlan.bindingPhrase) > 48;
-    const uidInvalid = Boolean(radioPlan.uid) && !isValidUidFormat(radioPlan.uid);
-    if (bindingConflict) {
-      return "Choose either a binding phrase or a direct UID before saving.";
-    }
-    if (phraseTooLong) {
-      return "Shorten the binding phrase to 48 UTF-8 bytes or less before saving.";
-    }
-    if (uidInvalid) {
-      return "Correct the UID format before saving.";
-    }
-    return "";
+    return getRadioBindingValidationMessage(radioPlan);
   };
 
   const persistFcPlan = () => {
