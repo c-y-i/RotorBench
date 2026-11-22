@@ -8,6 +8,7 @@ import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
 import { buildAerialKitPidResponsePlan } from "../utils/aerialKitPidResponse";
 import { buildAerialKitDResponsePlan } from "../utils/aerialKitDResponse";
 import { buildAerialKitAntiGravityPlan } from "../utils/aerialKitAntiGravity";
+import { buildAerialKitPidGainPlan } from "../utils/aerialKitPidGains";
 
 export const FIRMWARE_FAMILIES = [
   {
@@ -1801,6 +1802,14 @@ export function createDefaultFlightControllerConfig(
     antiGravityGain: 0,
     antiGravityCutoffHz: 5,
     antiGravityPGain: 100,
+    rateKpRoll: 0.25,
+    rateKpPitch: 0.25,
+    rateKpYaw: 0.35,
+    rateKiRoll: 0.15,
+    rateKiPitch: 0.15,
+    rateKiYaw: 0.2,
+    rateILimit: 0.3,
+    torqueLimit: 0.6,
     maxRateDps: 700,
     rateCenterDps: 0,
     rateExpo: 0,
@@ -2425,6 +2434,48 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "manual-rate-range",
         message: "Manual-mode authority must be between 0.1 and 1.0 of full stick.",
+      });
+    }
+    [
+      ["rateKpRoll", "Roll P", 3],
+      ["rateKpPitch", "Pitch P", 3],
+      ["rateKpYaw", "Yaw P", 3],
+      ["rateKiRoll", "Roll I", 2],
+      ["rateKiPitch", "Pitch I", 2],
+      ["rateKiYaw", "Yaw I", 2],
+    ].forEach(([key, label, maximum]) => {
+      if (
+        !finite(config[key])
+        || Number(config[key]) < 0
+        || Number(config[key]) > maximum
+      ) {
+        issues.push({
+          severity: "error",
+          code: `${key}-range`,
+          message: `${label} gain must be between 0 and ${maximum}.`,
+        });
+      }
+    });
+    if (
+      !finite(config.rateILimit)
+      || Number(config.rateILimit) < 0
+      || Number(config.rateILimit) > 1
+    ) {
+      issues.push({
+        severity: "error",
+        code: "rate-i-limit-range",
+        message: "Rate integral clamp must be between 0 and 1.",
+      });
+    }
+    if (
+      !finite(config.torqueLimit)
+      || Number(config.torqueLimit) < 0.05
+      || Number(config.torqueLimit) > 1
+    ) {
+      issues.push({
+        severity: "error",
+        code: "torque-limit-range",
+        message: "Per-axis torque limit must be between 0.05 and 1.",
       });
     }
     if (
@@ -3184,6 +3235,9 @@ export function buildFlightControllerSummary(
   const antiGravityPlan = config.firmwareFamily === "aerialkit"
     ? buildAerialKitAntiGravityPlan(config)
     : null;
+  const pidGainPlan = config.firmwareFamily === "aerialkit"
+    ? buildAerialKitPidGainPlan(config)
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -3254,6 +3308,7 @@ export function buildFlightControllerSummary(
               ? `enabled, gain ${antiGravityPlan.gain}, throttle-speed cutoff ${antiGravityPlan.cutoffHz} Hz, P share ${antiGravityPlan.pGainPercent}% on roll and pitch only`
               : "disabled; yaw remains outside anti-gravity scope"
           }`,
+          `Rate PID gains: ${pidGainPlan.axes.map((axis) => `${axis.label} P ${axis.p} / I ${axis.i}`).join(", ")}; integral limit ${pidGainPlan.rateILimit}, torque limit ${pidGainPlan.torqueLimit}${pidGainPlan.matchesFirmwareDefaults ? " (source defaults)" : " (edited from source defaults)"}`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,
           ...(supportsAerialKitWingFailsafe(config.airframe)

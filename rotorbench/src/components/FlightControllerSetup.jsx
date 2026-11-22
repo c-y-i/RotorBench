@@ -62,6 +62,7 @@ import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
 import { buildAerialKitPidResponsePlan } from "../utils/aerialKitPidResponse";
 import { buildAerialKitDResponsePlan } from "../utils/aerialKitDResponse";
 import { buildAerialKitAntiGravityPlan } from "../utils/aerialKitAntiGravity";
+import { buildAerialKitPidGainPlan } from "../utils/aerialKitPidGains";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -165,6 +166,14 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "anti-gravity-cutoff-range": { id: "fc-anti-gravity-cutoff", label: "anti-gravity cutoff" },
   "anti-gravity-p-gain-range": { id: "fc-anti-gravity-p-gain", label: "anti-gravity P share" },
   "manual-rate-range": { id: "fc-manual-rate", label: "manual stick authority" },
+  "rateKpRoll-range": { id: "fc-rate-kp-roll", label: "roll P gain" },
+  "rateKpPitch-range": { id: "fc-rate-kp-pitch", label: "pitch P gain" },
+  "rateKpYaw-range": { id: "fc-rate-kp-yaw", label: "yaw P gain" },
+  "rateKiRoll-range": { id: "fc-rate-ki-roll", label: "roll I gain" },
+  "rateKiPitch-range": { id: "fc-rate-ki-pitch", label: "pitch I gain" },
+  "rateKiYaw-range": { id: "fc-rate-ki-yaw", label: "yaw I gain" },
+  "rate-i-limit-range": { id: "fc-rate-i-limit", label: "integral clamp" },
+  "torque-limit-range": { id: "fc-torque-limit", label: "torque limit" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -926,6 +935,166 @@ function RcSmoothingPanel({
   );
 }
 
+function PidGainsPanel({
+  config,
+  plan,
+  onUpdate,
+}) {
+  const statusLabel = plan.matchesFirmwareDefaults
+    ? "Source defaults"
+    : "Edited gains";
+
+  return (
+    <details className={`fc-feed-forward fc-pid-gains is-${plan.status}`}>
+      <summary>
+        <span>
+          <strong>Baseline PID</strong>
+          <small>Rate-loop P and I · source defaults are a starting point, not a tune</small>
+        </span>
+        <em>{statusLabel}</em>
+      </summary>
+      <div className="fc-feed-forward-body">
+        <div className="fc-feed-forward-status" role="note">
+          <span>
+            <small>Baseline gains</small>
+            <strong>{statusLabel}</strong>
+          </span>
+          <dl>
+            {plan.axes.map((axis) => (
+              <div key={axis.id}>
+                <dt>{axis.label}</dt>
+                <dd>P {axis.p} / I {axis.i}</dd>
+              </div>
+            ))}
+            <div>
+              <dt>Limits</dt>
+              <dd>I {plan.rateILimit} / torque {plan.torqueLimit}</dd>
+            </div>
+          </dl>
+        </div>
+        <fieldset className="fc-feed-forward-gains">
+          <legend>P gains</legend>
+          <div className="fc-field-grid fc-field-grid-three">
+            {[
+              ["rateKpRoll", "Roll P", "fc-rate-kp-roll"],
+              ["rateKpPitch", "Pitch P", "fc-rate-kp-pitch"],
+              ["rateKpYaw", "Yaw P", "fc-rate-kp-yaw"],
+            ].map(([key, label, id]) => (
+              <Field
+                key={key}
+                label={label}
+                htmlFor={id}
+                hint="0 to 3"
+                hintId={`${id}-hint`}
+              >
+                <input
+                  id={id}
+                  type="number"
+                  min="0"
+                  max="3"
+                  step="0.001"
+                  aria-invalid={filterInputInvalid(config[key])}
+                  aria-describedby={`${id}-hint`}
+                  value={filterInputValue(config[key])}
+                  onChange={(event) => onUpdate(
+                    key,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="fc-feed-forward-gains">
+          <legend>I gains</legend>
+          <div className="fc-field-grid fc-field-grid-three">
+            {[
+              ["rateKiRoll", "Roll I", "fc-rate-ki-roll"],
+              ["rateKiPitch", "Pitch I", "fc-rate-ki-pitch"],
+              ["rateKiYaw", "Yaw I", "fc-rate-ki-yaw"],
+            ].map(([key, label, id]) => (
+              <Field
+                key={key}
+                label={label}
+                htmlFor={id}
+                hint="0 to 2"
+                hintId={`${id}-hint`}
+              >
+                <input
+                  id={id}
+                  type="number"
+                  min="0"
+                  max="2"
+                  step="0.001"
+                  aria-invalid={filterInputInvalid(config[key])}
+                  aria-describedby={`${id}-hint`}
+                  value={filterInputValue(config[key])}
+                  onChange={(event) => onUpdate(
+                    key,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="fc-feed-forward-shaping">
+          <legend>Limits</legend>
+          <div className="fc-field-grid">
+            <Field
+              label="Integral clamp"
+              htmlFor="fc-rate-i-limit"
+              hint="0 to 1"
+              hintId="fc-rate-i-limit-hint"
+            >
+              <input
+                id="fc-rate-i-limit"
+                type="number"
+                min="0"
+                max="1"
+                step="0.001"
+                aria-invalid={filterInputInvalid(config.rateILimit)}
+                aria-describedby="fc-rate-i-limit-hint"
+                value={filterInputValue(config.rateILimit)}
+                onChange={(event) => onUpdate(
+                  "rateILimit",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Torque limit"
+              htmlFor="fc-torque-limit"
+              hint="0.05 to 1 per axis"
+              hintId="fc-torque-limit-hint"
+            >
+              <input
+                id="fc-torque-limit"
+                type="number"
+                min="0.05"
+                max="1"
+                step="0.001"
+                aria-invalid={filterInputInvalid(config.torqueLimit)}
+                aria-describedby="fc-torque-limit-hint"
+                value={filterInputValue(config.torqueLimit)}
+                onChange={(event) => onUpdate(
+                  "torqueLimit",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+          </div>
+        </fieldset>
+        <p className="fc-feed-forward-note">
+          These are the firmware’s baseline rate-loop gains. Changing them can
+          make the aircraft unstable; verify a tune only with props-off checks
+          and qualified flight evidence.
+        </p>
+      </div>
+    </details>
+  );
+}
+
 function PidResponsePanel({
   config,
   plan,
@@ -1668,6 +1837,10 @@ export default function FlightControllerSetup({
   );
   const antiGravityPlan = useMemo(
     () => buildAerialKitAntiGravityPlan(config),
+    [config],
+  );
+  const pidGainPlan = useMemo(
+    () => buildAerialKitPidGainPlan(config),
     [config],
   );
   const aerialKitRoleKeys = new Set(
@@ -2644,6 +2817,11 @@ export default function FlightControllerSetup({
                   </div>
                 </div>
               </div>
+              <PidGainsPanel
+                config={config}
+                plan={pidGainPlan}
+                onUpdate={(key, nextValue) => update(key, nextValue)}
+              />
               <PidResponsePanel
                 config={config}
                 plan={pidResponsePlan}

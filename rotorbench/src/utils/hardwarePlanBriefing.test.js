@@ -16,6 +16,7 @@ test("creates a concise hardware briefing without binding material", () => {
     dMaxGain: 35,
     antiGravityGain: 80,
     antiGravityPGain: 120,
+    rateKpRoll: 0.3,
   };
   const fcProfile = getBoardProfile(fcPlan.profileId);
   const briefing = createHardwarePlanBriefing({
@@ -69,6 +70,9 @@ test("creates a concise hardware briefing without binding material", () => {
   );
   expect(briefing.text).toContain(
     "- Anti-gravity: enabled, gain 80, throttle-speed cutoff 5 Hz, P share 120% on roll and pitch only",
+  );
+  expect(briefing.text).toContain(
+    "- Rate PID gains: Roll P 0.3 / I 0.15, Pitch P 0.25 / I 0.15, Yaw P 0.35 / I 0.2; integral limit 0.3, torque limit 0.6 (edited from source defaults)",
   );
   expect(briefing.text).toContain("Nothing was connected, written, flashed, calibrated, or armed.");
   expect(briefing.text).not.toContain("do-not-export");

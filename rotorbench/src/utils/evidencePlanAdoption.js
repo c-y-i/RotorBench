@@ -16,6 +16,7 @@ import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
 import { AERIALKIT_PID_RESPONSE_FIELDS } from "./aerialKitPidResponse";
 import { AERIALKIT_D_RESPONSE_FIELDS } from "./aerialKitDResponse";
 import { AERIALKIT_ANTI_GRAVITY_FIELDS } from "./aerialKitAntiGravity";
+import { AERIALKIT_PID_GAIN_FIELDS } from "./aerialKitPidGains";
 
 const INFERRED_AIRFRAMES = Object.fromEntries(
   Object.entries(AERIALKIT_AIRFRAME_IDS).map(([name, id]) => [id, name]),
@@ -691,6 +692,25 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
         if (key === "antiGravityPGain") return `${value}%`;
         return String(value);
       },
+    })),
+    ...AERIALKIT_PID_GAIN_FIELDS.map(({ key, runtimeName, label }) => ({
+      key,
+      source: runtimeName,
+      snapshotKey: runtimeName,
+      label,
+      parse: (raw) => {
+        const number = finite(raw);
+        const minimum = key === "torqueLimit" ? 0.05 : 0;
+        const maximum = key.startsWith("rateKp")
+          ? 3
+          : key.startsWith("rateKi")
+            ? 2
+            : 1;
+        return number != null && number >= minimum && number <= maximum
+          ? number
+          : null;
+      },
+      display: (value) => String(value),
     })),
     {
       key: "maxRateDps",

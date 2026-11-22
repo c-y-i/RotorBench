@@ -11,6 +11,7 @@ import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
 import { AERIALKIT_PID_RESPONSE_FIELDS } from "./aerialKitPidResponse";
 import { AERIALKIT_D_RESPONSE_FIELDS } from "./aerialKitDResponse";
 import { AERIALKIT_ANTI_GRAVITY_FIELDS } from "./aerialKitAntiGravity";
+import { AERIALKIT_PID_GAIN_FIELDS } from "./aerialKitPidGains";
 
 export const AERIALKIT_AIRFRAME_IDS = {
   quadx: 0,
@@ -221,6 +222,15 @@ export function buildFlightControllerCommands(
     finite(config.manualRate) &&
     Number(config.manualRate) >= 0.1 &&
     Number(config.manualRate) <= 1 &&
+    AERIALKIT_PID_GAIN_FIELDS.every(({ key }) => finite(config[key])) &&
+    [config.rateKpRoll, config.rateKpPitch, config.rateKpYaw]
+      .every((value) => Number(value) >= 0 && Number(value) <= 3) &&
+    [config.rateKiRoll, config.rateKiPitch, config.rateKiYaw]
+      .every((value) => Number(value) >= 0 && Number(value) <= 2) &&
+    Number(config.rateILimit) >= 0 &&
+    Number(config.rateILimit) <= 1 &&
+    Number(config.torqueLimit) >= 0.05 &&
+    Number(config.torqueLimit) <= 1 &&
     finite(config.maxRateDps) &&
     finite(config.rateCenterDps) &&
     finite(config.rateExpo) &&
@@ -331,6 +341,9 @@ export function buildFlightControllerCommands(
       `set ${runtimeName} ${Number(config[key])}`
     )),
     ...AERIALKIT_ANTI_GRAVITY_FIELDS.map(({ key, runtimeName }) => (
+      `set ${runtimeName} ${Number(config[key])}`
+    )),
+    ...AERIALKIT_PID_GAIN_FIELDS.map(({ key, runtimeName }) => (
       `set ${runtimeName} ${Number(config[key])}`
     )),
     `set max_rate_dps ${Number(config.maxRateDps)}`,

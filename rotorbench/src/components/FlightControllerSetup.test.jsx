@@ -82,6 +82,14 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Anti-gravity gain")).toHaveValue(0);
   expect(screen.getByLabelText("Throttle cutoff")).toHaveValue(5);
   expect(screen.getByLabelText("P share")).toHaveValue(100);
+  expect(screen.getByLabelText("Roll P")).toHaveValue(0.25);
+  expect(screen.getByLabelText("Pitch P")).toHaveValue(0.25);
+  expect(screen.getByLabelText("Yaw P")).toHaveValue(0.35);
+  expect(screen.getByLabelText("Roll I")).toHaveValue(0.15);
+  expect(screen.getByLabelText("Pitch I")).toHaveValue(0.15);
+  expect(screen.getByLabelText("Yaw I")).toHaveValue(0.2);
+  expect(screen.getByLabelText("Integral clamp")).toHaveValue(0.3);
+  expect(screen.getByLabelText("Torque limit")).toHaveValue(0.6);
   expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
   expect(screen.getByLabelText("Centre slope")).toHaveValue(0);
   expect(screen.getByLabelText("Rate expo")).toHaveValue(0);
@@ -365,6 +373,33 @@ test("plans Aerial Kit anti-gravity on roll and pitch only", async () => {
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
     antiGravityGain: 80,
     antiGravityPGain: 120,
+  }));
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("stages Aerial Kit baseline P and I gains from source defaults", async () => {
+  const onChange = jest.fn();
+  const { container } = render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.getByText("Baseline PID")).toBeInTheDocument();
+  expect(screen.getAllByText("Source defaults").length).toBeGreaterThan(0);
+
+  fireEvent.change(screen.getByLabelText("Roll P"), {
+    target: { value: "0.3" },
+  });
+  expect(screen.getAllByText("Edited gains").length).toBeGreaterThan(0);
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    rateKpRoll: 0.3,
+    rateKpPitch: 0.25,
+    rateKiRoll: 0.15,
+  }));
+
+  fireEvent.change(screen.getByLabelText("Torque limit"), {
+    target: { value: "0.7" },
+  });
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+    rateKpRoll: 0.3,
+    torqueLimit: 0.7,
   }));
   expect(await getA11yViolations(container)).toEqual([]);
 });

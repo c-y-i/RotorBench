@@ -275,6 +275,14 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     antiGravityGain: 0,
     antiGravityCutoffHz: 5,
     antiGravityPGain: 100,
+    rateKpRoll: 0.25,
+    rateKpPitch: 0.25,
+    rateKpYaw: 0.35,
+    rateKiRoll: 0.15,
+    rateKiPitch: 0.15,
+    rateKiYaw: 0.2,
+    rateILimit: 0.3,
+    torqueLimit: 0.6,
     manualRate: 1,
   });
   const issues = validateFlightControllerConfig({
@@ -404,6 +412,20 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
       code: "manual-rate-range",
     }),
   ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    rateKpRoll: 3.1,
+    torqueLimit: 0.01,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "rateKpRoll-range",
+    }),
+    expect.objectContaining({
+      severity: "error",
+      code: "torque-limit-range",
+    }),
+  ]));
   expect(buildFlightControllerSummary(
     {
       ...config,
@@ -454,6 +476,15 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     getBoardProfile(config.profileId),
   ).join("\n")).toContain(
     "Anti-gravity: enabled, gain 80, throttle-speed cutoff 5 Hz, P share 120% on roll and pitch only",
+  );
+  expect(buildFlightControllerSummary(
+    {
+      ...config,
+      rateKpRoll: 0.3,
+    },
+    getBoardProfile(config.profileId),
+  ).join("\n")).toContain(
+    "Rate PID gains: Roll P 0.3 / I 0.15, Pitch P 0.25 / I 0.15, Yaw P 0.35 / I 0.2; integral limit 0.3, torque limit 0.6 (edited from source defaults)",
   );
 });
 

@@ -60,6 +60,10 @@ import {
   AERIALKIT_ANTI_GRAVITY_FIELDS,
   buildAerialKitAntiGravityPlan,
 } from "./aerialKitAntiGravity";
+import {
+  AERIALKIT_PID_GAIN_FIELDS,
+  buildAerialKitPidGainPlan,
+} from "./aerialKitPidGains";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -173,6 +177,9 @@ export function summarizeHardwareReadiness({
     : null;
   const fcAntiGravityPlan = fcPlan.firmwareFamily === "aerialkit"
     ? buildAerialKitAntiGravityPlan(fcPlan)
+    : null;
+  const fcPidGainPlan = fcPlan.firmwareFamily === "aerialkit"
+    ? buildAerialKitPidGainPlan(fcPlan)
     : null;
   const radioWarnings = radioPlanConfigured
     ? buildRadioWarnings(radioPlan, {
@@ -528,6 +535,13 @@ export function summarizeHardwareReadiness({
     fcAntiGravityStatus: fcAntiGravityPlan?.status ?? null,
     fcAntiGravityEnabled: fcAntiGravityPlan?.enabled ?? null,
     fcAntiGravityAxes: fcAntiGravityPlan?.axes ?? [],
+    ...Object.fromEntries(AERIALKIT_PID_GAIN_FIELDS.map(({ key }) => [
+      `fc${key[0].toUpperCase()}${key.slice(1)}`,
+      fcPlan.firmwareFamily === "aerialkit" ? fcPlan[key] : null,
+    ])),
+    fcPidGainStatus: fcPidGainPlan?.status ?? null,
+    fcPidGainsMatchFirmwareDefaults:
+      fcPidGainPlan?.matchesFirmwareDefaults ?? null,
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
@@ -750,6 +764,13 @@ export function sanitizeHardwareReadiness(readiness) {
     fcAntiGravityAxes: Array.isArray(readiness.fcAntiGravityAxes)
       ? readiness.fcAntiGravityAxes
       : [],
+    ...Object.fromEntries(AERIALKIT_PID_GAIN_FIELDS.map(({ key }) => {
+      const readinessKey = `fc${key[0].toUpperCase()}${key.slice(1)}`;
+      return [readinessKey, readiness[readinessKey] ?? null];
+    })),
+    fcPidGainStatus: readiness.fcPidGainStatus || null,
+    fcPidGainsMatchFirmwareDefaults:
+      readiness.fcPidGainsMatchFirmwareDefaults ?? null,
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
     fcRateCenterDps: readiness.fcRateCenterDps ?? null,
     fcRateExpo: readiness.fcRateExpo ?? null,

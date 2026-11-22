@@ -1106,7 +1106,8 @@
 .fc-feed-forward.is-relax > summary em,
 .fc-feed-forward.is-combined > summary em,
 .fc-feed-forward.is-configured > summary em,
-.fc-feed-forward.is-enabled > summary em {
+.fc-feed-forward.is-enabled > summary em,
+.fc-feed-forward.is-source-default > summary em {
   color: var(--brand-strong);
   background: var(--brand-soft);
   border-color: transparent;
@@ -1119,6 +1120,12 @@
 }
 
 .fc-feed-forward.is-no-headroom > summary em {
+  color: var(--warn);
+  background: var(--accent-soft);
+  border-color: #e2bd9e;
+}
+
+.fc-feed-forward.is-edited > summary em {
   color: var(--warn);
   background: var(--accent-soft);
   border-color: #e2bd9e;
@@ -1167,7 +1174,8 @@
 .fc-feed-forward.is-relax .fc-feed-forward-status strong,
 .fc-feed-forward.is-combined .fc-feed-forward-status strong,
 .fc-feed-forward.is-configured .fc-feed-forward-status strong,
-.fc-feed-forward.is-enabled .fc-feed-forward-status strong {
+.fc-feed-forward.is-enabled .fc-feed-forward-status strong,
+.fc-feed-forward.is-source-default .fc-feed-forward-status strong {
   color: var(--brand-strong);
 }
 
@@ -1176,6 +1184,10 @@
 }
 
 .fc-feed-forward.is-no-headroom .fc-feed-forward-status strong {
+  color: var(--warn);
+}
+
+.fc-feed-forward.is-edited .fc-feed-forward-status strong {
   color: var(--warn);
 }
 

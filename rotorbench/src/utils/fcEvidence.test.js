@@ -1057,6 +1057,14 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     "anti_gravity_cutoff_hz=5 status=0",
     "anti_gravity_p_gain=120 status=0",
     "manual_rate=0.6 status=0",
+    "rate_kp_roll=0.3 status=0",
+    "rate_kp_pitch=0.25 status=0",
+    "rate_kp_yaw=0.35 status=0",
+    "rate_ki_roll=0.15 status=0",
+    "rate_ki_pitch=0.15 status=0",
+    "rate_ki_yaw=0.2 status=0",
+    "rate_i_limit=0.3 status=0",
+    "torque_limit=0.6 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
     gyroLpf1StaticHz: 250,
@@ -1094,6 +1102,14 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     antiGravityCutoffHz: 5,
     antiGravityPGain: 100,
     manualRate: 1,
+    rateKpRoll: 0.25,
+    rateKpPitch: 0.25,
+    rateKpYaw: 0.35,
+    rateKiRoll: 0.15,
+    rateKiPitch: 0.15,
+    rateKiYaw: 0.2,
+    rateILimit: 0.3,
+    torqueLimit: 0.6,
   });
 
   expect(checks.find((check) => check.id === "fc-param-gyro-lpf1-static-hz").status)
@@ -1177,6 +1193,13 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
       status: "fail",
       detail: expect.stringMatching(/plan expects 1/i),
     });
+  expect(checks.find((check) => check.id === "fc-param-rate-kp-roll"))
+    .toMatchObject({
+      status: "fail",
+      detail: expect.stringMatching(/plan expects 0.25/i),
+    });
+  expect(checks.find((check) => check.id === "fc-param-torque-limit").status)
+    .toBe("pass");
 });
 
 test("parses Mission Planner and QGroundControl parameter files", () => {
