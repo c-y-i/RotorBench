@@ -3,6 +3,7 @@ import {
   fcEvidenceChecks,
   fcIdentityChecks,
   fcParameterChecks,
+  parseAerialKitLiveStatusJson,
   parseFcIdentityJson,
   parseFcPreflightJson,
   parseFcPreflightText,
@@ -1021,6 +1022,7 @@ export function parseBenchEvidenceBundle(
   }
 
   let singleReport = null;
+  let fcLiveStatus = null;
   let fcIdentity = null;
   let fcStatus = null;
   let fcRc = null;
@@ -1051,7 +1053,15 @@ export function parseBenchEvidenceBundle(
         parameterSnapshotsByRole[snapshot.role] = snapshot;
         continue;
       }
-      if (payload?.fields?.role) {
+      if (payload?.schema === "rotorbench.aerial-kit-live-status.v1") {
+        if (fcLiveStatus) {
+          throw new Error("More than one Aerial Kit live-status snapshot was selected.");
+        }
+        fcLiveStatus = parseAerialKitLiveStatusJson(payload);
+        fcIdentity = fcLiveStatus.identity;
+        fcStatus = fcLiveStatus.status;
+        fcRc = fcLiveStatus.rc;
+      } else if (payload?.fields?.role) {
         const diag = parseRadioDiagJson(document.text);
         if (diagnosticsByRole[diag.role]) {
           throw new Error(`More than one ${diag.role.toUpperCase()} boot diagnostic was selected.`);
@@ -1296,6 +1306,7 @@ export function parseBenchEvidenceBundle(
     && importedFcParameterChecks.every((check) => check.status === "pass")
   );
   const fcEvidence = {
+    liveStatus: fcLiveStatus,
     identity: fcIdentity,
     status: fcStatus,
     rc: fcRc,
@@ -1361,7 +1372,9 @@ export function parseBenchEvidenceBundle(
 
   return {
     schema: "rotorbench.bench-evidence-review.v1",
-    kind: fcStatus || fcPreflight
+    kind: fcLiveStatus
+      ? "fc-live-status"
+      : fcStatus || fcPreflight
       ? "fc-evidence"
       : fcIdentity
         ? "fc-identity"
@@ -1370,7 +1383,9 @@ export function parseBenchEvidenceBundle(
           : fcParameters
             ? "fc-parameters"
             : radioStatusReports.length ? "radio-status-evidence" : "diagnostics",
-    fileOverall: fcStatus || fcPreflight
+    fileOverall: fcLiveStatus
+      ? "Live AKP status reviewed; preflight not observed"
+      : fcStatus || fcPreflight
       ? fcEvidenceComplete
         ? fcRc
           ? "FC status, RC, and preflight reviewed"

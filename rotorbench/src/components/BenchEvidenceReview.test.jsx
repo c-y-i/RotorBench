@@ -240,6 +240,52 @@ test("shows Aerial Kit firmware capabilities as compiled claims, not hardware pr
   }));
 });
 
+test("reviews a downloaded live AKP snapshot as time-bounded evidence", async () => {
+  render(<BenchEvidenceReview expectedFc={{ firmwareFamily: "aerialkit" }} />);
+
+  userEvent.upload(
+    screen.getByLabelText("Choose hardware evidence files"),
+    evidenceFile({
+      schema: "rotorbench.aerial-kit-live-status.v1",
+      hello: {
+        protocolVersion: 1,
+        product: "aerialkit-f405",
+        parameterCount: 46,
+        changed: "0",
+        features: (1 << 0) | (1 << 4),
+        configHash: 0x12345678,
+      },
+      status: {
+        flightState: 0,
+        linkLive: 1,
+        gpsFixType: 3,
+        gpsSatellites: 11,
+        rollDeg: 1,
+        pitchDeg: 2,
+        yawDeg: 3,
+        observedAt: new Date().toISOString(),
+      },
+      armedState: { fresh: true, state: "disarmed" },
+      rc: {
+        status: "ok",
+        channels: [172, 1811, 992, 1000],
+        flagNames: ["link", "decoded"],
+        counters: { frames: 40 },
+        observedAt: new Date().toISOString(),
+      },
+    }, "live-status.json"),
+  );
+
+  expect(await screen.findByText(
+    "Live AKP status and RC reviewed; preflight and hardware remain unverified",
+  )).toBeInTheDocument();
+  expect(screen.getByText(/time-bounded observations/i)).toBeInTheDocument();
+  expect(screen.getByRole("region", {
+    name: "Aerial Kit identity and capabilities",
+  })).toBeInTheDocument();
+  expect(screen.getByText("172")).toBeInTheDocument();
+});
+
 test("a plan UID mismatch is shown as a failed check", async () => {
   render(<BenchEvidenceReview expectedUid="aa:bb:cc:dd:ee:ff" />);
 

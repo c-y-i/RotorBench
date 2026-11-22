@@ -37,6 +37,7 @@ const evidenceKindLabels = {
   "observation-pair": "TX + RX native observations",
   diagnostics: "Endpoint boot diagnostics",
   "fc-evidence": "Flight-controller status + preflight",
+  "fc-live-status": "Aerial Kit live status + RC",
   "fc-identity": "Aerial Kit identity + capabilities",
   "fc-rc": "Flight-controller RC observation",
   "fc-parameters": "Flight-controller parameter snapshot",
@@ -674,6 +675,7 @@ export default function BenchEvidenceReview({
   const fcEvidenceIncomplete = evidence?.kind === "fc-evidence"
     && !fcEvidenceComplete;
   const fcIdentityEvidence = evidence?.kind === "fc-identity";
+  const fcLiveStatusEvidence = evidence?.kind === "fc-live-status";
   const fcRcEvidence = evidence?.kind === "fc-rc";
   const fcRcComplete = evidence?.fcEvidence?.rcEvidenceComplete === true;
   const receiverLinkNotEstablished = evidence?.fcEvidence?.status?.protocol
@@ -899,6 +901,7 @@ export default function BenchEvidenceReview({
                   : radioEvidenceComplete
                     ? "is-radio-evidence"
                   : fcEvidenceComplete || fcRcComplete || fcIdentityEvidence
+                    || fcLiveStatusEvidence
                     ? "is-fc-evidence"
                 : evidence.rfReportedPass ? "is-claimed" : "is-incomplete"
             }`}
@@ -908,6 +911,7 @@ export default function BenchEvidenceReview({
               || fcEvidenceComplete
               || fcRcComplete
               || fcIdentityEvidence
+              || fcLiveStatusEvidence
               || radioEvidenceComplete
               ? <FileCheck2 size={19} aria-hidden="true" />
               : <ShieldAlert size={19} aria-hidden="true" />}
@@ -921,7 +925,9 @@ export default function BenchEvidenceReview({
                     ? "Radio identity matches the selected endpoint; RF remains unverified"
                     : radioEvidenceIncomplete
                       ? "Radio identity does not match the selected endpoint"
-                  : fcEvidenceComplete
+                  : fcLiveStatusEvidence
+                    ? "Live AKP status and RC reviewed; preflight and hardware remain unverified"
+                    : fcEvidenceComplete
                     ? "FC status and preflight are complete; hardware remains unverified"
                     : fcEvidenceIncomplete
                       ? receiverLinkNotEstablished
@@ -961,6 +967,9 @@ export default function BenchEvidenceReview({
                   : ""}
                 {evidence.kind === "fc-evidence"
                   ? " Imported FC status and preflight lines are read-only observations, not flight-ready authorization."
+                  : ""}
+                {evidence.kind === "fc-live-status"
+                  ? " The live status, arming state, and RC readback are time-bounded observations. Preflight, persistence, RF performance, and flight readiness remain unverified."
                   : ""}
                 {evidence.kind === "fc-identity"
                   ? " The capability word is a compiled-firmware claim from HELLO, not proof that RotorBench exercised any capability."

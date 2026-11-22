@@ -1004,6 +1004,65 @@ test("standalone Aerial Kit identity preserves an absent capability word", () =>
     });
 });
 
+test("reviews a downloaded live AKP snapshot as read-only hardware evidence", () => {
+  const bundle = parseBenchEvidenceBundle([
+    {
+      name: "aerialkit-live-status.json",
+      text: JSON.stringify({
+        schema: "rotorbench.aerial-kit-live-status.v1",
+        hello: {
+          protocolVersion: 1,
+          product: "aerialkit-f405",
+          parameterCount: 46,
+          changed: "0",
+          features: (1 << 0) | (1 << 4),
+          configHash: 0x12345678,
+        },
+        status: {
+          flightState: 0,
+          linkLive: 1,
+          gpsFixType: 3,
+          gpsSatellites: 11,
+          rollDeg: 1,
+          pitchDeg: 2,
+          yawDeg: 3,
+          observedAt: new Date().toISOString(),
+        },
+        armedState: { fresh: true, state: "disarmed" },
+        rc: {
+          status: "ok",
+          channels: [172, 1811, 992, 1000],
+          flagNames: ["link", "decoded"],
+          counters: { frames: 40 },
+          observedAt: new Date().toISOString(),
+        },
+      }),
+    },
+  ], {
+    expectedFc: { firmwareFamily: "aerialkit" },
+  });
+
+  expect(bundle).toMatchObject({
+    kind: "fc-live-status",
+    fileOverall: "Live AKP status reviewed; preflight not observed",
+    fcEvidence: {
+      liveStatus: {
+        kind: "fc-live-status",
+        identity: { product: "aerialkit-f405" },
+        status: { state: { armed: 0 } },
+        rc: { channels: [172, 1811, 992, 1000] },
+      },
+      hardwareVerifiedByRotorBench: false,
+    },
+  });
+  expect(bundle.checks.find((check) => check.id === "fc-status-protocol").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "fc-status-disarmed").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "fc-status-link").status)
+    .toBe("pass");
+});
+
 test("radio status evidence correlates identity without retaining device paths", () => {
   const bundle = parseBenchEvidenceBundle([
     { name: "tx-status.json", text: JSON.stringify(radioStatusEvidence) },

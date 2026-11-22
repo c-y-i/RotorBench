@@ -186,6 +186,113 @@ export function fcIdentityChecks(identity, { firmwareFamily = null } = {}) {
   return checks;
 }
 
+export function parseAerialKitLiveStatusJson(payload) {
+  if (
+    !payload
+    || payload.schema !== "rotorbench.aerial-kit-live-status.v1"
+    || !payload.hello
+    || !payload.status
+  ) {
+    throw new Error("The selected JSON is not an Aerial Kit live-status snapshot.");
+  }
+  const hello = payload.hello;
+  const features = hello.features == null
+    ? null
+    : uint32(hello.features, "The HELLO capability word");
+  const featureDetails = features == null
+    ? []
+    : AK_FEATURE_NAMES.filter((feature) => (features & feature.bit) !== 0);
+  const identity = {
+    kind: "fc-identity",
+    protocol: "akp",
+    product: String(hello.product || "").trim(),
+    protocolVersion: finiteNumber(hello.protocolVersion, null),
+    parameterCount: finiteNumber(hello.parameterCount, null),
+    changed: String(hello.changed || "").trim(),
+    features,
+    featureNames: featureDetails.map((feature) => feature.name),
+    featureDetails,
+    configHash: hello.configHash == null
+      ? null
+      : uint32(hello.configHash, "The HELLO configuration hash"),
+    capabilityState: features == null ? "absent" : "reported",
+    hardwareVerifiedByRotorBench: false,
+  };
+  if (!identity.product || identity.protocolVersion == null) {
+    throw new Error("The live-status snapshot has incomplete HELLO identity.");
+  }
+  const live = payload.status;
+  const flightState = finiteNumber(live.flightState, null);
+  const statusObservedAtMs = timestampMilliseconds(live.observedAt);
+  const statusAgeMs = statusObservedAtMs == null
+    ? null
+    : Math.max(0, Date.now() - statusObservedAtMs);
+  const statusFresh = payload.armedState?.fresh === true
+    && payload.armedState?.state !== "unknown"
+    && statusAgeMs != null
+    && statusAgeMs <= 2000;
+  const status = {
+    kind: "fc-status",
+    protocol: "akp",
+    product: identity.product,
+    firmware: null,
+    parameterCount: identity.parameterCount,
+    changed: identity.changed,
+    identity: `protocol=akp product=${identity.product} parameters=${identity.parameterCount ?? "unknown"} changed=${identity.changed || "unknown"}`,
+    state: {
+      armed: statusFresh && flightState != null
+        ? flightState === 0 ? 0 : 1
+        : null,
+      linkLive: finiteNumber(live.linkLive, null),
+      rollDeg: finiteNumber(live.rollDeg, null),
+      pitchDeg: finiteNumber(live.pitchDeg, null),
+      yawDeg: finiteNumber(live.yawDeg, null),
+      gpsFixType: finiteNumber(live.gpsFixType, null),
+      gpsSatellites: finiteNumber(live.gpsSatellites, null),
+      armingDisableFlags: null,
+      vbatV: null,
+      mah: null,
+    },
+    observedAtMs: statusObservedAtMs,
+    liveSource: "web-serial",
+  };
+  const liveRc = payload.rc;
+  const channels = Array.isArray(liveRc?.channels)
+    ? liveRc.channels.map(Number).filter((value) => (
+        Number.isInteger(value) && value >= 0 && value <= 65535
+      ))
+    : [];
+  const rc = channels.length > 0
+    ? {
+        kind: "fc-rc",
+        protocol: "akp",
+        channels,
+        observedAtMs: timestampMilliseconds(liveRc.observedAt),
+        linkLive: Array.isArray(liveRc.flagNames)
+          ? liveRc.flagNames.includes("link")
+          : null,
+        flags: Array.isArray(liveRc.flagNames)
+          ? liveRc.flagNames.filter((flag) => typeof flag === "string")
+          : [],
+        note: liveRc.status === "no-receiver"
+          ? "The board reported no receiver input."
+          : null,
+        counters: liveRc.counters && typeof liveRc.counters === "object"
+          ? liveRc.counters
+          : null,
+        liveSource: "web-serial",
+      }
+    : null;
+  return {
+    kind: "fc-live-status",
+    identity,
+    status,
+    rc,
+    observedAtMs: statusObservedAtMs,
+    boundaries: payload.boundaries || null,
+  };
+}
+
 function betaflightArmingDisableFlags(value) {
   if (value == null || value === "") return { raw: null, labels: null };
   const text = String(value).trim();
@@ -404,6 +511,10 @@ export function parseFcPreflightJson(payload) {
 }
 
 function timestampMilliseconds(value) {
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
   const number = Number(value);
   if (!Number.isFinite(number) || number <= 0) return null;
   return number > 1e12 ? number : number * 1000;

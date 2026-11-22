@@ -3,6 +3,7 @@ import {
   fcIdentityChecks,
   fcParameterChecks,
   fcRcChecks,
+  parseAerialKitLiveStatusJson,
   parseFcIdentityJson,
   parseFcPreflightJson,
   parseFcPreflightText,
@@ -82,6 +83,56 @@ test("decodes capability bits without trusting a supplied feature-name list", ()
     .toBe("pass");
   expect(checks.find((check) => check.id === "fc-capability-preflight").status)
     .toBe("unverified");
+});
+
+test("normalizes a live AKP snapshot without upgrading stale state", () => {
+  const parsed = parseAerialKitLiveStatusJson({
+    schema: "rotorbench.aerial-kit-live-status.v1",
+    hello: {
+      protocolVersion: 1,
+      product: "aerialkit-f405",
+      parameterCount: 46,
+      changed: "0",
+      features: (1 << 0) | (1 << 4),
+      configHash: 0x12345678,
+    },
+    status: {
+      flightState: 0,
+      linkLive: 1,
+      gpsFixType: 3,
+      gpsSatellites: 11,
+      rollDeg: 1,
+      pitchDeg: 2,
+      yawDeg: 3,
+      observedAt: "2026-11-22T10:00:00.000Z",
+    },
+    armedState: { fresh: true, state: "disarmed" },
+    rc: {
+      status: "ok",
+      channels: [172, 1811, 992, 1000],
+      flagNames: ["link", "decoded"],
+      counters: { frames: 40 },
+      observedAt: "2026-11-22T10:00:00.000Z",
+    },
+  });
+
+  expect(parsed).toMatchObject({
+    kind: "fc-live-status",
+    identity: {
+      product: "aerialkit-f405",
+      featureNames: ["PARAM_INFO", "RC_CHANNELS"],
+    },
+    status: {
+      protocol: "akp",
+      state: { armed: null, linkLive: 1 },
+      liveSource: "web-serial",
+    },
+    rc: {
+      protocol: "akp",
+      channels: [172, 1811, 992, 1000],
+      linkLive: true,
+    },
+  });
 });
 
 const statusJson = {
