@@ -167,6 +167,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   calibrationResults = [-1, -2, -3, 0, 0, 0],
   parameterValues = null,
   parameterGroups = [1, 1],
+  parameterMetadata = null,
 } = {}) {
   const waiters = [];
   const queued = [];
@@ -210,7 +211,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
       }
       else if (command === 0x0a) {
         const first = frame[5];
-        const entries = [
+        const entries = (parameterMetadata || [
           {
             name: "rate_kp_roll",
             group: parameterGroups[0] ?? 1,
@@ -225,7 +226,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
             max: "2.000",
             defaultValue: "0.150",
           },
-        ].slice(first, first + 2);
+        ]).slice(first, first + 2);
         const payload = [
           0,
           first,
@@ -651,6 +652,75 @@ test("filters live parameters by board-reported metadata groups", async () => {
   expect(screen.getByText("rate_ki_roll")).toBeInTheDocument();
   expect(within(groups).getByRole("button", { name: "receiver, 1 parameter" }))
     .toHaveAttribute("aria-pressed", "true");
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("compares live board-reported parameters with the staged FC plan", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS, {
+    parameterValues: [
+      { name: "arm_channel", value: "5" },
+      { name: "vbat_ratio", value: "11" },
+    ],
+    parameterMetadata: [
+      {
+        name: "arm_channel",
+        group: 3,
+        min: "0",
+        max: "16",
+        defaultValue: "6",
+      },
+      {
+        name: "vbat_ratio",
+        group: 7,
+        min: "0",
+        max: "100",
+        defaultValue: "11",
+      },
+    ],
+  });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(
+    <AerialKitStatusSession
+      firmwareFamily="aerialkit"
+      flightControllerPlan={{
+        firmwareFamily: "aerialkit",
+        armChannel: 6,
+        vbatRatio: 11,
+      }}
+    />,
+  );
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read parameter values",
+  }));
+  expect(await screen.findByText(/2 values read.*metadata/i)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read ranges/defaults",
+  }));
+
+  expect(await screen.findByText("1 match · 1 differ · 0 not observed"))
+    .toBeInTheDocument();
+  expect(screen.getByText("Differs")).toBeInTheDocument();
+  expect(screen.getByText("Matches plan")).toBeInTheDocument();
+  expect(screen.getByRole("listitem", {
+    name: /arm_channel: 5\. Differs\. Board-reported arm_channel=5; the staged plan expects 6\./,
+  })).toBeInTheDocument();
+
+  await userEvent.type(
+    screen.getByLabelText("Filter observed parameter names or values"),
+    "differs",
+  );
+  expect(screen.getByText("arm_channel")).toBeInTheDocument();
+  expect(screen.queryByText("vbat_ratio")).not.toBeInTheDocument();
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

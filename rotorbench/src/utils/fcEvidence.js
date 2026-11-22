@@ -1617,8 +1617,15 @@ export function parseFcParameterSnapshotText(text) {
   );
 }
 
-export function fcParameterChecks(snapshot, plan) {
+export function fcParameterChecks(
+  snapshot,
+  plan,
+  { sourceLabel = "Imported" } = {},
+) {
   if (!snapshot || !plan) return [];
+  const evidenceLabel = sourceLabel === "Imported"
+    ? "imported snapshot"
+    : `${sourceLabel.toLowerCase()} evidence`;
   const checks = (plan.firmwareFamily === "ardupilot"
     ? []
     : Object.entries(PARAMETER_PLAN_KEYS)
@@ -1632,7 +1639,7 @@ export function fcParameterChecks(snapshot, plan) {
           `fc-param-${runtimeName.replaceAll("_", "-")}`,
           `FC parameter ${runtimeName}`,
           "unverified",
-          `The imported snapshot does not include ${runtimeName}, so this planned value remains unverified.`,
+          `The ${evidenceLabel} does not include ${runtimeName}, so this planned value remains unverified.`,
         );
       }
       const actual = comparableParameterValue(snapshot.values[runtimeName]);
@@ -1643,8 +1650,8 @@ export function fcParameterChecks(snapshot, plan) {
         `FC parameter ${runtimeName}`,
         matches ? "pass" : "fail",
         matches
-          ? `Imported ${runtimeName}=${actual}, matching the staged plan.`
-          : `Imported ${runtimeName}=${actual}; the staged plan expects ${expected}.`,
+          ? `${sourceLabel} ${runtimeName}=${actual}, matching the staged plan.`
+          : `${sourceLabel} ${runtimeName}=${actual}; the staged plan expects ${expected}.`,
       );
     }));
 
@@ -1663,7 +1670,7 @@ export function fcParameterChecks(snapshot, plan) {
             `fc-param-${runtimeName.toLowerCase().replaceAll("_", "-")}`,
             `FC parameter ${runtimeName}`,
             "unverified",
-            `The imported snapshot does not include ${runtimeName}, so ${requirement} remains unverified.`,
+            `The ${evidenceLabel} does not include ${runtimeName}, so ${requirement} remains unverified.`,
           );
         }
         return makeCheck(
@@ -1671,8 +1678,8 @@ export function fcParameterChecks(snapshot, plan) {
           `FC parameter ${runtimeName}`,
           comparableParameterValue(actual) === expected ? "pass" : "fail",
           comparableParameterValue(actual) === expected
-            ? `Imported ${runtimeName}=${actual}, matching the documented ${boardProfile.label} ${requirement} requirement.`
-            : `Imported ${runtimeName}=${actual}; the documented ${boardProfile.label} plan requires ${expected} for ${requirement}.`,
+            ? `${sourceLabel} ${runtimeName}=${actual}, matching the documented ${boardProfile.label} ${requirement} requirement.`
+            : `${sourceLabel} ${runtimeName}=${actual}; the documented ${boardProfile.label} plan requires ${expected} for ${requirement}.`,
         );
       });
 

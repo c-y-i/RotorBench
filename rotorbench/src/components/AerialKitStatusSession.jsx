@@ -63,6 +63,7 @@ import {
   createAerialKitLogExport,
   serializeAerialKitLogCsv,
 } from "../utils/aerialKitLogExport";
+import { fcParameterChecks } from "../utils/fcEvidence";
 import {
   buildAerialKitRouteSummary,
   buildAerialKitMissionProximity,
@@ -114,6 +115,11 @@ const LOG_SOURCE_LABELS = [
 ];
 
 const LOG_SAMPLE_LIMIT = 8;
+const PARAMETER_PLAN_STATUS_LABELS = {
+  pass: "Matches plan",
+  fail: "Differs",
+  unverified: "Not observed",
+};
 
 function hexWord(value) {
   return value == null
@@ -143,10 +149,15 @@ function parameterGroupName(parameter) {
     : parameter.groupName;
 }
 
+function parameterPlanCheckId(name) {
+  return `fc-param-${String(name).toLowerCase().replaceAll("_", "-")}`;
+}
+
 export default function AerialKitStatusSession({
   firmwareFamily = null,
   channelMap = null,
   targetName = null,
+  flightControllerPlan = null,
   onObservation = null,
 }) {
   const supportedBrowser = useMemo(() => hasWebSerial(), []);
@@ -1691,6 +1702,36 @@ export default function AerialKitStatusSession({
     });
     return [...rows.values()].sort((left, right) => left.index - right.index);
   }, [parameterMetadata, parameters]);
+  const liveParameterChecks = useMemo(() => {
+    if (!flightControllerPlan || flightControllerPlan.firmwareFamily !== "aerialkit") {
+      return [];
+    }
+    const values = {};
+    inventoryRows.forEach((parameter) => {
+      if (
+        parameter.secret
+        || parameter.value == null
+        || parameter.value === "Secret / redacted"
+      ) {
+        return;
+      }
+      values[parameter.name.toLowerCase()] = parameter.value;
+    });
+    return fcParameterChecks(
+      { values },
+      flightControllerPlan,
+      { sourceLabel: "Board-reported" },
+    );
+  }, [flightControllerPlan, inventoryRows]);
+  const liveParameterChecksById = useMemo(
+    () => new Map(liveParameterChecks.map((check) => [check.id, check])),
+    [liveParameterChecks],
+  );
+  const liveParameterPlanCounts = useMemo(() => ({
+    matches: liveParameterChecks.filter((check) => check.status === "pass").length,
+    differences: liveParameterChecks.filter((check) => check.status === "fail").length,
+    unverified: liveParameterChecks.filter((check) => check.status === "unverified").length,
+  }), [liveParameterChecks]);
   const parameterGroups = useMemo(() => {
     const groups = new Map();
     inventoryRows.forEach((parameter) => {
@@ -1727,9 +1768,17 @@ export default function AerialKitStatusSession({
         || String(parameter.typeName || "").toLowerCase().includes(normalizedQuery)
         || String(parameter.default || "").toLowerCase().includes(normalizedQuery)
         || String(parameter.unavailable || "").toLowerCase().includes(normalizedQuery)
+        || (PARAMETER_PLAN_STATUS_LABELS[
+          liveParameterChecksById.get(parameterPlanCheckId(parameter.name))?.status
+        ] || "").toLowerCase().includes(normalizedQuery)
       )
     ));
-  }, [inventoryRows, parameterGroup, parameterQuery]);
+  }, [
+    inventoryRows,
+    liveParameterChecksById,
+    parameterGroup,
+    parameterQuery,
+  ]);
   const armed = aerialKitArmedState(liveStatus, {
     observedAtMs: lastStatusAt,
     nowMs: clockNow,
@@ -3204,6 +3253,34 @@ export default function AerialKitStatusSession({
                   are walked separately through `PARAM_HELP`; nothing is
                   inferred from a local table.
                 </p>
+                {liveParameterChecks.length > 0 && (
+                  <div
+                    className={`aerial-kit-parameter-plan ${
+                      liveParameterPlanCounts.differences
+                        ? "has-differences"
+                        : liveParameterPlanCounts.unverified
+                          ? "is-review"
+                          : "is-complete"
+                    }`}
+                  >
+                    <div>
+                      <strong>Plan comparison</strong>
+                      <span>
+                        {liveParameterPlanCounts.matches} match
+                        {liveParameterPlanCounts.matches === 1 ? "" : "es"}
+                        {" · "}
+                        {liveParameterPlanCounts.differences} differ
+                        {liveParameterPlanCounts.differences === 1 ? "" : "s"}
+                        {" · "}
+                        {liveParameterPlanCounts.unverified} not observed
+                      </span>
+                    </div>
+                    <small>
+                      Compares board-reported values with the staged flight-controller
+                      plan. Nothing was written, saved, or re-read.
+                    </small>
+                  </div>
+                )}
                 {parameterError && (
                   <div className="aerial-kit-rc-unavailable" role="note">
                     <ShieldAlert size={16} aria-hidden="true" />
@@ -3283,42 +3360,61 @@ export default function AerialKitStatusSession({
                         className="aerial-kit-parameter-list"
                         aria-label="Observed parameter name and value list"
                       >
-                        {visibleParameters.map((parameter) => (
-                          <li key={`${parameter.index}-${parameter.name}`}>
-                            <span>{parameter.name}</span>
-                            <code>
-                              {parameter.value == null
-                                ? "Value not read"
-                                : parameter.value || "Empty"}
-                            </code>
-                            {(parameter.groupName
-                              || parameter.typeName
-                              || parameter.min != null
-                              || parameter.max != null
-                              || parameter.default != null
-                              || parameter.unavailable) && (
-                              <small>
-                                {parameter.unavailable || [
-                                  parameter.groupName || `Group ${parameter.group}`,
-                                  parameter.typeName || `Type ${parameter.type}`,
-                                  parameter.maxLength != null
-                                    ? `max ${parameter.maxLength} chars`
-                                    : parameter.min != null
-                                      ? `${parameter.min} to ${parameter.max}`
+                        {visibleParameters.map((parameter) => {
+                          const planCheck = liveParameterChecksById.get(
+                            parameterPlanCheckId(parameter.name),
+                          );
+                          const displayedValue = parameter.value == null
+                            ? "Value not read"
+                            : parameter.value || "Empty";
+                          return (
+                            <li
+                              key={`${parameter.index}-${parameter.name}`}
+                              aria-label={planCheck
+                                ? `${parameter.name}: ${displayedValue}. ${
+                                  PARAMETER_PLAN_STATUS_LABELS[planCheck.status]
+                                }. ${planCheck.detail}`
+                                : undefined}
+                            >
+                              <span>{parameter.name}</span>
+                              <code>{displayedValue}</code>
+                              {planCheck && (
+                                <em
+                                  className={`is-${planCheck.status}`}
+                                  title={planCheck.detail}
+                                >
+                                  {PARAMETER_PLAN_STATUS_LABELS[planCheck.status]}
+                                </em>
+                              )}
+                              {(parameter.groupName
+                                || parameter.typeName
+                                || parameter.min != null
+                                || parameter.max != null
+                                || parameter.default != null
+                                || parameter.unavailable) && (
+                                <small>
+                                  {parameter.unavailable || [
+                                    parameter.groupName || `Group ${parameter.group}`,
+                                    parameter.typeName || `Type ${parameter.type}`,
+                                    parameter.maxLength != null
+                                      ? `max ${parameter.maxLength} chars`
+                                      : parameter.min != null
+                                        ? `${parameter.min} to ${parameter.max}`
+                                        : null,
+                                    parameter.default != null
+                                      ? `default ${parameter.default}`
                                       : null,
-                                  parameter.default != null
-                                    ? `default ${parameter.default}`
-                                    : null,
-                                ].filter(Boolean).join(" · ")}
-                              </small>
-                            )}
-                            {parameter.help != null && (
-                              <small className="aerial-kit-parameter-help">
-                                {parameter.help || "The board supplied an empty description."}
-                              </small>
-                            )}
-                          </li>
-                        ))}
+                                  ].filter(Boolean).join(" · ")}
+                                </small>
+                              )}
+                              {parameter.help != null && (
+                                <small className="aerial-kit-parameter-help">
+                                  {parameter.help || "The board supplied an empty description."}
+                                </small>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ol>
                     ) : (
                       <p>

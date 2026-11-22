@@ -4562,6 +4562,54 @@
   color: #dce2d9;
 }
 
+.aerial-kit-parameter-plan {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.aerial-kit-parameter-plan.is-complete {
+  background: #e8f5ee;
+  border-color: #b8ddc8;
+}
+
+.aerial-kit-parameter-plan.is-review {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+}
+
+.aerial-kit-parameter-plan.has-differences {
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--line));
+}
+
+.aerial-kit-parameter-plan > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.aerial-kit-parameter-plan strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.aerial-kit-parameter-plan span,
+.aerial-kit-parameter-plan small {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.aerial-kit-parameter-plan span {
+  text-align: end;
+}
+
 .aerial-kit-parameter-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4600,6 +4648,36 @@
   font-family: "IBM Plex Mono", monospace;
   font-size: 10px;
   font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-parameter-list li > em {
+  grid-column: 1 / -1;
+  width: max-content;
+  padding: 2px 5px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.aerial-kit-parameter-list li > em.is-pass {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.aerial-kit-parameter-list li > em.is-fail {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 9%, var(--surface));
+}
+
+.aerial-kit-parameter-list li > em.is-unverified {
+  color: var(--warn);
+  background: var(--accent-soft);
 }
 
 .aerial-kit-parameter-list li small {
@@ -5876,6 +5954,16 @@
 
   .aerial-kit-parameter-actions button {
     width: 100%;
+  }
+
+  .aerial-kit-parameter-plan > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .aerial-kit-parameter-plan span {
+    text-align: start;
   }
 
   .aerial-kit-parameter-list {

@@ -1162,6 +1162,7 @@ export default function SetupPage() {
             firmwareFamily={fcPlan.firmwareFamily}
             targetName={selectedFlightController?.name || fcProfile.label}
             channelMap={radioPlan.channelMap}
+            flightControllerPlan={fcPlan}
             onObservation={setLiveFcObservation}
           />
           <ElrsDeviceMenu
