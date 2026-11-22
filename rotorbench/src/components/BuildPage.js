@@ -86,6 +86,7 @@ import {
   CircleAlert,
   Clipboard,
   Cog,
+  Columns3,
   Cpu,
   Download,
   Eye,
@@ -387,9 +388,8 @@ export default function BuildPage() {
     navigate("/");
   };
 
-  const handleAnalyze = () => {
-    // Create build config
-    const build = {
+  const createCurrentBuildConfig = () => (
+    {
       id: currentBuild?.id || workingBuildId,
       name: workingBuildName,
       note: buildNote,
@@ -406,13 +406,20 @@ export default function BuildPage() {
       createdAt: currentBuild?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       geometryOverrides,
-    };
+    }
+  );
 
-    // Save to context
+  const handleAnalyze = () => {
+    const build = createCurrentBuildConfig();
     updateBuild(build);
-
-    // Navigate to analysis page
     navigate("/analysis", { state: { build } });
+  };
+
+  const handleCompareSaved = () => {
+    const build = createCurrentBuildConfig();
+    writeJsonStorage("currentBuild", build);
+    updateBuild(build);
+    navigate("/saved?compareCurrent=1");
   };
 
   // 3D model URLs state
@@ -2371,6 +2378,16 @@ export default function BuildPage() {
           <Save size={18} aria-hidden="true" />
           <span className="action-label-full">Save &amp; home</span>
           <span className="action-label-compact" aria-hidden="true">Save</span>
+        </button>
+
+        <button
+          className="action-btn compare-saved"
+          disabled={!canAnalyze}
+          onClick={handleCompareSaved}
+          style={{ opacity: canAnalyze ? 1 : 0.5 }}
+        >
+          <Columns3 size={18} aria-hidden="true" />
+          Compare
         </button>
 
         <button

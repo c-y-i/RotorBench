@@ -4639,6 +4639,18 @@
   border-color: #424b47;
 }
 
+.action-btn.compare-saved {
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+}
+
+.action-btn.compare-saved:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: var(--ink);
+}
+
 .action-btn:disabled {
   color: #73807b;
   background: #c4cac4;

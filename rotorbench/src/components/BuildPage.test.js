@@ -388,6 +388,13 @@ test("a starter-platform deep link selects all seven components and consumes the
   expect(screen.getByTestId("location-search")).toHaveTextContent("");
   expect(screen.getByRole("button", { name: "Save and go home" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Compare" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "Compare" }));
+  expect(JSON.parse(localStorage.getItem("currentBuild")).componentIds)
+    .toMatchObject({
+      frameId: "frame-aos-35-v51",
+      flightControllerId: "fc-speedybee-f405-mini",
+    });
   expect(screen.getByText("4/8 verified · 4 estimated")).toBeInTheDocument();
   const powerPath = screen.getByRole("region", {
     name: "Battery to ESC power path",

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import "../styles/home.css"; 
 import "../styles/saved.css";
 import "../styles/modernization.css";
@@ -105,7 +105,30 @@ export default function SavedConfigsPage() {
       : null;
 
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const userId = localStorage.getItem("userId");
+
+    useEffect(() => {
+        if (searchParams.get("compareCurrent") !== "1") return;
+        if (currentBuildComparable) {
+            setComparisonIds([CURRENT_BUILD_COMPARE_ID]);
+            setMessage({
+                type: "success",
+                text: "Current build ready for comparison. Select one saved build.",
+            });
+        } else {
+            setComparisonIds((current) => (
+                current.filter((id) => id !== CURRENT_BUILD_COMPARE_ID)
+            ));
+            setMessage({
+                type: "error",
+                text: "Open or create a build before comparing the current configuration.",
+            });
+        }
+        const next = new URLSearchParams(searchParams);
+        next.delete("compareCurrent");
+        setSearchParams(next, { replace: true });
+    }, [currentBuildComparable, searchParams, setSearchParams]);
 
     const setTransientMessage = (type, text, delay = 3000) => {
         setMessage({ type, text });

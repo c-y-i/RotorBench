@@ -104,7 +104,7 @@ test("compares the current working build with one saved build", async () => {
     },
   }));
   const { container } = render(
-    <MemoryRouter initialEntries={["/saved"]}>
+    <MemoryRouter initialEntries={["/saved?compareCurrent=1"]}>
       <Routes>
         <Route path="/saved" element={<SavedConfigsPage />} />
         <Route path="/compare" element={<CompareLocationProbe />} />
@@ -113,12 +113,12 @@ test("compares the current working build with one saved build", async () => {
   );
 
   await screen.findByRole("heading", { name: "Offline build" });
-  fireEvent.click(screen.getByRole("button", {
-    name: "Use current build for comparison",
-  }));
   expect(screen.getByRole("button", {
     name: "Remove current build from comparison",
   })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByText(
+    "Current build ready for comparison. Select one saved build.",
+  )).toBeInTheDocument();
   fireEvent.click(screen.getByRole("checkbox", { name: "Compare" }));
   fireEvent.click(screen.getByRole("button", { name: /Compare 2\/2/ }));
 
