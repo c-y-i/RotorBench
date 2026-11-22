@@ -370,6 +370,12 @@ test("selecting Borg 5S RX exposes its integrated receiver mapping", () => {
     .toBeChecked();
   expect(screen.getByRole("checkbox", { name: "Barometer altitude" }))
     .toBeDisabled();
+  expect(screen.getAllByText("Not exposed by this documented board profile."))
+    .not.toHaveLength(0);
+  expect(screen.getByRole("checkbox", { name: "Barometer altitude" }))
+    .toHaveAccessibleDescription(
+      /Not exposed by this documented board profile/,
+    );
   expect(screen.getByText("4 motors / 0 servos")).toBeInTheDocument();
   fireEvent.click(screen.getByText("Serial allocation"));
   const ports = screen.getByRole("list", {

@@ -185,6 +185,12 @@ function featuresForBoard(profile, receiverProtocol, firmwareFamily) {
   );
 }
 
+function featureUnavailableReason(feature, firmwareFamily) {
+  return feature.id === "blackbox" && firmwareFamily === "aerialkit"
+    ? "Aerial Kit logs internally; this external blackbox field does not apply."
+    : "Not exposed by this documented board profile.";
+}
+
 export default function FlightControllerSetup({
   value,
   onChange,
@@ -1416,26 +1422,58 @@ export default function FlightControllerSetup({
 
             <fieldset className="fc-feature-list">
               <legend>Enabled features</legend>
-              {FC_FEATURES.map((feature) => (
-                <label
-                  key={feature.id}
-                  className={profile.featureSupport?.[feature.id] === false ? "is-unavailable" : ""}
-                    title={profile.featureSupport?.[feature.id] === false
-                      ? feature.id === "blackbox" && config.firmwareFamily === "aerialkit"
-                        ? "Aerial Kit logs internally; this external blackbox field is not applicable"
-                        : "Not exposed by this documented board profile"
-                      : undefined}
-                >
-                  <input
-                    id={`fc-feature-${feature.id}`}
-                    type="checkbox"
-                    disabled={profile.featureSupport?.[feature.id] === false}
-                    checked={Boolean(config.features[feature.id])}
-                    onChange={(event) => update(`features.${feature.id}`, event.target.checked)}
-                  />
-                  <span>{feature.label}</span>
-                </label>
-              ))}
+              <p className="fc-feature-note">
+                Requested features from the selected board profile. This is not
+                a live firmware capability readback.
+              </p>
+              {FC_FEATURES.map((feature) => {
+                const unavailable = profile.featureSupport?.[feature.id] === false;
+                const availabilityId = `fc-feature-${feature.id}-availability`;
+                return (
+                  <label
+                    key={feature.id}
+                    className={unavailable ? "is-unavailable" : ""}
+                  >
+                    <input
+                      id={`fc-feature-${feature.id}`}
+                      type="checkbox"
+                      disabled={unavailable}
+                      checked={Boolean(config.features[feature.id])}
+                      aria-label={feature.label}
+                      aria-describedby={unavailable ? availabilityId : undefined}
+                      onChange={(event) => update(`features.${feature.id}`, event.target.checked)}
+                    />
+                    <span className="fc-feature-copy">
+                      <span>{feature.label}</span>
+                      {unavailable && (
+                        <em aria-hidden="true">Unavailable</em>
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
+              {FC_FEATURES.some(
+                (feature) => profile.featureSupport?.[feature.id] === false,
+              ) && (
+                <div className="fc-feature-unavailable">
+                  <strong>Unavailable on this board profile</strong>
+                  <ul aria-label="Unavailable board-profile features">
+                    {FC_FEATURES
+                      .filter((feature) => profile.featureSupport?.[feature.id] === false)
+                      .map((feature) => (
+                        <li
+                          key={feature.id}
+                          id={`fc-feature-${feature.id}-availability`}
+                        >
+                          <span>{feature.label}</span>
+                          <small>
+                            {featureUnavailableReason(feature, config.firmwareFamily)}
+                          </small>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
             </fieldset>
           </section>
 
