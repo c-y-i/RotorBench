@@ -370,3 +370,118 @@ export function createAerialKitLogExport({
     },
   };
 }
+
+const LOG_CSV_COLUMNS = [
+  "sample_source",
+  "sample_observed_at",
+  "record_index",
+  "record_version",
+  "record_bytes",
+  "time_ms",
+  "time_us",
+  "gyro_x",
+  "gyro_y",
+  "gyro_z",
+  "accel_x",
+  "accel_y",
+  "accel_z",
+  "roll_deg",
+  "pitch_deg",
+  "yaw_deg",
+  "alt_mm",
+  "stick_1",
+  "stick_2",
+  "stick_3",
+  "stick_4",
+  "torque_x",
+  "torque_y",
+  "torque_z",
+  "motor_1",
+  "motor_2",
+  "motor_3",
+  "motor_4",
+  "state",
+  "flags",
+  "lat",
+  "lon",
+  "gyro_filtered_x",
+  "gyro_filtered_y",
+  "gyro_filtered_z",
+  "notch_hz_1",
+  "notch_hz_2",
+  "notch_hz_3",
+  "notch_engaged_1",
+  "notch_engaged_2",
+  "notch_engaged_3",
+  "rate_setpoint_x",
+  "rate_setpoint_y",
+  "rate_setpoint_z",
+  "pid_p_x",
+  "pid_p_y",
+  "pid_p_z",
+  "pid_i_x",
+  "pid_i_y",
+  "pid_i_z",
+  "pid_d_x",
+  "pid_d_y",
+  "pid_d_z",
+  "vbat_mv",
+];
+
+function csvCell(value) {
+  if (value == null) return "";
+  const text = String(value);
+  return /[",\r\n]/.test(text)
+    ? `"${text.replaceAll('"', '""')}"`
+    : text;
+}
+
+export function serializeAerialKitLogCsv(payload) {
+  const exported = parseAerialKitLogExport(payload);
+  const records = exported.frames
+    .filter((frame) => frame.status === "record")
+    .map((frame) => frame.record);
+  const rows = records.map((record) => {
+    const gyroFiltered = record.gyroFiltered || [null, null, null];
+    const notchHz = record.notchHz || [null, null, null];
+    const notchEngaged = record.notchEngaged || [null, null, null];
+    const rateSetpoint = record.rateSetpoint || [null, null, null];
+    const pidP = record.pidP || [null, null, null];
+    const pidI = record.pidI || [null, null, null];
+    const pidD = record.pidD || [null, null, null];
+    return [
+      exported.sourceName,
+      new Date(exported.observedAtMs).toISOString(),
+      record.index,
+      record.version,
+      record.bytes,
+      record.timeMs,
+      record.timeUs,
+      ...record.gyro,
+      ...record.accel,
+      record.rollDeg,
+      record.pitchDeg,
+      record.yawDeg,
+      record.altMm,
+      ...record.stick,
+      ...record.torque,
+      ...record.motors,
+      record.state,
+      record.flags,
+      record.lat,
+      record.lon,
+      ...gyroFiltered,
+      ...notchHz,
+      ...notchEngaged,
+      ...rateSetpoint,
+      ...pidP,
+      ...pidI,
+      ...pidD,
+      record.vbatMv,
+    ];
+  });
+  return [
+    LOG_CSV_COLUMNS.map(csvCell).join(","),
+    ...rows.map((row) => row.map(csvCell).join(",")),
+  ].join("\r\n");
+}

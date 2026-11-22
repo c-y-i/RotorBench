@@ -1,6 +1,7 @@
 import {
   createAerialKitLogExport,
   parseAerialKitLogExport,
+  serializeAerialKitLogCsv,
 } from "./aerialKitLogExport";
 
 function clone(value) {
@@ -130,6 +131,15 @@ test("exports a bounded sample with a source, range, holes, completion, and vers
       holeIndexes: [1],
     },
   });
+  const csv = serializeAerialKitLogCsv(exported);
+  const csvLines = csv.split("\r\n");
+  expect(csvLines).toHaveLength(3);
+  expect(csvLines[0]).toContain("record_index");
+  expect(csvLines[0]).toContain("sample_source");
+  expect(csvLines[1]).toContain(",0,2,51,");
+  expect(csvLines[1]).toContain(",1000,10,20,30,40,");
+  expect(csvLines[2]).toContain(",2,4,87,");
+  expect(csvLines[2]).not.toContain("HOLE");
 
   const hiddenHole = clone(exported);
   hiddenHole.manifest.delivery.holes = 0;
@@ -186,4 +196,30 @@ test("marks a no-stream answer complete without inventing records", () => {
       },
     },
   });
+  expect(serializeAerialKitLogCsv(exported).split("\r\n")).toHaveLength(1);
+});
+
+test("quotes CSV cells that contain separators", () => {
+  const exported = createAerialKitLogExport({
+    sample: {
+      source: 0,
+      sourceName: "fast, ring",
+      first: 0,
+      count: 1,
+      hz: 20,
+      frames: [
+        recordFrame(0, 2, 51),
+        {
+          status: "done",
+          source: 0,
+          sourceName: "fast, ring",
+          index: 1,
+          record: null,
+        },
+      ],
+    },
+  });
+  const [header, row] = serializeAerialKitLogCsv(exported).split("\r\n");
+  expect(header.startsWith("sample_source,")).toBe(true);
+  expect(row.startsWith('"fast, ring",')).toBe(true);
 });

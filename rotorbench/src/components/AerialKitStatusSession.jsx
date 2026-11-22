@@ -52,7 +52,10 @@ import {
   hasWebSerial,
   serialCaptureErrorMessage,
 } from "../utils/webSerialCapture";
-import { createAerialKitLogExport } from "../utils/aerialKitLogExport";
+import {
+  createAerialKitLogExport,
+  serializeAerialKitLogCsv,
+} from "../utils/aerialKitLogExport";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
@@ -1136,6 +1139,32 @@ export default function AerialKitStatusSession({
     }
   };
 
+  const downloadLogCsv = () => {
+    try {
+      const exported = createAerialKitLogExport({
+        inventory: logInventory,
+        sample: logSample,
+        targetName: targetName || hello?.product || null,
+        nowMs: Date.now(),
+      });
+      const csv = serializeAerialKitLogCsv(exported);
+      const blob = new Blob([csv], {
+        type: "text/csv;charset=utf-8",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `rotorbench-log-sample-${Date.now()}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setMessage(
+        "CSV record rows exported. The validated JSON manifest remains authoritative for source, range, holes, and completion.",
+      );
+    } catch (exportError) {
+      setLogError(exportError.message);
+      setLogState("error");
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -1864,14 +1893,23 @@ export default function AerialKitStatusSession({
                     onClick={downloadLogSample}
                   >
                     <Download size={15} aria-hidden="true" />
-                    Export sample
+                    Export JSON
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!logSample?.done && !logSample?.noStream}
+                    onClick={downloadLogCsv}
+                  >
+                    <Download size={15} aria-hidden="true" />
+                    Export CSV
                   </button>
                 </div>
                 <p>
                   Reads the newest {LOG_SAMPLE_LIMIT} records or fewer at 20 Hz.
                   Source selection is protocol state only; RotorBench does not erase,
-                  rewrite, or download the whole log. Export is a JSON sample plus
-                  manifest and excludes serial-port identity.
+                  rewrite, or download the whole log. JSON carries the authoritative
+                  manifest; CSV contains record rows only. Both exclude serial-port
+                  identity.
                 </p>
                 {logError && (
                   <div className="aerial-kit-rc-unavailable" role="note">

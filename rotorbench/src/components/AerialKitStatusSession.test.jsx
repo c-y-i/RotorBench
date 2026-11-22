@@ -741,12 +741,16 @@ test("reads bounded log samples while retaining holes, completion, and record ve
   HTMLAnchorElement.prototype.click = anchorClick;
   try {
     await userEvent.click(screen.getByRole("button", {
-      name: "Export sample",
+      name: "Export JSON",
     }));
-    expect(createObjectUrl).toHaveBeenCalledTimes(1);
-    expect(anchorClick).toHaveBeenCalledTimes(1);
     expect(screen.getByText(/exported with its source, range, holes/i))
       .toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", {
+      name: "Export CSV",
+    }));
+    expect(createObjectUrl).toHaveBeenCalledTimes(2);
+    expect(anchorClick).toHaveBeenCalledTimes(2);
+    expect(screen.getByText(/CSV record rows exported/i)).toBeInTheDocument();
   } finally {
     URL.createObjectURL = originalCreateObjectUrl;
     URL.revokeObjectURL = originalRevokeObjectUrl;
