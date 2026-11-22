@@ -26,10 +26,14 @@ jest.mock("./FlightControllerSetup", () => function MockFlightControllerSetup(pr
     buildMotorCount,
     buildServoCount,
     value,
+    onOpenEvidenceReview,
   } = props;
   return (
     <div>
       Flight controller panel: {selectedFlightController?.name || "none"} / motors {buildMotorCount ?? "unknown"} / servos {buildServoCount ?? "unknown"} / arm {value?.armChannel ?? "none"}
+      <button type="button" onClick={onOpenEvidenceReview}>
+        Review mock parameters
+      </button>
     </div>
   );
 });
@@ -164,6 +168,20 @@ test("opens the evidence review directly from bench tools", () => {
   fireEvent.click(screen.getByRole("button", {
     name: /Review imported evidence/i,
   }));
+  expect(screen.getByTestId("mock-bench-runbook")).toHaveAttribute(
+    "data-open",
+    "true",
+  );
+});
+
+test("opens the evidence review from an ArduPilot parameter plan", () => {
+  renderSetup();
+
+  fireEvent.click(screen.getByRole("button", {
+    name: "Review mock parameters",
+  }));
+  expect(screen.getByText("Bench tools").closest("details"))
+    .toHaveAttribute("open");
   expect(screen.getByTestId("mock-bench-runbook")).toHaveAttribute(
     "data-open",
     "true",

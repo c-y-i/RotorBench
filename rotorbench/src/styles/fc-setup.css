@@ -531,11 +531,16 @@
   text-align: end;
 }
 
-.fc-ardupilot-parameter-plan > button {
+.fc-ardupilot-parameter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.fc-ardupilot-parameter-actions > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  justify-self: start;
   gap: 6px;
   min-height: var(--control-min-height);
   padding: 0 10px;
@@ -548,7 +553,7 @@
   cursor: pointer;
 }
 
-.fc-ardupilot-parameter-plan > button:hover {
+.fc-ardupilot-parameter-actions > button:hover {
   border-color: var(--brand);
 }
 

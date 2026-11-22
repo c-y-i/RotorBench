@@ -96,6 +96,7 @@ export default function SetupPage() {
   const [captureStatuses, setCaptureStatuses] = useState({});
   const [captureMessage, setCaptureMessage] = useState("");
   const [captureCommandPending, setCaptureCommandPending] = useState(false);
+  const [setupBenchToolsOpen, setSetupBenchToolsOpen] = useState(false);
   const [benchRunbookOpen, setBenchRunbookOpen] = useState(false);
   const [focusBenchEvidence, setFocusBenchEvidence] = useState(false);
   const importInputRef = useRef(null);
@@ -107,6 +108,12 @@ export default function SetupPage() {
     : "rotorbench:hardware-plan:standalone";
   const fcStorageKey = `${setupStorageBase}:fc`;
   const radioStorageKey = `${setupStorageBase}:radio`;
+
+  const openEvidenceReview = () => {
+    setSetupBenchToolsOpen(true);
+    setBenchRunbookOpen(true);
+    setFocusBenchEvidence(true);
+  };
 
   useEffect(() => {
     if (!benchRunbookOpen || !focusBenchEvidence) return undefined;
@@ -723,7 +730,11 @@ export default function SetupPage() {
         </div>
       )}
 
-      <details className="setup-bench-tools">
+      <details
+        className="setup-bench-tools"
+        open={setupBenchToolsOpen}
+        onToggle={(event) => setSetupBenchToolsOpen(event.currentTarget.open)}
+      >
         <summary>
           <Wrench size={18} aria-hidden="true" />
           <span>
@@ -736,10 +747,7 @@ export default function SetupPage() {
           <button
             type="button"
             className="setup-bench-evidence-jump"
-            onClick={() => {
-              setBenchRunbookOpen(true);
-              setFocusBenchEvidence(true);
-            }}
+            onClick={openEvidenceReview}
           >
             <span>
               <strong>Review imported evidence</strong>
@@ -907,6 +915,7 @@ export default function SetupPage() {
             buildMotorCount={selectedFrame?.motorCount ?? null}
             buildServoCount={selectedFrame?.servoHardware?.quantity ?? null}
             storageKey={fcStorageKey}
+            onOpenEvidenceReview={openEvidenceReview}
           />
         </div>
       ) : (

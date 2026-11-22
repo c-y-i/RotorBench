@@ -592,6 +592,7 @@ test("selecting Matek H743-WING exposes the ArduPilot UART and servo map", () =>
 test("copies the H743 ArduPilot parameter plan without writing hardware", async () => {
   const originalClipboard = navigator.clipboard;
   const writeText = jest.fn().mockResolvedValue(undefined);
+  const openEvidenceReview = jest.fn();
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
@@ -607,6 +608,7 @@ test("copies the H743 ArduPilot parameter plan without writing hardware", async 
           imu: "ICM42688P",
           firmware: ["ArduPilot"],
         }}
+        onOpenEvidenceReview={openEvidenceReview}
       />,
     );
 
@@ -620,6 +622,10 @@ test("copies the H743 ArduPilot parameter plan without writing hardware", async 
     expect(text).toContain("does not write or save controller parameters");
     expect(await screen.findByText(/ArduPilot parameter plan copied/i))
       .toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", {
+      name: "Review imported parameters",
+    }));
+    expect(openEvidenceReview).toHaveBeenCalledTimes(1);
   } finally {
     if (originalClipboard) {
       Object.defineProperty(navigator, "clipboard", {

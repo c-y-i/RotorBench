@@ -11,6 +11,7 @@ import {
   Cpu,
   Database,
   Download,
+  FileSearch,
   Gauge,
   Network,
   RadioTower,
@@ -193,6 +194,7 @@ export default function FlightControllerSetup({
   buildMotorCount = null,
   buildServoCount = null,
   storageKey = "rotorbench:flightControllerPlan",
+  onOpenEvidenceReview = null,
 }) {
   const [config, updateConfig, resetInternal] = useFlightControllerConfig(
     value,
@@ -1308,10 +1310,18 @@ export default function FlightControllerSetup({
                       </li>
                     ))}
                   </ul>
-                  <button type="button" onClick={copyArdupilotParameters}>
-                    <Clipboard size={14} aria-hidden="true" />
-                    Copy ArduPilot parameter plan
-                  </button>
+                  <div className="fc-ardupilot-parameter-actions">
+                    <button type="button" onClick={copyArdupilotParameters}>
+                      <Clipboard size={14} aria-hidden="true" />
+                      Copy ArduPilot parameter plan
+                    </button>
+                    {onOpenEvidenceReview && (
+                      <button type="button" onClick={onOpenEvidenceReview}>
+                        <FileSearch size={14} aria-hidden="true" />
+                        Review imported parameters
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
