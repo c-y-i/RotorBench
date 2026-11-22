@@ -471,6 +471,8 @@ const BabylonViewer = ({
   showFitOverlay = false,
   fitOverlayStatus = {},
   clearedComponents = [], // array of component type strings to remove (e.g. ['frame','motor'])
+  estimatedCgMm = null,
+  measuredCgMm = null,
   backgroundColor = "#2d2d44" // hex color for scene background
 }) => {
   const canvasRef = useRef(null);
@@ -481,6 +483,7 @@ const BabylonViewer = ({
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const explodedRef = useRef(exploded);
   const showFitOverlayRef = useRef(showFitOverlay);
+  const cgMarkerMeshesRef = useRef([]);
   const fitOverlayStatusRef = useRef(fitOverlayStatus);
   const [, setLoadedCount] = useState(0);
   const normalizeTimerRef = useRef(null);
@@ -607,6 +610,132 @@ const BabylonViewer = ({
         outline.isPickable = false;
         outline.metadata = { viewerFitOverlay: true };
       });
+    }
+  };
+
+  const disposeCenterOfGravityMarkers = () => {
+    cgMarkerMeshesRef.current.forEach((mesh) => {
+      const material = mesh.material;
+      mesh.dispose(false, true);
+      material?.dispose?.();
+    });
+    cgMarkerMeshesRef.current = [];
+  };
+
+  const applyCenterOfGravityMarkers = (scene) => {
+    disposeCenterOfGravityMarkers();
+    if (
+      !scene
+      || !Array.isArray(estimatedCgMm)
+      || estimatedCgMm.length !== 3
+      || !estimatedCgMm.every((value) => Number.isFinite(Number(value)))
+    ) {
+      return;
+    }
+    const scale = unitScaleRef.current || FIXED_UNIT_SCALE;
+    const measured = Array.isArray(measuredCgMm)
+      && measuredCgMm.length === 2
+      && measuredCgMm.every((value) => Number.isFinite(Number(value)))
+      ? [
+          Number(measuredCgMm[0]),
+          Number(estimatedCgMm[1]),
+          Number(measuredCgMm[1]),
+        ]
+      : null;
+
+    scene.setRenderingAutoClearDepthStencil?.(2, true, true, true);
+    const addMarker = (name, pointMm, color, diameter) => {
+      const center = new Vector3(
+        Number(pointMm[0]) * scale,
+        Number(pointMm[1]) * scale,
+        Number(pointMm[2]) * scale,
+      );
+      const material = createMaterial(
+        scene,
+        `__cg_material_${name}`,
+        color,
+        true,
+      );
+      material.disableLighting = true;
+      material.alpha = 0.96;
+      const disc = MeshBuilder.CreateDisc(
+        `__cg_marker_${name}_disc`,
+        { radius: diameter * 0.33, tessellation: 32 },
+        scene,
+      );
+      disc.rotation.x = Math.PI / 2;
+      disc.position = center;
+      disc.material = material;
+      disc.visibility = 0.45;
+      disc.renderingGroupId = 2;
+      disc.isPickable = false;
+      disc.alwaysSelectAsActiveMesh = true;
+      disc.metadata = { viewerCgMarker: name };
+
+      const ring = MeshBuilder.CreateTorus(
+        `__cg_marker_${name}_ring`,
+        {
+          diameter,
+          thickness: Math.max(diameter * 0.085, 0.0018),
+          tessellation: 40,
+        },
+        scene,
+      );
+      ring.position = center;
+      ring.material = material;
+      ring.renderingGroupId = 2;
+      ring.isPickable = false;
+      ring.alwaysSelectAsActiveMesh = true;
+      ring.metadata = { viewerCgMarker: name };
+      cgMarkerMeshesRef.current.push(disc, ring);
+      if (name === "measured") {
+        const arm = Math.max(diameter * 1.65, 0.045);
+        [
+          [center.add(new Vector3(-arm, 0, 0)), center.add(new Vector3(arm, 0, 0))],
+          [center.add(new Vector3(0, 0, -arm)), center.add(new Vector3(0, 0, arm))],
+        ].forEach((points, index) => {
+          const cross = MeshBuilder.CreateLines(
+            `__cg_marker_measured_cross_${index}`,
+            { points },
+            scene,
+          );
+          cross.color = Color3.FromHexString("#67d8cb");
+          cross.renderingGroupId = 2;
+          cross.isPickable = false;
+          cross.alwaysSelectAsActiveMesh = true;
+          cross.metadata = { viewerCgMarker: "measured-cross" };
+          cgMarkerMeshesRef.current.push(cross);
+        });
+      }
+    };
+
+    addMarker("estimated", estimatedCgMm, "#d5ff4f", 0.038);
+    if (measured) {
+      addMarker("measured", measured, "#67d8cb", 0.03);
+      const connector = MeshBuilder.CreateLines(
+        "__cg_marker_comparison_line",
+        {
+          points: [
+            new Vector3(
+              Number(estimatedCgMm[0]) * scale,
+              (Number(estimatedCgMm[1]) + 0.25) * scale,
+              Number(estimatedCgMm[2]) * scale,
+            ),
+            new Vector3(
+              measured[0] * scale,
+              (measured[1] + 0.25) * scale,
+              measured[2] * scale,
+            ),
+          ],
+        },
+        scene,
+      );
+      connector.color = Color3.FromHexString("#67d8cb");
+      connector.renderingGroupId = 2;
+      connector.isPickable = false;
+      connector.alwaysSelectAsActiveMesh = true;
+      connector.metadata = { viewerCgMarker: "comparison-line" };
+      cgMarkerMeshesRef.current.push(connector);
     }
   };
 
@@ -782,6 +911,13 @@ const BabylonViewer = ({
     // Scene initialization intentionally runs once. Auto-rotation is read from
     // a ref so toggling inspection modes does not rebuild and reload the scene.
   }, []);
+
+  useEffect(() => {
+    applyCenterOfGravityMarkers(sceneRef.current);
+    // The marker meshes are separate from model loading and remain above the
+    // selected component geometry at the same physical X/Y/Z coordinates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estimatedCgMm, measuredCgMm]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -1679,6 +1815,15 @@ const BabylonViewer = ({
         <div className="viewer-webgl-fallback" role="alert">
           <strong>3D preview unavailable</strong>
           <span>{viewerError}</span>
+        </div>
+      )}
+      {Array.isArray(estimatedCgMm) && (
+        <div className="babylon-cg-legend" role="note">
+          <strong>Center of gravity</strong>
+          <span className="is-estimated">CG estimate</span>
+          {Array.isArray(measuredCgMm) && (
+            <span className="is-measured">Measured CG</span>
+          )}
         </div>
       )}
       {debug && (

@@ -9,6 +9,7 @@ import { summarizeAssemblyInterfaces } from "../utils/physicalCompatibility";
 import { getFrameMountPointsMm } from "../assembly/assemblyTransforms";
 import { getFrameServoHardware } from "../utils/frameHardware";
 import { measuredAssemblyCenterOfGravity } from "../utils/buildGeometry";
+import { estimateAssemblyCenterOfGravity } from "../utils/assemblyCenterOfGravity";
 import { revealFocusedTrackControl } from "../utils/revealFocusedTrackControl";
 import {
   hasCatalogModel,
@@ -397,6 +398,10 @@ export default function HomePage() {
     flightController: fc || null,
     receiver: receiver || null,
   }), [frame, motor, propeller, battery, esc, fc, receiver]);
+  const centerOfGravityEstimate = useMemo(
+    () => estimateAssemblyCenterOfGravity(assemblySpec),
+    [assemblySpec],
+  );
 
   const hardwarePlanState = useMemo(
     () => summarizeHardwareReadiness({
@@ -815,6 +820,10 @@ export default function HomePage() {
                 backgroundColor={backgroundColor}
                 assemblySpec={assemblySpec}
                 propellerDirection={assemblyPropellerDirection}
+                estimatedCgMm={centerOfGravityEstimate.cgMm}
+                measuredCgMm={measuredAssemblyCenterOfGravity(
+                  currentBuild?.geometryOverrides,
+                )}
                 />
               </Suspense>
             )}

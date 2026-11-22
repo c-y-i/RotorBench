@@ -17,6 +17,8 @@ jest.mock("./BabylonViewer.jsx", () => ({
   exploded,
   frameCornerPositions,
   assemblySpec,
+  estimatedCgMm,
+  measuredCgMm,
   propellerDirection,
   showFitOverlay,
   fitOverlayStatus,
@@ -28,6 +30,8 @@ jest.mock("./BabylonViewer.jsx", () => ({
     data-auto-rotate={String(autoRotate)}
     data-exploded={String(exploded)}
     data-frame={assemblySpec?.frame?.id || ""}
+    data-estimated-cg={estimatedCgMm?.join(",") || ""}
+    data-measured-cg={measuredCgMm?.join(",") || ""}
     data-motor-mount-count={frameCornerPositions?.length || 0}
     data-motor={assemblySpec?.motor?.id || ""}
     data-motor-shaft={assemblySpec?.motor?.propShaftMm ?? ""}
@@ -500,6 +504,8 @@ test("a starter-platform deep link selects all seven components and consumes the
   });
   fireEvent.click(screen.getByRole("button", { name: "Save measurement" }));
   expect(screen.getByText("Measured − estimate")).toBeInTheDocument();
+  expect(viewer.getAttribute("data-estimated-cg")).toMatch(/^0,-?\d/);
+  expect(viewer).toHaveAttribute("data-measured-cg", "-1.2,-7.5");
   await waitFor(() => {
     expect(JSON.parse(
       localStorage.getItem("rotorbench:build-draft:v1"),

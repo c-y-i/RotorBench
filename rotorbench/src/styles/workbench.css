@@ -692,6 +692,58 @@
   background: var(--sidebar-muted);
 }
 
+.babylon-cg-legend {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 9px;
+  max-width: calc(100% - 20px);
+  padding: 7px 9px;
+  color: #f7f8f1;
+  background: rgba(10, 16, 15, 0.88);
+  border: 1px solid rgba(247, 248, 241, 0.22);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.babylon-cg-legend strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.babylon-cg-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #cbd7cd;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.babylon-cg-legend span::before {
+  width: 7px;
+  height: 7px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  content: "";
+}
+
+.babylon-cg-legend span.is-estimated::before {
+  background: var(--signal);
+  color: var(--signal);
+}
+
+.babylon-cg-legend span.is-measured::before {
+  background: #67d8cb;
+  color: #ffffff;
+}
+
 .viewer-exploded-note {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) auto;

@@ -48,6 +48,7 @@ import {
   setMeasuredAssemblyCenterOfGravity,
   setMeasuredGeometryValue,
 } from "../utils/buildGeometry";
+import { estimateAssemblyCenterOfGravity } from "../utils/assemblyCenterOfGravity";
 import {
   describeMissionControls,
   describeNavigationSafety,
@@ -842,6 +843,10 @@ export default function BuildPage() {
     ),
     [catalogAssemblySpec, geometryOverrides],
   );
+  const centerOfGravityEstimate = useMemo(
+    () => estimateAssemblyCenterOfGravity(assemblySpec),
+    [assemblySpec],
+  );
   const frameServoHardware = useMemo(
     () => getFrameServoHardware(selectedFramePart),
     [selectedFramePart],
@@ -1489,6 +1494,10 @@ export default function BuildPage() {
                   receiverUrl={receiverModelUrl}
                   receiverMountingPoint={receiverMountingPoint}
                   assemblySpec={assemblySpec}
+                  estimatedCgMm={centerOfGravityEstimate.cgMm}
+                  measuredCgMm={measuredAssemblyCenterOfGravity(
+                    geometryOverrides,
+                  )}
                   exploded={explodedAssembly}
                   groundClearance={4}
                   autoRotate={cameraView === "orbit" && !prefersReducedMotion}
