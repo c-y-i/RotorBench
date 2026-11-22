@@ -8,9 +8,17 @@ import {
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
+import {
+  createDefaultFlightControllerConfig,
+  getBoardProfile,
+} from "../data/flightControllerProfiles";
 import { DEFAULT_RADIO_CONFIG } from "../data/radioProfiles";
 import SetupPage from "./SetupPage";
 import { getA11yViolations } from "../test/a11y";
+import {
+  createCombinedHardwarePlan,
+  parseCombinedHardwarePlanJson,
+} from "../utils/hardwarePlanTransfer";
 
 jest.mock("./FlightControllerSetup", () => function MockFlightControllerSetup(props = {}) {
   const {
@@ -232,6 +240,45 @@ test("stages imported hardware plans until the user reviews and applies them", a
   }));
   expect(screen.getByText(/Flight controller panel: none.*arm 7/i))
     .toBeInTheDocument();
+});
+
+test("surfaces stale ArduPilot metadata without staging the plan", async () => {
+  renderSetup();
+  const profile = getBoardProfile("matek-h743-wing-v3-ardupilot");
+  const config = {
+    ...createDefaultFlightControllerConfig(),
+    firmwareFamily: "ardupilot",
+    profileId: profile.id,
+    receiverProtocol: "crsf",
+    receiverUart: "UART6",
+  };
+  const plan = createCombinedHardwarePlan({
+    build: null,
+    flightController: { config, profile, issues: [] },
+    radio: DEFAULT_RADIO_CONFIG,
+    generatedAt: "2026-05-01T00:00:00.000Z",
+  });
+  plan.flightController.parameterRequirements[0].value = "0";
+  expect(plan.flightController.parameterRequirements[0].value).toBe("0");
+  expect(() => parseCombinedHardwarePlanJson(JSON.stringify(plan)))
+    .toThrow(/do not match the selected board profile/i);
+  const file = {
+    name: "stale-h743-plan.json",
+    text: async () => JSON.stringify(plan),
+  };
+
+  await act(async () => {
+    fireEvent.change(screen.getByLabelText("Import combined hardware plan"), {
+      target: { files: [file] },
+    });
+  });
+
+  expect(screen.getByRole("status")).toHaveTextContent(
+    /Could not import hardware plan:.*do not match the selected board profile.*Export a fresh plan/i,
+  );
+  expect(screen.queryByRole("region", {
+    name: "Review imported hardware plan",
+  })).not.toBeInTheDocument();
 });
 
 test("copies a sanitized human-readable hardware plan summary", async () => {

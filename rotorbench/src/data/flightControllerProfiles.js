@@ -2639,7 +2639,7 @@ export function getArdupilotParameterRequirements(config, profile = null) {
   return (resolvedProfile?.parameterRequirements || []).filter((requirement) => (
     !requirement.whenReceiverProtocol
     || requirement.whenReceiverProtocol === config?.receiverProtocol
-  ));
+  )).map((requirement) => ({ ...requirement }));
 }
 
 export function buildArdupilotParameterPlanText(config, profile = null) {
