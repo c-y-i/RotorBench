@@ -424,6 +424,47 @@ export const RADIO_TARGETS = [
   },
 ];
 
+const RADIO_TARGET_GROUP_DEFINITIONS = {
+  internal: { id: "internal", label: "Internal RF handset", order: 1 },
+  usb: { id: "usb", label: "USB serial device", order: 2 },
+  rf24: { id: "rf24", label: "2.4 GHz module bay", order: 3 },
+  subghz: { id: "subghz", label: "Sub-G 900 MHz module bay", order: 4 },
+  generic: { id: "generic", label: "Generic / verify", order: 5 },
+};
+
+export function getRadioTargetGroup(target) {
+  if (target?.allowUnverifiedHostTransports || target?.allowUnverifiedHostBays) {
+    return RADIO_TARGET_GROUP_DEFINITIONS.generic;
+  }
+  if (target?.defaultHostTransport === "internal-rf") {
+    return RADIO_TARGET_GROUP_DEFINITIONS.internal;
+  }
+  if (target?.defaultHostTransport === "native-usb") {
+    return RADIO_TARGET_GROUP_DEFINITIONS.usb;
+  }
+  if (target?.frequencyBands?.includes("Sub-G 900 MHz")) {
+    return RADIO_TARGET_GROUP_DEFINITIONS.subghz;
+  }
+  if (target?.roles?.includes("tx")) {
+    return RADIO_TARGET_GROUP_DEFINITIONS.rf24;
+  }
+  return RADIO_TARGET_GROUP_DEFINITIONS.generic;
+}
+
+export function groupRadioTargets(targets) {
+  const groups = new Map();
+  for (const target of targets || []) {
+    const definition = getRadioTargetGroup(target);
+    if (!groups.has(definition.id)) {
+      groups.set(definition.id, { ...definition, targets: [] });
+    }
+    groups.get(definition.id).targets.push(target);
+  }
+  return Array.from(groups.values()).sort(
+    (left, right) => left.order - right.order,
+  );
+}
+
 export const RADIO_PACKET_RATES = [
   { value: "25", hz: 25, label: "25 Hz", note: "Lowest refresh option" },
   { value: "50", hz: 50, label: "50 Hz", note: "More robust link, lower control rate" },

@@ -22,7 +22,9 @@ import {
   getSuggestedRadioTargetForReceiver,
   getRadioTarget,
   getRadioTargetForRole,
+  getRadioTargetsForRole,
   getSuggestedTelemetryRatio,
+  groupRadioTargets,
   hasStagedBinding,
   isUnboundUid,
   isValidUidFormat,
@@ -262,6 +264,26 @@ test("TX12 Mark II exposes its compact internal ELRS transmitter", () => {
     .toEqual(["internal-rf", "unspecified"]);
   expect(getPacketRatesForTarget(target.id).map((rate) => rate.value))
     .toEqual(["25", "50", "100-full", "150", "250", "500"]);
+});
+
+test("radio targets are grouped by transport and RF band", () => {
+  const groups = groupRadioTargets(getRadioTargetsForRole("tx"));
+
+  expect(groups.map((group) => group.label)).toEqual([
+    "Internal RF handset",
+    "USB serial device",
+    "2.4 GHz module bay",
+    "Sub-G 900 MHz module bay",
+    "Generic / verify",
+  ]);
+  expect(groups.find((group) => group.id === "internal").targets.map(
+    (target) => target.id,
+  )).toEqual(expect.arrayContaining([
+    "radiomaster-pocket-elrs-24-tx",
+    "radiomaster-tx16s-mkii-elrs-24-tx",
+    "radiomaster-tx12-mkii-elrs-24-tx",
+  ]));
+  expect(groups.find((group) => group.id === "subghz").targets).toHaveLength(3);
 });
 
 test("Bandit family preserves sub-GHz bands, packet rates, and module formats", () => {

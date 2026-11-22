@@ -45,6 +45,7 @@ import {
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioTarget,
+  groupRadioTargets,
   getRadioTargetForRole,
   getRadioTargetsForRole,
   getSuggestedTelemetryRatio,
@@ -97,7 +98,14 @@ export default function RadioLinkSetup({
   const [showPhrase, setShowPhrase] = useState(false);
   const receiverLabel = selectedReceiver?.name || receiverName;
   const target = getRadioTarget(config.targetId);
-  const availableTargets = getRadioTargetsForRole(config.role);
+  const availableTargets = useMemo(
+    () => getRadioTargetsForRole(config.role),
+    [config.role],
+  );
+  const targetGroups = useMemo(
+    () => groupRadioTargets(availableTargets),
+    [availableTargets],
+  );
   const availableHostTransports = getRadioHostTransports(target.id);
   const selectedHostBay = getRadioHostBay(config.hostBay);
   const selectedHandset = getRadioHandset(config.handsetId);
@@ -477,8 +485,12 @@ export default function RadioLinkSetup({
             <label className="radio-field radio-field-wide">
               <span>Device</span>
               <select value={config.targetId} onChange={(event) => update("targetId", event.target.value)}>
-                {availableTargets.map((option) => (
-                  <option key={option.id} value={option.id}>{option.name}</option>
+                {targetGroups.map((group) => (
+                  <optgroup key={group.id} label={group.label}>
+                    {group.targets.map((option) => (
+                      <option key={option.id} value={option.id}>{option.name}</option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </label>

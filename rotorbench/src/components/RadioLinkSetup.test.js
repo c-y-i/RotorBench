@@ -239,6 +239,12 @@ test("TX12 Mark II selects its compact internal ELRS target", () => {
   expect(screen.getByRole("option", {
     name: /LBT · 20 dBm \/ 100 mW max/i,
   })).toBeInTheDocument();
+  const internalGroup = screen.getByRole("group", {
+    name: "Internal RF handset",
+  });
+  expect(within(internalGroup).getByRole("option", {
+    name: "RadioMaster TX12 Mark II Internal ELRS 2.4 GHz",
+  })).toBeInTheDocument();
 });
 
 test("sub-GHz receiver mismatch offers an explicit compatible target", () => {
