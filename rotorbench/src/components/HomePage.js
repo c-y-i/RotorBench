@@ -1,9 +1,8 @@
-import React, { lazy, Suspense, useState, useEffect, useMemo } from "react";
+import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
 import componentsData from "../data/components.json";
-import TwoDViewer from "./TwoDViewer";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
 import { summarizeBuild } from "../utils/buildComparison";
 import { summarizeAssemblyInterfaces } from "../utils/physicalCompatibility";
@@ -35,6 +34,7 @@ import {
 import { PLATFORM_PRESETS } from "../data/platformPresets";
 const sampleAssembly = process.env.PUBLIC_URL + "/assets/sample_assembly.glb";
 const BabylonViewer = lazy(() => import("./BabylonViewer"));
+const TwoDViewer = lazy(() => import("./TwoDViewer"));
 const PLATFORM_FIT_LABELS = {
   verified: "Fit verified",
   measured: "Fit measured",
@@ -123,6 +123,8 @@ export default function HomePage() {
   const [receiverMountingPoint, setReceiverMountingPoint] = useState([0, 0, 0]);
   const [clearedComponents, setClearedComponents] = useState([]);
   const [backgroundColor, setBackgroundColor] = useState("#2d2d44");
+  const [previewInView, setPreviewInView] = useState(false);
+  const viewerContainerRef = useRef(null);
   const requestedPlatformSize = searchParams.get("size") || "all";
   const platformSize = requestedPlatformSize === "all"
     || /^[\d.]+$/.test(requestedPlatformSize)
@@ -162,6 +164,24 @@ export default function HomePage() {
   const hasBuild = currentBuild && motor && propeller && battery;
   const hasAnalysis = analysisResults && hasBuild;
   const [activeView, setActiveView] = useState("3D");
+
+  useEffect(() => {
+    if (previewInView) return undefined;
+    const node = viewerContainerRef.current;
+    if (!node) return undefined;
+    if (typeof IntersectionObserver !== "function") {
+      setPreviewInView(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setPreviewInView(true);
+        observer.disconnect();
+      }
+    }, { rootMargin: "320px 0px" });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [previewInView]);
   const platformSummaries = useMemo(
     () => Object.fromEntries(PLATFORM_PRESETS.map((preset) => [
       preset.id,
@@ -699,8 +719,8 @@ export default function HomePage() {
             </div>
           )}
 
-          <div className="viewer-container">
-            {activeView === "3D" && (
+          <div className="viewer-container" ref={viewerContainerRef}>
+            {activeView === "3D" && previewInView && (
               <Suspense
                 fallback={(
                   <div className="viewer-loading-state" role="status">
@@ -734,8 +754,21 @@ export default function HomePage() {
                 />
               </Suspense>
             )}
-            {activeView === "2D" && (
-              <TwoDViewer modelUrl={hasAnySelection ? "/models/model.obj" : sampleAssembly} />
+            {activeView === "2D" && previewInView && (
+              <Suspense
+                fallback={(
+                  <div className="viewer-loading-state" role="status">
+                    Loading 2D assembly view
+                  </div>
+                )}
+              >
+                <TwoDViewer modelUrl={hasAnySelection ? "/models/model.obj" : sampleAssembly} />
+              </Suspense>
+            )}
+            {!previewInView && (
+              <div className="viewer-loading-state viewer-preview-pending" role="status">
+                The interactive preview loads when it reaches the viewport.
+              </div>
             )}
           </div>
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
 import HomePage from "./HomePage";
@@ -82,6 +82,34 @@ test("offers all complete source-backed platforms from an empty overview", async
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
 }, 10000);
+
+test("defers the 3D runtime until the preview approaches the viewport", async () => {
+  const originalIntersectionObserver = global.IntersectionObserver;
+  let intersectionCallback;
+  global.IntersectionObserver = jest.fn(function MockObserver(callback) {
+    intersectionCallback = callback;
+  });
+  global.IntersectionObserver.prototype.observe = jest.fn();
+  const disconnect = jest.fn();
+  global.IntersectionObserver.prototype.disconnect = disconnect;
+
+  try {
+    renderHome();
+    expect(screen.queryByTestId("home-assembly-viewer")).not.toBeInTheDocument();
+    expect(screen.getByText(/loads when it reaches the viewport/i))
+      .toBeInTheDocument();
+
+    act(() => {
+      intersectionCallback([{ isIntersecting: true }]);
+    });
+    expect(await screen.findByTestId("home-assembly-viewer")).toBeInTheDocument();
+    expect(disconnect).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "2D" }));
+    expect(await screen.findByTestId("home-two-d-viewer")).toBeInTheDocument();
+  } finally {
+    global.IntersectionObserver = originalIntersectionObserver;
+  }
+});
 
 test("starter platform actions open a preassembled build draft", async () => {
   renderHome();
