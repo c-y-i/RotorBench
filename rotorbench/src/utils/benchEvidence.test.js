@@ -1074,6 +1074,79 @@ test("reviews a downloaded live AKP snapshot as read-only hardware evidence", ()
     .toBe("pass");
 });
 
+test("reviews an ExpressLRS menu inventory without claiming RF verification", () => {
+  const bundle = parseBenchEvidenceBundle([
+    {
+      name: "elrs-menu.json",
+      text: JSON.stringify({
+        schema: "rotorbench.elrs-device-menu.v1",
+        targetName: "Nomad DBR4",
+        role: "rx",
+        logicalBaud: 420000,
+        device: {
+          name: "Nomad DBR4",
+          hardwareVersion: 1,
+          softwareVersion: 4,
+          parameterCount: 1,
+          parameterVersion: 3,
+        },
+        parameters: [{
+          id: 1,
+          parent: 0,
+          kind: "selection",
+          name: "Packet Rate",
+          options: ["50Hz", "100Hz"],
+          value: 1,
+          min: 0,
+          max: 1,
+          units: "Hz",
+        }],
+        diagnostics: { validFrames: 2 },
+        boundaries: {
+          readOnlyMenuQueriesOnly: true,
+          writesAllowed: false,
+          commandsExecuted: false,
+          rfPathVerified: false,
+          hardwareVerifiedByRotorBench: false,
+        },
+      }),
+    },
+  ], {
+    expectedRadio: {
+      targetName: "Nomad DBR4",
+      role: "rx",
+      rxBaud: 420000,
+    },
+    expectedSettings: {
+      packetRateMode: "100-full",
+    },
+  });
+
+  expect(bundle).toMatchObject({
+    kind: "radio-menu-inventory",
+    fileOverall: "ExpressLRS menu inventory reviewed; hardware remains unverified",
+    hardwareVerifiedByRotorBench: false,
+    rfEvidenceComplete: false,
+    bundle: {
+      radioMenuCount: 1,
+      radioMenuParameters: {
+        entries: [{
+          name: "Packet Rate",
+          value: "100Hz · index 1",
+        }],
+      },
+    },
+  });
+  expect(bundle.checks.find((check) => check.id === "elrs-menu-read-only").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "elrs-menu-field-count").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "settings-packet-rate"))
+    .toMatchObject({
+      status: "pass",
+    });
+});
+
 test("radio status evidence correlates identity without retaining device paths", () => {
   const bundle = parseBenchEvidenceBundle([
     { name: "tx-status.json", text: JSON.stringify(radioStatusEvidence) },

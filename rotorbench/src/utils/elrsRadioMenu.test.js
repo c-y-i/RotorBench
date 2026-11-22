@@ -10,6 +10,7 @@ import {
   encodeElrsDevicePing,
   encodeElrsExtendedFrame,
   encodeElrsParameterRead,
+  parseElrsDeviceMenuEvidence,
 } from "./elrsRadioMenu";
 
 function u32be(value) {
@@ -262,4 +263,56 @@ test("identifies a radio and walks only read-only menu requests", async () => {
 
   await session.close();
   expect(reader.cancel).toHaveBeenCalled();
+});
+
+test("validates imported radio-menu evidence against the staged endpoint", () => {
+  const parsed = parseElrsDeviceMenuEvidence({
+    schema: "rotorbench.elrs-device-menu.v1",
+    targetName: "Nomad DBR4",
+    role: "rx",
+    logicalBaud: 420000,
+    device: {
+      name: "Nomad DBR4",
+      hardwareVersion: 1,
+      softwareVersion: 4,
+      parameterCount: 1,
+      parameterVersion: 3,
+    },
+    parameters: [{
+      id: 1,
+      parent: 0,
+      kind: "selection",
+      name: "Packet Rate",
+      options: ["50Hz", "100Hz"],
+      value: 1,
+      min: 0,
+      max: 1,
+      units: "Hz",
+    }],
+    diagnostics: { validFrames: 2 },
+    boundaries: {
+      readOnlyMenuQueriesOnly: true,
+      writesAllowed: false,
+      commandsExecuted: false,
+      rfPathVerified: false,
+      hardwareVerifiedByRotorBench: false,
+    },
+  }, {
+    targetName: "Nomad DBR4",
+    expectedRole: "rx",
+  });
+
+  expect(parsed.kind).toBe("radio-menu-inventory");
+  expect(parsed.checks.find((check) => check.id === "elrs-menu-target").status)
+    .toBe("pass");
+  expect(parsed.checks.find((check) => check.id === "elrs-menu-role").status)
+    .toBe("pass");
+  expect(parsed.checks.find((check) => check.id === "elrs-menu-read-only").status)
+    .toBe("pass");
+  expect(parsed.entries[0]).toMatchObject({
+    name: "Packet Rate",
+    value: "100Hz · index 1",
+  });
+  expect(parsed.hardwareVerifiedByRotorBench).toBe(false);
+  expect(parsed.rfPathVerified).toBe(false);
 });

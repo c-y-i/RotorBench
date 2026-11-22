@@ -41,6 +41,7 @@ const evidenceKindLabels = {
   "fc-identity": "Aerial Kit identity + capabilities",
   "fc-rc": "Flight-controller RC observation",
   "fc-parameters": "Flight-controller parameter snapshot",
+  "radio-menu-inventory": "ExpressLRS device-reported menu",
   "radio-status-evidence": "Radio device status",
 };
 
@@ -676,6 +677,7 @@ export default function BenchEvidenceReview({
     && !fcEvidenceComplete;
   const fcIdentityEvidence = evidence?.kind === "fc-identity";
   const fcLiveStatusEvidence = evidence?.kind === "fc-live-status";
+  const radioMenuEvidence = evidence?.kind === "radio-menu-inventory";
   const fcRcEvidence = evidence?.kind === "fc-rc";
   const fcRcComplete = evidence?.fcEvidence?.rcEvidenceComplete === true;
   const receiverLinkNotEstablished = evidence?.fcEvidence?.status?.protocol
@@ -900,6 +902,8 @@ export default function BenchEvidenceReview({
                   ? "is-correlated"
                   : radioEvidenceComplete
                     ? "is-radio-evidence"
+                    : radioMenuEvidence
+                      ? "is-radio-evidence"
                   : fcEvidenceComplete || fcRcComplete || fcIdentityEvidence
                     || fcLiveStatusEvidence
                     ? "is-fc-evidence"
@@ -913,6 +917,7 @@ export default function BenchEvidenceReview({
               || fcIdentityEvidence
               || fcLiveStatusEvidence
               || radioEvidenceComplete
+              || radioMenuEvidence
               ? <FileCheck2 size={19} aria-hidden="true" />
               : <ShieldAlert size={19} aria-hidden="true" />}
             <div>
@@ -925,6 +930,8 @@ export default function BenchEvidenceReview({
                     ? "Radio identity matches the selected endpoint; RF remains unverified"
                     : radioEvidenceIncomplete
                       ? "Radio identity does not match the selected endpoint"
+                      : radioMenuEvidence
+                        ? "ExpressLRS menu inventory reviewed; RF and hardware remain unverified"
                   : fcLiveStatusEvidence
                     ? "Live AKP status and RC reviewed; preflight and hardware remain unverified"
                     : fcEvidenceComplete
@@ -982,6 +989,9 @@ export default function BenchEvidenceReview({
                   : ""}
                 {evidence.kind === "radio-status-evidence"
                   ? " Imported radio identity proves the endpoint answered; it does not prove RF range or performance."
+                  : ""}
+                {evidence.kind === "radio-menu-inventory"
+                  ? " The menu inventory is a read-only snapshot of fields the module returned. It does not prove endpoint pairing, RF behavior, or persistence."
                   : ""}
                 {settingsMismatch
                   ? " The TX parameter snapshot does not match the current plan."
@@ -1095,6 +1105,13 @@ export default function BenchEvidenceReview({
             <RadioParameterSnapshot
               entries={evidence.bundle.txParameters.entries}
               checks={evidence.checks}
+            />
+          )}
+          {evidence.bundle?.radioMenuParameters?.entries && (
+            <RadioParameterSnapshot
+              entries={evidence.bundle.radioMenuParameters.entries}
+              checks={evidence.checks}
+              title={`Observed ${evidence.bundle.radioMenuParameters.role?.toUpperCase() || "radio"} device menu`}
             />
           )}
 

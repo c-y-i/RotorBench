@@ -292,6 +292,66 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("dshot_khz")).toBeInTheDocument();
 });
 
+test("reviews an RX ExpressLRS menu inventory without calling it TX", async () => {
+  render(<BenchEvidenceReview
+    expectedRadio={{
+      targetName: "Nomad DBR4",
+      role: "rx",
+      rxBaud: 420000,
+    }}
+    expectedSettings={{ packetRateMode: "100-full" }}
+  />);
+
+  userEvent.upload(
+    screen.getByLabelText("Choose hardware evidence files"),
+    evidenceFile({
+      schema: "rotorbench.elrs-device-menu.v1",
+      targetName: "Nomad DBR4",
+      role: "rx",
+      logicalBaud: 420000,
+      device: {
+        name: "Nomad DBR4",
+        hardwareVersion: 1,
+        softwareVersion: 4,
+        parameterCount: 1,
+        parameterVersion: 3,
+      },
+      parameters: [{
+        id: 1,
+        parent: 0,
+        kind: "selection",
+        name: "Packet Rate",
+        options: ["50Hz", "100Hz"],
+        value: 1,
+        min: 0,
+        max: 1,
+        units: "Hz",
+      }],
+      diagnostics: { validFrames: 2 },
+      boundaries: {
+        readOnlyMenuQueriesOnly: true,
+        writesAllowed: false,
+        commandsExecuted: false,
+        rfPathVerified: false,
+        hardwareVerifiedByRotorBench: false,
+      },
+    }, "menu.json"),
+  );
+
+  expect(await screen.findByText(
+    "ExpressLRS menu inventory reviewed; RF and hardware remain unverified",
+  )).toBeInTheDocument();
+  expect(screen.getByRole("group", {
+    name: "Observed RX device menu",
+  })).toBeInTheDocument();
+  expect(screen.getByText("Packet Rate")).toBeInTheDocument();
+  expect(screen.getByText("100Hz · index 1")).toBeInTheDocument();
+  expect(screen.getByText("Matches plan")).toBeInTheDocument();
+  expect(screen.queryByText("Observed TX parameter snapshot"))
+    .not.toBeInTheDocument();
+  expect(screen.getByText(/does not prove endpoint pairing/i)).toBeInTheDocument();
+});
+
 test("a plan UID mismatch is shown as a failed check", async () => {
   render(<BenchEvidenceReview expectedUid="aa:bb:cc:dd:ee:ff" />);
 

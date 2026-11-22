@@ -59,7 +59,11 @@ export function groupRadioParameters(entries = []) {
   return [...grouped.values()].filter((group) => group.entries.length > 0);
 }
 
-export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
+export default function RadioParameterSnapshot({
+  entries = [],
+  checks = [],
+  title = "Observed TX parameter snapshot",
+}) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
@@ -145,12 +149,12 @@ export default function RadioParameterSnapshot({ entries = [], checks = [] }) {
   return (
     <details
       className="fc-parameter-snapshot radio-parameter-snapshot"
-      aria-label="Observed TX parameter snapshot"
+      aria-label={title}
     >
       <summary>
         <SlidersHorizontal size={17} aria-hidden="true" />
         <span>
-          <strong>Observed TX parameter snapshot</strong>
+          <strong>{title}</strong>
           <small>
             {entries.length} read-only module value{entries.length === 1 ? "" : "s"}
             {checks.length

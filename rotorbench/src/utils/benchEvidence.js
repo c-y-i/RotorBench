@@ -1,4 +1,5 @@
 import { RADIO_POWER_LEVELS } from "../data/radioProfiles";
+import { parseElrsDeviceMenuEvidence } from "./elrsRadioMenu";
 import {
   fcEvidenceChecks,
   fcIdentityChecks,
@@ -689,8 +690,12 @@ function settingCheck(id, label, actual, expected) {
   );
 }
 
-function expectedRadioSettingChecks(snapshot, expectedSettings) {
-  if (!snapshot || snapshot.role !== "tx" || !expectedSettings) return [];
+function expectedRadioSettingChecks(snapshot, expectedSettings, { allowRx = false } = {}) {
+  if (
+    !snapshot
+    || (!allowRx && snapshot.role !== "tx")
+    || !expectedSettings
+  ) return [];
   const power = RADIO_POWER_LEVELS.find(
     (level) => level.value === Number(expectedSettings.powerDbm),
   );
@@ -742,6 +747,34 @@ function expectedRadioSettingChecks(snapshot, expectedSettings) {
     ),
   ];
   return checks;
+}
+
+function elrsMenuSettingSnapshot(inventory) {
+  if (!inventory) return null;
+  const wanted = {
+    "Packet Rate": "packetRate",
+    "Max Power": "maxPower",
+    "Telem Ratio": "telemetryRatio",
+    "Switch Mode": "switchMode",
+    "Link Mode": "linkMode",
+    Dynamic: "dynamicPower",
+    "Model Match": "modelMatch",
+  };
+  const settings = {};
+  inventory.parameters.forEach((parameter) => {
+    const key = wanted[parameter.name];
+    if (!key) return;
+    const label = parameter.kind === "selection"
+      ? parameter.options?.[parameter.value]
+      : parameter.kind === "number"
+        ? `${parameter.value}${parameter.units || ""}`
+        : parameter.value;
+    if (label != null) settings[key] = { label: String(label) };
+  });
+  return {
+    role: inventory.role,
+    settings,
+  };
 }
 
 function diagCheck(diag, report, expectedBaud, expectedUid) {
@@ -1022,6 +1055,7 @@ export function parseBenchEvidenceBundle(
   }
 
   let singleReport = null;
+  let elrsMenuInventory = null;
   let fcLiveStatus = null;
   let fcIdentity = null;
   let fcStatus = null;
@@ -1053,7 +1087,15 @@ export function parseBenchEvidenceBundle(
         parameterSnapshotsByRole[snapshot.role] = snapshot;
         continue;
       }
-      if (payload?.schema === "rotorbench.aerial-kit-live-status.v1") {
+      if (payload?.schema === "rotorbench.elrs-device-menu.v1") {
+        if (elrsMenuInventory) {
+          throw new Error("More than one ExpressLRS menu inventory was selected.");
+        }
+        elrsMenuInventory = parseElrsDeviceMenuEvidence(payload, {
+          targetName: expectedRadio?.targetName || targetName,
+          expectedRole: expectedRadio?.role || null,
+        });
+      } else if (payload?.schema === "rotorbench.aerial-kit-live-status.v1") {
         if (fcLiveStatus) {
           throw new Error("More than one Aerial Kit live-status snapshot was selected.");
         }
@@ -1166,6 +1208,7 @@ export function parseBenchEvidenceBundle(
   const txParameters = parameterSnapshotsByRole.tx || null;
   const diagnosticsPresent = Boolean(txDiag || rxDiag);
   const checks = report ? [...report.checks] : [];
+  if (elrsMenuInventory) checks.push(...elrsMenuInventory.checks);
   if (diagnosticsPresent) {
     checks.push(
       diagCheck(txDiag, report, expectedBauds?.tx, expectedUid),
@@ -1241,6 +1284,13 @@ export function parseBenchEvidenceBundle(
   }
   const settingsChecks = expectedRadioSettingChecks(txParameters, expectedSettings);
   checks.push(...settingsChecks);
+  const menuSettingSnapshot = elrsMenuSettingSnapshot(elrsMenuInventory);
+  const menuSettingChecks = expectedRadioSettingChecks(
+    menuSettingSnapshot,
+    expectedSettings,
+    { allowRx: true },
+  );
+  checks.push(...menuSettingChecks);
   const importedFcChecks = fcEvidenceChecks(fcStatus, fcPreflight, {
     firmwareFamily: expectedFc?.firmwareFamily || null,
     rc: fcRc,
@@ -1319,6 +1369,14 @@ export function parseBenchEvidenceBundle(
     rcEvidenceComplete,
     hardwareVerifiedByRotorBench: false,
   };
+  const radioMenuParameters = elrsMenuInventory
+    ? {
+        role: elrsMenuInventory.role,
+        targetName: elrsMenuInventory.targetName,
+        entries: elrsMenuInventory.entries,
+        settings: menuSettingSnapshot?.settings || {},
+      }
+    : null;
   const radioDeviceEvidence = {
     reports: radioStatusReports,
     expectedRole: expectedRadio?.role || null,
@@ -1373,7 +1431,9 @@ export function parseBenchEvidenceBundle(
 
   return {
     schema: "rotorbench.bench-evidence-review.v1",
-    kind: fcLiveStatus
+    kind: elrsMenuInventory
+      ? "radio-menu-inventory"
+      : fcLiveStatus
       ? "fc-live-status"
       : fcStatus || fcPreflight
       ? "fc-evidence"
@@ -1384,7 +1444,9 @@ export function parseBenchEvidenceBundle(
           : fcParameters
             ? "fc-parameters"
             : radioStatusReports.length ? "radio-status-evidence" : "diagnostics",
-    fileOverall: fcLiveStatus
+    fileOverall: elrsMenuInventory
+      ? "ExpressLRS menu inventory reviewed; hardware remains unverified"
+      : fcLiveStatus
       ? "Live AKP status reviewed; preflight not observed"
       : fcStatus || fcPreflight
       ? fcEvidenceComplete
@@ -1426,6 +1488,8 @@ export function parseBenchEvidenceBundle(
         + Number(Boolean(fcPreflight))
         + Number(Boolean(fcIdentity)),
       radioStatusCount: radioStatusReports.length,
+      radioMenuCount: elrsMenuInventory ? elrsMenuInventory.parameters.length : 0,
+      radioMenuParameters,
       txDiag,
       rxDiag,
       txParameters,

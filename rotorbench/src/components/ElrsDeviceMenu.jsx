@@ -11,6 +11,7 @@ import {
   ELRS_ADDRESS,
   ElrsMenuReadOnlySession,
   createElrsDeviceMenuEvidence,
+  elrsParameterValueLabel,
 } from "../utils/elrsRadioMenu";
 import {
   SERIAL_CAPTURE_BAUD_RATES,
@@ -41,26 +42,6 @@ const KIND_LABELS = {
 
 function versionLabel(value) {
   return `${value} · 0x${value.toString(16).padStart(8, "0")}`;
-}
-
-function parameterValueLabel(parameter) {
-  if (parameter.kind === "selection") {
-    const option = parameter.options[parameter.value];
-    return option == null
-      ? `Index ${parameter.value} · ${parameter.min}..${parameter.max}`
-      : `${option} · index ${parameter.value}`;
-  }
-  if (parameter.kind === "number") {
-    return `${parameter.value}${parameter.units ? ` ${parameter.units}` : ""} · ${parameter.min}..${parameter.max}`;
-  }
-  if (parameter.kind === "folder") {
-    return `${parameter.children.length} child field${parameter.children.length === 1 ? "" : "s"}`;
-  }
-  if (parameter.kind === "command") {
-    return `${parameter.info || "No command status text"} · not executed`;
-  }
-  if (["info", "string"].includes(parameter.kind)) return parameter.value || "Empty";
-  return `Type ${parameter.type} · value not decoded`;
 }
 
 export default function ElrsDeviceMenu({
@@ -245,7 +226,7 @@ export default function ElrsDeviceMenu({
       const searchable = [
         parameter.name,
         KIND_LABELS[parameter.kind],
-        parameterValueLabel(parameter),
+        elrsParameterValueLabel(parameter),
         group,
       ].join(" ").toLowerCase();
       if (normalizedQuery && !searchable.includes(normalizedQuery)) return;
@@ -390,7 +371,7 @@ export default function ElrsDeviceMenu({
                             <span>{parameter.name}</span>
                             <em>{KIND_LABELS[parameter.kind]}</em>
                           </dt>
-                          <dd>{parameterValueLabel(parameter)}</dd>
+                          <dd>{elrsParameterValueLabel(parameter)}</dd>
                         </div>
                       ))}
                     </dl>

@@ -229,6 +229,28 @@ export function decodeElrsParameter(field, body) {
   };
 }
 
+export function elrsParameterValueLabel(parameter) {
+  if (parameter.kind === "selection") {
+    const option = parameter.options?.[parameter.value];
+    return option == null
+      ? `Index ${parameter.value} · ${parameter.min}..${parameter.max}`
+      : `${option} · index ${parameter.value}`;
+  }
+  if (parameter.kind === "number") {
+    return `${parameter.value}${parameter.units ? ` ${parameter.units}` : ""} · ${parameter.min}..${parameter.max}`;
+  }
+  if (parameter.kind === "folder") {
+    return `${parameter.children?.length || 0} child field${parameter.children?.length === 1 ? "" : "s"}`;
+  }
+  if (parameter.kind === "command") {
+    return `${parameter.info || "No command status text"} · not executed`;
+  }
+  if (["info", "string"].includes(parameter.kind)) {
+    return parameter.value || "Empty";
+  }
+  return `Type ${parameter.type} · value not decoded`;
+}
+
 export function createElrsDeviceMenuEvidence({
   device,
   parameters,
@@ -266,6 +288,118 @@ export function createElrsDeviceMenuEvidence({
       rfPathVerified: false,
       hardwareVerifiedByRotorBench: false,
     },
+  };
+}
+
+export function parseElrsDeviceMenuEvidence(
+  payload,
+  { targetName = null, expectedRole = null } = {},
+) {
+  if (
+    !payload
+    || payload.schema !== "rotorbench.elrs-device-menu.v1"
+    || !payload.device
+    || !Array.isArray(payload.parameters)
+  ) {
+    throw new Error("The selected JSON is not an ExpressLRS menu inventory.");
+  }
+  const device = payload.device;
+  const parameters = payload.parameters
+    .filter((parameter) => (
+      parameter
+      && Number.isInteger(parameter.id)
+      && typeof parameter.name === "string"
+      && typeof parameter.kind === "string"
+    ))
+    .map((parameter) => ({ ...parameter }));
+  const boundaries = payload.boundaries || {};
+  const targetMatch = !targetName || !payload.targetName
+    ? null
+    : String(payload.targetName).trim().toLowerCase()
+      === String(targetName).trim().toLowerCase();
+  const roleMatch = !expectedRole || !payload.role
+    ? null
+    : payload.role === expectedRole;
+  const boundarySafe = boundaries.readOnlyMenuQueriesOnly === true
+    && boundaries.writesAllowed === false
+    && boundaries.commandsExecuted === false;
+  const fieldCountMatch = Number.isInteger(device.parameterCount)
+    ? parameters.length === device.parameterCount
+    : null;
+  const checks = [
+    {
+      id: "elrs-menu-schema",
+      label: "ExpressLRS menu schema",
+      status: "pass",
+      detail: "The file is a versioned read-only ExpressLRS menu inventory.",
+    },
+    {
+      id: "elrs-menu-target",
+      label: "Radio target",
+      status: targetMatch === null ? "unverified" : targetMatch ? "pass" : "fail",
+      detail: targetMatch === null
+        ? "The staged radio target or imported target name is unavailable."
+        : targetMatch
+          ? `The imported menu target matches ${targetName}.`
+          : `The imported menu target ${payload.targetName} does not match ${targetName}.`,
+    },
+    {
+      id: "elrs-menu-role",
+      label: "Radio endpoint role",
+      status: roleMatch === null ? "unverified" : roleMatch ? "pass" : "fail",
+      detail: roleMatch === null
+        ? "The staged role or imported role is unavailable."
+        : roleMatch
+          ? `The imported ${payload.role.toUpperCase()} role matches the staged plan.`
+          : `The imported ${payload.role} role does not match the staged ${expectedRole} role.`,
+    },
+    {
+      id: "elrs-menu-read-only",
+      label: "Menu inventory boundary",
+      status: boundarySafe ? "pass" : payload.boundaries ? "fail" : "unverified",
+      detail: boundarySafe
+        ? "The inventory declares read-only queries, no writes, and no executed commands."
+        : payload.boundaries
+          ? "The inventory boundary claims a write or command; reject it as evidence."
+          : "The inventory carries no read-only boundary metadata.",
+    },
+    {
+      id: "elrs-menu-field-count",
+      label: "Menu field count",
+      status: fieldCountMatch === null ? "unverified" : fieldCountMatch ? "pass" : "fail",
+      detail: fieldCountMatch === null
+        ? "The device identity has no usable field count."
+        : fieldCountMatch
+          ? `The inventory contains all ${device.parameterCount} advertised fields.`
+          : `The device advertises ${device.parameterCount} fields and the inventory carries ${parameters.length}.`,
+    },
+  ];
+  const entries = parameters.map((parameter) => ({
+    id: `menu-${parameter.id}`,
+    name: parameter.name,
+    type: parameter.kind,
+    value: elrsParameterValueLabel(parameter),
+  }));
+  return {
+    kind: "radio-menu-inventory",
+    targetName: payload.targetName || null,
+    role: payload.role || null,
+    logicalBaud: payload.logicalBaud ?? null,
+    device: {
+      name: device.name || "Unknown module",
+      hardwareVersion: device.hardwareVersion ?? null,
+      softwareVersion: device.softwareVersion ?? null,
+      parameterCount: device.parameterCount ?? null,
+      parameterVersion: device.parameterVersion ?? null,
+      origin: device.origin ?? null,
+    },
+    parameters,
+    entries,
+    diagnostics: payload.diagnostics || null,
+    boundaries,
+    checks,
+    hardwareVerifiedByRotorBench: false,
+    rfPathVerified: false,
   };
 }
 
