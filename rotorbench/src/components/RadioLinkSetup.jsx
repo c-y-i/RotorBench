@@ -595,7 +595,9 @@ export default function RadioLinkSetup({
                 ? powerSpec.defaultDbm != null
                   ? `${powerSpec.defaultDbm} dBm default`
                   : "Default power unpublished"
-                : "ISM domain compiled into firmware"}</span>
+                : powerSpec?.publishedMaxPowerMw
+                  ? `${powerSpec.publishedMaxPowerMw} mW published max`
+                  : "ISM domain compiled into firmware"}</span>
               <span><Cable size={14} aria-hidden="true" />{target.serial.frame}</span>
               <span><Usb size={14} aria-hidden="true" />{serialBaud ? `${serialBaud} baud logical` : "Serial rate not established"}</span>
             </div>
@@ -794,6 +796,10 @@ export default function RadioLinkSetup({
                           : " Confirm the fitted RF-region variant and firmware menu."
                       }`
                       : "No verified power menu is bundled for this target. Enter the value required by its own firmware documentation."}
+                    {!powerSpec?.regulatoryMaxima?.length
+                      && powerSpec?.publishedMaxPowerMw
+                      ? ` Published hardware maximum: ${powerSpec.publishedMaxPowerMw} mW per transmitter. Regulatory locality and the default drive level remain unverified.`
+                      : ""}
                   </small>
                 </label>
               )}

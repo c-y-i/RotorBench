@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import RadioLinkSetup from "./RadioLinkSetup";
 import { DEFAULT_RADIO_CONFIG, RADIO_STORAGE_KEY } from "../data/radioProfiles";
+import { getA11yViolations } from "../test/a11y";
 
 beforeEach(() => {
   localStorage.clear();
@@ -246,6 +247,43 @@ test("TX12 Mark II selects its compact internal ELRS target", () => {
   expect(within(internalGroup).getByRole("option", {
     name: "RadioMaster TX12 Mark II Internal ELRS 2.4 GHz",
   })).toBeInTheDocument();
+});
+
+test("GX12 exposes simultaneous dual-band internal RF without inventing power defaults", async () => {
+  const { container } = render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-gx12-gemini-xrossband-tx" },
+  });
+
+  expect(screen.getByLabelText("Host transport")).toHaveValue("internal-rf");
+  expect(screen.getByText(/Internal dual-band Gemini-XROSSBAND ExpressLRS RF/i))
+    .toBeInTheDocument();
+  expect(screen.getByText("1000 mW published max")).toBeInTheDocument();
+  expect(screen.getByText(/Published hardware maximum: 1000 mW per transmitter/i))
+    .toBeInTheDocument();
+  expect(screen.getByRole("option", { name: /X100 Full/i })).toBeInTheDocument();
+  expect(screen.getByRole("option", { name: /^X150/i })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Open manufacturer source" }))
+    .toHaveAttribute(
+      "href",
+      "https://radiomasterrc.com/products/gx12-crush-radio-controller-elrs-mode-2",
+    );
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("TX15 Max is described as one selected band rather than Gemini-XROSSBAND", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-tx15-max-elrs-xrossband-tx" },
+  });
+
+  expect(screen.getByLabelText("Host transport")).toHaveValue("internal-rf");
+  expect(screen.getByText(/LR1121 transceiver; one band selected at a time/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/2\.4 GHz or Sub-G 900 MHz \(selected band\)/i))
+    .toBeInTheDocument();
+  expect(screen.queryByRole("option", { name: /X100 Full/i }))
+    .not.toBeInTheDocument();
 });
 
 test("sub-GHz receiver mismatch offers an explicit compatible target", () => {

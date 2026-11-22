@@ -315,6 +315,83 @@ export const RADIO_TARGETS = [
     manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/Pocket_A1.8.pdf?v=1770617495",
   },
   {
+    id: "radiomaster-tx15-max-elrs-xrossband-tx",
+    name: "RadioMaster TX15 Max Internal ELRS",
+    description: "EdgeTX handset with an LR1121 ExpressLRS transmitter that selects either 2.4 GHz or Sub-G 900 MHz; it does not document simultaneous dual-band transmission.",
+    frequency: "2.4 GHz or Sub-G 900 MHz (selected band)",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    defaultHostTransport: "internal-rf",
+    defaultHostBay: "verify",
+    supportedHostBays: [],
+    firmwareVersion: "EdgeTX 3.0.0 or newer with internal ExpressLRS",
+    roles: ["tx"],
+    packetRateModes: ["25", "50", "100-full", "150", "250", "500"],
+    serial: {
+      txBaud: null,
+      rxBaud: null,
+      frame: "Internal ExpressLRS RF through an LR1121 transceiver; one band selected at a time",
+      note: "USB-C is used for EdgeTX and firmware configuration. It is not the RF link and does not prove transmission.",
+    },
+    hostLink: {
+      internalRf: {
+        note: "Select the fitted band and configure the internal ELRS module inside EdgeTX. The product page lists 2.4 GHz or Sub-G 900 MHz, so do not describe this handset profile as simultaneous Gemini-XROSSBAND.",
+      },
+    },
+    power: {
+      defaultDbm: null,
+      defaultMw: null,
+      regulatoryMaxima: [],
+      menuVerified: false,
+      note: "RadioMaster publishes 875 mA at maximum output but does not publish the RF-power table or default drive value on this product page. Confirm the fitted regulatory variant and EdgeTX ELRS menu.",
+    },
+    source: "RadioMaster TX15 Max product page and official TX15 manual",
+    sourceUrl: "https://radiomasterrc.com/products/tx15-max-radio-controller-elrs-m2",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX15_manual_V1.5_bee3e99d-7e1e-4d5b-bbe6-d559712e03cd.pdf?v=1789608956",
+  },
+  {
+    id: "radiomaster-gx12-gemini-xrossband-tx",
+    name: "RadioMaster GX12 Gemini-XROSSBAND Internal ELRS",
+    description: "EdgeTX handset with dual 1 W Gemini-XROSSBAND ExpressLRS transmitters for simultaneous 2.4 GHz and Sub-G 900 MHz operation.",
+    frequency: "2.4 GHz / Sub-G 900 MHz (Gemini Xrossband)",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    defaultHostTransport: "internal-rf",
+    defaultHostBay: "verify",
+    supportedHostBays: [],
+    firmwareVersion: "EdgeTX with internal ExpressLRS Gemini-XROSSBAND",
+    roles: ["tx"],
+    packetRateModes: [
+      "50",
+      "100-full",
+      "150",
+      "250",
+      "500",
+      "x100-full",
+      "x150",
+    ],
+    serial: {
+      txBaud: null,
+      rxBaud: null,
+      frame: "Internal dual-band Gemini-XROSSBAND ExpressLRS RF; no external host CRSF path",
+      note: "USB-C handles charging, EdgeTX access, firmware updates, and storage. It is not the RF link and does not prove transmission.",
+    },
+    hostLink: {
+      internalRf: {
+        note: "Configure the internal Gemini-XROSSBAND module inside EdgeTX. X100 Full and X150 are simultaneous dual-band modes; confirm the receiver supports the same mode and both documented RF bands.",
+      },
+    },
+    power: {
+      defaultDbm: null,
+      defaultMw: null,
+      regulatoryMaxima: [],
+      publishedMaxPowerMw: 1000,
+      menuVerified: false,
+      note: "RadioMaster documents dual 1 W transmitters but does not publish a target-specific default drive level or complete regulatory menu on the product page. Confirm the fitted RF-region variant in EdgeTX.",
+    },
+    source: "RadioMaster GX12 Crush product page and official GX12 manual",
+    sourceUrl: "https://radiomasterrc.com/products/gx12-crush-radio-controller-elrs-mode-2",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/GX12_A1.8.pdf?v=1770617495",
+  },
+  {
     id: "radiomaster-tx16s-mkii-elrs-24-tx",
     name: "RadioMaster TX16S Mark II Internal ELRS 2.4 GHz",
     description: "EdgeTX full-size handset with internal ExpressLRS 2.4 GHz RF using an SX1280 transmitter module.",
@@ -705,6 +782,24 @@ export const RADIO_HANDSETS = [
     sourceUrl: "https://radiomasterrc.com/products/pocket-radio-controller-m2",
     manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/Pocket_A1.8.pdf?v=1770617495",
   },
+  {
+    id: "radiomaster-tx15-max",
+    name: "RadioMaster TX15 Max",
+    firmware: "EdgeTX 3.0.0 or newer",
+    supportedHostBays: ["jr-standard-5"],
+    note: "The official product specification lists a JR-compatible external module bay in addition to its internal ExpressLRS RF.",
+    sourceUrl: "https://radiomasterrc.com/products/tx15-max-radio-controller-elrs-m2",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX15_manual_V1.5_bee3e99d-7e1e-4d5b-bbe6-d559712e03cd.pdf?v=1789608956",
+  },
+  {
+    id: "radiomaster-gx12",
+    name: "RadioMaster GX12",
+    firmware: "EdgeTX",
+    supportedHostBays: ["nano-8"],
+    note: "The official product specification lists Nano / Crossfire compatible external-module support beside its internal dual-band RF.",
+    sourceUrl: "https://radiomasterrc.com/products/gx12-crush-radio-controller-elrs-mode-2",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/GX12_A1.8.pdf?v=1770617495",
+  },
 ];
 
 export const RADIO_CHANNEL_ROLES = [
@@ -818,9 +913,22 @@ export function getSuggestedRadioTargetForReceiver(targetId, receiver = null) {
     return compatibility.status === "compatible"
       && compatibility.receiverBandCoverageComplete;
     })
-    .sort((left, right) => (
-      (left.frequencyBands?.length || 0) - (right.frequencyBands?.length || 0)
-    ))[0];
+    .sort((left, right) => {
+      const simultaneousRank = (target) => (
+        target.packetRateModes?.some((mode) => mode.startsWith("x"))
+          ? 0
+          : 1
+      );
+      const transportRank = (target) => (
+        target.defaultHostTransport === "module-bay" ? 0 : 1
+      );
+      return (
+        (left.frequencyBands?.length || 0)
+          - (right.frequencyBands?.length || 0)
+        || simultaneousRank(left) - simultaneousRank(right)
+        || transportRank(left) - transportRank(right)
+      );
+    })[0];
   if (completeCoverageTarget) return completeCoverageTarget;
   return current.roles.includes("tx") && currentBands.status === "compatible"
     ? current

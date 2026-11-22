@@ -235,6 +235,40 @@ test("RadioMaster Pocket exposes its internal ELRS edition without a host bay", 
   ]));
 });
 
+test("TX15 Max and GX12 keep their internal-RF band behavior distinct", () => {
+  const tx15 = getRadioTarget("radiomaster-tx15-max-elrs-xrossband-tx");
+  const gx12 = getRadioTarget("radiomaster-gx12-gemini-xrossband-tx");
+
+  expect(tx15).toMatchObject({
+    frequency: "2.4 GHz or Sub-G 900 MHz (selected band)",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    defaultHostTransport: "internal-rf",
+    firmwareVersion: "EdgeTX 3.0.0 or newer with internal ExpressLRS",
+    sourceUrl: "https://radiomasterrc.com/products/tx15-max-radio-controller-elrs-m2",
+  });
+  expect(tx15.hostLink.internalRf.note)
+    .toMatch(/2\.4 GHz or Sub-G 900 MHz/i);
+  expect(tx15.hostLink.internalRf.note)
+    .toMatch(/do not describe.*simultaneous/i);
+  expect(getPacketRatesForTarget(tx15.id).map((rate) => rate.value))
+    .toEqual(["25", "50", "100-full", "150", "250", "500"]);
+
+  expect(gx12).toMatchObject({
+    frequency: "2.4 GHz / Sub-G 900 MHz (Gemini Xrossband)",
+    frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+    defaultHostTransport: "internal-rf",
+    sourceUrl: "https://radiomasterrc.com/products/gx12-crush-radio-controller-elrs-mode-2",
+    power: {
+      menuVerified: false,
+      publishedMaxPowerMw: 1000,
+    },
+  });
+  expect(gx12.description)
+    .toMatch(/simultaneous 2\.4 GHz and Sub-G 900 MHz/i);
+  expect(getPacketRatesForTarget(gx12.id).map((rate) => rate.value))
+    .toEqual(expect.arrayContaining(["x100-full", "x150"]));
+});
+
 test("TX16S Mark II exposes its documented internal ELRS transmitter", () => {
   const target = getRadioTarget("radiomaster-tx16s-mkii-elrs-24-tx");
 
@@ -353,6 +387,8 @@ test("radio targets are grouped by transport and RF band", () => {
     (target) => target.id,
   )).toEqual(expect.arrayContaining([
     "radiomaster-pocket-elrs-24-tx",
+    "radiomaster-tx15-max-elrs-xrossband-tx",
+    "radiomaster-gx12-gemini-xrossband-tx",
     "radiomaster-tx16s-mkii-elrs-24-tx",
     "radiomaster-tx12-mkii-elrs-24-tx",
   ]));
@@ -472,6 +508,8 @@ test("documented handset profiles distinguish JR bays from Nano adapters", () =>
     "radiomaster-tx16s-mkii",
     "radiomaster-tx12-mkii",
     "radiomaster-pocket",
+    "radiomaster-tx15-max",
+    "radiomaster-gx12",
   ]);
   const boxer = getRadioHandset("radiomaster-boxer");
   expect(boxer).toMatchObject({
@@ -517,6 +555,19 @@ test("documented handset profiles distinguish JR bays from Nano adapters", () =>
     "radiomaster-pocket",
     "jr-standard-5",
   ).status).toBe("conflict");
+
+  const tx15 = getRadioHandset("radiomaster-tx15-max");
+  expect(tx15).toMatchObject({
+    supportedHostBays: ["jr-standard-5"],
+    sourceUrl: "https://radiomasterrc.com/products/tx15-max-radio-controller-elrs-m2",
+  });
+  expect(tx15.manualUrl).toContain("TX15_manual_V1.5");
+  const gx12 = getRadioHandset("radiomaster-gx12");
+  expect(gx12).toMatchObject({
+    supportedHostBays: ["nano-8"],
+    sourceUrl: "https://radiomasterrc.com/products/gx12-crush-radio-controller-elrs-mode-2",
+  });
+  expect(gx12.manualUrl).toContain("GX12_A1.8.pdf");
 
   const warnings = buildRadioWarnings({
     ...DEFAULT_RADIO_CONFIG,
