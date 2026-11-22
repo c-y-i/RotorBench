@@ -335,11 +335,27 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
         capPercent: 15,
         outputs: [],
       },
+      preflight: {
+        status: "ok",
+        observedAt: new Date().toISOString(),
+        lines: [
+          {
+            name: "clock",
+            verdict: 1,
+            detail: "clock on the crystal",
+          },
+          {
+            name: "receiver",
+            verdict: 2,
+            detail: "receiver: 8412 bytes",
+          },
+        ],
+      },
     }, "live-status.json"),
   );
 
   expect(await screen.findByText(
-    "Live AKP status and RC reviewed; preflight and hardware remain unverified",
+    "Live AKP status and board preflight reviewed; hardware remains unverified",
   )).toBeInTheDocument();
   expect(screen.getByText(/time-bounded observations/i)).toBeInTheDocument();
   expect(screen.getByRole("region", {
@@ -355,6 +371,49 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("0 / 0 / 1000 mg")).toBeInTheDocument();
   expect(screen.getByText("2 / 3 / 4 mrad/s")).toBeInTheDocument();
   expect(screen.getByText(/4 motors, 0 servos, 15% test cap/i))
+    .toBeInTheDocument();
+  expect(screen.getAllByText("clock on the crystal").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("receiver: 8412 bytes").length).toBeGreaterThan(0);
+});
+
+test("keeps a live snapshot with no preflight checklist unverified", async () => {
+  render(<BenchEvidenceReview expectedFc={{ firmwareFamily: "aerialkit" }} />);
+
+  userEvent.upload(
+    screen.getByLabelText("Choose hardware evidence files"),
+    evidenceFile({
+      schema: "rotorbench.aerial-kit-live-status.v1",
+      hello: {
+        protocolVersion: 1,
+        product: "aerialkit-f405",
+        parameterCount: 46,
+        changed: "0",
+        features: 1 << 9,
+        configHash: 0x12345678,
+      },
+      status: {
+        flightState: 0,
+        linkLive: 1,
+        gpsFixType: 0,
+        gpsSatellites: 0,
+        rollDeg: 0,
+        pitchDeg: 0,
+        yawDeg: 0,
+        observedAt: new Date().toISOString(),
+      },
+      armedState: { fresh: true, state: "disarmed" },
+      preflight: {
+        status: "none",
+        observedAt: new Date().toISOString(),
+        lines: [],
+      },
+    }, "no-preflight.json"),
+  );
+
+  expect(await screen.findAllByText(
+    "Live AKP status reviewed; board reports no preflight checklist",
+  )).not.toHaveLength(0);
+  expect(screen.getByText(/does not turn that response into a pass/i))
     .toBeInTheDocument();
 });
 

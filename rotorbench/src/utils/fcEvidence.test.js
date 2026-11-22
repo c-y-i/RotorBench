@@ -155,6 +155,22 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       capPercent: 15,
       outputs: [],
     },
+    preflight: {
+      status: "ok",
+      observedAt: "2026-11-22T10:00:00.000Z",
+      lines: [
+        {
+          name: "clock",
+          verdict: 1,
+          detail: "clock on the crystal",
+        },
+        {
+          name: "receiver",
+          verdict: 2,
+          detail: "receiver: 8412 bytes",
+        },
+      ],
+    },
   });
 
   expect(parsed).toMatchObject({
@@ -202,7 +218,76 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       servos: 0,
       capPercent: 15,
     },
+    preflight: {
+      protocol: "akp",
+      status: "ok",
+      passCount: 1,
+      factCount: 1,
+      lines: [
+        {
+          name: "clock",
+          id: "clock",
+          verdict: 1,
+          status: "pass",
+          label: "Pass",
+          detail: "clock on the crystal",
+        },
+        {
+          name: "receiver",
+          id: "receiver",
+          verdict: 2,
+          status: "fact",
+          label: "Fact",
+          detail: "receiver: 8412 bytes",
+        },
+      ],
+    },
   });
+});
+
+test("keeps a live board's missing preflight checklist unverified", () => {
+  const snapshot = {
+    schema: "rotorbench.aerial-kit-live-status.v1",
+    hello: {
+      protocolVersion: 1,
+      product: "aerialkit-f405",
+      parameterCount: 46,
+      changed: "0",
+      features: (1 << 9),
+      configHash: 0x12345678,
+    },
+    status: {
+      flightState: 0,
+      linkLive: 1,
+      rollDeg: 0,
+      pitchDeg: 0,
+      yawDeg: 0,
+      gpsFixType: 0,
+      gpsSatellites: 0,
+      observedAt: new Date().toISOString(),
+    },
+    armedState: { fresh: true, state: "disarmed" },
+    preflight: {
+      status: "none",
+      observedAt: new Date().toISOString(),
+      lines: [],
+    },
+  };
+  const parsed = parseAerialKitLiveStatusJson(snapshot);
+  const checks = fcEvidenceChecks(parsed.status, parsed.preflight, {
+    firmwareFamily: "aerialkit",
+  });
+  expect(parsed.preflight).toMatchObject({
+    protocol: "akp",
+    status: "none",
+    passCount: 0,
+    failCount: 0,
+  });
+  expect(checks.find((check) => check.id === "fc-preflight-no-fail"))
+    .toMatchObject({
+      status: "unverified",
+      detail: expect.stringMatching(/not a passing checklist/i),
+    });
 });
 
 const statusJson = {

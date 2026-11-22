@@ -2794,6 +2794,7 @@
 .aerial-kit-identity,
 .aerial-kit-live,
 .aerial-kit-rc,
+.aerial-kit-preflight,
 .aerial-kit-parameters,
 .aerial-kit-hardware {
   display: grid;
@@ -2802,6 +2803,111 @@
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 4px;
+}
+
+.aerial-kit-preflight > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.aerial-kit-preflight ol {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aerial-kit-preflight li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-preflight li.is-pass {
+  background: #e8f5ee;
+  border-color: #b8ddc8;
+}
+
+.aerial-kit-preflight li.is-fail {
+  background: #fff0e9;
+  border-color: #efb596;
+}
+
+.aerial-kit-preflight li > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.aerial-kit-preflight li strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.aerial-kit-preflight li small {
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.aerial-kit-preflight li em {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.aerial-kit-preflight li.is-pass em {
+  color: var(--ok);
+}
+
+.aerial-kit-preflight li.is-fail em {
+  color: var(--danger);
+}
+
+.aerial-kit-preflight-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 10px;
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-preflight-empty > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.aerial-kit-preflight-empty > span {
+  display: grid;
+  gap: 2px;
+}
+
+.aerial-kit-preflight-empty strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.aerial-kit-preflight-empty small {
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.4;
 }
 
 .aerial-kit-hardware > p {

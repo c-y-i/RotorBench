@@ -463,6 +463,31 @@ export function parseAerialKitLiveStatusJson(payload) {
           })),
       }
     : null;
+  let preflight = null;
+  if (payload.preflight && typeof payload.preflight === "object") {
+    const observedAtMs = timestampMilliseconds(payload.preflight.observedAt);
+    if (payload.preflight.status === "none") {
+      preflight = {
+        kind: "fc-preflight",
+        protocol: "akp",
+        status: "none",
+        lines: [],
+        passCount: 0,
+        failCount: 0,
+        factCount: 0,
+        observedAtMs,
+      };
+    } else {
+      preflight = {
+        ...parseFcPreflightJson({
+          protocol: "akp",
+          lines: payload.preflight.lines,
+        }),
+        status: "ok",
+        observedAtMs,
+      };
+    }
+  }
   return {
     kind: "fc-live-status",
     identity,
@@ -478,6 +503,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     parameterMetadata,
     sensorMetadata,
     outputMetadata,
+    preflight,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };
@@ -884,15 +910,24 @@ export function fcEvidenceChecks(status, preflight, {
   }
   checks.push(...importedRcChecks);
   if (preflight) {
-    checks.push(makeCheck(
-      "fc-preflight-no-fail",
-      "FC preflight failures",
-      preflight.failCount === 0 ? "pass" : "fail",
-      preflight.failCount === 0
-        ? `All ${preflight.passCount} pass and ${preflight.factCount} fact lines were reviewed without a failure.`
-        : `${preflight.failCount} preflight line${preflight.failCount === 1 ? "" : "s"} failed.`,
-    ));
-    if (preflight.protocol === "betaflight") {
+    if (preflight.status === "none") {
+      checks.push(makeCheck(
+        "fc-preflight-no-fail",
+        "FC preflight checklist",
+        "unverified",
+        "The board reports no preflight checklist. No checklist is not a passing checklist.",
+      ));
+    } else {
+      checks.push(makeCheck(
+        "fc-preflight-no-fail",
+        "FC preflight failures",
+        preflight.failCount === 0 ? "pass" : "fail",
+        preflight.failCount === 0
+          ? `All ${preflight.passCount} pass and ${preflight.factCount} fact lines were reviewed without a failure.`
+          : `${preflight.failCount} preflight line${preflight.failCount === 1 ? "" : "s"} failed.`,
+      ));
+    }
+    if (preflight.protocol === "betaflight" && preflight.status !== "none") {
       const flags = preflight.armingDisableFlags;
       const parsedFlags = /^0x[0-9a-f]+$/i.test(String(flags))
         ? Number.parseInt(String(flags).slice(2), 16)

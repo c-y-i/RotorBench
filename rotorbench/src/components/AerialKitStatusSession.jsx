@@ -22,6 +22,7 @@ import {
   AERIAL_KIT_FEATURE_PARAM_INFO,
   AERIAL_KIT_FEATURE_SENSOR_INFO,
   AERIAL_KIT_FEATURE_OUTPUT_INFO,
+  AERIAL_KIT_FEATURE_PREFLIGHT,
   AERIAL_KIT_PARAMETER_READ_LIMIT,
   AERIAL_KIT_SENSOR_TOPICS,
   AerialKitReadOnlySession,
@@ -32,6 +33,7 @@ import {
   parseAerialKitParamHelpSlice,
   parseAerialKitParamGet,
   parseAerialKitParamInfoPage,
+  parseAerialKitPreflightPage,
   parseAerialKitSensorInfo,
   parseAerialKitOutputInfo,
   parseAerialKitRcChannels,
@@ -75,6 +77,14 @@ function hexWord(value) {
   return value == null
     ? "Absent"
     : `0x${value.toString(16).padStart(8, "0")}`;
+}
+
+function pageStatusName(verdict) {
+  return ["fail", "pass", "fact"][verdict] || "unknown";
+}
+
+function pageStatusLabel(verdict) {
+  return ["Fail", "Pass", "Reading"][verdict] || "Unknown";
 }
 
 function ageLabel(observedAtMs, nowMs) {
@@ -136,6 +146,9 @@ export default function AerialKitStatusSession({
   const [outputInfo, setOutputInfo] = useState(null);
   const [outputState, setOutputState] = useState("idle");
   const [outputError, setOutputError] = useState("");
+  const [preflight, setPreflight] = useState(null);
+  const [preflightState, setPreflightState] = useState("idle");
+  const [preflightError, setPreflightError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -199,6 +212,9 @@ export default function AerialKitStatusSession({
     setOutputInfo(null);
     setOutputState("idle");
     setOutputError("");
+    setPreflight(null);
+    setPreflightState("idle");
+    setPreflightError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -641,6 +657,142 @@ export default function AerialKitStatusSession({
     }
   };
 
+  const readPreflight = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_PREFLIGHT) === 0
+    ) {
+      setPreflightError(
+        "The HELLO capability word does not claim PREFLIGHT, so RotorBench did not ask for the board checklist.",
+      );
+      setPreflightState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setPreflightError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setPreflightError("");
+    setPreflightState("reading");
+    try {
+      const first = parseAerialKitPreflightPage(
+        await session.request(
+          AERIAL_KIT_COMMANDS.preflight,
+          Uint8Array.of(0, 0, 0),
+        ),
+        0,
+        0,
+      );
+      if (first.status === "none") {
+        setPreflight({
+          protocol: "akp",
+          status: "none",
+          count: 0,
+          lines: [],
+          passCount: 0,
+          failCount: 0,
+          factCount: 0,
+          observedAtMs: Date.now(),
+        });
+        setPreflightState("ready");
+        setMessage("The board reports no preflight checklist. That is not a passing checklist.");
+        setProtocolStats({ ...session.stats });
+        return;
+      }
+      if (first.status !== "ok") {
+        throw new Error("The board refused line 0 of its checklist.");
+      }
+      const lines = [];
+      for (let index = 0; index < first.count; index += 1) {
+        let offset = 0;
+        let expectedTotal = null;
+        let verdict = null;
+        let name = null;
+        let detail = "";
+        while (true) {
+          const page = parseAerialKitPreflightPage(
+            await session.request(
+              AERIAL_KIT_COMMANDS.preflight,
+              Uint8Array.of(
+                index,
+                offset & 0xff,
+                (offset >> 8) & 0xff,
+              ),
+            ),
+            index,
+            offset,
+          );
+          if (page.status !== "ok") {
+            throw new Error(
+              `The board stopped serving preflight line ${index + 1} of ${first.count}.`,
+            );
+          }
+          if (page.count !== first.count) {
+            throw new Error("The board changed its preflight line count during the walk.");
+          }
+          if (expectedTotal == null) {
+            expectedTotal = page.sentenceLength;
+            verdict = page.verdict;
+            name = page.name;
+          }
+          if (
+            page.sentenceLength !== expectedTotal
+            || page.verdict !== verdict
+            || page.name !== name
+          ) {
+            throw new Error(
+              `Preflight line ${index + 1} changed while its sentence was being read.`,
+            );
+          }
+          detail += page.detail;
+          offset += page.detail.length;
+          if (offset >= expectedTotal) break;
+          if (page.detail.length === 0) {
+            throw new Error(
+              `Preflight line ${index + 1} stopped before its declared end.`,
+            );
+          }
+        }
+        lines.push({
+          name,
+          id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          verdict,
+          status: pageStatusName(verdict),
+          label: pageStatusLabel(verdict),
+          detail,
+        });
+        if (!mountedRef.current) return;
+      }
+      const report = {
+        protocol: "akp",
+        status: "ok",
+        count: lines.length,
+        lines,
+        passCount: lines.filter((line) => line.status === "pass").length,
+        failCount: lines.filter((line) => line.status === "fail").length,
+        factCount: lines.filter((line) => line.status === "fact").length,
+        observedAtMs: Date.now(),
+      };
+      setPreflight(report);
+      setPreflightState("ready");
+      setMessage(
+        `Read ${lines.length} board preflight line${lines.length === 1 ? "" : "s"} without changing aircraft state.`,
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setPreflightState("error");
+      setPreflightError(readError.message);
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -732,6 +884,7 @@ export default function AerialKitStatusSession({
       parameterMetadata,
       sensorMetadata: sensors,
       outputMetadata: outputInfo,
+      preflight,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -792,13 +945,15 @@ export default function AerialKitStatusSession({
     connectionActive: sessionState === "monitoring",
   });
   const rcAgeMs = lastRcAt == null ? null : Math.max(0, clockNow - lastRcAt);
-  const canDownload = Boolean(hello || liveStatus || rc);
+  const canDownload = Boolean(hello || liveStatus || rc || preflight);
   const metadataClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) !== 0;
   const sensorClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_SENSOR_INFO) !== 0;
   const outputClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_OUTPUT_INFO) !== 0;
+  const preflightClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_PREFLIGHT) !== 0;
   const busy = ["selecting", "connecting", "stopping"].includes(sessionState);
   const active = ["connecting", "monitoring"].includes(sessionState);
 
@@ -930,6 +1085,10 @@ export default function AerialKitStatusSession({
                 <span aria-hidden="true" />
                 RC readback
               </li>
+              <li className={preflight ? "is-complete" : "is-pending"}>
+                <span aria-hidden="true" />
+                Board preflight
+              </li>
               <li className="is-unverified">
                 <span aria-hidden="true" />
                 RF path not verified
@@ -1020,6 +1179,89 @@ export default function AerialKitStatusSession({
                     </dd>
                   </div>
                 </dl>
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-preflight"
+                aria-label="Board-reported preflight checklist"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Board preflight checklist</strong>
+                  <span>
+                    {preflightState === "reading"
+                      ? "Reading"
+                      : preflightState === "ready"
+                        ? preflight.status === "none"
+                          ? "No checklist"
+                          : `${preflight.failCount} fail · ${preflight.passCount} pass · ${preflight.factCount} reading`
+                        : preflightState === "error"
+                          ? "Read stopped"
+                          : !preflightClaimed
+                            ? "Not claimed"
+                            : "Not read"}
+                  </span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || preflightState === "reading"
+                      || !preflightClaimed
+                    }
+                    onClick={readPreflight}
+                  >
+                    <ShieldCheck size={15} aria-hidden="true" />
+                    Read preflight checklist
+                  </button>
+                  <span>
+                    {preflight?.observedAtMs
+                      ? `Observed ${ageLabel(preflight.observedAtMs, clockNow)}`
+                      : "User-triggered read"}
+                  </span>
+                </div>
+                <p>
+                  The board supplies its own checks and readings. A clear checklist
+                  remains a time-bounded observation; it does not arm, fly, prove RF,
+                  or authorize the aircraft.
+                </p>
+                {preflightError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Preflight unavailable</strong>
+                      <small>{preflightError}</small>
+                    </span>
+                  </div>
+                )}
+                {preflight?.status === "none" && (
+                  <div className="aerial-kit-preflight-empty" role="note">
+                    <Activity size={16} aria-hidden="true" />
+                    <span>
+                      <strong>No checklist to read</strong>
+                      <small>
+                        The board answered that this build serves no preflight
+                        checklist. RotorBench does not convert that into a pass.
+                      </small>
+                    </span>
+                  </div>
+                )}
+                {preflight?.status === "ok" && (
+                  <ol aria-label="Board-reported preflight lines">
+                    {preflight.lines.map((line, index) => (
+                      <li key={`${line.id}-${index}`} className={`is-${line.status}`}>
+                        <span>
+                          <strong>{line.name}</strong>
+                          <small>{line.detail || "No additional detail."}</small>
+                        </span>
+                        <em>{line.label}</em>
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </section>
             )}
 

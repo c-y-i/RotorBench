@@ -13,6 +13,7 @@ import {
   parseAerialKitParamInfoPage,
   parseAerialKitOutputInfo,
   parseAerialKitParamGet,
+  parseAerialKitPreflightPage,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
   parseAerialKitSensorInfo,
@@ -215,6 +216,73 @@ test("parses an offset-checked PARAM_HELP slice", () => {
   });
   expect(() => parseAerialKitParamHelpSlice(payload, 4, 1))
     .toThrow(/asked from offset 1/i);
+});
+
+test("parses PREFLIGHT pages without turning no checklist into a pass", () => {
+  expect(parseAerialKitPreflightPage(Uint8Array.of(2), 0, 0)).toEqual({
+    status: "none",
+    index: null,
+    count: 0,
+    verdict: null,
+    verdictName: null,
+    verdictLabel: null,
+    name: null,
+    sentenceLength: 0,
+    offset: 0,
+    detail: "",
+    complete: true,
+  });
+  expect(parseAerialKitPreflightPage(Uint8Array.of(1, 4, 6), 4, 0))
+    .toMatchObject({
+      status: "no-index",
+      index: 4,
+      count: 6,
+      complete: false,
+    });
+
+  const detail = Buffer.from("receiver: 8412 bytes");
+  const name = Buffer.from("receiver");
+  const pageHeader = detailLength => Uint8Array.from([
+    0,
+    2,
+    5,
+    2,
+    name.length,
+    ...name,
+    detail.length & 0xff,
+    (detail.length >> 8) & 0xff,
+    detailLength,
+  ]);
+  expect(parseAerialKitPreflightPage(
+    Uint8Array.from([...pageHeader(7), ...detail.subarray(0, 7)]),
+    2,
+    0,
+  )).toEqual({
+    status: "ok",
+    index: 2,
+    count: 5,
+    verdict: 2,
+    verdictName: "fact",
+    verdictLabel: "Reading",
+    name: "receiver",
+    sentenceLength: detail.length,
+    offset: 0,
+    detail: "receive",
+    complete: false,
+  });
+  expect(parseAerialKitPreflightPage(
+    Uint8Array.from([...pageHeader(detail.length - 7), ...detail.subarray(7)]),
+    2,
+    7,
+  )).toMatchObject({
+    status: "ok",
+    detail: "r: 8412 bytes",
+    complete: true,
+  });
+  expect(() => parseAerialKitPreflightPage(Uint8Array.of(0x7f), 0, 0))
+    .toThrow(/predates PREFLIGHT/i);
+  expect(() => parseAerialKitPreflightPage(Uint8Array.of(2, 0), 0, 0))
+    .toThrow(/one status byte/i);
 });
 
 test("parses sensor presence without inventing a body for an absent sensor", () => {
@@ -557,6 +625,11 @@ test("creates a sanitized live-status evidence boundary", () => {
       help: "Rate-loop proportional gain.",
       secret: true,
     }],
+    preflight: {
+      status: "ok",
+      lines: [{ name: "clock", verdict: 1, detail: "clock on the crystal" }],
+      observedAtMs: 1250,
+    },
     connectionActive: true,
     nowMs: 1500,
   });
@@ -574,6 +647,7 @@ test("creates a sanitized live-status evidence boundary", () => {
         "PARAM_GET",
         "PARAM_INFO",
         "PARAM_HELP",
+        "PREFLIGHT",
       ],
     },
     status: {
@@ -594,6 +668,11 @@ test("creates a sanitized live-status evidence boundary", () => {
       default: "0.250",
       help: "Rate-loop proportional gain.",
     }],
+    preflight: {
+      status: "ok",
+      observedAt: "1970-01-01T00:00:01.250Z",
+      lines: [{ name: "clock", verdict: 1, detail: "clock on the crystal" }],
+    },
     boundaries: {
       readOnlyQueriesOnly: true,
       hardwareVerifiedByRotorBench: false,

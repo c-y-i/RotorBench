@@ -13,7 +13,10 @@ export const AERIAL_KIT_FEATURE_PARAM_INFO = 1 << 0;
 export const AERIAL_KIT_FEATURE_RC_CHANNELS = 1 << 4;
 export const AERIAL_KIT_FEATURE_SENSOR_INFO = 1 << 5;
 export const AERIAL_KIT_FEATURE_OUTPUT_INFO = 1 << 6;
+export const AERIAL_KIT_FEATURE_PREFLIGHT = 1 << 9;
 export const AERIAL_KIT_PARAMETER_READ_LIMIT = 255;
+export const AERIAL_KIT_PREFLIGHT_MAX_LINES = 32;
+export const AERIAL_KIT_PREFLIGHT_NAME_MAX = 24;
 export const AERIAL_KIT_COMMANDS = Object.freeze({
   hello: 0x01,
   paramGet: 0x02,
@@ -23,6 +26,7 @@ export const AERIAL_KIT_COMMANDS = Object.freeze({
   rcChannels: 0x0d,
   sensorInfo: 0x0e,
   outputInfo: 0x0f,
+  preflight: 0x12,
 });
 
 export const AERIAL_KIT_SENSOR_TOPICS = Object.freeze([
@@ -58,6 +62,12 @@ const GPS_FIX_NAMES = Object.freeze({
   3: "3D fix",
   4: "3D fix with dead reckoning",
   5: "time only, no position",
+});
+
+const PREFLIGHT_VERDICTS = Object.freeze({
+  0: { name: "fail", label: "Fail" },
+  1: { name: "pass", label: "Pass" },
+  2: { name: "fact", label: "Reading" },
 });
 
 export const AERIAL_KIT_PARAMETER_TYPES = Object.freeze({
@@ -543,6 +553,124 @@ export function parseAerialKitParamHelpSlice(payload, askedIndex, askedOffset) {
   };
 }
 
+export function parseAerialKitPreflightPage(
+  payload,
+  askedIndex,
+  askedOffset,
+) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) throw new Error("Aerial Kit PREFLIGHT payload is empty.");
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates PREFLIGHT and answered with the unknown-command status.",
+    );
+  }
+  if (bytes[0] === 2) {
+    if (bytes.length !== 1) {
+      throw new Error(
+        "A board with no preflight checklist must answer with one status byte.",
+      );
+    }
+    return {
+      status: "none",
+      index: null,
+      count: 0,
+      verdict: null,
+      verdictName: null,
+      verdictLabel: null,
+      name: null,
+      sentenceLength: 0,
+      offset: 0,
+      detail: "",
+      complete: true,
+    };
+  }
+  if (![0, 1].includes(bytes[0])) {
+    throw new Error(`PREFLIGHT returned status ${bytes[0]}.`);
+  }
+  if (bytes.length < 3) throw new Error("PREFLIGHT page header is incomplete.");
+  const index = bytes[1];
+  const count = bytes[2];
+  if (bytes[0] === 1) {
+    if (bytes.length !== 3) {
+      throw new Error("A no-index PREFLIGHT reply must contain three bytes.");
+    }
+    if (index !== (askedIndex & 0xff)) {
+      throw new Error(`PREFLIGHT asked for line ${askedIndex} but refused line ${index}.`);
+    }
+    return {
+      status: "no-index",
+      index,
+      count,
+      verdict: null,
+      verdictName: null,
+      verdictLabel: null,
+      name: null,
+      sentenceLength: 0,
+      offset: askedOffset,
+      detail: "",
+      complete: false,
+    };
+  }
+  if (index !== (askedIndex & 0xff)) {
+    throw new Error(`PREFLIGHT asked for line ${askedIndex} but answered line ${index}.`);
+  }
+  if (count < 1 || count > AERIAL_KIT_PREFLIGHT_MAX_LINES) {
+    throw new Error(`PREFLIGHT reported an invalid line count of ${count}.`);
+  }
+  if (bytes.length < 8) throw new Error("PREFLIGHT line page header is incomplete.");
+  const verdict = bytes[3];
+  const verdictDefinition = PREFLIGHT_VERDICTS[verdict];
+  if (!verdictDefinition) {
+    throw new Error(`PREFLIGHT returned unknown verdict ${verdict}.`);
+  }
+  const nameLength = bytes[4];
+  if (nameLength > AERIAL_KIT_PREFLIGHT_NAME_MAX) {
+    throw new Error(
+      `PREFLIGHT line name is ${nameLength} bytes; the protocol maximum is ${AERIAL_KIT_PREFLIGHT_NAME_MAX}.`,
+    );
+  }
+  if (5 + nameLength + 3 > bytes.length) {
+    throw new Error("PREFLIGHT line name or sentence header is incomplete.");
+  }
+  const name = decodeAscii(bytes.subarray(5, 5 + nameLength));
+  const sentenceLength = u16le(
+    bytes,
+    5 + nameLength,
+    "PREFLIGHT sentence length",
+  );
+  const detailLength = bytes[7 + nameLength];
+  const detailOffset = 8 + nameLength;
+  if (bytes.length !== detailOffset + detailLength) {
+    throw new Error(
+      `PREFLIGHT declares ${detailLength} text bytes but carries ${bytes.length - detailOffset}.`,
+    );
+  }
+  if (detailLength > sentenceLength) {
+    throw new Error(
+      `PREFLIGHT page carries ${detailLength} bytes of a ${sentenceLength}-byte sentence.`,
+    );
+  }
+  if (askedOffset > sentenceLength) {
+    throw new Error(
+      `PREFLIGHT asked from offset ${askedOffset}, beyond the ${sentenceLength}-byte sentence.`,
+    );
+  }
+  return {
+    status: "ok",
+    index,
+    count,
+    verdict,
+    verdictName: verdictDefinition.name,
+    verdictLabel: verdictDefinition.label,
+    name,
+    sentenceLength,
+    offset: askedOffset,
+    detail: decodeAscii(bytes.subarray(detailOffset)),
+    complete: askedOffset + detailLength >= sentenceLength,
+  };
+}
+
 export function parseAerialKitSensorInfo(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) throw new Error("Aerial Kit SENSOR_INFO payload is empty.");
@@ -953,6 +1081,7 @@ export function createAerialKitStatusEvidence({
   parameterMetadata = null,
   sensorMetadata = null,
   outputMetadata = null,
+  preflight = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -991,6 +1120,7 @@ export function createAerialKitStatusEvidence({
           : []),
         ...(sensorMetadata ? ["SENSOR_INFO"] : []),
         ...(outputMetadata ? ["OUTPUT_INFO"] : []),
+        ...(preflight ? ["PREFLIGHT"] : []),
       ],
     },
     hello,
@@ -1020,6 +1150,14 @@ export function createAerialKitStatusEvidence({
     parameterMetadata,
     sensorMetadata,
     outputMetadata,
+    preflight: preflight
+      ? {
+          ...preflight,
+          observedAt: Number.isFinite(preflight.observedAtMs)
+            ? new Date(preflight.observedAtMs).toISOString()
+            : null,
+        }
+      : null,
     parser: protocolStats,
     boundaries: {
       readOnlyQueriesOnly: true,

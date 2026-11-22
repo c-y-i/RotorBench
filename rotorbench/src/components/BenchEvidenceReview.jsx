@@ -934,7 +934,11 @@ export default function BenchEvidenceReview({
                       : radioMenuEvidence
                         ? "ExpressLRS menu inventory reviewed; RF and hardware remain unverified"
                   : fcLiveStatusEvidence
-                    ? "Live AKP status and RC reviewed; preflight and hardware remain unverified"
+                    ? evidence?.fcEvidence?.preflight
+                      ? evidence.fcEvidence.preflight.status === "none"
+                        ? "Live AKP status reviewed; board reports no preflight checklist"
+                        : "Live AKP status and board preflight reviewed; hardware remains unverified"
+                      : "Live AKP status and RC reviewed; board preflight not observed"
                     : fcEvidenceComplete
                     ? "FC status and preflight are complete; hardware remains unverified"
                     : fcEvidenceIncomplete
@@ -977,7 +981,9 @@ export default function BenchEvidenceReview({
                   ? " Imported FC status and preflight lines are read-only observations, not flight-ready authorization."
                   : ""}
                 {evidence.kind === "fc-live-status"
-                  ? " The live status, arming state, and RC readback are time-bounded observations. Preflight, persistence, RF performance, and flight readiness remain unverified."
+                  ? evidence.fcEvidence?.preflight
+                    ? " The live status, board preflight, and RC readback are time-bounded observations. Persistence, RF performance, and flight readiness remain unverified."
+                    : " The live status, arming state, and RC readback are time-bounded observations. Board preflight, persistence, RF performance, and flight readiness remain unverified."
                   : ""}
                 {evidence.kind === "fc-identity"
                   ? " The capability word is a compiled-firmware claim from HELLO, not proof that RotorBench exercised any capability."
@@ -1263,22 +1269,29 @@ export default function BenchEvidenceReview({
                 <span>
                   {evidence.fcEvidence.status.protocol.toUpperCase()} ·{" "}
                   {evidence.fcEvidence.status.product || "product unknown"} ·{" "}
-                  {evidence.fcEvidence.preflight.passCount} pass ·{" "}
-                  {evidence.fcEvidence.preflight.failCount} fail ·{" "}
-                  {evidence.fcEvidence.preflight.factCount} fact
+                  {evidence.fcEvidence.preflight.status === "none"
+                    ? "no checklist served"
+                    : `${evidence.fcEvidence.preflight.passCount} pass · ${evidence.fcEvidence.preflight.failCount} fail · ${evidence.fcEvidence.preflight.factCount} fact`}
                 </span>
               </div>
-              <ul>
-                {evidence.fcEvidence.preflight.lines.map((line, index) => (
-                  <li key={`${line.id}-${index}`} className={`is-${line.status}`}>
-                    <span>
-                      <strong>{line.name}</strong>
-                      <small>{line.detail || "No additional detail."}</small>
-                    </span>
-                    <em>{line.label}</em>
-                  </li>
-                ))}
-              </ul>
+              {evidence.fcEvidence.preflight.status === "none" ? (
+                <p>
+                  The board answered that this build serves no preflight
+                  checklist. RotorBench does not turn that response into a pass.
+                </p>
+              ) : (
+                <ul>
+                  {evidence.fcEvidence.preflight.lines.map((line, index) => (
+                    <li key={`${line.id}-${index}`} className={`is-${line.status}`}>
+                      <span>
+                        <strong>{line.name}</strong>
+                        <small>{line.detail || "No additional detail."}</small>
+                      </span>
+                      <em>{line.label}</em>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <p>
                 These are imported, read-only observations from the selected flight
                 controller. They do not arm, fly, or authorize the build.

@@ -1104,6 +1104,7 @@ export function parseBenchEvidenceBundle(
         fcStatus = fcLiveStatus.status;
         fcRc = fcLiveStatus.rc;
         fcParameters = fcLiveStatus.parameters;
+        fcPreflight = fcLiveStatus.preflight;
       } else if (payload?.fields?.role) {
         const diag = parseRadioDiagJson(document.text);
         if (diagnosticsByRole[diag.role]) {
@@ -1339,6 +1340,7 @@ export function parseBenchEvidenceBundle(
   const fcEvidenceComplete = Boolean(
     fcStatus
     && fcPreflight
+    && fcPreflight.status !== "none"
     && importedFcChecks.every((check) => check.status !== "fail")
     && importedFcChecks.find((check) => check.id === "fc-status-protocol")?.status
       === "pass"
@@ -1447,7 +1449,11 @@ export function parseBenchEvidenceBundle(
     fileOverall: elrsMenuInventory
       ? "ExpressLRS menu inventory reviewed; hardware remains unverified"
       : fcLiveStatus
-      ? "Live AKP status reviewed; preflight not observed"
+      ? fcPreflight
+        ? fcPreflight.status === "none"
+          ? "Live AKP status reviewed; board reports no preflight checklist"
+          : "Live AKP status and preflight reviewed; hardware remains unverified"
+        : "Live AKP status reviewed; preflight not observed"
       : fcStatus || fcPreflight
       ? fcEvidenceComplete
         ? fcRc

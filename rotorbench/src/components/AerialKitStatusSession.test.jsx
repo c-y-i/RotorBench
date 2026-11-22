@@ -15,6 +15,7 @@ const originalSerial = navigator.serial;
 const HELLO_PAYLOAD_NO_RC = "0161657269616c6b69742d66343035002e003000c1010000920638cf";
 const HELLO_PAYLOAD_WITH_RC = "0161657269616c6b69742d66343035002e003000d1010000920638cf";
 const HELLO_PAYLOAD_TWO_PARAMETERS = "0161657269616c6b69742d663430350002003000f1010000920638cf";
+const HELLO_PAYLOAD_WITH_PREFLIGHT = "0161657269616c6b69742d663430350002003000f1030000920638cf";
 const STATUS_REPLY = "aa550185160101030b7d00d8ff84038768111f3f0ef90228283c3c8598";
 
 function setSerial(value) {
@@ -169,6 +170,47 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC) {
           1, 0, 1, 12, 0, 0xf4, 0x01,
         ];
         deliver(buildAerialKitFrame(0x8f, Uint8Array.from(payload)));
+      }
+      else if (command === 0x12) {
+        const index = frame[5];
+        const offset = frame[6] | (frame[7] << 8);
+        const entries = [
+          {
+            name: "clock",
+            verdict: 1,
+            detail: "clock on the crystal",
+          },
+          {
+            name: "receiver",
+            verdict: 2,
+            detail: "receiver: 8412 bytes, 401 frames",
+          },
+        ];
+        const entry = entries[index];
+        if (!entry) {
+          deliver(buildAerialKitFrame(
+            0x92,
+            Uint8Array.from([1, index, entries.length]),
+          ));
+        } else {
+          const sentence = Buffer.from(entry.detail);
+          const chunk = sentence.subarray(offset, offset + 7);
+          deliver(buildAerialKitFrame(
+            0x92,
+            Uint8Array.from([
+              0,
+              index,
+              entries.length,
+              entry.verdict,
+              entry.name.length,
+              ...Buffer.from(entry.name),
+              sentence.length & 0xff,
+              (sentence.length >> 8) & 0xff,
+              chunk.length,
+              ...chunk,
+            ]),
+          ));
+        }
       }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
@@ -371,6 +413,10 @@ test("reads sensor presence and output descriptors without testing outputs", asy
   }));
   expect(await screen.findByText("Monitoring")).toBeInTheDocument();
 
+  expect(screen.getByRole("button", {
+    name: "Read preflight checklist",
+  })).toBeDisabled();
+
   await userEvent.click(screen.getByRole("button", {
     name: "Read sensor presence",
   }));
@@ -393,6 +439,36 @@ test("reads sensor presence and output descriptors without testing outputs", asy
   expect(commands).toContain(0x0e);
   expect(commands).toContain(0x0f);
   expect(commands).not.toContain(0x10);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads the board preflight checklist without issuing a state change", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_WITH_PREFLIGHT);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read preflight checklist",
+  }));
+  expect(await screen.findByText("clock on the crystal")).toBeInTheDocument();
+  expect(screen.getByText("receiver: 8412 bytes, 401 frames"))
+    .toBeInTheDocument();
+  expect(screen.getByText("0 fail · 1 pass · 1 reading")).toBeInTheDocument();
+  expect(screen.getByText("Board preflight checklist")).toBeInTheDocument();
+
+  const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
+  expect(commands).toContain(0x12);
+  expect(commands).not.toContain(0x10);
+  expect(commands).not.toContain(0x11);
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
