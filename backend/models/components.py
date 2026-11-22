@@ -277,10 +277,22 @@ class Battery(ComponentCatalogMetadata):
 class Receiver(ComponentCatalogMetadata):
     id: str
     name: str
+    manufacturer: Optional[str] = None
     protocol: str = Field(..., description="Communication protocol")
+    frequency_bands: List[str] = Field(default_factory=list, alias="frequencyBands")
     weight: float = Field(..., description="Weight in grams")
     current_draw: float = Field(..., alias="currentDraw", description="Current draw in mA")
     channels: int
+    pwm_outputs: Optional[int] = Field(None, alias="pwmOutputs", ge=0)
+    rf_chips: Optional[str] = Field(None, alias="rfChips")
+    telemetry_power_mw: Optional[float] = Field(None, alias="telemetryPowerMw", ge=0)
+    receiver_refresh_rate: Optional[str] = Field(None, alias="receiverRefreshRate")
+    working_voltage: Optional[str] = Field(None, alias="workingVoltage")
+    telemetry_voltage_range: Optional[str] = Field(None, alias="telemetryVoltageRange")
+    firmware_version: Optional[str] = Field(None, alias="firmwareVersion")
+    antenna: Optional[str] = None
+    serial_protocols: Optional[List[str]] = Field(None, alias="serialProtocols")
+    wifi_updates: Optional[bool] = Field(None, alias="wifiUpdates")
     price: float
 
     class Config:

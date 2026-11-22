@@ -44,10 +44,10 @@ class CatalogContractTests(unittest.TestCase):
                 "batteries": 11,
                 "escs": 9,
                 "flight_controllers": 11,
-                "receivers": 14,
+                "receivers": 17,
             },
         )
-        self.assertEqual(sum(counts.values()), 86)
+        self.assertEqual(sum(counts.values()), 89)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 86)
+        self.assertEqual(len(records), 89)
         self.assertTrue(all(record.id for record in records))
 
     def test_heewing_t1_ranger_preserves_non_quad_motor_positions(self):
@@ -224,6 +224,37 @@ class CatalogContractTests(unittest.TestCase):
         self.assertIn("channels", receiver.estimated_fields)
         self.assertNotIn("dimensionsMm", receiver.estimated_fields)
         self.assertNotIn("weight", receiver.estimated_fields)
+
+    def test_compact_er_pwm_receivers_keep_published_output_specs(self):
+        receivers = {
+            item.id: item
+            for item in self.database.receivers
+            if item.id in {
+                "rx-radiomaster-er3c-i-24-pwm",
+                "rx-radiomaster-er5c-i-24-pwm",
+                "rx-radiomaster-er4-24-pwm",
+            }
+        }
+        self.assertEqual(
+            {receiver.pwm_outputs for receiver in receivers.values()},
+            {3, 4, 5},
+        )
+        for receiver in receivers.values():
+            self.assertEqual(receiver.protocol, "CRSF")
+            self.assertEqual(receiver.frequency_bands, ["2.4 GHz"])
+            self.assertEqual(receiver.telemetry_power_mw, 10)
+            self.assertEqual(receiver.working_voltage, "4.5-8.4 V")
+            self.assertEqual(
+                receiver.firmware_version,
+                "ExpressLRS 3.3.0 pre-installed",
+            )
+            self.assertIn(
+                "currentDraw", receiver.estimated_fields
+            )
+            self.assertIn(
+                "channels", receiver.estimated_fields
+            )
+            self.assertNotIn("pwmOutputs", receiver.estimated_fields)
 
     def test_rp3_keeps_published_and_estimated_fields_separate(self):
         receiver = next(

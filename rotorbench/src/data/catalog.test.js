@@ -408,11 +408,42 @@ test("Adafruit Feather F405 binds a public product to the Aerial Kit wing profil
 });
 
 test("receiver catalog provides RF bands, protocol, and source provenance", () => {
-  expect(componentsData.receivers).toHaveLength(14);
+  expect(componentsData.receivers).toHaveLength(17);
   for (const receiver of componentsData.receivers) {
     expect(receiver.protocol).toBeTruthy();
     expect(receiver.frequencyBands?.length).toBeGreaterThan(0);
     expect(receiver.sourceUrl).toMatch(/^https:\/\//);
+  }
+});
+
+test("compact ER PWM receivers preserve published outputs and power", () => {
+  const expected = [
+    ["rx-radiomaster-er3c-i-24-pwm", 3, 4.2, [26.1, 18.5, 13], 16.99],
+    ["rx-radiomaster-er5c-i-24-pwm", 5, 5.0, [30, 18.5, 13], 19.99],
+    ["rx-radiomaster-er4-24-pwm", 4, 3.0, [30, 15, 5], 14.99],
+  ];
+
+  for (const [id, pwmOutputs, weight, dimensionsMm, price] of expected) {
+    const receiver = componentsData.receivers.find((item) => item.id === id);
+    expect(receiver).toMatchObject({
+      protocol: "CRSF",
+      frequencyBands: ["2.4 GHz"],
+      pwmOutputs,
+      weight,
+      dimensionsMm,
+      telemetryPowerMw: 10,
+      workingVoltage: "4.5-8.4 V",
+      telemetryVoltageRange: "4.0-35 V",
+      firmwareVersion: "ExpressLRS 3.3.0 pre-installed",
+      price,
+      modelStatus: "not_available",
+      sourceUrl: expect.stringContaining("radiomasterrc.com/products/er"),
+    });
+    expect(receiver.estimatedFields).toEqual([
+      "currentDraw",
+      "channels",
+      "mounting_point",
+    ]);
   }
 });
 
