@@ -761,6 +761,15 @@ export default function BuildPage() {
   const requiredCompletion = (requiredSelections / 4) * 100;
   const canAnalyze = requiredSelections === 4;
   const canSave = canAnalyze;
+  const canCompare = Boolean(
+    selectedFrame
+    || selectedMotor
+    || selectedPropeller
+    || selectedESC
+    || selectedFC
+    || selectedBattery
+    || selectedReceiver,
+  );
 
   const catalogAssemblySpec = useMemo(() => ({
     frame: selectedFramePart || null,
@@ -2382,9 +2391,9 @@ export default function BuildPage() {
 
         <button
           className="action-btn compare-saved"
-          disabled={!canAnalyze}
+          disabled={!canCompare}
           onClick={handleCompareSaved}
-          style={{ opacity: canAnalyze ? 1 : 0.5 }}
+          style={{ opacity: canCompare ? 1 : 0.5 }}
         >
           <Columns3 size={18} aria-hidden="true" />
           Compare

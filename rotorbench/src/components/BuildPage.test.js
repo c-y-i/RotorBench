@@ -968,6 +968,7 @@ test("an invalid starter-platform deep link leaves the required build gates inta
   expect(screen.getByTestId("location-search")).toHaveTextContent("");
   expect(screen.getByRole("button", { name: "Save and go home" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Analyze" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Compare" })).toBeDisabled();
 });
 
 test("hardware setup carries the unsaved draft identity and selected FC/receiver", async () => {
@@ -1330,4 +1331,5 @@ test("stale draft IDs cannot satisfy required build gates", async () => {
   expect(screen.getByText("1/4")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Save and go home" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Analyze" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Compare" })).toBeEnabled();
 });
