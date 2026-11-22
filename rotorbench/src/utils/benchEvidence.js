@@ -1061,6 +1061,7 @@ export function parseBenchEvidenceBundle(
         fcIdentity = fcLiveStatus.identity;
         fcStatus = fcLiveStatus.status;
         fcRc = fcLiveStatus.rc;
+        fcParameters = fcLiveStatus.parameters;
       } else if (payload?.fields?.role) {
         const diag = parseRadioDiagJson(document.text);
         if (diagnosticsByRole[diag.role]) {

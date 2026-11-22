@@ -114,6 +114,10 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       counters: { frames: 40 },
       observedAt: "2026-11-22T10:00:00.000Z",
     },
+    parameters: [
+      { index: 0, name: "rate_kp_roll", value: "0.250" },
+      { index: 1, name: "dshot_khz", value: "600" },
+    ],
   });
 
   expect(parsed).toMatchObject({
@@ -131,6 +135,13 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       protocol: "akp",
       channels: [172, 1811, 992, 1000],
       linkLive: true,
+    },
+    parameters: {
+      format: "aerial-kit",
+      values: {
+        rate_kp_roll: "0.250",
+        dshot_khz: "600",
+      },
     },
   });
 });

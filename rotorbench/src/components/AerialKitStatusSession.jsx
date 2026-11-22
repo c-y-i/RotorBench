@@ -11,16 +11,20 @@ import {
   Cpu,
   Download,
   RadioTower,
+  Search,
   ShieldAlert,
   ShieldCheck,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   AERIAL_KIT_COMMANDS,
   AERIAL_KIT_FEATURE_RC_CHANNELS,
+  AERIAL_KIT_PARAMETER_READ_LIMIT,
   AerialKitReadOnlySession,
   aerialKitArmedState,
   createAerialKitStatusEvidence,
   parseAerialKitHello,
+  parseAerialKitParamGet,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
 } from "../utils/aerialKitProtocol";
@@ -94,6 +98,14 @@ export default function AerialKitStatusSession({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [protocolStats, setProtocolStats] = useState(null);
+  const [parameters, setParameters] = useState(null);
+  const [parameterQuery, setParameterQuery] = useState("");
+  const [parameterState, setParameterState] = useState("idle");
+  const [parameterProgress, setParameterProgress] = useState({
+    read: 0,
+    total: 0,
+  });
+  const [parameterError, setParameterError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -138,6 +150,11 @@ export default function AerialKitStatusSession({
     setError("");
     setMessage("");
     setProtocolStats(null);
+    setParameters(null);
+    setParameterQuery("");
+    setParameterState("idle");
+    setParameterProgress({ read: 0, total: 0 });
+    setParameterError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -252,6 +269,63 @@ export default function AerialKitStatusSession({
     }, 500);
   };
 
+  const readParameters = async () => {
+    const session = sessionRef.current;
+    const count = hello?.parameterCount;
+    if (!activeRef.current || !session) return;
+    if (
+      !Number.isInteger(count)
+      || count < 0
+      || count > AERIAL_KIT_PARAMETER_READ_LIMIT
+    ) {
+      setParameterError(
+        `HELLO reports ${count ?? "an invalid"} parameters; this reader is bounded to ${AERIAL_KIT_PARAMETER_READ_LIMIT}.`,
+      );
+      setParameterState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setParameterError(
+        "Wait for the current STATUS/RC poll to finish before reading parameters.",
+      );
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setParameterError("");
+    setParameterState("reading");
+    setParameterProgress({ read: 0, total: count });
+    const read = [];
+    try {
+      for (let index = 0; index < count; index += 1) {
+        if (!activeRef.current) break;
+        const payload = await session.request(
+          AERIAL_KIT_COMMANDS.paramGet,
+          Uint8Array.of(index),
+        );
+        read.push(parseAerialKitParamGet(payload, index));
+        setParameterProgress({ read: index + 1, total: count });
+      }
+      if (!mountedRef.current) return;
+      setParameters(read);
+      setParameterState("ready");
+      setMessage(
+        `Read ${read.length} parameter name/value pair${read.length === 1 ? "" : "s"} without writing or saving settings.`,
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setParameters(read);
+      setParameterState("error");
+      setParameterError(
+        `${readError.message} ${read.length} value${read.length === 1 ? "" : "s"} were read before the stop.`,
+      );
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -339,6 +413,7 @@ export default function AerialKitStatusSession({
       baudRate,
       targetName,
       protocolStats,
+      parameters,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -361,6 +436,14 @@ export default function AerialKitStatusSession({
     });
     return labels;
   }, [channelMap]);
+  const visibleParameters = useMemo(() => {
+    const normalizedQuery = parameterQuery.trim().toLowerCase();
+    return (parameters || []).filter((parameter) => (
+      !normalizedQuery
+      || parameter.name.toLowerCase().includes(normalizedQuery)
+      || parameter.value.toLowerCase().includes(normalizedQuery)
+    ));
+  }, [parameterQuery, parameters]);
   const armed = aerialKitArmedState(liveStatus, {
     observedAtMs: lastStatusAt,
     nowMs: clockNow,
@@ -381,7 +464,7 @@ export default function AerialKitStatusSession({
         <span>
           <strong>Aerial Kit flight status</strong>
           <small>
-            Experimental · explicit port selection · HELLO / STATUS / RC queries
+            Experimental · explicit port selection · HELLO / STATUS / RC / PARAM_GET
           </small>
         </span>
         <em>Queries only</em>
@@ -394,9 +477,10 @@ export default function AerialKitStatusSession({
             <strong>Read-only AKP observation</strong>
             <p>
               This session identifies the board, polls live status and RC
-              readback, and never writes parameters, saves settings, arms,
-              calibrates, tests outputs, or flashes firmware. Opening a
-              native-USB port may reset the board.
+              readback, and can read parameter names and values on request. It
+              never writes parameters, saves settings, arms, calibrates, tests
+              outputs, or flashes firmware. Opening a native-USB port may reset
+              the board.
             </p>
           </div>
         </div>
@@ -646,6 +730,92 @@ export default function AerialKitStatusSession({
                       Raw decoded receiver values. This does not prove RF range,
                       stick calibration, or flight readiness.
                     </p>
+                  </>
+                )}
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-parameters"
+                aria-label="Observed parameter values"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Parameter values</strong>
+                  <span>
+                    {hello.parameterCount} advertised · PARAM_GET only
+                  </span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || parameterState === "reading"
+                    }
+                    onClick={readParameters}
+                  >
+                    <SlidersHorizontal size={15} aria-hidden="true" />
+                    Read parameter values
+                  </button>
+                  <span>
+                    {parameterState === "reading"
+                      ? `Reading ${parameterProgress.read}/${parameterProgress.total}`
+                      : parameterState === "ready"
+                        ? `${parameters?.length || 0} values read`
+                        : parameterState === "error"
+                          ? "Read stopped"
+                          : "Not read"}
+                  </span>
+                </div>
+                <p>
+                  Names and values come from read-only `PARAM_GET` replies.
+                  Ranges, defaults, and descriptions require separate commands
+                  and are not inferred here.
+                </p>
+                {parameterError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Parameter read incomplete</strong>
+                      <small>{parameterError}</small>
+                    </span>
+                  </div>
+                )}
+                {parameters && (
+                  <>
+                    <label className="aerial-kit-parameter-search">
+                      <Search size={14} aria-hidden="true" />
+                      <span className="visually-hidden">
+                        Filter observed parameter names or values
+                      </span>
+                      <input
+                        type="search"
+                        value={parameterQuery}
+                        onChange={(event) => setParameterQuery(event.target.value)}
+                        placeholder="Filter names or values"
+                      />
+                    </label>
+                    {visibleParameters.length > 0 ? (
+                      <ol
+                        className="aerial-kit-parameter-list"
+                        aria-label="Observed parameter name and value list"
+                      >
+                        {visibleParameters.map((parameter) => (
+                          <li key={`${parameter.index}-${parameter.name}`}>
+                            <span>{parameter.name}</span>
+                            <code>{parameter.value || "Empty"}</code>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p>
+                        {parameters.length === 0
+                          ? "The board advertises no parameters."
+                          : "No observed parameter matches the current filter."}
+                      </p>
+                    )}
                   </>
                 )}
               </section>

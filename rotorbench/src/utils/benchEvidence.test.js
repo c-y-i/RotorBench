@@ -1036,6 +1036,10 @@ test("reviews a downloaded live AKP snapshot as read-only hardware evidence", ()
           counters: { frames: 40 },
           observedAt: new Date().toISOString(),
         },
+        parameters: [
+          { index: 0, name: "arm_channel", value: "5" },
+          { index: 1, name: "dshot_khz", value: "300" },
+        ],
       }),
     },
   ], {
@@ -1051,6 +1055,13 @@ test("reviews a downloaded live AKP snapshot as read-only hardware evidence", ()
         identity: { product: "aerialkit-f405" },
         status: { state: { armed: 0 } },
         rc: { channels: [172, 1811, 992, 1000] },
+        parameters: {
+          format: "aerial-kit",
+          values: {
+            arm_channel: "5",
+            dshot_khz: "300",
+          },
+        },
       },
       hardwareVerifiedByRotorBench: false,
     },

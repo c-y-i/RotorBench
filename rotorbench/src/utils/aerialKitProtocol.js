@@ -10,8 +10,10 @@ export const AERIAL_KIT_RESPONSE_BIT = 0x80;
 export const AERIAL_KIT_MAX_PAYLOAD = 96;
 export const AERIAL_KIT_UNKNOWN_COMMAND = 0x7f;
 export const AERIAL_KIT_FEATURE_RC_CHANNELS = 1 << 4;
+export const AERIAL_KIT_PARAMETER_READ_LIMIT = 255;
 export const AERIAL_KIT_COMMANDS = Object.freeze({
   hello: 0x01,
+  paramGet: 0x02,
   status: 0x05,
   rcChannels: 0x0d,
 });
@@ -308,6 +310,25 @@ export function parseAerialKitStatus(payload) {
   };
 }
 
+export function parseAerialKitParamGet(payload, index) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) throw new Error("Aerial Kit PARAM_GET payload is empty.");
+  if (bytes[0] !== 0) {
+    throw new Error(
+      bytes[0] === 1
+        ? `The board has no parameter at index ${index}.`
+        : `PARAM_GET for index ${index} returned status ${bytes[0]}.`,
+    );
+  }
+  const name = readCString(bytes, 1, `Parameter ${index} name`);
+  const value = readCString(bytes, name.next, `Parameter ${index} value`);
+  return {
+    index,
+    name: name.value,
+    value: value.value,
+  };
+}
+
 export function parseAerialKitRcChannels(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) throw new Error("Aerial Kit RC_CHANNELS payload is empty.");
@@ -443,6 +464,7 @@ export function createAerialKitStatusEvidence({
   status = null,
   rc = null,
   rcError = null,
+  parameters = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -458,7 +480,12 @@ export function createAerialKitStatusEvidence({
     transport: {
       kind: "web-serial",
       logicalBaud: baudRate,
-      queries: ["HELLO", "STATUS", "RC_CHANNELS"],
+      queries: [
+        "HELLO",
+        "STATUS",
+        "RC_CHANNELS",
+        ...(parameters ? ["PARAM_GET"] : []),
+      ],
     },
     hello,
     status: status
@@ -483,6 +510,7 @@ export function createAerialKitStatusEvidence({
         }
       : null,
     rcError: rcError || null,
+    parameters,
     parser: protocolStats,
     boundaries: {
       readOnlyQueriesOnly: true,

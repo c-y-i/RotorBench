@@ -273,6 +273,10 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
         counters: { frames: 40 },
         observedAt: new Date().toISOString(),
       },
+      parameters: [
+        { index: 0, name: "arm_channel", value: "5" },
+        { index: 1, name: "dshot_khz", value: "300" },
+      ],
     }, "live-status.json"),
   );
 
@@ -284,6 +288,8 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
     name: "Aerial Kit identity and capabilities",
   })).toBeInTheDocument();
   expect(screen.getByText("172")).toBeInTheDocument();
+  expect(screen.getByText("arm_channel")).toBeInTheDocument();
+  expect(screen.getByText("dshot_khz")).toBeInTheDocument();
 });
 
 test("a plan UID mismatch is shown as a failed check", async () => {

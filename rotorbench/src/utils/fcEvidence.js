@@ -283,11 +283,32 @@ export function parseAerialKitLiveStatusJson(payload) {
         liveSource: "web-serial",
       }
     : null;
+  const parameterValues = Array.isArray(payload.parameters)
+    ? Object.fromEntries(
+        payload.parameters
+          .filter((parameter) => (
+            parameter
+            && typeof parameter.name === "string"
+            && parameter.name.trim()
+            && typeof parameter.value === "string"
+          ))
+          .map((parameter) => [
+            parameter.name.trim(),
+            parameter.value,
+          ]),
+      )
+    : null;
   return {
     kind: "fc-live-status",
     identity,
     status,
     rc,
+    parameters: parameterValues && Object.keys(parameterValues).length
+      ? {
+          values: parameterValues,
+          format: "aerial-kit",
+        }
+      : null,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

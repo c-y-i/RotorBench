@@ -14,6 +14,7 @@ import { buildAerialKitFrame } from "../utils/aerialKitProtocol";
 const originalSerial = navigator.serial;
 const HELLO_PAYLOAD_NO_RC = "0161657269616c6b69742d66343035002e003000c1010000920638cf";
 const HELLO_PAYLOAD_WITH_RC = "0161657269616c6b69742d66343035002e003000d1010000920638cf";
+const HELLO_PAYLOAD_TWO_PARAMETERS = "0161657269616c6b69742d663430350002003000d1010000920638cf";
 const STATUS_REPLY = "aa550185160101030b7d00d8ff84038768111f3f0ef90228283c3c8598";
 
 function setSerial(value) {
@@ -75,6 +76,15 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC) {
       }
       else if (command === 0x05) deliver(bytes(STATUS_REPLY));
       else if (command === 0x0d) deliver(rcReply());
+      else if (command === 0x02) {
+        const index = frame[5];
+        const name = index === 0 ? "rate_kp_roll" : "rate_ki_roll";
+        const value = index === 0 ? "0.250" : "1.500";
+        deliver(buildAerialKitFrame(
+          0x82,
+          Uint8Array.from([0, ...Buffer.from(`${name}\0${value}\0`)]),
+        ));
+      }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
     releaseLock: jest.fn(),
@@ -195,6 +205,36 @@ test("does not ask for RC when HELLO explicitly omits that capability", async ()
   const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
   expect(commands.slice(0, 2)).toEqual([0x01, 0x05]);
   expect(commands).not.toContain(0x0d);
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads a bounded parameter inventory with PARAM_GET only", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read parameter values",
+  }));
+
+  expect(await screen.findByText("2 values read")).toBeInTheDocument();
+  expect(screen.getByText("rate_kp_roll")).toBeInTheDocument();
+  expect(screen.getByText("0.250")).toBeInTheDocument();
+  expect(screen.getByText("rate_ki_roll")).toBeInTheDocument();
+  expect(screen.getByText("1.500")).toBeInTheDocument();
+  const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
+  expect(commands.filter((command) => command === 0x02)).toHaveLength(2);
+  expect(commands.every((command) => [0x01, 0x02, 0x05, 0x0d].includes(command)))
+    .toBe(true);
+
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
   });

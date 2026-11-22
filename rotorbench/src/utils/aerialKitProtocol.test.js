@@ -9,6 +9,7 @@ import {
   buildAerialKitFrame,
   createAerialKitStatusEvidence,
   parseAerialKitHello,
+  parseAerialKitParamGet,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
 } from "./aerialKitProtocol";
@@ -139,6 +140,19 @@ test("keeps no-receiver RC readback distinct from a linked receiver", () => {
     .toThrow(/predates RC_CHANNELS/i);
 });
 
+test("parses a read-only PARAM_GET name and value", () => {
+  expect(parseAerialKitParamGet(
+    bytes("00726174655f6b705f726f6c6c00302e32353000"),
+    0,
+  )).toEqual({
+    index: 0,
+    name: "rate_kp_roll",
+    value: "0.250",
+  });
+  expect(() => parseAerialKitParamGet(bytes("01"), 99))
+    .toThrow(/no parameter at index 99/i);
+});
+
 test("carries RC frames through the frame decoder", () => {
   const decoder = new AerialKitFrameDecoder();
   const reply = frame(AERIAL_KIT_COMMANDS.rcChannels | 0x80, rcPayload());
@@ -209,6 +223,7 @@ test("creates a sanitized live-status evidence boundary", () => {
     baudRate: 115200,
     targetName: "Aerial Kit F405",
     protocolStats: { framesDecoded: 3 },
+    parameters: [{ index: 0, name: "rate_kp_roll", value: "0.250" }],
     connectionActive: true,
     nowMs: 1500,
   });
@@ -219,13 +234,14 @@ test("creates a sanitized live-status evidence boundary", () => {
     transport: {
       kind: "web-serial",
       logicalBaud: 115200,
-      queries: ["HELLO", "STATUS", "RC_CHANNELS"],
+      queries: ["HELLO", "STATUS", "RC_CHANNELS", "PARAM_GET"],
     },
     status: {
       flightState: 0,
       observedAt: "1970-01-01T00:00:01.000Z",
     },
     armedState: { state: "disarmed", fresh: true },
+    parameters: [{ index: 0, name: "rate_kp_roll", value: "0.250" }],
     boundaries: {
       readOnlyQueriesOnly: true,
       hardwareVerifiedByRotorBench: false,
