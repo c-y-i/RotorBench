@@ -406,6 +406,10 @@ export default function HomePage() {
     }),
     [currentBuild?.id, fc, frame, receiver],
   );
+  const assemblyPropellerDirection =
+    hasBuild && hardwarePlanState.fcPropellerDirection
+      ? hardwarePlanState.fcPropellerDirection
+      : "props-out";
 
   return (
     <div className="app-container">
@@ -797,6 +801,7 @@ export default function HomePage() {
                 clearedComponents={clearedComponents}
                 backgroundColor={backgroundColor}
                 assemblySpec={assemblySpec}
+                propellerDirection={assemblyPropellerDirection}
                 />
               </Suspense>
             )}
@@ -808,7 +813,11 @@ export default function HomePage() {
                   </div>
                 )}
               >
-                <TwoDViewer modelUrl={hasAnySelection ? "/models/model.obj" : sampleAssembly} />
+                <TwoDViewer
+                  assemblySpec={hasAnySelection ? assemblySpec : null}
+                  propellerDirection={assemblyPropellerDirection}
+                  clearedComponents={clearedComponents}
+                />
               </Suspense>
             )}
             {!previewInView && (

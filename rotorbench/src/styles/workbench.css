@@ -3603,6 +3603,137 @@
   background: #202826;
 }
 
+.assembly-plan-view {
+  display: grid;
+  overflow: hidden;
+  background: #202826;
+}
+
+.assembly-plan-view svg {
+  width: 100%;
+  height: 100%;
+}
+
+.assembly-plan-grid {
+  fill: url(#assembly-grid-major);
+}
+
+#assembly-grid-minor path {
+  stroke: #293632;
+  stroke-width: 0.35;
+}
+
+#assembly-grid-major > path {
+  stroke: #34423d;
+  stroke-width: 0.65;
+}
+
+.assembly-plan-frame line {
+  stroke: #aab7b1;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.assembly-plan-frame > rect:first-of-type {
+  fill: rgba(219, 227, 221, 0.08);
+  stroke: #aab7b1;
+  stroke-width: 1.4;
+}
+
+.assembly-plan-frame .assembly-plan-deck {
+  fill: #16201d;
+  stroke: #7f938a;
+  stroke-width: 1.1;
+}
+
+.assembly-plan-battery {
+  fill: #ff7d3a;
+  fill-opacity: 0.88;
+  stroke: #ffd1b4;
+  stroke-width: 1.4;
+}
+
+.assembly-plan-battery-label {
+  fill: #2c160b;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.assembly-plan-electronics rect {
+  fill: rgba(213, 255, 79, 0.08);
+  stroke: #d5ff4f;
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+.assembly-plan-electronics text,
+.assembly-plan-motor text,
+.assembly-plan-propeller text,
+.assembly-plan-axes text {
+  fill: #dce7df;
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.assembly-plan-axes line {
+  stroke: #67d8cb;
+  stroke-width: 1;
+}
+
+.assembly-plan-front {
+  fill: var(--signal) !important;
+  letter-spacing: 0.08em !important;
+}
+
+.assembly-plan-propeller path {
+  fill: #76d8cd;
+  fill-opacity: 0.82;
+  stroke: #a6eee5;
+  stroke-width: 0.8;
+}
+
+.assembly-plan-propeller.is-ccw path {
+  fill: #e6dac4;
+  fill-opacity: 0.82;
+  stroke: #fff6e6;
+}
+
+.assembly-plan-propeller > circle {
+  fill: #101816;
+  stroke: #f7f4e9;
+  stroke-width: 1;
+}
+
+.assembly-plan-propeller text {
+  fill: #9eada7;
+}
+
+.assembly-plan-motor > circle:first-child {
+  fill: #2a3733;
+  stroke: #e8decd;
+  stroke-width: 2;
+}
+
+.assembly-plan-motor > circle:first-child.is-hidden {
+  fill-opacity: 0.18;
+  stroke-opacity: 0.28;
+}
+
+.assembly-plan-hub {
+  fill: var(--signal);
+}
+
+.assembly-plan-hub.is-hidden {
+  fill-opacity: 0.18;
+}
+
+.assembly-plan-motor.is-hidden text {
+  fill-opacity: 0.35;
+}
+
 .home-preview-panel .preview-controls {
   margin: 12px 14px 0;
   border-color: #34403c;
