@@ -66,6 +66,9 @@ test("renders and copies a transparent catalog-mass CG estimate", async () => {
   expect(screen.getByLabelText("Lateral X (mm)")).toHaveValue(-1.2);
   expect(screen.getByLabelText("Fore / aft Z (mm)")).toHaveValue(-7.5);
   expect(screen.getByText("Measured − estimate")).toBeInTheDocument();
+  expect(screen.getByText("MEASURED")).toBeInTheDocument();
+  expect(container.querySelector(".assembly-cg-measured-point"))
+    .toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText("Lateral X (mm)"), {
     target: { value: "-2" },

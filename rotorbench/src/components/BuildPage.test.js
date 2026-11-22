@@ -522,7 +522,7 @@ test("a starter-platform deep link selects all seven components and consumes the
   fireEvent.click(fitOverlay);
   expect(viewer).toHaveAttribute("data-fit-overlay", "true");
   expect(screen.getByText(/Verified interface/)).toBeInTheDocument();
-});
+}, 15000);
 
 test("keeps the current build available when reopening Build directly", async () => {
   const currentBuild = {

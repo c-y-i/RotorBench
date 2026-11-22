@@ -3896,6 +3896,34 @@
   letter-spacing: 0.04em;
 }
 
+.assembly-plan-measured-cg-ring {
+  fill: #101816;
+  stroke: #ffffff;
+  stroke-width: 1.4;
+}
+
+.assembly-plan-measured-cg-dot {
+  fill: #67d8cb;
+  stroke: #101816;
+  stroke-width: 0.8;
+}
+
+.assembly-plan-measured-cg line {
+  stroke: #67d8cb;
+  stroke-linecap: round;
+  stroke-width: 0.7;
+}
+
+.assembly-plan-measured-cg text {
+  fill: #ffffff;
+  stroke: #202826;
+  stroke-width: 0.7px;
+  paint-order: stroke fill;
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .home-preview-panel .preview-controls {
   margin: 12px 14px 0;
   border-color: #34403c;
@@ -4431,6 +4459,25 @@
   fill: var(--brand);
   stroke: var(--ink);
   stroke-width: 2;
+}
+
+.assembly-cg-measured-line {
+  stroke: var(--brand-strong);
+  stroke-dasharray: 4 3;
+  stroke-width: 1.4;
+}
+
+.assembly-cg-measured-point {
+  fill: #ffffff;
+  stroke: var(--brand-strong);
+  stroke-width: 2.5;
+}
+
+.assembly-cg-measured-label {
+  fill: var(--brand-strong);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
 }
 
 .assembly-cg-label {

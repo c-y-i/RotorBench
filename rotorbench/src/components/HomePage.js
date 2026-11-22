@@ -8,6 +8,7 @@ import { summarizeBuild } from "../utils/buildComparison";
 import { summarizeAssemblyInterfaces } from "../utils/physicalCompatibility";
 import { getFrameMountPointsMm } from "../assembly/assemblyTransforms";
 import { getFrameServoHardware } from "../utils/frameHardware";
+import { measuredAssemblyCenterOfGravity } from "../utils/buildGeometry";
 import { revealFocusedTrackControl } from "../utils/revealFocusedTrackControl";
 import {
   hasCatalogModel,
@@ -829,6 +830,9 @@ export default function HomePage() {
                   assemblySpec={hasAnySelection ? assemblySpec : null}
                   propellerDirection={assemblyPropellerDirection}
                   clearedComponents={clearedComponents}
+                  measuredCg={measuredAssemblyCenterOfGravity(
+                    currentBuild?.geometryOverrides,
+                  )}
                 />
               </Suspense>
             )}

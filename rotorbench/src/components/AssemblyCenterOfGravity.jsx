@@ -6,7 +6,7 @@ import {
 } from "../utils/assemblyCenterOfGravity";
 import "../styles/workbench.css";
 
-function CgPlot({ estimate }) {
+function CgPlot({ estimate, measuredCg }) {
   if (!estimate.frameEnvelopeMm || !estimate.planarOffsetMm) return null;
   const width = 300;
   const height = 190;
@@ -17,6 +17,12 @@ function CgPlot({ estimate }) {
   const x = width / 2 + (estimate.planarOffsetMm.lateral / frameWidth) * innerWidth;
   const y = height / 2
     + (estimate.planarOffsetMm.longitudinal / frameDepth) * innerHeight;
+  const measuredX = measuredCg
+    ? width / 2 + (Number(measuredCg[0]) / frameWidth) * innerWidth
+    : null;
+  const measuredY = measuredCg
+    ? height / 2 + (Number(measuredCg[1]) / frameDepth) * innerHeight
+    : null;
   const description = [
     `Top-view planning plot on a ${frameWidth} by ${frameDepth} millimetre frame envelope.`,
     `The estimated center is ${Math.abs(estimate.planarOffsetMm.lateral)} millimetres ${
@@ -24,7 +30,10 @@ function CgPlot({ estimate }) {
     } and ${Math.abs(estimate.planarOffsetMm.longitudinal)} millimetres ${
       estimate.planarOffsetMm.longitudinal < 0 ? "forward" : "aft"
     } of the assembly datum.`,
-    "This is not a measured aircraft center of gravity.",
+    measuredCg
+      ? `The recorded measured balance point is ${Math.abs(Number(measuredCg[0]))} millimetres ${Number(measuredCg[0]) < 0 ? "left" : "right"} and ${Math.abs(Number(measuredCg[1]))} millimetres ${Number(measuredCg[1]) < 0 ? "forward" : "aft"}.`
+      : "No measured balance point is recorded.",
+    "The estimate uses catalog masses and resolved assembly origins; it is not a measured aircraft center of gravity.",
   ].join(" ");
 
   return (
@@ -72,6 +81,30 @@ function CgPlot({ estimate }) {
         y2={y}
       />
       <circle className="assembly-cg-point" cx={x} cy={y} r="7" />
+      {measuredCg && (
+        <>
+          <line
+            className="assembly-cg-measured-line"
+            x1={x}
+            y1={y}
+            x2={measuredX}
+            y2={measuredY}
+          />
+          <circle
+            className="assembly-cg-measured-point"
+            cx={measuredX}
+            cy={measuredY}
+            r="6"
+          />
+          <text
+            className="assembly-cg-measured-label"
+            x={measuredX + 10}
+            y={measuredY - 9}
+          >
+            MEASURED
+          </text>
+        </>
+      )}
       <text className="assembly-cg-label" x={width / 2} y={13} textAnchor="middle">
         Nose
       </text>
@@ -177,7 +210,7 @@ export default function AssemblyCenterOfGravity({
         ) : (
           <>
             <div className="assembly-cg-overview">
-              <CgPlot estimate={estimate} />
+              <CgPlot estimate={estimate} measuredCg={measuredCg} />
               <dl className="assembly-cg-facts">
                 <div>
                   <dt>Lateral X</dt>

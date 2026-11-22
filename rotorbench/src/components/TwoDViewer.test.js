@@ -85,17 +85,38 @@ test("uses selected frame mounts and respects hidden component groups", () => {
   })).toBeInTheDocument();
 });
 
+test("plots a recorded measured CG separately from the estimate", () => {
+  const { container } = render(
+    <TwoDViewer
+      assemblySpec={WING_ASSEMBLY_SPEC}
+      measuredCg={[-4.5, -12.25]}
+      propellerDirection="props-in"
+    />,
+  );
+
+  expect(container.querySelector(".assembly-plan-measured-cg"))
+    .toBeInTheDocument();
+  expect(screen.getByText("MEASURED CG")).toBeInTheDocument();
+  expect(screen.getByText(/measured X -4.5 \/ Z -12.2 mm/))
+    .toBeInTheDocument();
+  expect(screen.getByRole("img", {
+    name: /Measured balance point X -4.5 millimetres, Z -12.2 millimetres/i,
+  })).toBeInTheDocument();
+});
+
 test("exports a self-contained standalone SVG with source mount coordinates", () => {
   const model = buildSchematicModel({
     assemblySpec: WING_ASSEMBLY_SPEC,
     propellerDirection: "props-in",
     clearedComponents: ["battery"],
+    measuredCg: [-4.5, -12.25],
   });
   const { container } = render(
     <TwoDViewer
       assemblySpec={WING_ASSEMBLY_SPEC}
       propellerDirection="props-in"
       clearedComponents={["battery"]}
+      measuredCg={[-4.5, -12.25]}
     />,
   );
   const metadata = buildSchematicExportMetadata(
@@ -116,6 +137,10 @@ test("exports a self-contained standalone SVG with source mount coordinates", ()
   expect(exported).toContain('"units": "mm"');
   expect(exported).toContain('"front": "-Z"');
   expect(exported).toContain('"centerOfGravity"');
+  expect(exported).toContain('"measuredCenterOfGravity"');
+  expect(exported).toContain('"lateralMm": -4.5');
+  expect(exported).toContain('"longitudinalMm": -12.25');
+  expect(exported).toContain("MEASURED CG");
   expect(exported).toContain('"status": "unavailable"');
   expect(exported).toContain('"motorStationSource": "frame.motorPositionsMm"');
   expect(exported).toContain('"leftToRight": 460');

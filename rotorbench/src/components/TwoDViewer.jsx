@@ -99,6 +99,7 @@ export function buildSchematicModel({
   assemblySpec = {},
   propellerDirection = "props-out",
   clearedComponents = [],
+  measuredCg = null,
 } = {}) {
   const hasSelectedAssembly = Boolean(assemblySpec?.frame?.id);
   const spec = hasSelectedAssembly ? assemblySpec : SAMPLE_SPEC;
@@ -217,6 +218,10 @@ export function buildSchematicModel({
     centerOfGravity.planarOffsetMm
       ? ` Estimated center of gravity X ${formatMillimeters(centerOfGravity.planarOffsetMm.lateral)} millimetres, Z ${formatMillimeters(centerOfGravity.planarOffsetMm.longitudinal)} millimetres; not measured.`
       : ""
+  }${
+    Array.isArray(measuredCg) && measuredCg.length === 2
+      ? ` Measured balance point X ${formatMillimeters(measuredCg[0])} millimetres, Z ${formatMillimeters(measuredCg[1])} millimetres; build-local measurement.`
+      : ""
   }`;
 
   return {
@@ -242,6 +247,9 @@ export function buildSchematicModel({
     motorRadius,
     motorSpanXMm,
     motorSpanZMm,
+    measuredCenterOfGravity: Array.isArray(measuredCg) && measuredCg.length === 2
+      ? measuredCg.map(Number)
+      : null,
     mounts,
     mountMaxX,
     mountMaxZ,
@@ -338,6 +346,13 @@ export function buildSchematicExportMetadata(
           status: "unavailable",
           reason: model.centerOfGravity.reason,
         },
+    measuredCenterOfGravity: model.measuredCenterOfGravity
+      ? {
+          scope: "build-local physical balance measurement; not independently verified",
+          lateralMm: model.measuredCenterOfGravity[0],
+          longitudinalMm: model.measuredCenterOfGravity[1],
+        }
+      : null,
     visibleComponents,
     boundaries: {
       planningSchematic: true,
@@ -415,6 +430,14 @@ const STANDALONE_SCHEMATIC_STYLES = `
   .assembly-plan-cg-point { fill: #d5ff4f; stroke: #101816; stroke-width: 0.8; }
   .assembly-plan-cg text {
     fill: #d5ff4f; stroke: #202826; stroke-width: 0.7px; paint-order: stroke fill;
+    font-family: "IBM Plex Mono", monospace; font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .assembly-plan-measured-cg-ring { fill: #101816; stroke: #ffffff; stroke-width: 1.4; }
+  .assembly-plan-measured-cg-dot { fill: #67d8cb; stroke: #101816; stroke-width: 0.8; }
+  .assembly-plan-measured-cg line { stroke: #67d8cb; stroke-width: 0.7; }
+  .assembly-plan-measured-cg text {
+    fill: #ffffff; stroke: #202826; stroke-width: 0.7px; paint-order: stroke fill;
     font-family: "IBM Plex Mono", monospace; font-weight: 700;
     letter-spacing: 0.04em;
   }
@@ -511,6 +534,7 @@ export default function TwoDViewer({
   assemblySpec = {},
   propellerDirection = "props-out",
   clearedComponents = [],
+  measuredCg = null,
 }) {
   const svgRef = useRef(null);
   const [exportStatus, setExportStatus] = useState("");
@@ -518,6 +542,7 @@ export default function TwoDViewer({
     assemblySpec,
     propellerDirection,
     clearedComponents,
+    measuredCg,
   });
   const {
     batteryPlacement,
@@ -531,6 +556,7 @@ export default function TwoDViewer({
     maxX,
     maxZ,
     minX,
+    measuredCenterOfGravity,
     motorRadius,
     motorSpanXMm,
     motorSpanZMm,
@@ -584,6 +610,9 @@ export default function TwoDViewer({
             schematic, not product-exact
             {centerOfGravity.planarOffsetMm
               ? ` · CG X ${formatMillimeters(centerOfGravity.planarOffsetMm.lateral)} / Z ${formatMillimeters(centerOfGravity.planarOffsetMm.longitudinal)} mm`
+              : ""}
+            {measuredCenterOfGravity
+              ? ` · measured X ${formatMillimeters(measuredCenterOfGravity[0])} / Z ${formatMillimeters(measuredCenterOfGravity[1])} mm`
               : ""}
           </span>
         </div>
@@ -853,6 +882,22 @@ export default function TwoDViewer({
               fontSize={labelSize * 0.92}
             >
               CG EST.
+            </text>
+          </g>
+        )}
+
+        {measuredCenterOfGravity && (
+          <g
+            className="assembly-plan-measured-cg"
+            transform={`translate(${measuredCenterOfGravity[0]} ${measuredCenterOfGravity[1]})`}
+            aria-label={`Measured center of gravity: X ${formatMillimeters(measuredCenterOfGravity[0])} millimetres, Z ${formatMillimeters(measuredCenterOfGravity[1])} millimetres. Build-local measurement.`}
+          >
+            <circle className="assembly-plan-measured-cg-ring" r={labelSize * 2} />
+            <line x1={-labelSize * 2.6} y1="0" x2={labelSize * 2.6} y2="0" />
+            <line x1="0" y1={-labelSize * 2.6} x2="0" y2={labelSize * 2.6} />
+            <circle className="assembly-plan-measured-cg-dot" r={labelSize * 0.8} />
+            <text x={labelSize * 3.2} y={labelSize * 2.8} fontSize={labelSize * 0.9}>
+              MEASURED CG
             </text>
           </g>
         )}
