@@ -637,6 +637,23 @@ export default function SavedConfigsPage() {
                                       : buildSummary.hasHardwareParts
                                         ? "Hardware plan missing"
                                         : buildSummary.hardwareReadinessLabel;
+                                const tuningFeatures = [
+                                  buildSummary.fcRcSmoothingStatus
+                                    && !["off", "waiting"].includes(buildSummary.fcRcSmoothingStatus)
+                                    ? `RC ${buildSummary.fcRcSmoothingStatus}`
+                                    : null,
+                                  buildSummary.fcFeedForwardStatus
+                                    && buildSummary.fcFeedForwardStatus !== "off"
+                                    ? `FF ${buildSummary.fcFeedForwardStatus}`
+                                    : null,
+                                  buildSummary.fcDResponseStatus
+                                    && buildSummary.fcDResponseStatus !== "off"
+                                    ? `D ${buildSummary.fcDResponseStatus}`
+                                    : null,
+                                  buildSummary.fcAntiGravityStatus === "enabled"
+                                    ? "anti-gravity"
+                                    : null,
+                                ].filter(Boolean);
 
                                 return (
                                     <li key={it.id} className="saved-card">
@@ -756,6 +773,29 @@ export default function SavedConfigsPage() {
                                                 && buildSummary.fcMotorOrder && (
                                                 <span>
                                                     {buildSummary.fcMotorDirectionLabel}
+                                                </span>
+                                            )}
+                                            {buildSummary.fcPropellerDirection && (
+                                                <span>
+                                                    Props {buildSummary.fcPropellerDirection}
+                                                </span>
+                                            )}
+                                            {buildSummary.fcMaxRateDps != null && (
+                                                <span>
+                                                    Rate {buildSummary.fcMaxRateDps}°/s
+                                                </span>
+                                            )}
+                                            {buildSummary.hardwarePlanStatus === "saved"
+                                                && buildSummary.fcPidGainStatus && (
+                                                <span className={`is-wiring-${buildSummary.fcPidGainStatus === "source-default" ? "documented" : "unverified"}`}>
+                                                    {buildSummary.fcPidGainStatus === "source-default"
+                                                        ? "PID source defaults"
+                                                        : "PID edited"}
+                                                </span>
+                                            )}
+                                            {tuningFeatures.length > 0 && (
+                                                <span>
+                                                    Tuning {tuningFeatures.join(" · ")}
                                                 </span>
                                             )}
                                             {buildSummary.servoOutputCoverageLabel && (

@@ -218,6 +218,62 @@ test("saved hardware builds expose their documented board target", async () => {
     .toBeInTheDocument();
 });
 
+test("saved builds expose their Aerial Kit tuning profile", async () => {
+  const tunedBuild = {
+    ...offlineBuild,
+    id: "tuned-aerial-build",
+    name: "Tuned Aerial build",
+    componentIds: {
+      ...offlineBuild.componentIds,
+      flightControllerId: "fc-adafruit-feather-f405",
+      receiverId: null,
+    },
+  };
+  localStorage.setItem("offlineBuilds", JSON.stringify([tunedBuild]));
+  localStorage.setItem(
+    "rotorbench:hardware-plan:tuned-aerial-build:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-adafruit-feather-f405",
+      selectedReceiverId: null,
+      firmwareFamily: "aerialkit",
+      profileId: "feather-f405",
+      airframe: "quadx",
+      receiverProtocol: "crsf",
+      receiverUart: "USART3",
+      receiverBaud: 420000,
+      maxRateDps: 650,
+      rateKpRoll: 0.3,
+      rcSmooth: 1,
+      rcSmoothFactor: 30,
+      rateFfdRoll: 0.01,
+      rateKdMaxRoll: 0.005,
+      antiGravityGain: 80,
+    }),
+  );
+  localStorage.setItem(
+    "rotorbench:hardware-plan:tuned-aerial-build:radio",
+    JSON.stringify({
+      planVersion: 3,
+      selectedReceiverId: null,
+      packetRateMode: "250",
+    }),
+  );
+
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText("Props props-in")).toBeInTheDocument();
+  expect(screen.getByText("Rate 650°/s")).toBeInTheDocument();
+  expect(screen.getByText("PID edited")).toBeInTheDocument();
+  expect(screen.getByText(
+    "Tuning RC auto · FF planned · D configured · anti-gravity",
+  )).toBeInTheDocument();
+});
+
 test("saved radio plans distinguish simultaneous and selectable dual-band RF", async () => {
   const baseBuild = {
     ...offlineBuild,
