@@ -23,10 +23,48 @@ test("every catalog flight controller resolves to one documented board map", () 
     .map((controller) => controller.id);
   const mappedIds = FC_BOARD_PROFILES
     .flatMap((profile) => profile.catalogFlightControllerIds || []);
+  const catalogIds = componentsData.flight_controllers.map(
+    (controller) => controller.id,
+  );
 
   expect(missing).toEqual([]);
-  expect(componentsData.flight_controllers).toHaveLength(11);
-  expect(new Set(mappedIds).size).toBe(mappedIds.length);
+  expect(componentsData.flight_controllers).toHaveLength(12);
+  expect(new Set(mappedIds)).toEqual(new Set(catalogIds));
+  expect(new Set(FC_BOARD_PROFILES.map((profile) => profile.id)).size)
+    .toBe(FC_BOARD_PROFILES.length);
+});
+
+test("Matek H743-WING resolves to its documented ArduPilot wing map", () => {
+  const controller = componentsData.flight_controllers.find(
+    (item) => item.id === "fc-matek-h743-wing-v3",
+  );
+  const profile = getCatalogBoardProfile(controller);
+
+  expect(profile).toMatchObject({
+    id: "matek-h743-wing-v3-ardupilot",
+    family: "ardupilot",
+    board: "MATEKH743",
+    receiverUart: "UART6",
+    gpsUart: "UART2",
+    outputs: { motors: 2, servos: 11 },
+    sharedPwmOutputs: 13,
+    defaultAirframe: "elevonwing",
+  });
+  expect(profile.serialPorts.map((port) => port.id)).toEqual([
+    "UART1",
+    "UART2",
+    "UART3",
+    "UART4",
+    "UART6",
+    "UART7",
+    "UART8",
+  ]);
+  expect(profile.notes.join(" ")).toMatch(/BRD_ALT_CONFIG=1/i);
+  expect(createDefaultFlightControllerConfig(controller)).toMatchObject({
+    firmwareFamily: "ardupilot",
+    profileId: "matek-h743-wing-v3-ardupilot",
+    airframe: "elevonwing",
+  });
 });
 
 test("the Feather product resolves to the public Aerial Kit wing map", () => {

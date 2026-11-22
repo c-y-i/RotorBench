@@ -43,11 +43,11 @@ class CatalogContractTests(unittest.TestCase):
                 "propellers": 12,
                 "batteries": 11,
                 "escs": 9,
-                "flight_controllers": 11,
+                "flight_controllers": 12,
                 "receivers": 17,
             },
         )
-        self.assertEqual(sum(counts.values()), 89)
+        self.assertEqual(sum(counts.values()), 90)
 
     def test_all_component_ids_are_unique(self):
         ids = [
@@ -68,7 +68,7 @@ class CatalogContractTests(unittest.TestCase):
             *self.database.flight_controllers,
             *self.database.receivers,
         ]
-        self.assertEqual(len(records), 89)
+        self.assertEqual(len(records), 90)
         self.assertTrue(all(record.id for record in records))
 
     def test_heewing_t1_ranger_preserves_non_quad_motor_positions(self):
@@ -136,6 +136,23 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(analysis.performance.power_draw, 0)
         self.assertEqual(analysis.performance.total_weight, 506)
         self.assertEqual(analysis.total_cost, 297.89)
+
+    def test_matek_h743_wing_keeps_published_controller_specs(self):
+        controller = next(
+            item
+            for item in self.database.flight_controllers
+            if item.id == "fc-matek-h743-wing-v3"
+        )
+        self.assertEqual(controller.processor, "STM32H743VIT6")
+        self.assertEqual(controller.imu, "ICM42688P")
+        self.assertEqual(controller.weight, 30)
+        self.assertEqual(controller.mounting_pattern_mm, [30.5, 30.5])
+        self.assertEqual(controller.dimensions_mm, [54, 13, 36])
+        self.assertEqual(controller.firmware, ["ArduPilot"])
+        self.assertEqual(controller.max_voltage, 36)
+        self.assertEqual(controller.price, 141.99)
+        self.assertIn("13 PWM outputs", controller.features)
+        self.assertIn("mateksys.com", controller.source_url)
 
     def test_adafruit_feather_f405_keeps_public_product_provenance(self):
         record = next(

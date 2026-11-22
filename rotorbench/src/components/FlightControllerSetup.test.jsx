@@ -548,6 +548,40 @@ test("selecting Matek F405-WMN exposes its documented INAV wing mapping", () => 
     .toHaveTextContent("Documented");
 });
 
+test("selecting Matek H743-WING exposes the ArduPilot UART and servo map", () => {
+  render(
+    <FlightControllerSetup
+      selectedFlightController={{
+        id: "fc-matek-h743-wing-v3",
+        name: "Matek H743-WING V3",
+        processor: "STM32H743VIT6",
+        imu: "ICM42688P",
+        firmware: ["ArduPilot"],
+      }}
+    />,
+  );
+
+  expect(screen.getByLabelText("Firmware family")).toHaveValue("ardupilot");
+  expect(screen.getByLabelText("Board profile")).toHaveValue(
+    "matek-h743-wing-v3-ardupilot",
+  );
+  expect(screen.getByLabelText("Receiver UART")).toHaveValue("UART6");
+  expect(screen.getByLabelText("Receiver UART")).toBeDisabled();
+  expect(screen.getByText("13 shared PWM pads")).toBeInTheDocument();
+  fireEvent.click(screen.getByText("Serial allocation"));
+  const ports = screen.getByRole("list", {
+    name: "Documented serial port allocation",
+  });
+  expect(within(ports).getByText("UART6").closest("li")).toHaveTextContent(
+    "BRD_ALT_CONFIG=1",
+  );
+
+  fireEvent.change(screen.getByLabelText("Firmware family"), {
+    target: { value: "inav" },
+  });
+  expect(screen.getByLabelText("Board profile")).toHaveValue("custom-board");
+});
+
 test("Matek keeps its documented mapping when switching to ArduPilot", () => {
   render(
     <FlightControllerSetup

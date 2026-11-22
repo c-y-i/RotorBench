@@ -391,9 +391,19 @@ export default function FlightControllerSetup({
   );
 
   const changeFamily = (familyId) => {
+    const profileForBoard = FC_BOARD_PROFILES.find((item) => (
+      item.family === familyId
+      && item.catalogFlightControllerIds?.includes(selectedFlightController?.id)
+    ));
     const profileForFamily = FC_BOARD_PROFILES.find((item) => item.family === familyId);
-    const nextProfile =
-      profileForFamily || getBoardProfile("custom-board", selectedFlightController);
+    const nextProfile = profileForBoard || (
+      selectedFlightController
+        ? {
+            ...getBoardProfile("custom-board", selectedFlightController),
+            family: familyId,
+          }
+        : profileForFamily || getBoardProfile("custom-board", selectedFlightController)
+    );
     const expressLrsReceiver = [
       selectedReceiver?.name,
       selectedReceiver?.protocol,
