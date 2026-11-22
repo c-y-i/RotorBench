@@ -4586,7 +4586,7 @@
   border-color: color-mix(in srgb, var(--danger) 32%, var(--line));
 }
 
-.aerial-kit-parameter-plan > div {
+.aerial-kit-parameter-plan-summary {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -4606,8 +4606,43 @@
   line-height: 1.45;
 }
 
-.aerial-kit-parameter-plan > div > span {
+.aerial-kit-parameter-plan-summary > span {
   text-align: end;
+}
+
+.aerial-kit-parameter-plan-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.aerial-kit-parameter-plan-tools button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.aerial-kit-parameter-plan-tools button:hover {
+  border-color: var(--ink);
+}
+
+.aerial-kit-parameter-plan-tools > span {
+  color: var(--ok);
+  font-size: 8px;
 }
 
 .aerial-kit-parameter-missing {
@@ -4643,6 +4678,10 @@
   font-size: 8px;
   font-style: normal;
   font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-parameter-missing-search {
+  margin: 0 0 7px 18px;
 }
 
 .aerial-kit-parameter-missing ul {
@@ -4681,6 +4720,13 @@
   color: var(--ink-soft);
   font-size: 8px;
   text-align: end;
+}
+
+.aerial-kit-parameter-missing-empty {
+  margin: 0 0 0 18px;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
 }
 
 .aerial-kit-parameter-list {
@@ -6029,13 +6075,13 @@
     width: 100%;
   }
 
-  .aerial-kit-parameter-plan > div {
+  .aerial-kit-parameter-plan-summary {
     align-items: flex-start;
     flex-direction: column;
     gap: 3px;
   }
 
-  .aerial-kit-parameter-plan > div > span {
+  .aerial-kit-parameter-plan-summary > span {
     text-align: start;
   }
 

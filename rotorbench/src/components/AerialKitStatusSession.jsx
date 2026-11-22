@@ -8,6 +8,7 @@ import React, {
 import {
   Activity,
   CircleStop,
+  Clipboard,
   Cpu,
   Download,
   RadioTower,
@@ -153,6 +154,39 @@ function parameterPlanCheckId(name) {
   return `fc-param-${String(name).toLowerCase().replaceAll("_", "-")}`;
 }
 
+function createParameterPlanComparisonText(checks, targetName) {
+  const differences = checks.filter((check) => check.status === "fail");
+  const unverified = checks.filter((check) => check.status === "unverified");
+  const matches = checks.filter((check) => check.status === "pass");
+  const lines = [
+    "RotorBench live flight-controller plan comparison",
+    `Target: ${targetName || "Selected flight-controller plan"}`,
+    "Source: board-reported AKP parameter values from a read-only session",
+    `Matches: ${matches.length}`,
+    `Differences: ${differences.length}`,
+    `Not observed: ${unverified.length}`,
+  ];
+  if (differences.length > 0) {
+    lines.push("", "DIFFERENCES");
+    differences.forEach((check) => {
+      const name = check.label.replace(/^FC parameter /, "");
+      lines.push(`- ${name}: ${check.detail}`);
+    });
+  }
+  if (unverified.length > 0) {
+    lines.push("", "NOT OBSERVED");
+    unverified.forEach((check) => {
+      const name = check.label.replace(/^FC parameter /, "");
+      lines.push(`- ${name}`);
+    });
+  }
+  lines.push(
+    "",
+    "Boundary: this is a read-only comparison. Nothing was written, saved, flashed, armed, or persisted, and hardware readiness or RF behavior was not verified.",
+  );
+  return lines.join("\n");
+}
+
 export default function AerialKitStatusSession({
   firmwareFamily = null,
   channelMap = null,
@@ -180,6 +214,8 @@ export default function AerialKitStatusSession({
   const [parameters, setParameters] = useState(null);
   const [parameterQuery, setParameterQuery] = useState("");
   const [parameterGroup, setParameterGroup] = useState("all");
+  const [missingParameterQuery, setMissingParameterQuery] = useState("");
+  const [parameterPlanCopyState, setParameterPlanCopyState] = useState("");
   const [parameterState, setParameterState] = useState("idle");
   const [parameterProgress, setParameterProgress] = useState({
     read: 0,
@@ -287,6 +323,8 @@ export default function AerialKitStatusSession({
     setParameters(null);
     setParameterQuery("");
     setParameterGroup("all");
+    setMissingParameterQuery("");
+    setParameterPlanCopyState("");
     setParameterState("idle");
     setParameterProgress({ read: 0, total: 0 });
     setParameterError("");
@@ -1674,6 +1712,21 @@ export default function AerialKitStatusSession({
     setMessage("Read-only status snapshot downloaded without a serial port identity.");
   };
 
+  const copyParameterPlanComparison = async () => {
+    if (liveParameterChecks.length === 0) return;
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard unavailable");
+      }
+      await navigator.clipboard.writeText(
+        createParameterPlanComparisonText(liveParameterChecks, targetName),
+      );
+      setParameterPlanCopyState("Copied");
+    } catch {
+      setParameterPlanCopyState("Clipboard unavailable");
+    }
+  };
+
   const channelLabels = useMemo(() => {
     const labels = {};
     Object.entries(channelMap || {}).forEach(([role, channel]) => {
@@ -1736,6 +1789,14 @@ export default function AerialKitStatusSession({
     () => liveParameterChecks.filter((check) => check.status === "unverified"),
     [liveParameterChecks],
   );
+  const visibleUnverifiedParameterChecks = useMemo(() => {
+    const normalizedQuery = missingParameterQuery.trim().toLowerCase();
+    if (!normalizedQuery) return liveUnverifiedParameterChecks;
+    return liveUnverifiedParameterChecks.filter((check) => (
+      check.label.toLowerCase().includes(normalizedQuery)
+      || check.detail.toLowerCase().includes(normalizedQuery)
+    ));
+  }, [liveUnverifiedParameterChecks, missingParameterQuery]);
   const parameterGroups = useMemo(() => {
     const groups = new Map();
     inventoryRows.forEach((parameter) => {
@@ -1759,6 +1820,10 @@ export default function AerialKitStatusSession({
       setParameterGroup("all");
     }
   }, [parameterGroup, parameterGroups.entries]);
+
+  useEffect(() => {
+    setParameterPlanCopyState("");
+  }, [liveParameterChecks]);
 
   const visibleParameters = useMemo(() => {
     const normalizedQuery = parameterQuery.trim().toLowerCase();
@@ -2365,7 +2430,7 @@ export default function AerialKitStatusSession({
                 )}
                 {mission?.status === "ok" && (
                   <dl className="aerial-kit-mission-state">
-                    <div>
+                    <div className="aerial-kit-parameter-plan-summary">
                       <dt>Navigator</dt>
                       <dd>{mission.active ? "Mission active" : "No mission active"}</dd>
                     </div>
@@ -3283,29 +3348,63 @@ export default function AerialKitStatusSession({
                       Compares board-reported values with the staged flight-controller
                       plan. Nothing was written, saved, or re-read.
                     </small>
+                    <div className="aerial-kit-parameter-plan-tools">
+                      <button
+                        type="button"
+                        onClick={copyParameterPlanComparison}
+                      >
+                        <Clipboard size={14} aria-hidden="true" />
+                        Copy plan comparison
+                      </button>
+                      <span role="status">{parameterPlanCopyState}</span>
+                    </div>
                     {liveUnverifiedParameterChecks.length > 0 && (
                       <details className="aerial-kit-parameter-missing">
                         <summary>
                           <span>Planned values not observed</span>
-                          <em>{liveUnverifiedParameterChecks.length}</em>
+                          <em>
+                            {missingParameterQuery.trim()
+                              ? `${visibleUnverifiedParameterChecks.length}/${liveUnverifiedParameterChecks.length}`
+                              : liveUnverifiedParameterChecks.length}
+                          </em>
                         </summary>
-                        <ul
-                          aria-label="Staged flight-controller parameters not observed"
-                          tabIndex={0}
-                        >
-                          {liveUnverifiedParameterChecks.map((check) => {
-                            const name = check.label.replace(/^FC parameter /, "");
-                            return (
-                              <li
-                                key={check.id}
-                                aria-label={`${name}: ${check.detail}`}
-                              >
-                                <code>{name}</code>
-                                <span>Not returned by this live read</span>
-                              </li>
-                            );
-                          })}
-                        </ul>
+                        <label className="aerial-kit-parameter-search aerial-kit-parameter-missing-search">
+                          <Search size={14} aria-hidden="true" />
+                          <span className="visually-hidden">
+                            Filter planned values not observed
+                          </span>
+                          <input
+                            type="search"
+                            value={missingParameterQuery}
+                            onChange={(event) => setMissingParameterQuery(
+                              event.target.value,
+                            )}
+                            placeholder="Filter missing parameter names"
+                          />
+                        </label>
+                        {visibleUnverifiedParameterChecks.length > 0 ? (
+                          <ul
+                            aria-label="Staged flight-controller parameters not observed"
+                            tabIndex={0}
+                          >
+                            {visibleUnverifiedParameterChecks.map((check) => {
+                              const name = check.label.replace(/^FC parameter /, "");
+                              return (
+                                <li
+                                  key={check.id}
+                                  aria-label={`${name}: ${check.detail}`}
+                                >
+                                  <code>{name}</code>
+                                  <span>Not returned by this live read</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p className="aerial-kit-parameter-missing-empty">
+                            No missing planned value matches this filter.
+                          </p>
+                        )}
                       </details>
                     )}
                   </div>

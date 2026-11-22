@@ -659,6 +659,11 @@ test("filters live parameters by board-reported metadata groups", async () => {
 });
 
 test("compares live board-reported parameters with the staged FC plan", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
   const { port } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS, {
     parameterValues: [
       { name: "arm_channel", value: "5" },
@@ -687,6 +692,7 @@ test("compares live board-reported parameters with the staged FC plan", async ()
       firmwareFamily="aerialkit"
       flightControllerPlan={{
         firmwareFamily: "aerialkit",
+        airframe: "quadx",
         armChannel: 6,
         dshotKhz: 300,
         vbatRatio: 11,
@@ -708,7 +714,7 @@ test("compares live board-reported parameters with the staged FC plan", async ()
     name: "Read ranges/defaults",
   }));
 
-  expect(await screen.findByText("1 match · 1 differ · 1 not observed"))
+  expect(await screen.findByText("1 match · 1 differ · 2 not observed"))
     .toBeInTheDocument();
   expect(screen.getByText("Differs")).toBeInTheDocument();
   expect(screen.getByText("Matches plan")).toBeInTheDocument();
@@ -717,8 +723,32 @@ test("compares live board-reported parameters with the staged FC plan", async ()
     name: /dshot_khz: The board-reported evidence does not include dshot_khz/,
   })).toBeInTheDocument();
   expect(screen.getByRole("listitem", {
+    name: /airframe: The board-reported evidence does not include airframe/,
+  })).toBeInTheDocument();
+  expect(screen.getByRole("listitem", {
     name: /arm_channel: 5\. Differs\. Board-reported arm_channel=5; the staged plan expects 6\./,
   })).toBeInTheDocument();
+
+  await userEvent.type(
+    screen.getByLabelText("Filter planned values not observed"),
+    "dshot",
+  );
+  expect(screen.getByRole("listitem", {
+    name: /dshot_khz: The board-reported evidence does not include dshot_khz/,
+  })).toBeInTheDocument();
+  expect(screen.queryByRole("listitem", {
+    name: /airframe: The board-reported evidence does not include airframe/,
+  })).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Copy plan comparison",
+  }));
+  expect(await screen.findByText("Copied")).toBeInTheDocument();
+  expect(writeText).toHaveBeenCalledTimes(1);
+  expect(writeText.mock.calls[0][0]).toContain("arm_channel");
+  expect(writeText.mock.calls[0][0]).toContain("dshot_khz");
+  expect(writeText.mock.calls[0][0]).toContain("airframe");
+  expect(writeText.mock.calls[0][0]).toContain("read-only comparison");
 
   await userEvent.type(
     screen.getByLabelText("Filter observed parameter names or values"),
