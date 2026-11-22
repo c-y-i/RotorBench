@@ -64,6 +64,7 @@ import {
   createAerialKitLogExport,
   serializeAerialKitLogCsv,
 } from "../utils/aerialKitLogExport";
+import { createAerialKitPlanComparisonEvidence } from "../utils/aerialKitPlanComparison";
 import { fcParameterChecks } from "../utils/fcEvidence";
 import {
   buildAerialKitRouteSummary,
@@ -215,7 +216,7 @@ export default function AerialKitStatusSession({
   const [parameterQuery, setParameterQuery] = useState("");
   const [parameterGroup, setParameterGroup] = useState("all");
   const [missingParameterQuery, setMissingParameterQuery] = useState("");
-  const [parameterPlanCopyState, setParameterPlanCopyState] = useState("");
+  const [parameterPlanActionState, setParameterPlanActionState] = useState("");
   const [parameterState, setParameterState] = useState("idle");
   const [parameterProgress, setParameterProgress] = useState({
     read: 0,
@@ -324,7 +325,7 @@ export default function AerialKitStatusSession({
     setParameterQuery("");
     setParameterGroup("all");
     setMissingParameterQuery("");
-    setParameterPlanCopyState("");
+    setParameterPlanActionState("");
     setParameterState("idle");
     setParameterProgress({ read: 0, total: 0 });
     setParameterError("");
@@ -1721,10 +1722,33 @@ export default function AerialKitStatusSession({
       await navigator.clipboard.writeText(
         createParameterPlanComparisonText(liveParameterChecks, targetName),
       );
-      setParameterPlanCopyState("Copied");
+      setParameterPlanActionState("Copied");
     } catch {
-      setParameterPlanCopyState("Clipboard unavailable");
+      setParameterPlanActionState("Clipboard unavailable");
     }
+  };
+
+  const downloadParameterPlanComparison = () => {
+    if (liveParameterChecks.length === 0) return;
+    const evidence = createAerialKitPlanComparisonEvidence({
+      checks: liveParameterChecks,
+      plan: flightControllerPlan,
+      targetName,
+      statusObservedAtMs: lastStatusAt,
+      parameterValuesRead: parameters != null,
+      parameterMetadataRead: parameterMetadata != null,
+      sessionActive: sessionState === "monitoring",
+      nowMs: Date.now(),
+    });
+    const blob = new Blob([JSON.stringify(evidence, null, 2)], {
+      type: "application/json",
+    });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `rotorbench-aerial-kit-plan-comparison-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    setParameterPlanActionState("Downloaded");
   };
 
   const channelLabels = useMemo(() => {
@@ -1822,7 +1846,7 @@ export default function AerialKitStatusSession({
   }, [parameterGroup, parameterGroups.entries]);
 
   useEffect(() => {
-    setParameterPlanCopyState("");
+    setParameterPlanActionState("");
   }, [liveParameterChecks]);
 
   const visibleParameters = useMemo(() => {
@@ -2430,7 +2454,7 @@ export default function AerialKitStatusSession({
                 )}
                 {mission?.status === "ok" && (
                   <dl className="aerial-kit-mission-state">
-                    <div className="aerial-kit-parameter-plan-summary">
+                    <div>
                       <dt>Navigator</dt>
                       <dd>{mission.active ? "Mission active" : "No mission active"}</dd>
                     </div>
@@ -3332,7 +3356,7 @@ export default function AerialKitStatusSession({
                           : "is-complete"
                     }`}
                   >
-                    <div>
+                    <div className="aerial-kit-parameter-plan-summary">
                       <strong>Plan comparison</strong>
                       <span>
                         {liveParameterPlanCounts.matches} match
@@ -3356,7 +3380,14 @@ export default function AerialKitStatusSession({
                         <Clipboard size={14} aria-hidden="true" />
                         Copy plan comparison
                       </button>
-                      <span role="status">{parameterPlanCopyState}</span>
+                      <button
+                        type="button"
+                        onClick={downloadParameterPlanComparison}
+                      >
+                        <Download size={14} aria-hidden="true" />
+                        Download comparison
+                      </button>
+                      <span role="status">{parameterPlanActionState}</span>
                     </div>
                     {liveUnverifiedParameterChecks.length > 0 && (
                       <details className="aerial-kit-parameter-missing">

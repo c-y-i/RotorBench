@@ -1617,6 +1617,33 @@ export function parseFcParameterSnapshotText(text) {
   );
 }
 
+export function fcParameterPlanEntries(plan) {
+  if (!plan) return [];
+  if (plan.firmwareFamily !== "ardupilot") {
+    return Object.entries(PARAMETER_PLAN_KEYS).flatMap(([runtimeName, planKey]) => {
+      const value = plan[planKey];
+      if (value === null || value === undefined || value === "") return [];
+      return [{
+        runtimeName,
+        expected: comparableParameterValue(value),
+      }];
+    });
+  }
+
+  const boardProfile = plan.profileId ? getBoardProfile(plan.profileId) : null;
+  return (boardProfile?.parameterRequirements || [])
+    .filter((requirement) => (
+      !requirement.whenReceiverProtocol
+      || requirement.whenReceiverProtocol === plan.receiverProtocol
+    ))
+    .map(({ name, value, description }) => ({
+      runtimeName: name,
+      expected: comparableParameterValue(value),
+      requirement: description,
+      boardLabel: boardProfile?.label || "documented board",
+    }));
+}
+
 export function fcParameterChecks(
   snapshot,
   plan,
@@ -1626,62 +1653,39 @@ export function fcParameterChecks(
   const evidenceLabel = sourceLabel === "Imported"
     ? "imported snapshot"
     : `${sourceLabel.toLowerCase()} evidence`;
-  const checks = (plan.firmwareFamily === "ardupilot"
-    ? []
-    : Object.entries(PARAMETER_PLAN_KEYS)
-    .filter(([, planKey]) => {
-      const value = plan[planKey];
-      return value !== null && value !== undefined && value !== "";
-    })
-    .map(([runtimeName, planKey]) => {
-      if (!Object.hasOwn(snapshot.values, runtimeName)) {
-        return makeCheck(
-          `fc-param-${runtimeName.replaceAll("_", "-")}`,
-          `FC parameter ${runtimeName}`,
-          "unverified",
-          `The ${evidenceLabel} does not include ${runtimeName}, so this planned value remains unverified.`,
-        );
-      }
-      const actual = comparableParameterValue(snapshot.values[runtimeName]);
-      const expected = comparableParameterValue(plan[planKey]);
-      const matches = actual === expected;
+  return fcParameterPlanEntries(plan).map((entry) => {
+    const {
+      runtimeName,
+      expected,
+      requirement,
+      boardLabel,
+    } = entry;
+    const normalizedName = runtimeName.toLowerCase();
+    const actual = snapshot.values?.[normalizedName];
+    const id = `fc-param-${normalizedName.replaceAll("_", "-")}`;
+    if (actual === undefined) {
       return makeCheck(
-        `fc-param-${runtimeName.replaceAll("_", "-")}`,
+        id,
         `FC parameter ${runtimeName}`,
-        matches ? "pass" : "fail",
-        matches
-          ? `${sourceLabel} ${runtimeName}=${actual}, matching the staged plan.`
-          : `${sourceLabel} ${runtimeName}=${actual}; the staged plan expects ${expected}.`,
+        "unverified",
+        requirement
+          ? `The ${evidenceLabel} does not include ${runtimeName}, so ${requirement} remains unverified.`
+          : `The ${evidenceLabel} does not include ${runtimeName}, so this planned value remains unverified.`,
       );
-    }));
-
-  const boardProfile = plan.profileId ? getBoardProfile(plan.profileId) : null;
-  const ardupilotRequirements = plan.firmwareFamily === "ardupilot"
-    ? (boardProfile?.parameterRequirements || []).filter((requirement) => (
-        !requirement.whenReceiverProtocol
-        || requirement.whenReceiverProtocol === plan.receiverProtocol
-      ))
-    : [];
-  const ardupilotChecks = ardupilotRequirements
-    .map(({ name: runtimeName, value: expected, description: requirement }) => {
-        const actual = snapshot.values[runtimeName.toLowerCase()];
-        if (actual === undefined) {
-          return makeCheck(
-            `fc-param-${runtimeName.toLowerCase().replaceAll("_", "-")}`,
-            `FC parameter ${runtimeName}`,
-            "unverified",
-            `The ${evidenceLabel} does not include ${runtimeName}, so ${requirement} remains unverified.`,
-          );
-        }
-        return makeCheck(
-          `fc-param-${runtimeName.toLowerCase().replaceAll("_", "-")}`,
-          `FC parameter ${runtimeName}`,
-          comparableParameterValue(actual) === expected ? "pass" : "fail",
-          comparableParameterValue(actual) === expected
-            ? `${sourceLabel} ${runtimeName}=${actual}, matching the documented ${boardProfile.label} ${requirement} requirement.`
-            : `${sourceLabel} ${runtimeName}=${actual}; the documented ${boardProfile.label} plan requires ${expected} for ${requirement}.`,
-        );
-      });
-
-  return [...checks, ...ardupilotChecks];
+    }
+    const comparableActual = comparableParameterValue(actual);
+    const matches = comparableActual === expected;
+    return makeCheck(
+      id,
+      `FC parameter ${runtimeName}`,
+      matches ? "pass" : "fail",
+      requirement
+        ? matches
+          ? `${sourceLabel} ${runtimeName}=${comparableActual}, matching the documented ${boardLabel} ${requirement} requirement.`
+          : `${sourceLabel} ${runtimeName}=${comparableActual}; the documented ${boardLabel} plan requires ${expected} for ${requirement}.`
+        : matches
+          ? `${sourceLabel} ${runtimeName}=${comparableActual}, matching the staged plan.`
+          : `${sourceLabel} ${runtimeName}=${comparableActual}; the staged plan expects ${expected}.`,
+    );
+  });
 }

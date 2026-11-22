@@ -744,6 +744,9 @@ test("compares live board-reported parameters with the staged FC plan", async ()
     name: "Copy plan comparison",
   }));
   expect(await screen.findByText("Copied")).toBeInTheDocument();
+  expect(screen.getByRole("button", {
+    name: "Download comparison",
+  })).toBeInTheDocument();
   expect(writeText).toHaveBeenCalledTimes(1);
   expect(writeText.mock.calls[0][0]).toContain("arm_channel");
   expect(writeText.mock.calls[0][0]).toContain("dshot_khz");
