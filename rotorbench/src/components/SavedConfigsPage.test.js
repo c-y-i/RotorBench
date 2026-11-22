@@ -246,6 +246,55 @@ test("status filters isolate hardware-plan review from clear plans", async () =>
   expect(screen.getByRole("heading", { name: "Offline build" })).toBeInTheDocument();
 });
 
+test("saved builds can be sorted by planning weight and catalog price", async () => {
+  const lightBuild = {
+    ...offlineBuild,
+    id: "light-build",
+    name: "Light build",
+    updatedAt: "2026-02-01T00:00:00.000Z",
+  };
+  const heavyBuild = {
+    ...offlineBuild,
+    id: "heavy-build",
+    name: "Heavy build",
+    updatedAt: "2026-03-01T00:00:00.000Z",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-f405-wmn",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  localStorage.setItem(
+    "offlineBuilds",
+    JSON.stringify([heavyBuild, lightBuild]),
+  );
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole("heading", { name: "Heavy build" });
+  const sort = screen.getByLabelText("Sort saved builds");
+  fireEvent.change(sort, { target: { value: "weight-low" } });
+  let headings = screen.getAllByRole("heading", { level: 2 })
+    .map((heading) => heading.textContent);
+  expect(headings.indexOf("Light build")).toBeLessThan(
+    headings.indexOf("Heavy build"),
+  );
+
+  fireEvent.change(sort, { target: { value: "price-high" } });
+  headings = screen.getAllByRole("heading", { level: 2 })
+    .map((heading) => heading.textContent);
+  expect(headings.indexOf("Heavy build")).toBeLessThan(
+    headings.indexOf("Light build"),
+  );
+});
+
 test("saved builds copy sanitized portable share links", async () => {
   const writeText = jest.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {

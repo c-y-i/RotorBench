@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/home.css"; 
 import "../styles/saved.css";
@@ -82,6 +82,7 @@ export default function SavedConfigsPage() {
     const [error, setError] = useState(null);
     const [q, setQ] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [sortMode, setSortMode] = useState("updated");
     const [expandedId, setExpandedId] = useState(null);
     const [comparisonIds, setComparisonIds] = useState([]);
     const [message, setMessage] = useState({ type: "", text: "" });
@@ -373,12 +374,40 @@ export default function SavedConfigsPage() {
         });
     }, [items, q, statusFilter]);
 
-    const displayName = (it) => {
+    const displayName = useCallback((it) => {
         const idx = items.indexOf(it);
         return it.name && it.name.trim()
             ? it.name
             : `Saved Config #${idx + 1}`;
-    };
+    }, [items]);
+
+    const visibleItems = useMemo(() => {
+        const next = [...filtered];
+        if (sortMode === "name") {
+            return next.sort((left, right) => (
+                displayName(left).localeCompare(displayName(right))
+            ));
+        }
+        if (sortMode === "weight-low" || sortMode === "weight-high") {
+            return next.sort((left, right) => {
+                const delta = summarizeBuild(left).totalWeight
+                    - summarizeBuild(right).totalWeight;
+                return sortMode === "weight-low" ? delta : -delta;
+            });
+        }
+        if (sortMode === "price-low" || sortMode === "price-high") {
+            return next.sort((left, right) => {
+                const delta = summarizeBuild(left).totalPrice
+                    - summarizeBuild(right).totalPrice;
+                return sortMode === "price-low" ? delta : -delta;
+            });
+        }
+        return next.sort((left, right) => {
+            const leftTime = new Date(left.updatedAt || left.createdAt || 0).getTime();
+            const rightTime = new Date(right.updatedAt || right.createdAt || 0).getTime();
+            return rightTime - leftTime;
+        });
+    }, [displayName, filtered, sortMode]);
 
     const openWithAnalysis = (build) => {
         // Pass the build directly to /analysis, with subsequent analysis handled uniformly by AnalysisPage.
@@ -454,6 +483,21 @@ export default function SavedConfigsPage() {
                             <option value="evidence">Imported evidence</option>
                         </select>
                     </label>
+                    <label className="saved-status-filter saved-sort-filter">
+                        <SlidersHorizontal size={16} aria-hidden="true" />
+                        <select
+                            aria-label="Sort saved builds"
+                            value={sortMode}
+                            onChange={(event) => setSortMode(event.target.value)}
+                        >
+                            <option value="updated">Recently updated</option>
+                            <option value="name">Name · A–Z</option>
+                            <option value="weight-low">Planning weight · low first</option>
+                            <option value="weight-high">Planning weight · high first</option>
+                            <option value="price-low">Catalog price · low first</option>
+                            <option value="price-high">Catalog price · high first</option>
+                        </select>
+                    </label>
                     <button className="action-btn analysis" onClick={() => navigate("/build?new=1")}>
                         <Plus size={17} aria-hidden="true" />
                         New build
@@ -498,7 +542,7 @@ export default function SavedConfigsPage() {
             {/* List of Saved Builds */}
             {!loading && !error && (
                 <div className="analysis-content" style={{ padding: "0 14px 14px" }}>
-                    {filtered.length === 0 ? (
+                    {visibleItems.length === 0 ? (
                         <div className="empty-state">
                             <FolderOpen size={28} strokeWidth={1.5} aria-hidden="true" />
                             <h3>{items.length ? "No matching builds" : "No saved builds yet"}</h3>
@@ -510,7 +554,7 @@ export default function SavedConfigsPage() {
                         </div>
                     ) : (
                         <ul className="saved-list">
-                            {filtered.map((it) => {
+                            {visibleItems.map((it) => {
                                 const title = displayName(it);
                                 const isOpen = expandedId === it.id;
                                 const componentRows = getBuildComponents(it);
