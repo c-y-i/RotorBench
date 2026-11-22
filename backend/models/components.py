@@ -169,7 +169,7 @@ class FrameServoHardware(ComponentCatalogMetadata):
         return value
 
 
-class FrameFlightEnvelope(ComponentCatalogMetadata):
+class FrameFlightEnvelope(BaseModel):
     takeoff_weight_g: List[float] = Field(..., alias="takeoffWeightG")
     min_speed_kmh: float = Field(..., alias="minSpeedKmh", gt=0)
     pnp_thrust_to_weight_max: Optional[float] = Field(

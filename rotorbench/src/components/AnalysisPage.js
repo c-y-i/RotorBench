@@ -24,6 +24,7 @@ import {
   createAnalysisReport,
 } from "../utils/analysisReport";
 import { buildShareUrl } from "../utils/buildLink";
+import { summarizeTakeoffWeight } from "../utils/flightEnvelope";
 import { getFrameServoHardware } from "../utils/frameHardware";
 import {
   describeMissionControls,
@@ -262,6 +263,10 @@ export default function AnalysisPage() {
   const selectedFramePart = componentRows.find(
     (row) => row.label === "Frame",
   )?.part;
+  const takeoffWeightSummary = useMemo(() => summarizeTakeoffWeight(
+    analysis?.performance?.totalWeight,
+    selectedFramePart?.flightEnvelope,
+  ), [analysis?.performance?.totalWeight, selectedFramePart?.flightEnvelope]);
   const selectedFrameServoHardware = getFrameServoHardware(selectedFramePart);
   const hasHardwareSelection = Boolean(
     selectedFlightControllerPart || selectedReceiverPart,
@@ -625,11 +630,20 @@ export default function AnalysisPage() {
                 <div className="analysis-hardware-envelope">
                   <dt>Published envelope</dt>
                   <dd>
-                    {selectedFramePart.flightEnvelope.takeoffWeightG.join("–")} g takeoff ·{" "}
-                    {selectedFramePart.flightEnvelope.minSpeedKmh} km/h minimum
-                    {selectedFramePart.flightEnvelope.pnpThrustToWeightMax
-                      ? ` · PNP ${selectedFramePart.flightEnvelope.pnpThrustToWeightMax}:1 T/W reference`
-                      : ""}
+                    <span className="analysis-hardware-envelope-source">
+                      {selectedFramePart.flightEnvelope.takeoffWeightG.join("–")} g takeoff ·{" "}
+                      {selectedFramePart.flightEnvelope.minSpeedKmh} km/h minimum
+                      {selectedFramePart.flightEnvelope.pnpThrustToWeightMax
+                        ? ` · PNP ${selectedFramePart.flightEnvelope.pnpThrustToWeightMax}:1 T/W reference`
+                        : ""}
+                    </span>
+                    {takeoffWeightSummary && (
+                      <span
+                        className={`analysis-hardware-envelope-weight is-${takeoffWeightSummary.status}`}
+                      >
+                        {takeoffWeightSummary.label}
+                      </span>
+                    )}
                   </dd>
                 </div>
               )}

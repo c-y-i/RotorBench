@@ -263,6 +263,7 @@ test("fixed-wing builds do not inherit multirotor performance claims", async () 
       ...analysis,
       performance: {
         ...analysis.performance,
+        totalWeight: 548,
         maxThrust: 0,
         thrustToWeightRatio: 0,
         powerDraw: 0,
@@ -307,6 +308,9 @@ test("fixed-wing builds do not inherit multirotor performance claims", async () 
   expect(screen.getByText(/350–500 g takeoff · 25 km\/h minimum/i))
     .toBeInTheDocument();
   expect(screen.getByText(/PNP 1\.71:1 T\/W reference/i)).toBeInTheDocument();
+  expect(screen.getByText(
+    /548 g catalog estimate · 48 g over the 500 g published maximum/i,
+  )).toBeInTheDocument();
   const body = JSON.parse(global.fetch.mock.calls[0][1].body);
   expect(body.components.frame).toMatchObject({
     id: "frame-heewing-t1-ranger",

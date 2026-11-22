@@ -93,6 +93,15 @@ class CatalogContractTests(unittest.TestCase):
         self.assertEqual(frame.flight_envelope.takeoff_weight_g, [350, 500])
         self.assertEqual(frame.flight_envelope.min_speed_kmh, 25)
         self.assertEqual(frame.flight_envelope.pnp_thrust_to_weight_max, 1.71)
+        self.assertEqual(
+            set(frame.flight_envelope.model_dump(by_alias=True)),
+            {
+                "takeoffWeightG",
+                "minSpeedKmh",
+                "pnpThrustToWeightMax",
+                "note",
+            },
+        )
 
     def test_fixed_wing_analysis_fails_closed_on_multirotor_performance(self):
         config = DroneBuildConfig(

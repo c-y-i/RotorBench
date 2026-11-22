@@ -212,9 +212,20 @@
 }
 
 .analysis-hardware-facts .analysis-hardware-envelope dd {
+  display: grid;
+  gap: 4px;
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
+}
+
+.analysis-hardware-envelope-weight {
+  color: var(--ink-soft);
+}
+
+.analysis-hardware-envelope-weight.is-above,
+.analysis-hardware-envelope-weight.is-below {
+  color: var(--warn);
 }
 
 .analysis-hardware-state {
