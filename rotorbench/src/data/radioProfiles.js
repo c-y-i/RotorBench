@@ -1124,6 +1124,16 @@ export function buildRadioWarnings(
     warnings.push(
       `${receiver.name || "The selected receiver"} does not share a documented RF band with ${target.name}.`,
     );
+  } else if (
+    bandCompatibility.status === "compatible"
+    && !bandCompatibility.receiverBandCoverageComplete
+  ) {
+    const uncoveredBands = bandCompatibility.receiverBandLabels.filter(
+      (label) => !bandCompatibility.sharedBandLabels.includes(label),
+    );
+    warnings.push(
+      `${target.name} covers ${bandCompatibility.sharedBandLabels.join(" / ")} but does not configure the receiver's ${uncoveredBands.join(" / ")} band${uncoveredBands.length === 1 ? "" : "s"}.`,
+    );
   }
   if (!packetRates.some((rate) => rate.value === normalized.packetRateMode)) {
     warnings.push(

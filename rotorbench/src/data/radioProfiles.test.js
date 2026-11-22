@@ -598,6 +598,16 @@ test("radio receiver bands remain source-backed and fail closed", () => {
     "aerialkit-elrs-rev-a3",
     dualBand,
   ).id).toBe("radiomaster-nomad-gemini-xrossband-tx");
+  expect(buildRadioWarnings({
+    ...DEFAULT_RADIO_CONFIG,
+    selectedReceiverId: dualBand.id,
+  }, {
+    receiver: dualBand,
+  })).toEqual(expect.arrayContaining([
+    expect.stringMatching(
+      /covers 2\.4 GHz but does not configure.*Sub-G 900 MHz band/i,
+    ),
+  ]));
   expect(getRadioReceiverBandCompatibility(
     "aerialkit-elrs-rev-a3",
     { id: "rx-900", frequencyBands: ["Sub-G 900 MHz"] },

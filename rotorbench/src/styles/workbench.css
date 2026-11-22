@@ -5706,6 +5706,16 @@
   }
 }
 
+@media (min-width: 901px) {
+  .app-container > .build-command-bar {
+    position: static;
+    margin-top: 14px;
+    padding-top: 14px;
+    background: transparent;
+    border-top: 1px solid var(--line);
+  }
+}
+
 @media (max-width: 640px) {
   .bottom-buttons {
     gap: 7px;

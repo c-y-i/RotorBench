@@ -2338,7 +2338,7 @@ export default function BuildPage() {
         </section>
       </div>
 
-      <div className="bottom-buttons">
+      <div className="bottom-buttons build-command-bar">
         <button
           className="action-btn reset-action"
           aria-label="Reset all components"
