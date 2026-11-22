@@ -1835,6 +1835,7 @@ export function createDefaultFlightControllerConfig(
     launchClimbDeg: 18,
     launchTimeoutS: 5,
     manualChannel: null,
+    manualRate: 1,
     ctrlChannel: null,
     sysidChannel: null,
     sysidAxis: 0,
@@ -2413,6 +2414,17 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "anti-gravity-p-gain-range",
         message: "Anti-gravity P share must be between 0 and 250 percent.",
+      });
+    }
+    if (
+      !finite(config.manualRate)
+      || Number(config.manualRate) < 0.1
+      || Number(config.manualRate) > 1
+    ) {
+      issues.push({
+        severity: "error",
+        code: "manual-rate-range",
+        message: "Manual-mode authority must be between 0.1 and 1.0 of full stick.",
       });
     }
     if (
@@ -3288,7 +3300,9 @@ export function buildFlightControllerSummary(
         ]
       : []),
     config.firmwareFamily === "aerialkit"
-      ? `Switches: ${aerialKitSwitches}`
+      ? `Switches: ${aerialKitSwitches}${profile.buildScope === "workspace"
+        ? `; manual authority ${Math.round(Number(config.manualRate) * 100)}% of full stick`
+        : ""}`
       : `Channels: mode ${config.modeChannel ?? "not mapped"}, arm ${config.armChannel ?? "not mapped"}, beeper ${config.beeperChannel ?? "not mapped"}`,
     config.firmwareFamily === "aerialkit"
       ? `Aerial Kit control roles: ${aerialKitRoles.map((role) => role.label).join(", ")} only`

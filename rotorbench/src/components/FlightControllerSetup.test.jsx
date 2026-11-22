@@ -1696,7 +1696,8 @@ test("control-loop request derives its loop timing without claiming the observed
 });
 
 test("workspace Aerial Kit boards expose workspace switches instead of velocity", () => {
-  render(<FlightControllerSetup />);
+  const onChange = jest.fn();
+  render(<FlightControllerSetup onChange={onChange} />);
   fireEvent.change(screen.getByLabelText("Board profile"), {
     target: { value: "weact-f405" },
   });
@@ -1704,6 +1705,13 @@ test("workspace Aerial Kit boards expose workspace switches instead of velocity"
   expect(screen.getByLabelText("Manual channel")).toBeInTheDocument();
   expect(screen.getByLabelText("Control channel")).toBeInTheDocument();
   expect(screen.getByLabelText("System-ID channel")).toBeInTheDocument();
+  expect(screen.getByLabelText("Manual stick authority")).toHaveValue(1);
+  fireEvent.change(screen.getByLabelText("Manual stick authority"), {
+    target: { value: "0.6" },
+  });
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    manualRate: 0.6,
+  }));
   expect(screen.getByText("AK_ARM_NO_IMU")).toBeInTheDocument();
 });
 

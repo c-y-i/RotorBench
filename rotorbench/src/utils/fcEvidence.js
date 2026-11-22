@@ -1524,6 +1524,7 @@ const PARAMETER_PLAN_KEYS = {
   launch_climb_deg: "launchClimbDeg",
   launch_timeout_s: "launchTimeoutS",
   manual_channel: "manualChannel",
+  manual_rate: "manualRate",
   ctrl_channel: "ctrlChannel",
   sysid_channel: "sysidChannel",
   sysid_axis: "sysidAxis",

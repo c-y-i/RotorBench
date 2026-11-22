@@ -422,6 +422,9 @@ export function summarizeHardwareReadiness({
     fcMissionChannel: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.missionChannel ?? null
       : null,
+    fcManualRate: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.manualRate
+      : null,
     fcLaunchChannel: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.launchChannel ?? null
       : null,
@@ -668,6 +671,7 @@ export function sanitizeHardwareReadiness(readiness) {
     fcBatteryMinCellV: readiness.fcBatteryMinCellV ?? null,
     fcBatteryRthEnabled: readiness.fcBatteryRthEnabled ?? null,
     fcMissionChannel: readiness.fcMissionChannel ?? null,
+    fcManualRate: readiness.fcManualRate ?? null,
     fcLaunchChannel: readiness.fcLaunchChannel ?? null,
     fcLaunchThrottle: readiness.fcLaunchThrottle ?? null,
     fcLaunchClimbDeg: readiness.fcLaunchClimbDeg ?? null,

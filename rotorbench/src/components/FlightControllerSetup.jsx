@@ -164,6 +164,7 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "anti-gravity-gain-range": { id: "fc-anti-gravity-gain", label: "anti-gravity gain" },
   "anti-gravity-cutoff-range": { id: "fc-anti-gravity-cutoff", label: "anti-gravity cutoff" },
   "anti-gravity-p-gain-range": { id: "fc-anti-gravity-p-gain", label: "anti-gravity P share" },
+  "manual-rate-range": { id: "fc-manual-rate", label: "manual stick authority" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -3654,6 +3655,28 @@ export default function FlightControllerSetup({
                     </>
                   )}
                 </>
+              )}
+              {config.firmwareFamily === "aerialkit"
+                && profile.buildScope === "workspace" && (
+                <Field
+                  label="Manual stick authority"
+                  htmlFor="fc-manual-rate"
+                  hint="0.1 to 1.0 of full manual stick"
+                >
+                  <input
+                    id="fc-manual-rate"
+                    type="number"
+                    min="0.1"
+                    max="1"
+                    step="0.01"
+                    aria-invalid={numericInvalid(config.manualRate)}
+                    value={numericValue(config.manualRate)}
+                    onChange={(event) => update(
+                      "manualRate",
+                      numericInput(event.target.value),
+                    )}
+                  />
+                </Field>
               )}
               <Field label="Link-loss action" htmlFor="fc-failsafe">
                 <select id="fc-failsafe" value={config.failsafeAction} onChange={(event) => update("failsafeAction", event.target.value)}>

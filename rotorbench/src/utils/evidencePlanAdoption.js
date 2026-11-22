@@ -262,6 +262,19 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       nullWhen: (raw) => Number(raw) === 0,
     },
     {
+      key: "manualRate",
+      source: "manual_rate",
+      snapshotKey: "manual_rate",
+      label: "Manual stick authority",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0.1 && number <= 1
+          ? number
+          : null;
+      },
+      display: (value) => `${Math.round(value * 100)}%`,
+    },
+    {
       key: "ctrlChannel",
       source: "ctrl_channel",
       snapshotKey: "ctrl_channel",

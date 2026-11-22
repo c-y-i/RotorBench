@@ -1056,6 +1056,7 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     "anti_gravity_gain=80 status=0",
     "anti_gravity_cutoff_hz=5 status=0",
     "anti_gravity_p_gain=120 status=0",
+    "manual_rate=0.6 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
     gyroLpf1StaticHz: 250,
@@ -1092,6 +1093,7 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     antiGravityGain: 0,
     antiGravityCutoffHz: 5,
     antiGravityPGain: 100,
+    manualRate: 1,
   });
 
   expect(checks.find((check) => check.id === "fc-param-gyro-lpf1-static-hz").status)
@@ -1169,6 +1171,11 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     .toMatchObject({
       status: "fail",
       detail: expect.stringMatching(/plan expects 100/i),
+    });
+  expect(checks.find((check) => check.id === "fc-param-manual-rate"))
+    .toMatchObject({
+      status: "fail",
+      detail: expect.stringMatching(/plan expects 1/i),
     });
 });
 

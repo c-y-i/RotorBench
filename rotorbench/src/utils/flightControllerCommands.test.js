@@ -82,6 +82,7 @@ const config = {
   antiGravityGain: 0,
   antiGravityCutoffHz: 5,
   antiGravityPGain: 100,
+  manualRate: 1,
   maxRateDps: 700,
   rateCenterDps: 350,
   rateExpo: 0.4,
@@ -302,6 +303,7 @@ test("workspace Aerial Kit profiles preview workspace switches, not velocity", (
   );
   expect(preview.supported).toBe(true);
   expect(preview.text).toContain("set manual_channel 7");
+  expect(preview.text).toContain("set manual_rate 1");
   expect(preview.text).toContain("set ctrl_channel 8");
   expect(preview.text).toContain("set sysid_channel 0");
   expect(preview.text).not.toContain("set velocity_channel");

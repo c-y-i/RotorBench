@@ -275,6 +275,7 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     antiGravityGain: 0,
     antiGravityCutoffHz: 5,
     antiGravityPGain: 100,
+    manualRate: 1,
   });
   const issues = validateFlightControllerConfig({
     ...config,
@@ -392,6 +393,15 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     expect.objectContaining({
       severity: "error",
       code: "anti-gravity-cutoff-range",
+    }),
+  ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    manualRate: 0.05,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "manual-rate-range",
     }),
   ]));
   expect(buildFlightControllerSummary(
@@ -514,6 +524,10 @@ test("summary keeps the receiver and safety mapping visible", () => {
   expect(summary).toContain("arm, flight mode, velocity mode, mission, launch only");
   expect(summary).toContain("Motor order: 1 RR CW, 2 FR CCW, 3 RL CCW, 4 FL CW");
   expect(summary).toContain("propeller plan props-in");
+  expect(buildFlightControllerSummary(
+    config,
+    getBoardProfile("weact-f405"),
+  ).join("\n")).toContain("manual authority 100% of full stick");
   expect(summary).toContain("Failsafe: Firmware-derived");
   expect(summary).toContain(
     "Battery telemetry: divider 11:1, cells auto, warning 3.5 V/cell, minimum 3.3 V/cell, critical-pack return disabled",

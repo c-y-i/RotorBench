@@ -218,6 +218,9 @@ export function buildFlightControllerCommands(
     Number(config.antiGravityCutoffHz) <= 50 &&
     Number(config.antiGravityPGain) >= 0 &&
     Number(config.antiGravityPGain) <= 250 &&
+    finite(config.manualRate) &&
+    Number(config.manualRate) >= 0.1 &&
+    Number(config.manualRate) <= 1 &&
     finite(config.maxRateDps) &&
     finite(config.rateCenterDps) &&
     finite(config.rateExpo) &&
@@ -269,6 +272,7 @@ export function buildFlightControllerCommands(
   if (profile?.buildScope === "workspace") {
     lines.push(
       `set manual_channel ${Number(config.manualChannel ?? 0)}`,
+      `set manual_rate ${Number(config.manualRate)}`,
       `set ctrl_channel ${Number(config.ctrlChannel ?? 0)}`,
       `set sysid_channel ${Number(config.sysidChannel ?? 0)}`,
       `set sysid_axis ${Number(sysidAxis)}`,
