@@ -300,6 +300,10 @@ test("fixed-wing builds do not inherit multirotor performance claims", async () 
     .toBeInTheDocument();
   expect(screen.getAllByText(fixedWingNote).length).toBeGreaterThan(0);
   expect(screen.queryByText("11.2:1")).not.toBeInTheDocument();
+  expect(screen.getByText("HeeWing FX-7G Digital Metal Gear Servo Set"))
+    .toBeInTheDocument();
+  expect(screen.getByText("Servo map not saved")).toBeInTheDocument();
+  expect(screen.getAllByText(/3 servos/i).length).toBeGreaterThan(0);
   const body = JSON.parse(global.fetch.mock.calls[0][1].body);
   expect(body.components.frame).toMatchObject({
     id: "frame-heewing-t1-ranger",

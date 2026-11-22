@@ -24,6 +24,7 @@ import {
   createAnalysisReport,
 } from "../utils/analysisReport";
 import { buildShareUrl } from "../utils/buildLink";
+import { getFrameServoHardware } from "../utils/frameHardware";
 import {
   describeMissionControls,
   describeNavigationSafety,
@@ -224,6 +225,7 @@ export default function AnalysisPage() {
     const esc = findPart("escs", ids.escId);
     const flightController = findPart("flight_controllers", ids.flightControllerId);
     const receiver = findPart("receivers", ids.receiverId);
+    const servoHardware = getFrameServoHardware(frame);
 
     return [
       { label: "Frame", part: frame, Icon: Box, meta: frame ? `${frame.size} mm · ${frame.weight} g` : "Not selected" },
@@ -233,6 +235,15 @@ export default function AnalysisPage() {
       { label: "ESC", part: esc, Icon: Zap, meta: esc ? `${esc.currentRating} A continuous · ${esc.weight} g` : "Not selected" },
       { label: "Flight controller", part: flightController, Icon: Cpu, meta: flightController ? `${flightController.processor} · ${flightController.imu}` : "Not selected" },
       { label: "Receiver", part: receiver, Icon: Radio, meta: receiver ? `${receiver.protocol} · ${receiver.channels} channels` : "Not selected" },
+      ...(servoHardware ? [{
+        label: "Control-surface hardware",
+        part: {
+          id: `${frame.id}:servo-hardware`,
+          name: servoHardware.name,
+        },
+        Icon: Settings2,
+        meta: `${servoHardware.quantity} servos · ${servoHardware.weight} g · ${servoHardware.gear} gears`,
+      }] : []),
     ];
   }, [build]);
 
@@ -251,6 +262,7 @@ export default function AnalysisPage() {
   const selectedFramePart = componentRows.find(
     (row) => row.label === "Frame",
   )?.part;
+  const selectedFrameServoHardware = getFrameServoHardware(selectedFramePart);
   const hasHardwareSelection = Boolean(
     selectedFlightControllerPart || selectedReceiverPart,
   );
@@ -259,10 +271,12 @@ export default function AnalysisPage() {
     flightController: selectedFlightControllerPart,
     receiver: selectedReceiverPart,
     buildMotorCount: selectedFramePart?.motorCount ?? null,
+    buildServoCount: selectedFrameServoHardware?.quantity ?? null,
   }), [
     build?.id,
     selectedFlightControllerPart,
     selectedFramePart?.motorCount,
+    selectedFrameServoHardware?.quantity,
     selectedReceiverPart,
   ]);
   const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
@@ -591,6 +605,22 @@ export default function AnalysisPage() {
                   </dd>
                 </div>
               )}
+              {selectedFrameServoHardware && (
+                <div>
+                  <dt>Control surfaces</dt>
+                  <dd>
+                    {selectedFrameServoHardware.quantity} servos ·{" "}
+                    {selectedFrameServoHardware.weight} g · source-backed set
+                  </dd>
+                </div>
+              )}
+              {selectedFrameServoHardware
+                && hardwareReadiness.servoOutputCoverageLabel && (
+                  <div>
+                    <dt>Servo outputs</dt>
+                    <dd>{hardwareReadiness.servoOutputCoverageLabel}</dd>
+                  </div>
+                )}
               {hasHardwareSelection && navigationSafetyLabel && (
                 <div>
                   <dt>Navigation safety</dt>
