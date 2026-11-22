@@ -694,7 +694,12 @@ export default function BenchEvidenceReview({
   };
 
   return (
-    <section className="bench-file-review" aria-labelledby="bench-file-review-title">
+    <section
+      id="bench-evidence-review"
+      className="bench-file-review"
+      aria-labelledby="bench-file-review-title"
+      tabIndex={-1}
+    >
       <div className="bench-file-review-heading">
         <div>
           <FileSearch size={18} aria-hidden="true" />

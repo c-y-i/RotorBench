@@ -461,6 +461,45 @@
   border-top: 1px solid var(--line);
 }
 
+.setup-bench-evidence-jump {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: var(--control-min-height);
+  padding: 10px 12px;
+  color: var(--ink);
+  text-align: start;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.setup-bench-evidence-jump:hover {
+  border-color: var(--brand);
+}
+
+.setup-bench-evidence-jump > span {
+  display: grid;
+  gap: 2px;
+}
+
+.setup-bench-evidence-jump strong {
+  font-size: 11px;
+}
+
+.setup-bench-evidence-jump small {
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.setup-bench-evidence-jump > svg {
+  flex: 0 0 auto;
+  color: var(--brand-strong);
+}
+
 .setup-bench-tools-body > .serial-capture {
   background: transparent;
   border: 0;

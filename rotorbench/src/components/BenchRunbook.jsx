@@ -16,6 +16,8 @@ export default function BenchRunbook({
   expectedFc = null,
   expectedRadio = null,
   onAdoptPlanPatch = null,
+  open,
+  onOpenChange = null,
 }) {
   const [message, setMessage] = useState("");
   const [mutationAcknowledged, setMutationAcknowledged] = useState(false);
@@ -38,7 +40,11 @@ export default function BenchRunbook({
   };
 
   return (
-    <details className="bench-runbook">
+    <details
+      className="bench-runbook"
+      open={open}
+      onToggle={(event) => onOpenChange?.(event.currentTarget.open)}
+    >
       <summary>
         <Terminal size={19} aria-hidden="true" />
         <span>

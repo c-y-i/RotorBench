@@ -96,6 +96,8 @@ export default function SetupPage() {
   const [captureStatuses, setCaptureStatuses] = useState({});
   const [captureMessage, setCaptureMessage] = useState("");
   const [captureCommandPending, setCaptureCommandPending] = useState(false);
+  const [benchRunbookOpen, setBenchRunbookOpen] = useState(false);
+  const [focusBenchEvidence, setFocusBenchEvidence] = useState(false);
   const importInputRef = useRef(null);
   const captureRefs = useRef({});
   const captureCommandPendingRef = useRef(false);
@@ -105,6 +107,24 @@ export default function SetupPage() {
     : "rotorbench:hardware-plan:standalone";
   const fcStorageKey = `${setupStorageBase}:fc`;
   const radioStorageKey = `${setupStorageBase}:radio`;
+
+  useEffect(() => {
+    if (!benchRunbookOpen || !focusBenchEvidence) return undefined;
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById("bench-evidence-review");
+      if (!target) return;
+      const reducedMotion = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      )?.matches;
+      target.scrollIntoView({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "center",
+      });
+      target.focus({ preventScroll: true });
+      setFocusBenchEvidence(false);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [benchRunbookOpen, focusBenchEvidence]);
 
   useEffect(() => {
     const fallback = createDefaultFlightControllerConfig(
@@ -713,6 +733,20 @@ export default function SetupPage() {
           <em>Nothing sent</em>
         </summary>
         <div className="setup-bench-tools-body">
+          <button
+            type="button"
+            className="setup-bench-evidence-jump"
+            onClick={() => {
+              setBenchRunbookOpen(true);
+              setFocusBenchEvidence(true);
+            }}
+          >
+            <span>
+              <strong>Review imported evidence</strong>
+              <small>FC status, parameters, radio snapshots, and observations</small>
+            </span>
+            <ArrowRight size={17} aria-hidden="true" />
+          </button>
           <BenchRunbook
             runbook={benchRunbook}
             expectedUid={expectedBenchUid}
@@ -731,6 +765,8 @@ export default function SetupPage() {
               plan: radioPlan,
             }}
             onAdoptPlanPatch={adoptObservedPlanPatch}
+            open={benchRunbookOpen}
+            onOpenChange={setBenchRunbookOpen}
           />
           <div className="serial-capture-deck">
             <div className="serial-capture-deck-header">

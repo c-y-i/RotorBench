@@ -34,9 +34,9 @@ jest.mock("./RadioLinkSetup", () => function MockRadioLinkSetup(props = {}) {
   );
 });
 jest.mock("./BenchRunbook", () => function MockBenchRunbook(props = {}) {
-  const { runbook, expectedUid, onAdoptPlanPatch } = props;
+  const { runbook, expectedUid, onAdoptPlanPatch, open } = props;
   return (
-    <div>
+    <div data-testid="mock-bench-runbook" data-open={String(Boolean(open))}>
       Bench runbook: {runbook.stages.length} stages · plan UID: {expectedUid || "none"}
       <button
         type="button"
@@ -143,6 +143,23 @@ test("renders the hardware planning page and switches to radio setup", async () 
     "true",
   );
   expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("opens the evidence review directly from bench tools", () => {
+  renderSetup();
+
+  fireEvent.click(screen.getByText("Bench tools"));
+  expect(screen.getByTestId("mock-bench-runbook")).toHaveAttribute(
+    "data-open",
+    "false",
+  );
+  fireEvent.click(screen.getByRole("button", {
+    name: /Review imported evidence/i,
+  }));
+  expect(screen.getByTestId("mock-bench-runbook")).toHaveAttribute(
+    "data-open",
+    "true",
+  );
 });
 
 test("stages imported hardware plans until the user reviews and applies them", async () => {
