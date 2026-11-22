@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import PartPicker from "./PartPicker";
+import { getA11yViolations } from "../test/a11y";
 
 const parts = [
   {
@@ -264,6 +265,131 @@ test("flight-controller metadata distinguishes documented and custom mappings", 
 
   expect(screen.getByText(/Documented setup map/)).toBeInTheDocument();
   expect(screen.getByText(/Custom mapping required/)).toBeInTheDocument();
+});
+
+test("flight-controller firmware facets expose output budgets before selection", async () => {
+  const { container } = render(
+    <PartPicker
+      category="flight_controllers"
+      parts={[
+        {
+          id: "fc-adafruit-feather-f405",
+          name: "Adafruit Feather STM32F405 Express",
+          processor: "STM32F405",
+          imu: "External LSM6DSO or BNO055",
+          firmware: ["Aerial Kit"],
+          weight: 6.2,
+          dimensionsMm: [52, 10, 23],
+          price: 39.95,
+          sourceUrl: "https://www.adafruit.com/product/4382",
+        },
+        {
+          id: "fc-speedybee-f405-v5",
+          name: "SpeedyBee F405 V5",
+          processor: "STM32F405",
+          imu: "ICM42688P",
+          firmware: ["Betaflight"],
+          weight: 8.1,
+          dimensionsMm: [39, 4.9, 39],
+          price: 73.99,
+          sourceUrl: "https://www.speedybee.com/speedybee-f405-v5-55a-stack/",
+        },
+      ]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({
+        ok: true,
+        verified: false,
+        reason: "Board map selected.",
+      })}
+      placeholder="Choose a flight controller"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", {
+    name: /choose a flight controller/i,
+  }));
+  const facets = screen.getByRole("group", {
+    name: "Filter flight controllers by firmware",
+  });
+  fireEvent.click(within(facets).getByRole("button", {
+    name: "Aerial Kit",
+  }));
+
+  const results = screen.getByRole("listbox", {
+    name: "Flight controller options",
+  });
+  expect(within(results).getAllByRole("option")).toHaveLength(1);
+  expect(within(results).getByText("Adafruit Feather STM32F405 Express"))
+    .toBeInTheDocument();
+  expect(within(results).getByText(/2 motors \/ 2 servos/)).toBeInTheDocument();
+  expect(within(results).getByText(/Documented setup map/)).toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("receiver radio facets isolate bands and PWM-capable outputs", () => {
+  render(
+    <PartPicker
+      category="receivers"
+      parts={[
+        {
+          id: "rx-er6",
+          name: "RadioMaster ER6",
+          protocol: "CRSF",
+          frequencyBands: ["2.4 GHz"],
+          channels: 16,
+          pwmOutputs: 6,
+          weight: 14.5,
+          price: 24.99,
+          sourceUrl: "https://example.com/er6",
+        },
+        {
+          id: "rx-bandit-br3",
+          name: "RadioMaster Bandit BR3",
+          protocol: "CRSF",
+          frequencyBands: ["Sub-G 900 MHz"],
+          channels: 16,
+          weight: 5.5,
+          price: 24.99,
+          sourceUrl: "https://example.com/br3",
+        },
+        {
+          id: "rx-xr4",
+          name: "RadioMaster XR4",
+          protocol: "CRSF",
+          frequencyBands: ["2.4 GHz", "Sub-G 900 MHz"],
+          channels: 16,
+          weight: 1.7,
+          price: 34.99,
+          sourceUrl: "https://example.com/xr4",
+        },
+      ]}
+      value=""
+      onChange={jest.fn()}
+      compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
+      placeholder="Choose a receiver"
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a receiver/i }));
+  const facets = screen.getByRole("group", {
+    name: "Filter receivers by radio",
+  });
+  const results = () => screen.getByRole("listbox", {
+    name: "Receiver options",
+  });
+
+  fireEvent.click(within(facets).getByRole("button", {
+    name: "PWM outputs",
+  }));
+  expect(within(results()).getAllByRole("option")).toHaveLength(1);
+  expect(within(results()).getByText("RadioMaster ER6")).toBeInTheDocument();
+
+  fireEvent.click(within(facets).getByRole("button", {
+    name: "Dual band",
+  }));
+  expect(within(results()).getAllByRole("option")).toHaveLength(1);
+  expect(within(results()).getByText("RadioMaster XR4")).toBeInTheDocument();
 });
 
 test("humanizes estimated field names for catalog review", () => {

@@ -30,6 +30,65 @@ const categoryDetails = {
   receivers: { label: "Receiver", Icon: Radio },
 };
 
+const CATEGORY_FACETS = {
+  flight_controllers: {
+    label: "Firmware",
+    allLabel: "All firmware",
+    options: [
+      {
+        value: "aerialkit",
+        label: "Aerial Kit",
+        match: (part) => part.firmware?.some((name) => /aerial kit/i.test(name)),
+      },
+      {
+        value: "betaflight",
+        label: "Betaflight",
+        match: (part) => part.firmware?.some((name) => /betaflight/i.test(name)),
+      },
+      {
+        value: "inav",
+        label: "INAV",
+        match: (part) => part.firmware?.some((name) => /inav/i.test(name)),
+      },
+      {
+        value: "ardupilot",
+        label: "ArduPilot",
+        match: (part) => part.firmware?.some((name) => /ardupilot/i.test(name)),
+      },
+    ],
+  },
+  receivers: {
+    label: "Radio",
+    allLabel: "All radio",
+    options: [
+      {
+        value: "2.4ghz",
+        label: "2.4 GHz",
+        match: (part) => part.frequencyBands?.includes("2.4 GHz"),
+      },
+      {
+        value: "sub-g",
+        label: "Sub-G 900 MHz",
+        match: (part) => part.frequencyBands?.includes("Sub-G 900 MHz"),
+      },
+      {
+        value: "dual-band",
+        label: "Dual band",
+        match: (part) => (part.frequencyBands?.length || 0) > 1,
+      },
+      {
+        value: "pwm",
+        label: "PWM outputs",
+        match: (part) => Number(part.pwmOutputs) > 0,
+      },
+    ],
+  },
+};
+
+function countLabel(count, singular, plural = `${singular}s`) {
+  return `${Number(count) || 0} ${Number(count) === 1 ? singular : plural}`;
+}
+
 function footprintLabel(part) {
   if (
     Array.isArray(part.planformMm)
@@ -98,16 +157,21 @@ function getMeta(category, part) {
               ? "Cable, connector unspecified"
               : null,
       ].filter(Boolean);
-    case "flight_controllers":
+    case "flight_controllers": {
+      const boardProfile = getCatalogBoardProfile(part);
       return [
         part.processor,
         part.imu,
         footprintLabel(part),
         `${part.weight} g`,
-        getCatalogBoardProfile(part)
+        boardProfile?.outputs
+          ? `${countLabel(boardProfile.outputs.motors, "motor")} / ${countLabel(boardProfile.outputs.servos, "servo")}`
+          : null,
+        boardProfile
           ? "Documented setup map"
           : "Custom mapping required",
-      ];
+      ].filter(Boolean);
+    }
     case "receivers":
       return [
         part.protocol,
@@ -152,6 +216,7 @@ export default function PartPicker({
   const optionRefs = useRef([]);
   const [query, setQuery] = useState("");
   const [resultFilter, setResultFilter] = useState("all");
+  const [facetFilter, setFacetFilter] = useState("all");
   const [sortMode, setSortMode] = useState("best");
   const [showSources, setShowSources] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -162,6 +227,10 @@ export default function PartPicker({
   });
   const selected = parts.find((part) => part.id === value) || null;
   const { label, Icon } = categoryDetails[category];
+  const categoryFacet = CATEGORY_FACETS[category] || null;
+  const activeFacet = categoryFacet?.options.find(
+    (option) => option.value === facetFilter,
+  );
 
   const rankedParts = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -175,6 +244,7 @@ export default function PartPicker({
         return { part, ...result, recent: recentIds.includes(part.id) };
       })
       .filter(({ part }) => !term || searchText(part, category).includes(term))
+      .filter(({ part }) => !activeFacet || activeFacet.match(part))
       .filter(({ ok, part, verified }) => {
         if (resultFilter === "compatible") return ok;
         if (resultFilter === "verified") return ok && verified;
@@ -217,7 +287,16 @@ export default function PartPicker({
         }
         return a.part.name.localeCompare(b.part.name);
       });
-  }, [category, compatibility, parts, query, recentIds, resultFilter, sortMode]);
+  }, [
+    activeFacet,
+    category,
+    compatibility,
+    parts,
+    query,
+    recentIds,
+    resultFilter,
+    sortMode,
+  ]);
   const sourceCount = rankedParts.filter(({ part }) => (
     part.sourceUrl || part.priceSourceUrl || part.connectorSourceUrl
   )).length;
@@ -225,6 +304,7 @@ export default function PartPicker({
   const openPicker = () => {
     setQuery("");
     setResultFilter("all");
+    setFacetFilter("all");
     setSortMode("best");
     setShowSources(false);
     setActiveIndex(0);
@@ -234,13 +314,14 @@ export default function PartPicker({
   const resetSearchAndFilters = () => {
     setQuery("");
     setResultFilter("all");
+    setFacetFilter("all");
     setSortMode("best");
     setActiveIndex(0);
   };
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [query, resultFilter, sortMode]);
+  }, [query, resultFilter, facetFilter, sortMode]);
 
   const closePicker = () => {
     setShowSources(false);
@@ -406,6 +487,35 @@ export default function PartPicker({
             </label>
             <span>{rankedParts.length} options</span>
           </div>
+
+          {categoryFacet && (
+            <div
+              className="part-picker-facets"
+              role="group"
+              aria-label={`Filter ${label.toLowerCase()}s by ${categoryFacet.label.toLowerCase()}`}
+            >
+              <span className="part-picker-facet-label">{categoryFacet.label}</span>
+              <button
+                type="button"
+                className={facetFilter === "all" ? "is-active" : ""}
+                aria-pressed={facetFilter === "all"}
+                onClick={() => setFacetFilter("all")}
+              >
+                {categoryFacet.allLabel}
+              </button>
+              {categoryFacet.options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={facetFilter === option.value ? "is-active" : ""}
+                  aria-pressed={facetFilter === option.value}
+                  onClick={() => setFacetFilter(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {showSources ? (
             <div
