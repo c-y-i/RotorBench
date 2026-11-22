@@ -14,6 +14,7 @@ import {
   parseAerialKitLogSource,
   parseAerialKitLogStreamFrame,
   parseAerialKitLogStreamReply,
+  parseAerialKitMissionStatus,
   parseAerialKitMotorTelemetry,
   parseAerialKitOutputInfo,
   parseAerialKitParamGet,
@@ -374,6 +375,44 @@ test("parses the PERF window in its exact wire units", () => {
     .toThrow(/59-byte window/i);
   expect(() => parseAerialKitPerf(Uint8Array.of(0x7f)))
     .toThrow(/predates PERF/i);
+});
+
+test("parses read-only mission status without flattening requested and active", () => {
+  const bytes = new Uint8Array(17);
+  const view = new DataView(bytes.buffer);
+  bytes.set([0, 0, 1, 1, 4, 2, 7], 0);
+  view.setUint16(7, 2, true);
+  view.setUint16(9, 3, true);
+  view.setUint16(11, 1, true);
+  view.setInt32(13, 120000, true);
+  expect(parseAerialKitMissionStatus(bytes)).toEqual({
+    status: "ok",
+    op: 0,
+    verb: "status",
+    active: true,
+    requested: true,
+    count: 4,
+    countCapped: false,
+    index: 2,
+    channel: 7,
+    reached: 2,
+    started: 3,
+    cancelled: 1,
+    holdAltMm: 120000,
+  });
+  expect(parseAerialKitMissionStatus(Uint8Array.from([
+    2, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  ]))).toMatchObject({
+    status: "no-navigator",
+    active: false,
+    requested: false,
+    index: null,
+    channel: null,
+  });
+  expect(() => parseAerialKitMissionStatus(Uint8Array.of(0x7f)))
+    .toThrow(/predates MISSION/i);
+  expect(() => parseAerialKitMissionStatus(new Uint8Array(16)))
+    .toThrow(/17-byte state/i);
 });
 
 test("parses motor telemetry without inventing stopped or measured fields", () => {
@@ -992,6 +1031,22 @@ test("creates a sanitized live-status evidence boundary", () => {
       lastObservedAtMs: 1250,
       latest: null,
     },
+    mission: {
+      status: "ok",
+      op: 0,
+      verb: "status",
+      active: true,
+      requested: true,
+      count: 4,
+      countCapped: false,
+      index: 2,
+      channel: 7,
+      reached: 2,
+      started: 3,
+      cancelled: 1,
+      holdAltMm: 120000,
+      observedAtMs: 1250,
+    },
     logInventory: [{
       status: "available",
       requestedSource: 0,
@@ -1065,6 +1120,7 @@ test("creates a sanitized live-status evidence boundary", () => {
         "LOG_SOURCE",
         "LOG_STREAM",
         "TELEMETRY",
+        "MISSION",
       ],
     },
     status: {
@@ -1113,6 +1169,13 @@ test("creates a sanitized live-status evidence boundary", () => {
       startedAt: "1970-01-01T00:00:01.000Z",
       stoppedAt: "1970-01-01T00:00:01.500Z",
       lastObservedAt: "1970-01-01T00:00:01.250Z",
+    },
+    mission: {
+      status: "ok",
+      active: true,
+      requested: true,
+      holdAltMm: 120000,
+      observedAt: "1970-01-01T00:00:01.250Z",
     },
     logInventory: [{
       requestedSource: 0,

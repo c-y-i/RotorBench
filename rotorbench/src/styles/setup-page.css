@@ -2799,6 +2799,7 @@
 .aerial-kit-motors,
 .aerial-kit-logs,
 .aerial-kit-telemetry-stream,
+.aerial-kit-mission,
 .aerial-kit-parameters,
 .aerial-kit-hardware {
   display: grid;
@@ -3221,6 +3222,48 @@
 
 .aerial-kit-telemetry-health dd,
 .aerial-kit-telemetry-latest dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-mission > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.aerial-kit-mission-state {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.aerial-kit-mission-state > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-mission-state > div:last-child {
+  grid-column: 1 / -1;
+}
+
+.aerial-kit-mission-state dt {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+
+.aerial-kit-mission-state dd {
   overflow-wrap: anywhere;
   margin: 0;
   color: var(--ink);
@@ -5075,6 +5118,14 @@
   .aerial-kit-telemetry-health,
   .aerial-kit-telemetry-latest {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aerial-kit-mission-state {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aerial-kit-mission-state > div:last-child {
+    grid-column: 1 / -1;
   }
 
   .aerial-kit-log-frames dl {

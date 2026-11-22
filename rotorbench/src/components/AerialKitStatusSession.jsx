@@ -23,6 +23,7 @@ import {
   AERIAL_KIT_FEATURE_SENSOR_INFO,
   AERIAL_KIT_FEATURE_OUTPUT_INFO,
   AERIAL_KIT_FEATURE_PREFLIGHT,
+  AERIAL_KIT_FEATURE_MISSION,
   AERIAL_KIT_FEATURE_PERF,
   AERIAL_KIT_FEATURE_MOTOR_TELEMETRY,
   AERIAL_KIT_FEATURE_LOG_STREAM,
@@ -42,6 +43,7 @@ import {
   parseAerialKitLogSource,
   parseAerialKitLogStreamReply,
   parseAerialKitMotorTelemetry,
+  parseAerialKitMissionStatus,
   parseAerialKitPerf,
   parseAerialKitPreflightPage,
   parseAerialKitSensorInfo,
@@ -190,6 +192,9 @@ export default function AerialKitStatusSession({
   const [telemetryState, setTelemetryState] = useState("idle");
   const [telemetryError, setTelemetryError] = useState("");
   const [telemetryStream, setTelemetryStream] = useState(null);
+  const [mission, setMission] = useState(null);
+  const [missionState, setMissionState] = useState("idle");
+  const [missionError, setMissionError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -275,6 +280,9 @@ export default function AerialKitStatusSession({
     setTelemetryError("");
     setTelemetryStream(null);
     telemetryStreamingRef.current = false;
+    setMission(null);
+    setMissionState("idle");
+    setMissionError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -542,6 +550,54 @@ export default function AerialKitStatusSession({
         ...current,
         stoppedAtMs: Date.now(),
       }));
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
+  const readMissionStatus = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_MISSION) === 0
+    ) {
+      setMissionError(
+        "The HELLO capability word does not claim MISSION, so RotorBench did not ask for mission status.",
+      );
+      setMissionState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setMissionError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setMissionError("");
+    setMissionState("reading");
+    try {
+      const status = parseAerialKitMissionStatus(
+        await session.request(
+          AERIAL_KIT_COMMANDS.mission,
+          Uint8Array.of(0),
+        ),
+      );
+      if (!mountedRef.current) return;
+      setMission({
+        ...status,
+        observedAtMs: Date.now(),
+      });
+      setMissionState("ready");
+      setMessage(
+        "Read mission status only. RotorBench did not request start, stop, home set, home clear, or a waypoint upload.",
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setMissionState("error");
+      setMissionError(readError.message);
+    } finally {
       pollBusyRef.current = false;
       if (activeRef.current) schedulePoll(session, hello);
     }
@@ -1434,6 +1490,7 @@ export default function AerialKitStatusSession({
       logInventory,
       logSample,
       telemetryStream,
+      mission,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -1537,6 +1594,8 @@ export default function AerialKitStatusSession({
     || (hello.features & AERIAL_KIT_FEATURE_MOTOR_TELEMETRY) !== 0;
   const logClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_LOG_STREAM) !== 0;
+  const missionClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_MISSION) !== 0;
   const busy = ["selecting", "connecting", "stopping"].includes(sessionState);
   const active = ["connecting", "monitoring"].includes(sessionState);
 
@@ -1945,6 +2004,115 @@ export default function AerialKitStatusSession({
                       </small>
                     </span>
                   </div>
+                )}
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-mission"
+                aria-label="Aerial Kit mission status"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Mission status</strong>
+                  <span>
+                    {missionState === "reading"
+                      ? "Reading"
+                      : missionState === "ready"
+                        ? mission.status
+                        : missionState === "error"
+                          ? "Read stopped"
+                          : !missionClaimed
+                            ? "Not claimed"
+                            : "Not read"}
+                  </span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || missionState === "reading"
+                      || !missionClaimed
+                    }
+                    onClick={readMissionStatus}
+                  >
+                    <Search size={15} aria-hidden="true" />
+                    Read mission status
+                  </button>
+                  <span>
+                    {mission?.observedAtMs
+                      ? `Observed ${ageLabel(mission.observedAtMs, clockNow)}`
+                      : "Status verb only"}
+                  </span>
+                </div>
+                <p>
+                  This panel reads the board&apos;s mission state. It has no start,
+                  stop, home set, home clear, or waypoint upload controls.
+                </p>
+                {missionError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Mission status unavailable</strong>
+                      <small>{missionError}</small>
+                    </span>
+                  </div>
+                )}
+                {mission?.status !== "ok" && mission && (
+                  <div className="aerial-kit-preflight-empty" role="note">
+                    <Activity size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Mission state not available</strong>
+                      <small>
+                        The board answered {mission.status}. RotorBench does not
+                        reinterpret that refusal as an empty mission.
+                      </small>
+                    </span>
+                  </div>
+                )}
+                {mission?.status === "ok" && (
+                  <dl className="aerial-kit-mission-state">
+                    <div>
+                      <dt>Navigator</dt>
+                      <dd>{mission.active ? "Mission active" : "No mission active"}</dd>
+                    </div>
+                    <div>
+                      <dt>Mission requested</dt>
+                      <dd>{mission.requested ? "Yes" : "No"}</dd>
+                    </div>
+                    <div>
+                      <dt>Waypoint list</dt>
+                      <dd>
+                        {mission.count}
+                        {mission.countCapped ? "+" : ""} waypoint
+                        {mission.count === 1 ? "" : "s"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Current waypoint</dt>
+                      <dd>{mission.index ?? "None"}</dd>
+                    </div>
+                    <div>
+                      <dt>Mission switch</dt>
+                      <dd>
+                        {mission.channel == null ? "Not configured" : `CH ${mission.channel}`}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Hold altitude</dt>
+                      <dd>
+                        {mission.active ? `${mission.holdAltMm} mm` : "No mission running"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Reached / started / cancelled</dt>
+                      <dd>
+                        {mission.reached} / {mission.started} / {mission.cancelled}
+                      </dd>
+                    </div>
+                  </dl>
                 )}
               </section>
             )}

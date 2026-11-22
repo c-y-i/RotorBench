@@ -426,6 +426,22 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
           motors: [10, 20, 30, 40],
         },
       },
+      mission: {
+        status: "ok",
+        op: 0,
+        verb: "status",
+        active: true,
+        requested: true,
+        count: 4,
+        countCapped: false,
+        index: 2,
+        channel: 7,
+        reached: 2,
+        started: 3,
+        cancelled: 1,
+        holdAltMm: 120000,
+        observedAt: new Date().toISOString(),
+      },
       logInventory: [{
         status: "available",
         requestedSource: 0,
@@ -520,6 +536,12 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   })).toBeInTheDocument();
   expect(screen.getByText("20 → 20 Hz")).toBeInTheDocument();
   expect(screen.getByText("13.5 / -2.5 / 90.0°")).toBeInTheDocument();
+  expect(screen.getByRole("region", {
+    name: "Imported Aerial Kit mission status",
+  })).toBeInTheDocument();
+  expect(screen.getByText("Mission active")).toBeInTheDocument();
+  expect(screen.getByText("CH 7")).toBeInTheDocument();
+  expect(screen.getByText("120000 mm")).toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();

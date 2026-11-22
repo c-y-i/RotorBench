@@ -499,6 +499,34 @@ function normalizedTelemetryStream(value) {
   };
 }
 
+function normalizedMissionStatus(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const allowedStatuses = ["ok", "no-verb", "no-navigator", "no-waypoints", "no-fix"];
+  if (!allowedStatuses.includes(value.status)) {
+    throw new Error("The Aerial Kit mission status is not one the protocol defines.");
+  }
+  const op = sensorNumber(value.op);
+  if (!Number.isInteger(op) || op < 0 || op > 0xff) {
+    throw new Error("The Aerial Kit mission status has an invalid operation byte.");
+  }
+  return {
+    status: value.status,
+    op,
+    verb: sensorString(value.verb),
+    active: value.active === true,
+    requested: value.requested === true,
+    count: sensorNumber(value.count),
+    countCapped: value.countCapped === true,
+    index: sensorNumber(value.index),
+    channel: sensorNumber(value.channel),
+    reached: sensorNumber(value.reached),
+    started: sensorNumber(value.started),
+    cancelled: sensorNumber(value.cancelled),
+    holdAltMm: sensorNumber(value.holdAltMm),
+    observedAtMs: timestampMilliseconds(value.observedAt),
+  };
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -810,6 +838,7 @@ export function parseAerialKitLiveStatusJson(payload) {
   const logInventory = normalizedLogInventory(payload.logInventory);
   const logSample = normalizedLogSample(payload.logSample);
   const telemetryStream = normalizedTelemetryStream(payload.telemetryStream);
+  const mission = normalizedMissionStatus(payload.mission);
   return {
     kind: "fc-live-status",
     identity,
@@ -831,6 +860,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     logInventory,
     logSample,
     telemetryStream,
+    mission,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

@@ -18,6 +18,7 @@ const HELLO_PAYLOAD_TWO_PARAMETERS = "0161657269616c6b69742d663430350002003000f1
 const HELLO_PAYLOAD_WITH_PREFLIGHT = "0161657269616c6b69742d663430350002003000f1030000920638cf";
 const HELLO_PAYLOAD_WITH_PERF = "0161657269616c6b69742d663430350002003000f1130000920638cf";
 const HELLO_PAYLOAD_WITH_MOTORS = "0161657269616c6b69742d663430350002003000f1330000920638cf";
+const HELLO_PAYLOAD_WITH_MISSION = "0161657269616c6b69742d663430350002003000f13b0000920638cf";
 const STATUS_REPLY = "aa550185160101030b7d00d8ff84038768111f3f0ef90228283c3c8598";
 
 function setSerial(value) {
@@ -89,6 +90,17 @@ function telemetryFrame(uptimeMs, {
   return buildAerialKitFrame(0x08, payload);
 }
 
+function missionReply(status = 0) {
+  const payload = new Uint8Array(17);
+  const view = new DataView(payload.buffer);
+  payload.set([status, 0, 1, 1, 4, 2, 7], 0);
+  view.setUint16(7, 2, true);
+  view.setUint16(9, 3, true);
+  view.setUint16(11, 1, true);
+  view.setInt32(13, 120000, true);
+  return buildAerialKitFrame(0x94, payload);
+}
+
 function logRecordBody(bytes, timeMs) {
   const payload = new Uint8Array(bytes);
   const view = new DataView(payload.buffer);
@@ -120,6 +132,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   motorStatus = 0,
   telemetryAgreedHz = 20,
   telemetryPushCount = 2,
+  missionStatus = 0,
 } = {}) {
   const waiters = [];
   const queued = [];
@@ -319,6 +332,9 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
             }));
           }
         }
+      }
+      else if (command === 0x14) {
+        deliver(missionReply(missionStatus));
       }
       else if (command === 0x09) {
         const source = frame[5];
@@ -812,13 +828,73 @@ test("marks a silent telemetry stream stale instead of keeping it live", async (
     name: "Start telemetry",
   }));
   expect(await screen.findByText("20 / 20 Hz")).toBeInTheDocument();
-  expect(await screen.findByText(
-    "Telemetry stream is stale",
-    {},
-    { timeout: 2500 },
-  )).toBeInTheDocument();
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1600));
+  });
+  expect(screen.getByText("Telemetry stream is stale")).toBeInTheDocument();
   expect(screen.getByText(/last observation remains historical/i))
     .toBeInTheDocument();
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads mission status without exposing mission-changing verbs", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_WITH_MISSION);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read mission status",
+  }));
+
+  expect(await screen.findByText("Mission active")).toBeInTheDocument();
+  expect(screen.getByText("Waypoint list")).toBeInTheDocument();
+  expect(screen.getByText("4 waypoints")).toBeInTheDocument();
+  expect(screen.getByText("CH 7")).toBeInTheDocument();
+  expect(screen.getByText("120000 mm")).toBeInTheDocument();
+  expect(screen.getByText("2 / 3 / 1")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /start mission/i }))
+    .not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /stop mission/i }))
+    .not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /home set/i }))
+    .not.toBeInTheDocument();
+
+  const missionRequests = writer.write.mock.calls
+    .map(([frame]) => frame)
+    .filter((frame) => frame[3] === 0x14)
+    .map((frame) => frame[5]);
+  expect(missionRequests).toEqual([0]);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("keeps a no-navigator mission refusal distinct from an empty mission", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_WITH_MISSION, { missionStatus: 2 });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read mission status",
+  }));
+
+  expect(await screen.findByText("Mission state not available")).toBeInTheDocument();
+  expect(screen.getByText(/answered no-navigator/)).toBeInTheDocument();
+  expect(screen.queryByText("Waypoint list")).not.toBeInTheDocument();
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

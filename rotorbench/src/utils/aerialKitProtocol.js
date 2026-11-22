@@ -15,6 +15,7 @@ export const AERIAL_KIT_FEATURE_SENSOR_INFO = 1 << 5;
 export const AERIAL_KIT_FEATURE_OUTPUT_INFO = 1 << 6;
 export const AERIAL_KIT_FEATURE_LOG_STREAM = 1 << 8;
 export const AERIAL_KIT_FEATURE_PREFLIGHT = 1 << 9;
+export const AERIAL_KIT_FEATURE_MISSION = 1 << 11;
 export const AERIAL_KIT_FEATURE_PERF = 1 << 12;
 export const AERIAL_KIT_FEATURE_MOTOR_TELEMETRY = 1 << 13;
 export const AERIAL_KIT_PARAMETER_READ_LIMIT = 255;
@@ -37,6 +38,7 @@ export const AERIAL_KIT_COMMANDS = Object.freeze({
   outputInfo: 0x0f,
   logStream: 0x11,
   preflight: 0x12,
+  mission: 0x14,
   perf: 0x15,
   motorTelemetry: 0x16,
   logSource: 0x09,
@@ -101,6 +103,14 @@ const LOG_STREAM_STATUS_NAMES = Object.freeze({
   0: "record",
   1: "hole",
   2: "done",
+});
+
+const MISSION_STATUS_NAMES = Object.freeze({
+  0: "ok",
+  1: "no-verb",
+  2: "no-navigator",
+  3: "no-waypoints",
+  4: "no-fix",
 });
 
 export const AERIAL_KIT_PARAMETER_TYPES = Object.freeze({
@@ -780,6 +790,51 @@ export function parseAerialKitPerf(payload) {
   return window;
 }
 
+export function parseAerialKitMissionStatus(payload) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) throw new Error("Aerial Kit MISSION payload is empty.");
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates MISSION and answered with the unknown-command status.",
+    );
+  }
+  if (!Object.hasOwn(MISSION_STATUS_NAMES, bytes[0])) {
+    throw new Error(`MISSION returned status ${bytes[0]}.`);
+  }
+  if (bytes.length !== 17) {
+    throw new Error(`MISSION must carry a 17-byte state and this reply has ${bytes.length}.`);
+  }
+  const verbNames = Object.freeze({
+    0: "status",
+    1: "start",
+    2: "stop",
+    3: "home-set",
+    4: "home-clear",
+  });
+  const op = bytes[1];
+  const index = bytes[5];
+  const channel = bytes[6];
+  return {
+    status: MISSION_STATUS_NAMES[bytes[0]],
+    op,
+    verb: verbNames[op] || null,
+    active: bytes[2] !== 0,
+    requested: bytes[3] !== 0,
+    count: bytes[4],
+    countCapped: bytes[4] === 255,
+    index: index === 255 ? null : index,
+    channel: channel === 0 ? null : channel,
+    reached: u16le(bytes, 7, "MISSION reached"),
+    started: u16le(bytes, 9, "MISSION started"),
+    cancelled: u16le(bytes, 11, "MISSION cancelled"),
+    holdAltMm: new DataView(
+      bytes.buffer,
+      bytes.byteOffset,
+      bytes.byteLength,
+    ).getInt32(13, true),
+  };
+}
+
 export function parseAerialKitMotorTelemetry(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) {
@@ -1421,6 +1476,7 @@ export function createAerialKitStatusEvidence({
   logInventory = null,
   logSample = null,
   telemetryStream = null,
+  mission = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -1465,6 +1521,7 @@ export function createAerialKitStatusEvidence({
         ...(logInventory ? ["LOG_SOURCE"] : []),
         ...(logSample ? ["LOG_STREAM"] : []),
         ...(telemetryStream ? ["TELEMETRY"] : []),
+        ...(mission ? ["MISSION"] : []),
       ],
     },
     hello,
@@ -1538,6 +1595,14 @@ export function createAerialKitStatusEvidence({
             : null,
           lastObservedAt: Number.isFinite(telemetryStream.lastObservedAtMs)
             ? new Date(telemetryStream.lastObservedAtMs).toISOString()
+            : null,
+        }
+      : null,
+    mission: mission
+      ? {
+          ...mission,
+          observedAt: Number.isFinite(mission.observedAtMs)
+            ? new Date(mission.observedAtMs).toISOString()
             : null,
         }
       : null,

@@ -1467,6 +1467,84 @@ export default function BenchEvidenceReview({
             </section>
           )}
 
+          {evidence.fcEvidence?.liveStatus?.mission && (
+            <section
+              className="aerial-kit-mission"
+              aria-label="Imported Aerial Kit mission status"
+            >
+              <div className="aerial-kit-section-heading">
+                <strong>Imported mission status</strong>
+                <span>{evidence.fcEvidence.liveStatus.mission.status}</span>
+              </div>
+              {evidence.fcEvidence.liveStatus.mission.status === "ok" ? (
+                <dl className="aerial-kit-mission-state">
+                  <div>
+                    <dt>Navigator</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.mission.active
+                        ? "Mission active"
+                        : "No mission active"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Requested</dt>
+                    <dd>{evidence.fcEvidence.liveStatus.mission.requested ? "Yes" : "No"}</dd>
+                  </div>
+                  <div>
+                    <dt>Waypoints</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.mission.count}
+                      {evidence.fcEvidence.liveStatus.mission.countCapped ? "+" : ""}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Current waypoint</dt>
+                    <dd>{evidence.fcEvidence.liveStatus.mission.index ?? "None"}</dd>
+                  </div>
+                  <div>
+                    <dt>Mission switch</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.mission.channel == null
+                        ? "Not configured"
+                        : `CH ${evidence.fcEvidence.liveStatus.mission.channel}`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Hold altitude</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.mission.active
+                        ? `${evidence.fcEvidence.liveStatus.mission.holdAltMm} mm`
+                        : "No mission running"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Reached / started / cancelled</dt>
+                    <dd>
+                      {evidence.fcEvidence.liveStatus.mission.reached} /{" "}
+                      {evidence.fcEvidence.liveStatus.mission.started} /{" "}
+                      {evidence.fcEvidence.liveStatus.mission.cancelled}
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <div className="aerial-kit-preflight-empty" role="note">
+                  <Activity size={16} aria-hidden="true" />
+                  <span>
+                    <strong>Mission state not available</strong>
+                    <small>
+                      The imported board reply was {evidence.fcEvidence.liveStatus.mission.status};
+                      RotorBench does not reinterpret it as an empty mission.
+                    </small>
+                  </span>
+                </div>
+              )}
+              <p>
+                This is an imported status observation. It does not start, stop,
+                clear, or upload a mission.
+              </p>
+            </section>
+          )}
+
           {evidence.fcEvidence?.liveStatus?.motorTelemetry && (
             <section
               className="aerial-kit-motors"
