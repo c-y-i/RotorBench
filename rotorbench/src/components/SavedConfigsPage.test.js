@@ -92,6 +92,35 @@ test("offline builds can be renamed and duplicated with their saved plan and evi
   });
 });
 
+test("shows imported plan-comparison metadata as portable evidence", async () => {
+  localStorage.setItem("offlineBuilds", JSON.stringify([{
+    ...offlineBuild,
+    importedEvidence: {
+      label: "FC plan comparison matched",
+      planComparison: {
+        targetName: "SpeedyBee F405 V5",
+        currentPlanMatches: true,
+        planFingerprint: "fnv1a-12345678",
+        compared: 38,
+        matched: 1,
+        differing: 1,
+        notObserved: 36,
+        hardwareVerified: false,
+      },
+    },
+  }]));
+  const { container } = render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText("Imported plan · 1 difference"))
+    .toBeInTheDocument();
+  expect(screen.queryByText("Hardware verified")).not.toBeInTheDocument();
+  await expect(getA11yViolations(container)).resolves.toEqual([]);
+});
+
 test("compares the current working build with one saved build", async () => {
   localStorage.setItem("currentBuild", JSON.stringify({
     id: "working-build",

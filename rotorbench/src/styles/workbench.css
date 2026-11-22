@@ -2623,6 +2623,100 @@
   border-color: var(--ink);
 }
 
+.build-portable-evidence {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 9px;
+  margin-top: 8px;
+  padding: 10px 11px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.build-portable-evidence.is-current-plan {
+  background: #e8f5ee;
+  border-color: #b8ddc8;
+}
+
+.build-portable-evidence.is-review {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+}
+
+.build-portable-evidence.is-different-plan {
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--line));
+}
+
+.build-portable-evidence > svg {
+  margin-top: 2px;
+  color: var(--brand-strong);
+}
+
+.build-portable-evidence > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.build-portable-evidence strong {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.build-portable-evidence strong span,
+.build-portable-evidence em {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.build-portable-evidence strong span {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+}
+
+.build-portable-evidence > div > span,
+.build-portable-evidence small {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.build-portable-evidence small {
+  color: var(--ink-soft);
+}
+
+.build-portable-evidence em {
+  color: var(--ink-soft);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  white-space: nowrap;
+}
+
+.build-portable-evidence.is-current-plan em {
+  color: var(--ok);
+}
+
+.build-portable-evidence.is-review em {
+  color: var(--warn);
+}
+
+.build-portable-evidence.is-different-plan em {
+  color: var(--danger);
+}
+
 @media (max-width: 640px) {
   .build-setup-cta {
     align-items: stretch;
@@ -2631,6 +2725,15 @@
 
   .build-setup-cta button {
     justify-content: center;
+  }
+
+  .build-portable-evidence {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .build-portable-evidence em {
+    grid-column: 2;
+    justify-self: start;
   }
 }
 

@@ -53,6 +53,7 @@ test("comparison rows include all seven component categories", () => {
       "navigation-safety",
       "mission-controls",
       "bench-evidence",
+      "portable-plan-comparison",
       "frame-size",
       "motor-kv",
       "motor-size",
@@ -71,6 +72,30 @@ test("comparison rows include all seven component categories", () => {
       "total-price",
     ]),
   );
+});
+
+test("saved-build summaries expose imported plan-comparison metadata", () => {
+  const summary = summarizeBuild({
+    ...build,
+    importedEvidence: {
+      planComparison: {
+        targetName: "SpeedyBee F405 V5",
+        currentPlanMatches: true,
+        planFingerprint: "fnv1a-12345678",
+        compared: 38,
+        matched: 1,
+        differing: 1,
+        notObserved: 36,
+        hardwareVerified: false,
+      },
+    },
+  });
+
+  expect(summary).toMatchObject({
+    portablePlanComparisonConfigured: true,
+    portablePlanComparisonStatus: "review",
+    portablePlanComparisonLabel: "Imported plan · 1 difference",
+  });
 });
 
 test("comparison rows compare planning weight with a published takeoff envelope", () => {

@@ -54,6 +54,7 @@ import { getRadioReceiverBandCompatibility, getRadioTarget } from "../data/radio
 import {
   readBenchEvidenceAttachment,
   readCurrentBenchEvidenceScope,
+  sanitizePlanComparisonMetadata,
   summarizeBenchEvidenceAttachment,
 } from "../utils/benchEvidenceAttachment";
 import {
@@ -190,6 +191,26 @@ export default function BuildPage() {
   const storedDraft = sanitizedDraftIds &&
     Object.values(sanitizedDraftIds).some(Boolean)
     ? { ...storedDraftValue, componentIds: sanitizedDraftIds }
+    : null;
+  const portableImportedEvidence = !startNewDraft
+    ? initialBuild?.importedEvidence
+      || currentBuild?.importedEvidence
+      || storedDraft?.importedEvidence
+      || null
+    : null;
+  const portablePlanComparison = sanitizePlanComparisonMetadata(
+    portableImportedEvidence?.planComparison,
+  );
+  const safePortableImportedEvidence = portableImportedEvidence
+    && portablePlanComparison
+    ? {
+        configured: true,
+        status: String(portableImportedEvidence.status || "plan-comparison"),
+        label: String(portableImportedEvidence.label || "Imported plan comparison"),
+        scopeStatus: String(portableImportedEvidence.scopeStatus || "unchecked"),
+        identityStatus: String(portableImportedEvidence.identityStatus || "not-recorded"),
+        planComparison: portablePlanComparison,
+      }
     : null;
   const initialComponentIds =
     initialBuild?.componentIds ||
@@ -356,6 +377,7 @@ export default function BuildPage() {
       },
       totalWeight,
       geometryOverrides,
+      importedEvidence: safePortableImportedEvidence,
       createdAt: currentBuild?.createdAt || now,
       updatedAt: now,
     };
@@ -406,6 +428,7 @@ export default function BuildPage() {
       createdAt: currentBuild?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       geometryOverrides,
+      importedEvidence: safePortableImportedEvidence,
     }
   );
 
@@ -2371,6 +2394,43 @@ export default function BuildPage() {
               {hardwareReadiness.configured ? "Review setup" : "Open setup"}
             </button>
           </div>
+          {portablePlanComparison && (
+            <section
+              className={`build-portable-evidence ${
+                portablePlanComparison.currentPlanMatches === false
+                  ? "is-different-plan"
+                  : portablePlanComparison.differing
+                    ? "is-review"
+                    : "is-current-plan"
+              }`}
+              aria-label="Imported plan comparison metadata"
+            >
+              <FileCheck2 size={17} aria-hidden="true" />
+              <div>
+                <strong>
+                  Imported plan comparison
+                  <span>{safePortableImportedEvidence?.label || "Portable evidence"}</span>
+                </strong>
+                <span>
+                  {portablePlanComparison.targetName || "Flight-controller target not named"} ·{" "}
+                  {portablePlanComparison.matched} match /{" "}
+                  {portablePlanComparison.differing} differ /{" "}
+                  {portablePlanComparison.notObserved} not observed
+                </span>
+                <small>
+                  Imported handoff metadata only. Raw parameter values were excluded;
+                  this is not attached evidence, a write, or hardware verification.
+                </small>
+              </div>
+              <em>
+                {portablePlanComparison.currentPlanMatches === false
+                  ? "Different plan"
+                  : portablePlanComparison.currentPlanMatches
+                    ? "Plan matched"
+                    : "Plan not compared"}
+              </em>
+            </section>
+          )}
         </section>
       </div>
 

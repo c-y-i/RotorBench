@@ -21,6 +21,7 @@ import {
 import {
   readBenchEvidenceAttachment,
   readCurrentBenchEvidenceScope,
+  sanitizePlanComparisonMetadata,
   summarizeBenchEvidenceAttachment,
 } from "./benchEvidenceAttachment";
 
@@ -118,6 +119,9 @@ export function summarizeBuild(build) {
     readBenchEvidenceAttachment(build?.id),
     readCurrentBenchEvidenceScope(build),
   );
+  const portablePlanComparison = sanitizePlanComparisonMetadata(
+    build?.importedEvidence?.planComparison,
+  );
   const thrustDataStatus = !byCategory.propellers
     ? "not-selected"
     : (byCategory.propellers.thrustData?.length || 0) > 0
@@ -197,6 +201,21 @@ export function summarizeBuild(build) {
     benchEvidenceStatus: benchEvidence.status,
     benchEvidenceLabel: benchEvidence.label,
     benchEvidenceConfigured: benchEvidence.configured,
+    portablePlanComparisonConfigured: Boolean(portablePlanComparison),
+    portablePlanComparisonStatus: !portablePlanComparison
+      ? null
+      : portablePlanComparison.currentPlanMatches === false
+        ? "different-plan"
+        : portablePlanComparison.differing
+          ? "review"
+          : "current-plan",
+    portablePlanComparisonLabel: !portablePlanComparison
+      ? null
+      : portablePlanComparison.currentPlanMatches === false
+        ? "Imported plan · different plan"
+        : portablePlanComparison.differing
+          ? `Imported plan · ${portablePlanComparison.differing} difference${portablePlanComparison.differing === 1 ? "" : "s"}`
+          : "Imported plan comparison matched",
     thrustDataStatus,
     hasHardwareParts: Boolean(
       byCategory.flight_controllers || byCategory.receivers,
@@ -646,6 +665,13 @@ export function comparisonRows(left, right) {
       label: "Imported bench evidence",
       left: left.benchEvidenceLabel,
       right: right.benchEvidenceLabel,
+      format: (value) => value,
+    },
+    {
+      id: "portable-plan-comparison",
+      label: "Imported plan comparison",
+      left: left.portablePlanComparisonLabel,
+      right: right.portablePlanComparisonLabel,
       format: (value) => value,
     },
     {

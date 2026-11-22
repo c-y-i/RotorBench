@@ -801,6 +801,11 @@ export default function SavedConfigsPage() {
                                                     {buildSummary.benchEvidenceLabel}
                                                 </span>
                                             )}
+                                            {buildSummary.portablePlanComparisonConfigured && (
+                                                <span className={`saved-evidence-state is-${buildSummary.portablePlanComparisonStatus}`}>
+                                                    {buildSummary.portablePlanComparisonLabel}
+                                                </span>
+                                            )}
                                         </div>
 
                                         <div className="saved-part-preview" aria-label="Selected components">

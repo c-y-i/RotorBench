@@ -709,6 +709,17 @@
   background: var(--accent-soft);
 }
 
+.saved-build-state .saved-evidence-state.is-current-plan {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.saved-build-state .saved-evidence-state.is-review,
+.saved-build-state .saved-evidence-state.is-different-plan {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
 .saved-part-preview {
   display: flex;
   flex-wrap: wrap;

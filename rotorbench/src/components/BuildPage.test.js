@@ -83,6 +83,24 @@ const build = {
   },
 };
 
+const importedPlanBuild = {
+  ...build,
+  id: "build-imported-plan",
+  importedEvidence: {
+    status: "plan-comparison",
+    label: "FC plan comparison matched",
+    planComparison: {
+      targetName: "SpeedyBee F405 V5",
+      currentPlanMatches: true,
+      compared: 38,
+      matched: 1,
+      differing: 1,
+      notObserved: 36,
+      hardwareVerified: false,
+    },
+  },
+};
+
 beforeAll(() => {
   if (!HTMLDialogElement.prototype.showModal) {
     HTMLDialogElement.prototype.showModal = function showModal() {
@@ -183,6 +201,36 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
   expect(screen.getByText("SpeedyBee BLS 35A Mini V2 current")).toBeInTheDocument();
   expect(screen.getByText("SpeedyBee F405 Mini input voltage")).toBeInTheDocument();
   expect(screen.getByText("Ready")).toBeInTheDocument();
+});
+
+test("shows imported plan-comparison metadata without promoting it to hardware evidence", async () => {
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: "/build",
+      state: { build: importedPlanBuild },
+    }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const metadata = screen.getByRole("region", {
+    name: "Imported plan comparison metadata",
+  });
+  expect(within(metadata).getByText("Imported plan comparison")).toBeInTheDocument();
+  expect(within(metadata).getByText(/SpeedyBee F405 V5/)).toBeInTheDocument();
+  expect(within(metadata).getByText(/1 match.*1 differ.*36 not observed/))
+    .toBeInTheDocument();
+  expect(within(metadata).getByText("Plan matched")).toBeInTheDocument();
+  expect(within(metadata).getByText(/Raw parameter values were excluded/))
+    .toBeInTheDocument();
+  expect(within(metadata).getByText(/not attached evidence, a write, or hardware verification/))
+    .toBeInTheDocument();
 });
 
 test("marks the viewer live only after the normalized assembly is ready", async () => {
