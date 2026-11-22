@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import BenchEvidenceReview from "./BenchEvidenceReview";
 import {
   appendBenchEvidenceAttachmentHistory,
+  createBenchEvidenceAttachment,
   createBenchEvidenceScope,
 } from "../utils/benchEvidenceAttachment";
 import { createAerialKitLogExport } from "../utils/aerialKitLogExport";
@@ -1134,6 +1135,85 @@ test("shows local evidence history and compares it with the current run", async 
   expect(screen.getByRole("region", { name: "Evidence attached to this build" }))
     .toBeInTheDocument();
   expect(screen.getByRole("status")).toHaveTextContent(/current attachment was kept/i);
+});
+
+test("shows mission-route geometry deltas in local evidence history", async () => {
+  const evidenceScope = createBenchEvidenceScope({
+    build: { componentIds: { flightControllerId: "fc-route", receiverId: "rx-route" } },
+  });
+  const routeReview = ({
+    waypointCount,
+    totalDistanceM,
+    activeWaypointIndex,
+    remainingDistanceM,
+  }) => ({
+    schema: "rotorbench.bench-evidence-review.v1",
+    kind: "fc-mission-route",
+    fileOverall: "Mission-route geometry validated as planning evidence",
+    importTrust: "locally selected files; authenticity not independently verified",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    checks: [
+      { id: "fc-mission-route-geometry", label: "Mission-route geometry", status: "pass" },
+      { id: "fc-mission-route-freshness", label: "Mission observation age", status: "pass" },
+      { id: "fc-mission-route-authenticity", label: "Mission hardware proof", status: "unverified" },
+    ],
+    fcEvidence: {
+      missionRoute: {
+        route: { waypointCount, totalDistanceM },
+        activeTarget: { index: activeWaypointIndex },
+        progress: { distanceToActiveM: 1250, totalRemainingM: remainingDistanceM },
+        staleOnImport: false,
+        geometryRecomputed: true,
+      },
+    },
+  });
+  const current = createBenchEvidenceAttachment(
+    routeReview({
+      waypointCount: 4,
+      totalDistanceM: 6100,
+      activeWaypointIndex: 2,
+      remainingDistanceM: 4300,
+    }),
+    "2026-11-20T12:20:00.000Z",
+    evidenceScope,
+  );
+  const previous = createBenchEvidenceAttachment(
+    routeReview({
+      waypointCount: 3,
+      totalDistanceM: 5400,
+      activeWaypointIndex: 1,
+      remainingDistanceM: 3612,
+    }),
+    "2026-11-20T12:10:00.000Z",
+    evidenceScope,
+  );
+  localStorage.setItem(
+    "rotorbench:bench-evidence:mission-route-history:v1",
+    JSON.stringify(current),
+  );
+  appendBenchEvidenceAttachmentHistory(
+    "mission-route-history",
+    previous,
+    localStorage,
+  );
+
+  render(
+    <BenchEvidenceReview
+      buildId="mission-route-history"
+      evidenceScope={evidenceScope}
+    />,
+  );
+  await userEvent.click(screen.getByText("Evidence run history"));
+
+  expect(screen.getByText("Mission route changed")).toBeInTheDocument();
+  expect(screen.getByText(/\+1 waypoint/)).toBeInTheDocument();
+  expect(screen.getAllByText(/WP 1 → WP 2/).length).toBeGreaterThanOrEqual(2);
+  expect(screen.getByText(/5\.400 km → 6\.100 km.*\+700\.0 m/))
+    .toBeInTheDocument();
+  expect(screen.getByText(/3\.612 km → 4\.300 km.*\+688\.0 m/))
+    .toBeInTheDocument();
+  expect(screen.getByText("Fresh · unchanged")).toBeInTheDocument();
 });
 
 test("invalid JSON is rejected without retaining prior evidence", async () => {

@@ -419,6 +419,10 @@ test("preserves validated mission-route evidence in attached history", () => {
           totalDistanceM: 5400,
         },
         activeTarget: { index: 1 },
+        progress: {
+          distanceToActiveM: 1250,
+          totalRemainingM: 3612,
+        },
         staleOnImport: true,
         geometryRecomputed: true,
       },
@@ -431,6 +435,8 @@ test("preserves validated mission-route evidence in attached history", () => {
       waypointCount: 3,
       totalDistanceM: 5400,
       activeWaypointIndex: 1,
+      distanceToActiveM: 1250,
+      remainingDistanceM: 3612,
       staleOnImport: true,
       geometryRecomputed: true,
     },
@@ -440,6 +446,118 @@ test("preserves validated mission-route evidence in attached history", () => {
     label: "Mission route validated · historical observation",
     hardwareVerified: false,
   });
+});
+
+function missionRouteAttachment({
+  waypointCount = 3,
+  totalDistanceM = 5400,
+  activeWaypointIndex = 1,
+  remainingDistanceM = 3612,
+  staleOnImport = false,
+  coordinateOffsetDegrees = 0,
+  checks = [
+    { id: "fc-mission-route-geometry", status: "pass" },
+    { id: "fc-mission-route-freshness", status: "pass" },
+    { id: "fc-mission-route-authenticity", status: "unverified" },
+  ],
+} = {}) {
+  return createBenchEvidenceAttachment({
+    ...review,
+    kind: "fc-mission-route",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    checks,
+    fcEvidence: {
+      missionRoute: {
+        route: { waypointCount, totalDistanceM },
+        waypoints: Array.from({ length: waypointCount }, (_, index) => ({
+          index,
+          lat: index / 100 + coordinateOffsetDegrees,
+          lon: index / 100,
+        })),
+        activeTarget: { index: activeWaypointIndex },
+        progress: { distanceToActiveM: 1250, totalRemainingM: remainingDistanceM },
+        staleOnImport,
+        geometryRecomputed: true,
+      },
+    },
+  });
+}
+
+test("compares mission-route geometry without calling changes better or worse", () => {
+  const previous = missionRouteAttachment();
+  const current = missionRouteAttachment({
+    waypointCount: 4,
+    totalDistanceM: 6100,
+    activeWaypointIndex: 2,
+    remainingDistanceM: 4300,
+  });
+
+  expect(compareBenchEvidenceRuns(current, previous)).toMatchObject({
+    status: "changed",
+    label: "Mission route changed",
+    missionRouteComparison: {
+      waypointCountDelta: 1,
+      totalDistanceDeltaM: 700,
+      remainingDistanceDeltaM: 688,
+      activeTargetChanged: true,
+      activeTarget: { previous: 1, current: 2 },
+      freshnessChange: "unchanged",
+      geometryChanged: true,
+    },
+  });
+  expect(compareBenchEvidenceRuns(current, previous).summary)
+    .toContain("WP 1 → WP 2");
+});
+
+test("distinguishes an active-target-only change and freshness transitions", () => {
+  const previous = missionRouteAttachment();
+  const activeChanged = missionRouteAttachment({
+    activeWaypointIndex: 2,
+    remainingDistanceM: 2362,
+  });
+  expect(compareBenchEvidenceRuns(activeChanged, previous)).toMatchObject({
+    status: "changed",
+    label: "Active mission target changed",
+  });
+
+  const historical = missionRouteAttachment({ staleOnImport: true });
+  const refreshed = compareBenchEvidenceRuns(previous, historical);
+  expect(refreshed).toMatchObject({
+    status: "improved",
+    label: "Mission observation refreshed",
+    missionRouteComparison: {
+      freshnessChange: "refreshed",
+      geometryChanged: false,
+    },
+  });
+  expect(compareBenchEvidenceRuns(historical, previous)).toMatchObject({
+    status: "changed",
+    label: "Mission observation became historical",
+  });
+  expect(compareBenchEvidenceRuns(previous, previous)).toMatchObject({
+    status: "unchanged",
+    label: "Mission route unchanged",
+  });
+});
+
+test("detects coordinate changes when scalar route totals are unchanged", () => {
+  const previous = missionRouteAttachment();
+  const current = missionRouteAttachment({ coordinateOffsetDegrees: 0.001 });
+  expect(compareBenchEvidenceRuns(current, previous)).toMatchObject({
+    status: "changed",
+    label: "Mission waypoints changed",
+    missionRouteComparison: {
+      waypointCountDelta: 0,
+      totalDistanceDeltaM: 0,
+      remainingDistanceDeltaM: 0,
+      coordinatesComparable: true,
+      coordinatesChanged: true,
+      geometryChanged: true,
+    },
+  });
+  expect(compareBenchEvidenceRuns(current, previous).summary)
+    .toContain("Waypoint coordinates changed");
 });
 
 test("does not summarize a partial FC parameter snapshot as matched", () => {

@@ -272,6 +272,15 @@ export function createBenchEvidenceAttachment(
           totalDistanceM: review.fcEvidence.missionRoute.route.totalDistanceM,
           activeWaypointIndex:
             review.fcEvidence.missionRoute.activeTarget.index,
+          distanceToActiveM:
+            review.fcEvidence.missionRoute.progress?.distanceToActiveM,
+          remainingDistanceM:
+            review.fcEvidence.missionRoute.progress?.totalRemainingM,
+          geometryFingerprint: stableFingerprint(
+            (review.fcEvidence.missionRoute.waypoints || [])
+              .map((waypoint) => `${waypoint.index}:${waypoint.lat},${waypoint.lon}`)
+              .join("|"),
+          ),
           staleOnImport: review.fcEvidence.missionRoute.staleOnImport,
           geometryRecomputed: true,
         }
@@ -462,7 +471,7 @@ export function compareBenchEvidenceRuns(current, previous, {
   const gainedCompletion = completionKeys.some(
     (keyName) => previous[keyName] !== true && current[keyName] === true,
   );
-  const status = lostCompletion
+  let status = lostCompletion
     || (failDelta > 0 && unverifiedDelta >= 0)
     || (passDelta < 0 && unverifiedDelta >= 0)
     ? "regressed"
@@ -476,29 +485,169 @@ export function compareBenchEvidenceRuns(current, previous, {
       : failDelta === 0 && passDelta === 0 && unverifiedDelta === 0
         ? "unchanged"
         : "mixed";
-  const changes = [
+  let changes = [
     passDelta ? `${passDelta > 0 ? "+" : ""}${passDelta} pass` : null,
     failDelta ? `${failDelta > 0 ? "+" : ""}${failDelta} fail` : null,
     unverifiedDelta
       ? `${unverifiedDelta > 0 ? "+" : ""}${unverifiedDelta} open`
       : null,
   ].filter(Boolean);
-  return {
-    comparable: true,
-    status,
-    label: status === "regressed"
+  const currentRoute = current.missionRoute;
+  const previousRoute = previous.missionRoute;
+  const numericDelta = (currentValue, previousValue) => (
+    Number.isFinite(currentValue) && Number.isFinite(previousValue)
+      ? currentValue - previousValue
+      : null
+  );
+  const totalDistanceDeltaM = currentRoute && previousRoute
+    ? numericDelta(currentRoute.totalDistanceM, previousRoute.totalDistanceM)
+    : null;
+  const remainingDistanceDeltaM = currentRoute && previousRoute
+    ? numericDelta(
+        currentRoute.remainingDistanceM,
+        previousRoute.remainingDistanceM,
+      )
+    : null;
+  const missionRouteComparison = current.missionRouteComplete
+    && previous.missionRouteComplete
+    && currentRoute
+    && previousRoute
+    ? {
+        waypointCount: {
+          previous: previousRoute.waypointCount,
+          current: currentRoute.waypointCount,
+        },
+        waypointCountDelta:
+          currentRoute.waypointCount - previousRoute.waypointCount,
+        totalDistanceM: {
+          previous: previousRoute.totalDistanceM,
+          current: currentRoute.totalDistanceM,
+        },
+        totalDistanceDeltaM,
+        activeTargetChanged:
+          currentRoute.activeWaypointIndex !== previousRoute.activeWaypointIndex,
+        activeTarget: {
+          previous: previousRoute.activeWaypointIndex,
+          current: currentRoute.activeWaypointIndex,
+        },
+        remainingDistanceDeltaM,
+        remainingDistanceM: {
+          previous: previousRoute.remainingDistanceM,
+          current: currentRoute.remainingDistanceM,
+        },
+        remainingDistanceComparable: remainingDistanceDeltaM != null,
+        coordinatesComparable: Boolean(
+          currentRoute.geometryFingerprint
+          && previousRoute.geometryFingerprint,
+        ),
+        coordinatesChanged: Boolean(
+          currentRoute.geometryFingerprint
+          && previousRoute.geometryFingerprint
+          && currentRoute.geometryFingerprint !== previousRoute.geometryFingerprint,
+        ),
+        staleOnImport: {
+          previous: previousRoute.staleOnImport,
+          current: currentRoute.staleOnImport,
+        },
+        freshnessChange: previousRoute.staleOnImport === currentRoute.staleOnImport
+          ? "unchanged"
+          : currentRoute.staleOnImport ? "historical" : "refreshed",
+        geometryChanged:
+          currentRoute.waypointCount !== previousRoute.waypointCount
+          || (
+            currentRoute.geometryFingerprint
+            && previousRoute.geometryFingerprint
+            && currentRoute.geometryFingerprint !== previousRoute.geometryFingerprint
+          )
+          || (totalDistanceDeltaM != null && Math.abs(totalDistanceDeltaM) > 0.05)
+          || currentRoute.activeWaypointIndex !== previousRoute.activeWaypointIndex
+          || (remainingDistanceDeltaM != null
+            && Math.abs(remainingDistanceDeltaM) > 0.05),
+      }
+    : null;
+  let label;
+  if (missionRouteComparison) {
+    if (missionRouteComparison.geometryChanged) {
+      status = "changed";
+      label = missionRouteComparison.activeTargetChanged
+        && missionRouteComparison.waypointCountDelta === 0
+        && Math.abs(missionRouteComparison.totalDistanceDeltaM) <= 0.05
+        && !missionRouteComparison.coordinatesChanged
+        ? "Active mission target changed"
+        : missionRouteComparison.coordinatesChanged
+          && missionRouteComparison.waypointCountDelta === 0
+          ? "Mission waypoints changed"
+        : "Mission route changed";
+      const routeChanges = [
+        missionRouteComparison.waypointCountDelta
+          ? `${missionRouteComparison.waypointCountDelta > 0 ? "+" : ""}${missionRouteComparison.waypointCountDelta} waypoint`
+          : null,
+        missionRouteComparison.activeTargetChanged
+          ? `WP ${missionRouteComparison.activeTarget.previous ?? "—"} → WP ${missionRouteComparison.activeTarget.current ?? "—"}`
+          : null,
+        missionRouteComparison.coordinatesChanged
+          ? "Waypoint coordinates changed"
+          : null,
+        missionRouteComparison.totalDistanceDeltaM != null
+          && Math.abs(missionRouteComparison.totalDistanceDeltaM) > 0.05
+          ? `${missionRouteComparison.totalDistanceDeltaM > 0 ? "+" : ""}${missionRouteComparison.totalDistanceDeltaM.toFixed(1)} m route`
+          : null,
+        missionRouteComparison.remainingDistanceDeltaM != null
+          && Math.abs(missionRouteComparison.remainingDistanceDeltaM) > 0.05
+          ? `${missionRouteComparison.remainingDistanceDeltaM > 0 ? "+" : ""}${missionRouteComparison.remainingDistanceDeltaM.toFixed(1)} m remaining`
+          : null,
+      ].filter(Boolean);
+      changes = routeChanges;
+    } else if (!missionRouteComparison.remainingDistanceComparable
+      || !missionRouteComparison.coordinatesComparable) {
+      status = "mixed";
+      label = "Mission-route comparison incomplete";
+      changes = [
+        !missionRouteComparison.remainingDistanceComparable
+          ? "An earlier run lacks remaining-distance detail"
+          : null,
+        !missionRouteComparison.coordinatesComparable
+          ? "An earlier run lacks the waypoint-coordinate fingerprint"
+          : null,
+      ].filter(Boolean);
+    } else if (missionRouteComparison.freshnessChange === "refreshed") {
+      status = "improved";
+      label = "Mission observation refreshed";
+      changes = ["Historical → fresh observation"];
+    } else if (missionRouteComparison.freshnessChange === "historical") {
+      status = "changed";
+      label = "Mission observation became historical";
+      changes = ["Fresh → historical observation"];
+    } else {
+      label = status === "unchanged"
+        ? "Mission route unchanged"
+        : "Mission-route evidence changed";
+      if (status === "unchanged") {
+        changes = ["No waypoint, active-target, or distance change"];
+      }
+    }
+  } else {
+    label = status === "regressed"
       ? "Review regressed"
       : status === "improved"
         ? "Review improved"
         : status === "mixed"
           ? "Review coverage changed"
-          : "No check-count change",
+          : "No check-count change";
+  }
+  return {
+    comparable: true,
+    status,
+    label,
     summary: changes.length
       ? changes.join(" · ")
-      : "Same pass, fail, and open counts.",
+      : missionRouteComparison
+        ? "No route comparison fields changed."
+        : "Same pass, fail, and open counts.",
     passDelta,
     failDelta,
     unverifiedDelta,
+    missionRouteComparison,
   };
 }
 

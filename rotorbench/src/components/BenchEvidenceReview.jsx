@@ -36,6 +36,7 @@ import AerialKitMissionBriefingButton from "./AerialKitMissionBriefingButton";
 import AerialKitWaypointInspector from "./AerialKitWaypointInspector";
 import AerialKitMissionRouteDownloadButton from "./AerialKitMissionRouteDownloadButton";
 import AerialKitMissionRouteEvidence from "./AerialKitMissionRouteEvidence";
+import AerialKitMissionRouteComparison from "./AerialKitMissionRouteComparison";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -2028,6 +2029,11 @@ export default function BenchEvidenceReview({
                   Compared with the previous run: {historyComparison.summary}
                 </span>
               </p>
+            )}
+            {historyComparison?.missionRouteComparison && (
+              <AerialKitMissionRouteComparison
+                comparison={historyComparison.missionRouteComparison}
+              />
             )}
             <ol>
               {previousRuns.map((run, index) => {

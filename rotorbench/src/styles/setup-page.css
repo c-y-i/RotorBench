@@ -1463,6 +1463,44 @@
   color: var(--danger);
 }
 
+.bench-evidence-history-delta.is-changed strong {
+  color: var(--brand-strong);
+}
+
+.bench-evidence-history-route-diff {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.bench-evidence-history-route-diff > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.bench-evidence-history-route-diff dt {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.bench-evidence-history-route-diff dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .bench-evidence-history ol {
   display: grid;
   margin: 0;
