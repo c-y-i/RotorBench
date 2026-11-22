@@ -263,6 +263,19 @@ export function createBenchEvidenceAttachment(
     fcParametersComplete: review.kind === "fc-parameters"
       && review.checks.some((check) => check.status === "pass")
       && review.checks.every((check) => check.status === "pass"),
+    missionRouteComplete: review.kind === "fc-mission-route"
+      && review.fcEvidence?.missionRoute?.geometryRecomputed === true,
+    missionRoute: review.kind === "fc-mission-route"
+      && review.fcEvidence?.missionRoute
+      ? {
+          waypointCount: review.fcEvidence.missionRoute.route.waypointCount,
+          totalDistanceM: review.fcEvidence.missionRoute.route.totalDistanceM,
+          activeWaypointIndex:
+            review.fcEvidence.missionRoute.activeTarget.index,
+          staleOnImport: review.fcEvidence.missionRoute.staleOnImport,
+          geometryRecomputed: true,
+        }
+      : null,
     radioEvidenceComplete: Boolean(review.radioDeviceEvidence?.evidenceComplete),
     diagnosticsComplete: review.bundle?.complete ?? null,
     settingsComplete: review.bundle?.settingsComplete ?? null,
@@ -439,6 +452,7 @@ export function compareBenchEvidenceRuns(current, previous, {
     "rfEvidenceComplete",
     "fcEvidenceComplete",
     "fcParametersComplete",
+    "missionRouteComplete",
     "radioEvidenceComplete",
     "observationCorrelationComplete",
   ];
@@ -528,6 +542,8 @@ export function summarizeBenchEvidenceAttachment(attachment, currentScope = null
   }
   const fileStatus = attachment.radioEvidenceComplete
     ? "radio-evidence"
+    : attachment.missionRouteComplete
+      ? "mission-route"
     : attachment.fcParametersComplete
       ? "fc-parameters"
     : attachment.fcEvidenceComplete
@@ -567,6 +583,7 @@ export function summarizeBenchEvidenceAttachment(attachment, currentScope = null
   const successfulFileStatus = [
     "fc-evidence",
     "fc-parameters",
+    "mission-route",
     "radio-evidence",
     "correlated",
     "observation-pair",
@@ -584,6 +601,9 @@ export function summarizeBenchEvidenceAttachment(attachment, currentScope = null
   const label = {
     "radio-evidence": "Radio device status reviewed",
     "fc-parameters": "FC parameter snapshot matched",
+    "mission-route": attachment.missionRoute?.staleOnImport
+      ? "Mission route validated · historical observation"
+      : "Mission route geometry validated",
     "fc-evidence": "FC status and preflight reviewed",
     "identity-mismatch": "Imported evidence · staged UID changed",
     "identity-unstaged": "Imported evidence · UID not currently staged",

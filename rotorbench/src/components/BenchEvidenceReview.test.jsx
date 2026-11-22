@@ -7,6 +7,8 @@ import {
   createBenchEvidenceScope,
 } from "../utils/benchEvidenceAttachment";
 import { createAerialKitLogExport } from "../utils/aerialKitLogExport";
+import { buildAerialKitMissionRouteExport } from "../utils/aerialKitMissionRouteExport";
+import { buildAerialKitWaypointInventory } from "../utils/aerialKitWaypoints";
 
 const pairEvidence = {
   expected_uid: "10:73:A1:1F:A8:0F",
@@ -689,6 +691,63 @@ test("keeps a live snapshot with no preflight checklist unverified", async () =>
   )).not.toHaveLength(0);
   expect(screen.getByText(/does not turn that response into a pass/i))
     .toBeInTheDocument();
+});
+
+test("reviews a downloaded mission route as validated planning evidence", async () => {
+  const inventory = buildAerialKitWaypointInventory([
+    { name: "wp_count", value: "3" },
+    { name: "wp0_lat", value: "37.6774" },
+    { name: "wp0_lon", value: "-122.4194" },
+    { name: "wp1_lat", value: "37.701" },
+    { name: "wp1_lon", value: "-122.402" },
+    { name: "wp2_lat", value: "37.682" },
+    { name: "wp2_lon", value: "-122.39" },
+  ]);
+  const artifact = buildAerialKitMissionRouteExport({
+    inventory,
+    mission: {
+      status: "ok",
+      active: true,
+      requested: true,
+      index: 1,
+      count: 3,
+      countCapped: false,
+      channel: 7,
+      reached: 1,
+      started: 2,
+      cancelled: 0,
+      holdAltMm: 120000,
+    },
+    proximity: {
+      status: "ok",
+      waypoint: { index: 1, lat: 37.701, lon: -122.402 },
+      position: { lat: 37.69, lon: -122.414, gpsFixType: 3 },
+      positionSource: "telemetry",
+      ageMs: 100,
+      distanceM: 1250,
+    },
+  }).artifact;
+  render(<BenchEvidenceReview expectedFc={{ firmwareFamily: "aerialkit" }} />);
+
+  userEvent.upload(
+    screen.getByLabelText("Choose hardware evidence files"),
+    evidenceFile(artifact, "mission-route.json"),
+  );
+
+  expect(await screen.findByText("Validated mission route")).toBeInTheDocument();
+  const routeRegion = screen.getByRole("region", {
+    name: "Imported Aerial Kit mission route",
+  });
+  expect(routeRegion).toBeInTheDocument();
+  expect(screen.getAllByText(
+    "Mission-route geometry validated as planning evidence",
+  ).length).toBeGreaterThanOrEqual(2);
+  expect(screen.getByText("Fresh observation at import")).toBeInTheDocument();
+  expect(screen.getByText(/Exported board position shown/i)).toBeInTheDocument();
+  expect(screen.getByText(/Every waypoint, leg, route total/i)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Inspect waypoint WP 0" }))
+    .toBeInTheDocument();
+  expect(within(routeRegion).getByText("Active target")).toBeInTheDocument();
 });
 
 test("reviews a validated standalone bounded log artifact", async () => {

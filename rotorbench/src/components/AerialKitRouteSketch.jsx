@@ -7,6 +7,7 @@ export default function AerialKitRouteSketch({
   activeWaypointIndex = null,
   selectedWaypointIndex = null,
   onSelectWaypoint = null,
+  positionIsFresh = true,
 }) {
   const sketch = buildAerialKitRouteSketch(inventory, currentPosition);
   if (sketch.status === "unavailable") return null;
@@ -37,7 +38,11 @@ export default function AerialKitRouteSketch({
   const selectedTargetLabel = selectedPoint
     ? ` Selected for inspection is WP ${selectedPoint.index}.`
     : "";
-  const positionLabel = boardPosition ? " Fresh board position shown." : "";
+  const positionLabel = boardPosition
+    ? positionIsFresh
+      ? " Fresh board position shown."
+      : " Exported board position shown."
+    : "";
   const outsideLabel = sketch.currentPosition && !boardPosition
     ? " Fresh board position lies outside this sketch extent."
     : "";
@@ -48,7 +53,9 @@ export default function AerialKitRouteSketch({
         role={selectable ? "group" : "img"}
         aria-label={[
           "Local north-up sketch of",
-          boardPosition ? "waypoint coordinates with fresh board position" : "board-reported waypoint coordinates",
+          boardPosition
+            ? `waypoint coordinates with ${positionIsFresh ? "fresh" : "exported"} board position`
+            : "board-reported waypoint coordinates",
           activePoint ? `and active target WP ${activePoint.index}` : "",
           selectedPoint ? `with selected waypoint WP ${selectedPoint.index}` : "",
         ].filter(Boolean).join(" ")}
@@ -58,7 +65,9 @@ export default function AerialKitRouteSketch({
           A local projection of waypoint order and relative position. It is not
           a basemap or a flown-path record.
           {boardPosition
-            ? " The marked board position is a fresh observation, not the flown path."
+            ? positionIsFresh
+              ? " The marked board position is a fresh observation, not the flown path."
+              : " The marked board position is the observation recorded at export, not the flown path."
             : ""}
           {activePoint
             ? ` WP ${activePoint.index} is marked as the active target.`

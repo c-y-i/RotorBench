@@ -35,6 +35,7 @@ import AerialKitMissionRouteProgress from "./AerialKitMissionRouteProgress";
 import AerialKitMissionBriefingButton from "./AerialKitMissionBriefingButton";
 import AerialKitWaypointInspector from "./AerialKitWaypointInspector";
 import AerialKitMissionRouteDownloadButton from "./AerialKitMissionRouteDownloadButton";
+import AerialKitMissionRouteEvidence from "./AerialKitMissionRouteEvidence";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -51,6 +52,7 @@ const evidenceKindLabels = {
   "fc-evidence": "Flight-controller status + preflight",
   "fc-live-status": "Aerial Kit live status + RC",
   "fc-log-sample": "Aerial Kit bounded log sample",
+  "fc-mission-route": "Aerial Kit validated mission route",
   "fc-identity": "Aerial Kit identity + capabilities",
   "fc-rc": "Flight-controller RC observation",
   "fc-parameters": "Flight-controller parameter snapshot",
@@ -674,6 +676,26 @@ export default function BenchEvidenceReview({
         : null,
     },
     {
+      label: "Mission-route waypoints",
+      value: evidence.fcEvidence?.missionRoute
+        ? String(evidence.fcEvidence.missionRoute.route.waypointCount)
+        : null,
+    },
+    {
+      label: "Mission active target",
+      value: evidence.fcEvidence?.missionRoute
+        ? `WP ${evidence.fcEvidence.missionRoute.activeTarget.index}`
+        : null,
+    },
+    {
+      label: "Mission observation",
+      value: evidence.fcEvidence?.missionRoute
+        ? evidence.fcEvidence.missionRoute.staleOnImport
+          ? "Historical at import"
+          : "Fresh at import"
+        : null,
+    },
+    {
       label: "Radio status reports",
       value: evidence.radioDeviceEvidence?.reports?.length
         ? String(evidence.radioDeviceEvidence.reports.length)
@@ -717,6 +739,7 @@ export default function BenchEvidenceReview({
   const fcIdentityEvidence = evidence?.kind === "fc-identity";
   const fcLiveStatusEvidence = evidence?.kind === "fc-live-status";
   const fcLogSampleEvidence = evidence?.kind === "fc-log-sample";
+  const fcMissionRouteEvidence = evidence?.kind === "fc-mission-route";
   const radioMenuEvidence = evidence?.kind === "radio-menu-inventory";
   const fcRcEvidence = evidence?.kind === "fc-rc";
   const fcRcComplete = evidence?.fcEvidence?.rcEvidenceComplete === true;
@@ -945,7 +968,8 @@ export default function BenchEvidenceReview({
                     : radioMenuEvidence
                       ? "is-radio-evidence"
                   : fcEvidenceComplete || fcRcComplete || fcIdentityEvidence
-                    || fcLiveStatusEvidence
+                    || fcLiveStatusEvidence || fcLogSampleEvidence
+                    || fcMissionRouteEvidence
                     ? "is-fc-evidence"
                 : evidence.rfReportedPass ? "is-claimed" : "is-incomplete"
             }`}
@@ -957,6 +981,7 @@ export default function BenchEvidenceReview({
               || fcIdentityEvidence
               || fcLiveStatusEvidence
               || fcLogSampleEvidence
+              || fcMissionRouteEvidence
               || radioEvidenceComplete
               || radioMenuEvidence
               ? <FileCheck2 size={19} aria-hidden="true" />
@@ -973,6 +998,10 @@ export default function BenchEvidenceReview({
                       ? "Radio identity does not match the selected endpoint"
                       : radioMenuEvidence
                         ? "ExpressLRS menu inventory reviewed; RF and hardware remain unverified"
+                  : fcMissionRouteEvidence
+                    ? evidence.fcEvidence?.missionRoute?.staleOnImport
+                      ? "Mission-route geometry validated; observation is now historical"
+                      : "Mission-route geometry validated as planning evidence"
                   : fcLiveStatusEvidence
                     ? evidence?.fcEvidence?.preflight
                       ? evidence.fcEvidence.preflight.status === "none"
@@ -1032,6 +1061,9 @@ export default function BenchEvidenceReview({
                 {evidence.kind === "fc-log-sample"
                   ? " The manifest was checked against every exported frame. It covers only the bounded sample, not the aircraft's full log."
                   : ""}
+                {evidence.kind === "fc-mission-route"
+                  ? " RotorBench recomputed every imported waypoint, leg, active target, and remaining-distance suffix. This is planning evidence, not a flown mission or hardware verification."
+                  : ""}
                 {evidence.kind === "fc-identity"
                   ? " The capability word is a compiled-firmware claim from HELLO, not proof that RotorBench exercised any capability."
                   : ""}
@@ -1072,6 +1104,12 @@ export default function BenchEvidenceReview({
               </div>
             ))}
           </dl>
+
+          {evidence.fcEvidence?.missionRoute && (
+            <AerialKitMissionRouteEvidence
+              route={evidence.fcEvidence.missionRoute}
+            />
+          )}
 
           {evidence.fcEvidence?.identity && (
             <section

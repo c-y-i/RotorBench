@@ -400,6 +400,48 @@ test("summarizes matching FC parameter snapshots as read-only evidence", () => {
   });
 });
 
+test("preserves validated mission-route evidence in attached history", () => {
+  const attachment = createBenchEvidenceAttachment({
+    ...review,
+    kind: "fc-mission-route",
+    fileOverall: "Mission-route geometry validated as planning evidence",
+    rfReportedPass: false,
+    rfEvidenceComplete: false,
+    checks: [
+      { id: "fc-mission-route-geometry", status: "pass" },
+      { id: "fc-mission-route-freshness", status: "unverified" },
+      { id: "fc-mission-route-authenticity", status: "unverified" },
+    ],
+    fcEvidence: {
+      missionRoute: {
+        route: {
+          waypointCount: 3,
+          totalDistanceM: 5400,
+        },
+        activeTarget: { index: 1 },
+        staleOnImport: true,
+        geometryRecomputed: true,
+      },
+    },
+  }, undefined, scope);
+
+  expect(attachment).toMatchObject({
+    missionRouteComplete: true,
+    missionRoute: {
+      waypointCount: 3,
+      totalDistanceM: 5400,
+      activeWaypointIndex: 1,
+      staleOnImport: true,
+      geometryRecomputed: true,
+    },
+  });
+  expect(summarizeBenchEvidenceAttachment(attachment, scope)).toMatchObject({
+    status: "mission-route",
+    label: "Mission route validated · historical observation",
+    hardwareVerified: false,
+  });
+});
+
 test("does not summarize a partial FC parameter snapshot as matched", () => {
   const attachment = createBenchEvidenceAttachment({
     ...review,

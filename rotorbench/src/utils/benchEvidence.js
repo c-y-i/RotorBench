@@ -17,6 +17,10 @@ import {
   radioStatusChecks,
 } from "./radioDeviceEvidence";
 import { parseAerialKitLogExport } from "./aerialKitLogExport";
+import {
+  aerialKitMissionRouteEvidenceChecks,
+  parseAerialKitMissionRouteEvidence,
+} from "./aerialKitMissionRouteEvidence";
 
 const MAX_EVIDENCE_BYTES = 1024 * 1024;
 
@@ -1059,6 +1063,7 @@ export function parseBenchEvidenceBundle(
   let elrsMenuInventory = null;
   let fcLiveStatus = null;
   let fcLogSample = null;
+  let fcMissionRoute = null;
   let fcIdentity = null;
   let fcStatus = null;
   let fcRc = null;
@@ -1112,6 +1117,11 @@ export function parseBenchEvidenceBundle(
           throw new Error("More than one bounded Aerial Kit log sample was selected.");
         }
         fcLogSample = parseAerialKitLogExport(payload);
+      } else if (payload?.schema === "rotorbench.aerial-kit-mission-route.v1") {
+        if (fcMissionRoute) {
+          throw new Error("More than one Aerial Kit mission-route artifact was selected.");
+        }
+        fcMissionRoute = parseAerialKitMissionRouteEvidence(payload);
       } else if (payload?.fields?.role) {
         const diag = parseRadioDiagJson(document.text);
         if (diagnosticsByRole[diag.role]) {
@@ -1334,6 +1344,9 @@ export function parseBenchEvidenceBundle(
     firmwareFamily: expectedFc?.firmwareFamily || null,
   });
   checks.push(...importedFcIdentityChecks);
+  const importedMissionRouteChecks =
+    aerialKitMissionRouteEvidenceChecks(fcMissionRoute);
+  checks.push(...importedMissionRouteChecks);
   const importedFcRcChecks = importedFcChecks.filter(
     (check) => check.id.startsWith("fc-rc-"),
   );
@@ -1394,6 +1407,7 @@ export function parseBenchEvidenceBundle(
   const fcEvidence = {
     liveStatus: fcLiveStatus,
     logSample: fcLogSample,
+    missionRoute: fcMissionRoute,
     identity: fcIdentity,
     status: fcStatus,
     rc: fcRc,
@@ -1454,7 +1468,8 @@ export function parseBenchEvidenceBundle(
           + Number(Boolean(fcRc))
           + Number(Boolean(fcPreflight))
           + Number(Boolean(fcIdentity))
-          + Number(Boolean(fcLogSample)),
+          + Number(Boolean(fcLogSample))
+          + Number(Boolean(fcMissionRoute)),
         radioStatusCount: radioStatusReports.length,
         txDiag,
         rxDiag,
@@ -1470,6 +1485,8 @@ export function parseBenchEvidenceBundle(
     schema: "rotorbench.bench-evidence-review.v1",
     kind: elrsMenuInventory
       ? "radio-menu-inventory"
+      : fcMissionRoute
+      ? "fc-mission-route"
       : fcLiveStatus
       ? "fc-live-status"
       : fcLogSample
@@ -1485,6 +1502,10 @@ export function parseBenchEvidenceBundle(
             : radioStatusReports.length ? "radio-status-evidence" : "diagnostics",
     fileOverall: elrsMenuInventory
       ? "ExpressLRS menu inventory reviewed; hardware remains unverified"
+      : fcMissionRoute
+      ? fcMissionRoute.staleOnImport
+        ? "Mission-route geometry validated; observation is now historical"
+        : "Mission-route geometry validated as planning evidence"
       : fcLiveStatus
       ? fcPreflight
         ? fcPreflight.status === "none"
@@ -1534,7 +1555,8 @@ export function parseBenchEvidenceBundle(
         + Number(Boolean(fcRc))
         + Number(Boolean(fcPreflight))
         + Number(Boolean(fcIdentity))
-        + Number(Boolean(fcLogSample)),
+        + Number(Boolean(fcLogSample))
+        + Number(Boolean(fcMissionRoute)),
       radioStatusCount: radioStatusReports.length,
       radioMenuCount: elrsMenuInventory ? elrsMenuInventory.parameters.length : 0,
       radioMenuParameters,
