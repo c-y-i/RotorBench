@@ -4606,7 +4606,80 @@
   line-height: 1.45;
 }
 
-.aerial-kit-parameter-plan span {
+.aerial-kit-parameter-plan > div > span {
+  text-align: end;
+}
+
+.aerial-kit-parameter-missing {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.aerial-kit-parameter-missing summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.aerial-kit-parameter-missing summary::marker {
+  color: var(--warn);
+}
+
+.aerial-kit-parameter-missing summary em {
+  padding: 2px 6px;
+  color: var(--warn);
+  background: var(--accent-soft);
+  border-radius: 3px;
+  font-size: 8px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-parameter-missing ul {
+  display: grid;
+  gap: 4px;
+  max-height: 220px;
+  margin: 0;
+  padding: 0 2px 2px 18px;
+  overflow: auto;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.aerial-kit-parameter-missing ul:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.aerial-kit-parameter-missing li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 7px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-parameter-missing code {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.aerial-kit-parameter-missing li span {
+  color: var(--ink-soft);
+  font-size: 8px;
   text-align: end;
 }
 
@@ -5962,7 +6035,7 @@
     gap: 3px;
   }
 
-  .aerial-kit-parameter-plan span {
+  .aerial-kit-parameter-plan > div > span {
     text-align: start;
   }
 

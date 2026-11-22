@@ -688,6 +688,7 @@ test("compares live board-reported parameters with the staged FC plan", async ()
       flightControllerPlan={{
         firmwareFamily: "aerialkit",
         armChannel: 6,
+        dshotKhz: 300,
         vbatRatio: 11,
       }}
     />,
@@ -707,10 +708,14 @@ test("compares live board-reported parameters with the staged FC plan", async ()
     name: "Read ranges/defaults",
   }));
 
-  expect(await screen.findByText("1 match · 1 differ · 0 not observed"))
+  expect(await screen.findByText("1 match · 1 differ · 1 not observed"))
     .toBeInTheDocument();
   expect(screen.getByText("Differs")).toBeInTheDocument();
   expect(screen.getByText("Matches plan")).toBeInTheDocument();
+  await userEvent.click(screen.getByText("Planned values not observed"));
+  expect(screen.getByRole("listitem", {
+    name: /dshot_khz: The board-reported evidence does not include dshot_khz/,
+  })).toBeInTheDocument();
   expect(screen.getByRole("listitem", {
     name: /arm_channel: 5\. Differs\. Board-reported arm_channel=5; the staged plan expects 6\./,
   })).toBeInTheDocument();

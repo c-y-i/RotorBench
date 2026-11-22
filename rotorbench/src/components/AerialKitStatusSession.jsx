@@ -1732,6 +1732,10 @@ export default function AerialKitStatusSession({
     differences: liveParameterChecks.filter((check) => check.status === "fail").length,
     unverified: liveParameterChecks.filter((check) => check.status === "unverified").length,
   }), [liveParameterChecks]);
+  const liveUnverifiedParameterChecks = useMemo(
+    () => liveParameterChecks.filter((check) => check.status === "unverified"),
+    [liveParameterChecks],
+  );
   const parameterGroups = useMemo(() => {
     const groups = new Map();
     inventoryRows.forEach((parameter) => {
@@ -3279,6 +3283,31 @@ export default function AerialKitStatusSession({
                       Compares board-reported values with the staged flight-controller
                       plan. Nothing was written, saved, or re-read.
                     </small>
+                    {liveUnverifiedParameterChecks.length > 0 && (
+                      <details className="aerial-kit-parameter-missing">
+                        <summary>
+                          <span>Planned values not observed</span>
+                          <em>{liveUnverifiedParameterChecks.length}</em>
+                        </summary>
+                        <ul
+                          aria-label="Staged flight-controller parameters not observed"
+                          tabIndex={0}
+                        >
+                          {liveUnverifiedParameterChecks.map((check) => {
+                            const name = check.label.replace(/^FC parameter /, "");
+                            return (
+                              <li
+                                key={check.id}
+                                aria-label={`${name}: ${check.detail}`}
+                              >
+                                <code>{name}</code>
+                                <span>Not returned by this live read</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </details>
+                    )}
                   </div>
                 )}
                 {parameterError && (
