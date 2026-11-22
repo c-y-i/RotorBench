@@ -5,6 +5,7 @@ import {
   parseRadioParameterText,
 } from "./benchEvidence";
 import { createAerialKitLogExport } from "./aerialKitLogExport";
+import { createAerialKitPlanComparisonEvidence } from "./aerialKitPlanComparison";
 
 const pairEvidence = {
   expected_uid: "10:73:A1:1F:A8:0F",
@@ -1072,6 +1073,69 @@ test("reviews a downloaded live AKP snapshot as read-only hardware evidence", ()
   expect(bundle.checks.find((check) => check.id === "fc-status-disarmed").status)
     .toBe("pass");
   expect(bundle.checks.find((check) => check.id === "fc-status-link").status)
+    .toBe("pass");
+});
+
+test("validates a downloaded plan comparison against the current staged plan", () => {
+  const now = Date.now();
+  const plan = {
+    firmwareFamily: "aerialkit",
+    armChannel: 6,
+    dshotKhz: 300,
+  };
+  const artifact = createAerialKitPlanComparisonEvidence({
+    checks: [
+      {
+        id: "fc-param-arm-channel",
+        label: "FC parameter arm_channel",
+        status: "fail",
+        detail: "Board-reported arm_channel=5; the staged plan expects 6.",
+      },
+      {
+        id: "fc-param-dshot-khz",
+        label: "FC parameter dshot_khz",
+        status: "unverified",
+        detail: "The board-reported evidence does not include dshot_khz.",
+      },
+    ],
+    plan,
+    targetName: "SpeedyBee F405 V5",
+    statusObservedAtMs: now - 5000,
+    parameterValuesRead: true,
+    parameterMetadataRead: true,
+    nowMs: now,
+  });
+  const bundle = parseBenchEvidenceBundle([{
+    name: "plan-comparison.json",
+    text: JSON.stringify(artifact),
+  }], {
+    expectedFc: {
+      firmwareFamily: "aerialkit",
+      plan,
+    },
+  });
+
+  expect(bundle).toMatchObject({
+    kind: "fc-plan-comparison",
+    fileOverall: "Plan comparison validated against the current staged plan",
+    fcEvidence: {
+      planComparison: {
+        currentPlanMatches: true,
+        summary: {
+          compared: 2,
+          matched: 0,
+          differing: 1,
+          notObserved: 1,
+        },
+      },
+      hardwareVerifiedByRotorBench: false,
+    },
+  });
+  expect(bundle.checks.find((check) => check.id === "akp-plan-summary").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "akp-plan-current").status)
+    .toBe("pass");
+  expect(bundle.checks.find((check) => check.id === "akp-plan-boundaries").status)
     .toBe("pass");
 });
 

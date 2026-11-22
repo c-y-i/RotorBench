@@ -4730,6 +4730,71 @@
   line-height: 1.45;
 }
 
+.aerial-kit-plan-comparison-state {
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.aerial-kit-plan-comparison-state.is-complete {
+  background: #e8f5ee;
+  border-color: #b8ddc8;
+}
+
+.aerial-kit-plan-comparison-state.is-review {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+}
+
+.aerial-kit-plan-comparison-state.has-differences {
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--line));
+}
+
+.aerial-kit-plan-comparison-state strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.aerial-kit-plan-comparison-state span {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.aerial-kit-plan-comparison-rows > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.aerial-kit-plan-comparison-rows > summary em {
+  padding: 2px 6px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-radius: 3px;
+  font-size: 8px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-plan-comparison-rows .aerial-kit-parameter-list {
+  margin-top: 5px;
+}
+
 .aerial-kit-parameter-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

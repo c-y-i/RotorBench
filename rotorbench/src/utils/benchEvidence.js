@@ -21,6 +21,7 @@ import {
   aerialKitMissionRouteEvidenceChecks,
   parseAerialKitMissionRouteEvidence,
 } from "./aerialKitMissionRouteEvidence";
+import { parseAerialKitPlanComparisonEvidence } from "./aerialKitPlanComparison";
 
 const MAX_EVIDENCE_BYTES = 1024 * 1024;
 
@@ -1064,6 +1065,7 @@ export function parseBenchEvidenceBundle(
   let fcLiveStatus = null;
   let fcLogSample = null;
   let fcMissionRoute = null;
+  let fcPlanComparison = null;
   let fcIdentity = null;
   let fcStatus = null;
   let fcRc = null;
@@ -1112,6 +1114,21 @@ export function parseBenchEvidenceBundle(
         fcRc = fcLiveStatus.rc;
         fcParameters = fcLiveStatus.parameters;
         fcPreflight = fcLiveStatus.preflight;
+      } else if (payload?.schema === "rotorbench.aerial-kit-plan-comparison.v1") {
+        if (fcPlanComparison) {
+          throw new Error("More than one Aerial Kit plan-comparison artifact was selected.");
+        }
+        fcPlanComparison = parseAerialKitPlanComparisonEvidence(payload, {
+          expectedPlan: expectedFc?.plan
+            ? {
+                ...expectedFc.plan,
+                firmwareFamily:
+                  expectedFc.plan.firmwareFamily
+                  || expectedFc.firmwareFamily
+                  || null,
+              }
+            : null,
+        });
       } else if (payload?.schema === "rotorbench.aerial-kit-log-sample.v1") {
         if (fcLogSample) {
           throw new Error("More than one bounded Aerial Kit log sample was selected.");
@@ -1347,6 +1364,7 @@ export function parseBenchEvidenceBundle(
   const importedMissionRouteChecks =
     aerialKitMissionRouteEvidenceChecks(fcMissionRoute);
   checks.push(...importedMissionRouteChecks);
+  if (fcPlanComparison) checks.push(...fcPlanComparison.checks);
   const importedFcRcChecks = importedFcChecks.filter(
     (check) => check.id.startsWith("fc-rc-"),
   );
@@ -1408,6 +1426,7 @@ export function parseBenchEvidenceBundle(
     liveStatus: fcLiveStatus,
     logSample: fcLogSample,
     missionRoute: fcMissionRoute,
+    planComparison: fcPlanComparison,
     identity: fcIdentity,
     status: fcStatus,
     rc: fcRc,
@@ -1469,7 +1488,8 @@ export function parseBenchEvidenceBundle(
           + Number(Boolean(fcPreflight))
           + Number(Boolean(fcIdentity))
           + Number(Boolean(fcLogSample))
-          + Number(Boolean(fcMissionRoute)),
+          + Number(Boolean(fcMissionRoute))
+          + Number(Boolean(fcPlanComparison)),
         radioStatusCount: radioStatusReports.length,
         txDiag,
         rxDiag,
@@ -1487,6 +1507,8 @@ export function parseBenchEvidenceBundle(
       ? "radio-menu-inventory"
       : fcMissionRoute
       ? "fc-mission-route"
+      : fcPlanComparison
+      ? "fc-plan-comparison"
       : fcLiveStatus
       ? "fc-live-status"
       : fcLogSample
@@ -1506,6 +1528,12 @@ export function parseBenchEvidenceBundle(
       ? fcMissionRoute.staleOnImport
         ? "Mission-route geometry validated; observation is now historical"
         : "Mission-route geometry validated as planning evidence"
+      : fcPlanComparison
+      ? fcPlanComparison.currentPlanMatches === false
+        ? "Plan comparison validated against a different staged plan"
+        : fcPlanComparison.currentPlanMatches
+          ? "Plan comparison validated against the current staged plan"
+          : "Plan comparison artifact validated; current plan was not compared"
       : fcLiveStatus
       ? fcPreflight
         ? fcPreflight.status === "none"
@@ -1556,13 +1584,15 @@ export function parseBenchEvidenceBundle(
         + Number(Boolean(fcPreflight))
         + Number(Boolean(fcIdentity))
         + Number(Boolean(fcLogSample))
-        + Number(Boolean(fcMissionRoute)),
+        + Number(Boolean(fcMissionRoute))
+        + Number(Boolean(fcPlanComparison)),
       radioStatusCount: radioStatusReports.length,
       radioMenuCount: elrsMenuInventory ? elrsMenuInventory.parameters.length : 0,
       radioMenuParameters,
       txDiag,
       rxDiag,
       txParameters,
+      planComparison: fcPlanComparison,
       complete: bundleComplete,
       settingsComplete,
       targetName,

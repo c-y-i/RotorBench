@@ -37,6 +37,7 @@ import AerialKitWaypointInspector from "./AerialKitWaypointInspector";
 import AerialKitMissionRouteDownloadButton from "./AerialKitMissionRouteDownloadButton";
 import AerialKitMissionRouteEvidence from "./AerialKitMissionRouteEvidence";
 import AerialKitMissionRouteComparison from "./AerialKitMissionRouteComparison";
+import AerialKitPlanComparisonEvidence from "./AerialKitPlanComparisonEvidence";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -54,6 +55,7 @@ const evidenceKindLabels = {
   "fc-live-status": "Aerial Kit live status + RC",
   "fc-log-sample": "Aerial Kit bounded log sample",
   "fc-mission-route": "Aerial Kit validated mission route",
+  "fc-plan-comparison": "Aerial Kit validated plan comparison",
   "fc-identity": "Aerial Kit identity + capabilities",
   "fc-rc": "Flight-controller RC observation",
   "fc-parameters": "Flight-controller parameter snapshot",
@@ -405,6 +407,7 @@ export default function BenchEvidenceReview({
     || evidence?.fcEvidence?.preflight
     || evidence?.fcEvidence?.parameters
     || evidence?.fcEvidence?.logSample
+    || evidence?.fcEvidence?.planComparison
     || evidence?.bundle?.fcEvidenceCount,
   );
   const radioEvidencePresent = Boolean(
@@ -700,6 +703,28 @@ export default function BenchEvidenceReview({
         : null,
     },
     {
+      label: "Plan comparison checks",
+      value: evidence.fcEvidence?.planComparison
+        ? `${evidence.fcEvidence.planComparison.summary.compared} checked`
+        : null,
+    },
+    {
+      label: "Plan identity",
+      value: evidence.fcEvidence?.planComparison
+        ? evidence.fcEvidence.planComparison.currentPlanMatches === false
+          ? "Different staged plan"
+          : evidence.fcEvidence.planComparison.currentPlanMatches
+            ? "Current plan matched"
+            : "Current plan not supplied"
+        : null,
+    },
+    {
+      label: "Plan comparison generated",
+      value: evidence.fcEvidence?.planComparison?.generatedAt
+        ? attachmentDate(evidence.fcEvidence.planComparison.generatedAt)
+        : null,
+    },
+    {
       label: "Radio status reports",
       value: evidence.radioDeviceEvidence?.reports?.length
         ? String(evidence.radioDeviceEvidence.reports.length)
@@ -744,6 +769,7 @@ export default function BenchEvidenceReview({
   const fcLiveStatusEvidence = evidence?.kind === "fc-live-status";
   const fcLogSampleEvidence = evidence?.kind === "fc-log-sample";
   const fcMissionRouteEvidence = evidence?.kind === "fc-mission-route";
+  const fcPlanComparisonEvidence = evidence?.kind === "fc-plan-comparison";
   const radioMenuEvidence = evidence?.kind === "radio-menu-inventory";
   const fcRcEvidence = evidence?.kind === "fc-rc";
   const fcRcComplete = evidence?.fcEvidence?.rcEvidenceComplete === true;
@@ -976,7 +1002,7 @@ export default function BenchEvidenceReview({
                       ? "is-radio-evidence"
                   : fcEvidenceComplete || fcRcComplete || fcIdentityEvidence
                     || fcLiveStatusEvidence || fcLogSampleEvidence
-                    || fcMissionRouteEvidence
+                    || fcMissionRouteEvidence || fcPlanComparisonEvidence
                     ? "is-fc-evidence"
                 : evidence.rfReportedPass ? "is-claimed" : "is-incomplete"
             }`}
@@ -989,6 +1015,7 @@ export default function BenchEvidenceReview({
               || fcLiveStatusEvidence
               || fcLogSampleEvidence
               || fcMissionRouteEvidence
+              || fcPlanComparisonEvidence
               || radioEvidenceComplete
               || radioMenuEvidence
               ? <FileCheck2 size={19} aria-hidden="true" />
@@ -1005,6 +1032,12 @@ export default function BenchEvidenceReview({
                       ? "Radio identity does not match the selected endpoint"
                       : radioMenuEvidence
                         ? "ExpressLRS menu inventory reviewed; RF and hardware remain unverified"
+                  : fcPlanComparisonEvidence
+                    ? evidence.fcEvidence?.planComparison?.currentPlanMatches === false
+                      ? "Plan comparison targets a different staged plan"
+                      : evidence.fcEvidence?.planComparison?.summary?.differing
+                        ? "Plan comparison validated with parameter differences; hardware remains unverified"
+                        : "Plan comparison structure and counts validated; hardware remains unverified"
                   : fcMissionRouteEvidence
                     ? evidence.fcEvidence?.missionRoute?.staleOnImport
                       ? "Mission-route geometry validated; observation is now historical"
@@ -1071,6 +1104,9 @@ export default function BenchEvidenceReview({
                 {evidence.kind === "fc-mission-route"
                   ? " RotorBench recomputed every imported waypoint, leg, active target, and remaining-distance suffix. This is planning evidence, not a flown mission or hardware verification."
                   : ""}
+                {evidence.kind === "fc-plan-comparison"
+                  ? " RotorBench independently checked the comparison schema, row counts, expected values, timestamps, and false hardware boundaries. The artifact remains read-only and is not a write, persistence, or hardware-readiness claim."
+                  : ""}
                 {evidence.kind === "fc-identity"
                   ? " The capability word is a compiled-firmware claim from HELLO, not proof that RotorBench exercised any capability."
                   : ""}
@@ -1115,6 +1151,12 @@ export default function BenchEvidenceReview({
           {evidence.fcEvidence?.missionRoute && (
             <AerialKitMissionRouteEvidence
               route={evidence.fcEvidence.missionRoute}
+            />
+          )}
+
+          {evidence.fcEvidence?.planComparison && (
+            <AerialKitPlanComparisonEvidence
+              comparison={evidence.fcEvidence.planComparison}
             />
           )}
 

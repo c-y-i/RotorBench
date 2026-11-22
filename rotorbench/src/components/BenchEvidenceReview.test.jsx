@@ -9,6 +9,7 @@ import {
 } from "../utils/benchEvidenceAttachment";
 import { createAerialKitLogExport } from "../utils/aerialKitLogExport";
 import { buildAerialKitMissionRouteExport } from "../utils/aerialKitMissionRouteExport";
+import { createAerialKitPlanComparisonEvidence } from "../utils/aerialKitPlanComparison";
 import { buildAerialKitWaypointInventory } from "../utils/aerialKitWaypoints";
 
 const pairEvidence = {
@@ -749,6 +750,66 @@ test("reviews a downloaded mission route as validated planning evidence", async 
   expect(screen.getByRole("button", { name: "Inspect waypoint WP 0" }))
     .toBeInTheDocument();
   expect(within(routeRegion).getByText("Active target")).toBeInTheDocument();
+});
+
+test("reviews a downloaded plan comparison against the current FC plan", async () => {
+  const plan = {
+    firmwareFamily: "aerialkit",
+    armChannel: 6,
+    dshotKhz: 300,
+  };
+  const artifact = createAerialKitPlanComparisonEvidence({
+    checks: [
+      {
+        id: "fc-param-arm-channel",
+        label: "FC parameter arm_channel",
+        status: "fail",
+        detail: "Board-reported arm_channel=5; the staged plan expects 6.",
+      },
+      {
+        id: "fc-param-dshot-khz",
+        label: "FC parameter dshot_khz",
+        status: "unverified",
+        detail: "The board-reported evidence does not include dshot_khz.",
+      },
+    ],
+    plan,
+    targetName: "SpeedyBee F405 V5",
+    statusObservedAtMs: Date.now() - 5000,
+    parameterValuesRead: true,
+    parameterMetadataRead: true,
+    nowMs: Date.now(),
+  });
+  render(
+    <BenchEvidenceReview
+      expectedFc={{ firmwareFamily: "aerialkit", plan }}
+    />,
+  );
+
+  userEvent.upload(
+    screen.getByLabelText("Choose hardware evidence files"),
+    evidenceFile(artifact, "plan-comparison.json"),
+  );
+
+  expect(await screen.findByText("Validated plan comparison")).toBeInTheDocument();
+  const comparisonRegion = screen.getByRole("region", {
+    name: "Imported Aerial Kit plan comparison",
+  });
+  expect(within(comparisonRegion).getByText("2 checked · current plan matches"))
+    .toBeInTheDocument();
+  expect(within(comparisonRegion).getByText("Differences")).toBeInTheDocument();
+  await userEvent.click(within(comparisonRegion).getByText(
+    "Validated comparison rows",
+  ));
+  expect(within(comparisonRegion).getByRole("listitem", {
+    name: /arm_channel: Differs/,
+  })).toBeInTheDocument();
+  expect(within(comparisonRegion).getByRole("listitem", {
+    name: /dshot_khz: Not observed/,
+  })).toBeInTheDocument();
+  expect(screen.getAllByText(
+    "Plan comparison validated against the current staged plan",
+  ).length).toBeGreaterThanOrEqual(1);
 });
 
 test("reviews a validated standalone bounded log artifact", async () => {
