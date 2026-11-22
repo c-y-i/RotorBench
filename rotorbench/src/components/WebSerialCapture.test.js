@@ -197,6 +197,9 @@ test("captures bytes only after an explicit port selection and never writes", as
   expect(screen.getByText(/cannot prove the aircraft is disarmed/i))
     .toBeInTheDocument();
   expect(screen.getByText("ANGLE")).toBeInTheDocument();
+  expect(screen.getByRole("img", {
+    name: /observed serial attitude.*read-only observation, not flight verification/i,
+  })).toBeInTheDocument();
   expect(screen.getByText(/16\.8 V · 12\.3 A/)).toBeInTheDocument();
   expect(screen.getByText(/88% · 1500 mAh/)).toBeInTheDocument();
   expect(screen.getByText(/12 sats · 10\.0 m\/s/)).toBeInTheDocument();

@@ -2684,6 +2684,109 @@
   margin: 0;
 }
 
+.serial-attitude-observation {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr);
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.serial-attitude-instrument {
+  position: relative;
+  min-height: 142px;
+  overflow: hidden;
+  background: var(--ink);
+  border: 1px solid #34413c;
+  border-radius: 5px;
+}
+
+.serial-attitude-horizon {
+  position: absolute;
+  inset: -70%;
+  transform:
+    translateY(var(--attitude-pitch, 0))
+    rotate(var(--attitude-roll, 0));
+  transition: transform 140ms linear;
+}
+
+.serial-attitude-sky,
+.serial-attitude-ground {
+  position: absolute;
+  inset-inline: 0;
+  height: 50%;
+}
+
+.serial-attitude-sky {
+  top: 0;
+  background: #62877e;
+}
+
+.serial-attitude-ground {
+  bottom: 0;
+  background: #8d684d;
+}
+
+.serial-attitude-line {
+  position: absolute;
+  top: 50%;
+  inset-inline: 0;
+  height: 2px;
+  background: var(--signal);
+  box-shadow: 0 -1px 0 rgba(16, 24, 22, 0.45);
+}
+
+.serial-attitude-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 54px;
+  height: 18px;
+  border: 2px solid #eff4e9;
+  border-top: 0;
+  border-radius: 0 0 18px 18px;
+  transform: translate(-50%, -2px);
+  box-shadow: 0 1px 0 rgba(16, 24, 22, 0.45);
+}
+
+.serial-attitude-reticle::before {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 2px;
+  height: 15px;
+  background: #eff4e9;
+  content: "";
+  transform: translateX(-50%);
+}
+
+.serial-attitude-scale {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: #eff4e9;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  transform: translateY(-50%);
+}
+
+.serial-attitude-readout {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.serial-attitude-readout dl {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.serial-attitude-readout p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .serial-crsf-link dl > div,
 .serial-crsf-telemetry dl > div {
   min-width: 0;
@@ -2978,6 +3081,10 @@
   .serial-crsf-link dl,
   .serial-crsf-telemetry dl {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .serial-attitude-observation {
+    grid-template-columns: 1fr;
   }
 
   .serial-crsf-channel-heading {

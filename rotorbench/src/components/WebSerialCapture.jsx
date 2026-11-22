@@ -32,6 +32,7 @@ import {
   summarizeChannelRanges,
   updateChannelRanges,
 } from "../utils/crsfCapture";
+import SerialAttitudeIndicator from "./SerialAttitudeIndicator";
 
 const statusLabels = {
   idle: "Not connected",
@@ -785,6 +786,13 @@ const WebSerialCapture = forwardRef(function WebSerialCapture({
               {latestTelemetry && (
                 <div className="serial-crsf-telemetry">
                   <h4>Telemetry observed</h4>
+                  {latestTelemetry.attitude && (
+                    <SerialAttitudeIndicator
+                      rollRad={latestTelemetry.attitude.rollRad}
+                      pitchRad={latestTelemetry.attitude.pitchRad}
+                      yawRad={latestTelemetry.attitude.yawRad}
+                    />
+                  )}
                   <dl>
                     {latestTelemetry.flightMode && (
                       <div><dt>Flight mode</dt><dd>{latestTelemetry.flightMode.mode}</dd></div>
@@ -794,16 +802,6 @@ const WebSerialCapture = forwardRef(function WebSerialCapture({
                         <div><dt>Battery</dt><dd>{latestTelemetry.battery.voltageV.toFixed(1)} V · {latestTelemetry.battery.currentA.toFixed(1)} A</dd></div>
                         <div><dt>Battery remaining</dt><dd>{latestTelemetry.battery.remainingPercent}% · {latestTelemetry.battery.capacityMah} mAh</dd></div>
                       </>
-                    )}
-                    {latestTelemetry.attitude && (
-                      <div>
-                        <dt>Attitude</dt>
-                        <dd>
-                          Roll {(latestTelemetry.attitude.rollRad * 180 / Math.PI).toFixed(1)}°
-                          {" · "}Pitch {(latestTelemetry.attitude.pitchRad * 180 / Math.PI).toFixed(1)}°
-                          {" · "}Yaw {(latestTelemetry.attitude.yawRad * 180 / Math.PI).toFixed(1)}°
-                        </dd>
-                      </div>
                     )}
                     {latestTelemetry.barometer && (
                       <div><dt>Barometer</dt><dd>{latestTelemetry.barometer.altitudeM.toFixed(1)} m · {latestTelemetry.barometer.verticalSpeedMps.toFixed(1)} m/s</dd></div>
