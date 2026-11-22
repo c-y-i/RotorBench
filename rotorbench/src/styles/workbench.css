@@ -1958,6 +1958,12 @@
   text-transform: uppercase;
 }
 
+.prop-rotation-map > summary em.is-conflict {
+  color: #ffd8d1;
+  background: #5d2520;
+  border-color: #9b4a42;
+}
+
 .prop-rotation-map > div {
   display: grid;
   gap: 7px;
@@ -2055,6 +2061,37 @@
   line-height: 1.45;
   text-align: center;
   text-wrap: pretty;
+}
+
+.prop-map-conflict {
+  display: grid;
+  width: min(100%, 62ch);
+  gap: 3px;
+  padding: 10px 11px;
+  color: #ffd8d1;
+  background: #35201e;
+  border: 1px solid #9b4a42;
+  border-radius: 5px;
+}
+
+.prop-map-conflict strong {
+  color: #fff3f0;
+  font-size: 10px;
+}
+
+.prop-map-conflict span,
+.prop-map-conflict small {
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.prop-map-conflict span {
+  color: #ffd8d1;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.prop-map-conflict small {
+  color: #e6b8b0;
 }
 
 .prop-map-copy {

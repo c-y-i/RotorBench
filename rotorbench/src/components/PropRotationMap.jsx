@@ -57,20 +57,44 @@ export default function PropRotationMap({
       })
       .join(", ")
     : "";
+  const cornerPlans = rotationCorners.map((corner, index) => {
+    const handedness = getPropellerHandedness(corner, directionProfile);
+    const output = outputFor(corner, index);
+    return {
+      corner,
+      handedness,
+      output,
+      conflict: Boolean(
+        output?.spin
+        && String(output.spin).toUpperCase() !== handedness,
+      ),
+    };
+  });
+  const outputConflicts = cornerPlans.filter((plan) => plan.conflict);
   if (!motor?.id || !propeller?.id) return null;
   const copyText = [
     "# RotorBench prop rotation plan - planning only",
     `Motor: ${motor.name || motor.id}`,
     `Propeller: ${propeller.name || propeller.id}`,
     `Direction: ${directionLabel}`,
+    ...(outputConflicts.length
+      ? [
+          "",
+          `# WARNING: ${outputConflicts.length} flight-controller output ${outputConflicts.length === 1 ? "direction conflicts" : "directions conflict"} with the planned prop direction.`,
+        ]
+      : []),
     "",
-    ...rotationCorners.map((corner, index) => {
-      const output = outputFor(corner, index);
-      return `- ${isTwin && corner === "upperLeft" ? "Left motor" : isTwin ? "Right motor" : CORNER_NAMES[corner]}: ${getPropellerHandedness(corner, directionProfile)}${
+    ...cornerPlans.map(({
+      corner,
+      handedness,
+      output,
+      conflict,
+    }) => {
+      return `- ${isTwin && corner === "upperLeft" ? "Left motor" : isTwin ? "Right motor" : CORNER_NAMES[corner]}: ${handedness}${
         output
           ? ` · output ${output.output} (${output.label})`
           : " · output number not mapped"
-      }`;
+      }${conflict ? ` [CONFLICT: output ${output.spin} does not match ${handedness}]` : ""}`;
     }),
     "",
     "Planning data only. Confirm motor order, wiring, propeller markings, and direction with props removed before flight.",
@@ -96,7 +120,11 @@ export default function PropRotationMap({
           <strong>Prop rotation map</strong>
           <small>{motor.name} · {propeller.name}</small>
         </span>
-        <em>{directionLabel} · {hasOutputs ? "outputs mapped" : "CW / CCW"}</em>
+        <em className={outputConflicts.length ? "is-conflict" : ""}>
+          {directionLabel} · {outputConflicts.length
+            ? `${outputConflicts.length} conflict${outputConflicts.length === 1 ? "" : "s"}`
+            : hasOutputs ? "outputs mapped" : "CW / CCW"}
+        </em>
       </summary>
       <div>
         <svg
@@ -115,6 +143,9 @@ export default function PropRotationMap({
                 ? "Front-left and rear-right propellers rotate clockwise. Front-right and rear-left propellers rotate counter-clockwise."
                 : "Front-left and rear-right propellers rotate counter-clockwise. Front-right and rear-left propellers rotate clockwise."}
             {hasOutputs ? ` Firmware outputs: ${outputDescription}.` : ""}
+            {outputConflicts.length
+              ? ` Direction conflicts: ${outputConflicts.map((plan) => `${CORNER_LABELS[plan.corner]} output ${plan.output.output} is ${plan.output.spin} but the plan expects ${plan.handedness}`).join("; ")}.`
+              : ""}
           </desc>
           <text className="prop-map-front" x="120" y="15" textAnchor="middle">
             FRONT
@@ -173,6 +204,20 @@ export default function PropRotationMap({
             );
           })}
         </svg>
+        {outputConflicts.length > 0 && (
+          <div className="prop-map-conflict" role="note">
+            <strong>Output direction conflict</strong>
+            <span>
+              {outputConflicts.map((plan) => (
+                `${CORNER_LABELS[plan.corner]} OUT ${plan.output.output} is ${plan.output.spin}; ${directionLabel} expects ${plan.handedness}`
+              )).join(" · ")}
+            </span>
+            <small>
+              Do not rely on this prop map until the flight-controller motor
+              direction, reversed setting, and physical wiring agree.
+            </small>
+          </div>
+        )}
         <p>
           {isTwin ? "Twin-motor" : "Corner"} handedness follows the {directionLabel} assembly plan.
           {hasOutputs

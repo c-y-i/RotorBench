@@ -5,6 +5,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import PropRotationMap from "./PropRotationMap";
+import { getA11yViolations } from "../test/a11y";
 
 test("renders the four alternating propeller directions without vendor numbering", () => {
   render(
@@ -101,6 +102,49 @@ test("saved flight-controller outputs label the corresponding corners", () => {
   })).toHaveAccessibleDescription(/UL output 4 \(CW\).*LL output 3 \(CCW\)/i);
   expect(screen.getByText(/Output numbers follow the saved flight-controller QUAD X plan/i))
     .toBeInTheDocument();
+});
+
+test("flags flight-controller output spin that conflicts with prop direction", async () => {
+  const writeText = jest.fn().mockResolvedValue(undefined);
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  });
+  const { container } = render(
+    <PropRotationMap
+      motor={{ id: "motor-test", name: "Test motor" }}
+      propeller={{ id: "prop-test", name: "Test propeller" }}
+      direction="props-in"
+      motorOutputByCorner={{
+        upperLeft: { output: 4, label: "FL", spin: "CCW" },
+        upperRight: { output: 2, label: "FR", spin: "CCW" },
+        lowerRight: { output: 1, label: "RR", spin: "CW" },
+        lowerLeft: { output: 3, label: "RL", spin: "CCW" },
+      }}
+    />,
+  );
+
+  expect(screen.getByText("props in · 1 conflict")).toBeInTheDocument();
+  expect(screen.getByRole("note")).toHaveTextContent(
+    "UL OUT 4 is CCW; props in expects CW",
+  );
+  expect(screen.getByRole("note")).toHaveTextContent(
+    /do not rely on this prop map/i,
+  );
+  expect(screen.getByRole("img", {
+    name: "Propeller rotation by frame corner",
+  })).toHaveAccessibleDescription(
+    /UL output 4 is CCW but the plan expects CW/i,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Copy prop map" }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+  expect(writeText.mock.calls[0][0]).toContain(
+    "# WARNING: 1 flight-controller output direction conflicts with the planned prop direction.",
+  );
+  expect(writeText.mock.calls[0][0]).toContain(
+    "- Front-left: CW · output 4 (FL) [CONFLICT: output CCW does not match CW]",
+  );
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("copies a portable prop-map handoff with the output mapping and boundary", async () => {
