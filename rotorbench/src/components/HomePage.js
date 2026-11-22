@@ -6,6 +6,7 @@ import componentsData from "../data/components.json";
 import TwoDViewer from "./TwoDViewer";
 import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
 import { summarizeBuild } from "../utils/buildComparison";
+import { summarizeAssemblyInterfaces } from "../utils/physicalCompatibility";
 import {
   hasCatalogModel,
   resolveModelForComponent,
@@ -82,6 +83,20 @@ function platformGeometryCoverage(preset) {
   };
 }
 
+function platformAssemblyCoverage(preset) {
+  const part = (key, category) => componentsData[category]?.find(
+    (item) => item.id === preset.componentIds?.[key],
+  ) || null;
+  return summarizeAssemblyInterfaces({
+    frame: part("frameId", "frames"),
+    motor: part("motorId", "motors"),
+    propeller: part("propellerId", "propellers"),
+    esc: part("escId", "escs"),
+    flightController: part("flightControllerId", "flight_controllers"),
+    battery: part("batteryId", "batteries"),
+  });
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -149,6 +164,13 @@ export default function HomePage() {
     () => Object.fromEntries(PLATFORM_PRESETS.map((preset) => [
       preset.id,
       summarizeBuild({ componentIds: preset.componentIds }),
+    ])),
+    [],
+  );
+  const platformAssemblySummaries = useMemo(
+    () => Object.fromEntries(PLATFORM_PRESETS.map((preset) => [
+      preset.id,
+      platformAssemblyCoverage(preset),
     ])),
     [],
   );
@@ -495,6 +517,7 @@ export default function HomePage() {
               const estimatedThrust = propeller?.estimatedFields?.includes("thrustData");
               const fitStatus = platformSummaries[preset.id]?.physicalFitStatus || "pending";
               const geometry = platformGeometryCoverage(preset);
+              const joints = platformAssemblySummaries[preset.id];
               const thrustLabel = hasThrustData
                 ? estimatedThrust
                   ? "Estimated thrust data"
@@ -505,6 +528,14 @@ export default function HomePage() {
                 : geometry.catalogModelCount === 0
                   ? `${geometry.total} fallback meshes`
                   : `${geometry.catalogModelCount}/${geometry.total} catalog models`;
+              const jointState = joints.conflictCount
+                ? "conflict"
+                : joints.unknownCount ? "review" : "verified";
+              const jointLabel = joints.conflictCount
+                ? `${joints.conflictCount} joint conflict${joints.conflictCount === 1 ? "" : "s"}`
+                : joints.unknownCount
+                  ? `${joints.matchedCount} matched · ${joints.unknownCount} verify`
+                  : `${joints.matchedCount} joints matched`;
               const rawWeight = platformSummary.totalWeight;
               const rawPrice = platformSummary.totalPrice;
               const weightLabel = rawWeight != null && Number.isFinite(Number(rawWeight))
@@ -541,6 +572,12 @@ export default function HomePage() {
                       <span className={`starter-platform-fit is-${fitStatus}`}>
                         {PLATFORM_FIT_LABELS[fitStatus]}
                       </span>
+                      <span
+                        className={`starter-platform-joints is-${jointState}`}
+                        title="Catalogued interfaces only; not a physical inspection."
+                      >
+                        {jointLabel}
+                      </span>
                       <span className={`starter-platform-geometry is-${geometry.fallbackCount === 0 ? "catalog" : "fallback"}`}>
                         {geometryLabel}
                       </span>
@@ -548,7 +585,7 @@ export default function HomePage() {
                       <span className="starter-platform-metric">{priceLabel}</span>
                     </span>
                     <span id={statusId} className="visually-hidden">
-                      {thrustLabel}. {PLATFORM_FIT_LABELS[fitStatus]}.{" "}
+                      {thrustLabel}. {PLATFORM_FIT_LABELS[fitStatus]}. {jointLabel}.{" "}
                       {geometryLabel}. Build weight {weightLabel}. Catalog total{" "}
                       {priceLabel}.
                     </span>

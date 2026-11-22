@@ -358,6 +358,35 @@ export function physicalChecksFor(category, part, selected = {}) {
   return checks.filter(Boolean);
 }
 
+export function summarizeAssemblyInterfaces(selected = {}) {
+  const checks = [];
+  if (selected.frame?.id && selected.motor?.id) {
+    checks.push(checkMotorMount(selected.motor, selected.frame));
+  }
+  if (selected.motor?.id && selected.propeller?.id) {
+    checks.push(checkPropellerFit(selected.propeller, selected.motor));
+  }
+  for (const board of [selected.flightController, selected.esc]) {
+    if (selected.frame?.id && board?.id) {
+      checks.push(checkBoardStack(board, selected.frame));
+    }
+  }
+  if (selected.battery?.id && selected.esc?.id) {
+    checks.push(checkPowerConnector(selected.battery, selected.esc));
+  }
+
+  const conflictCount = checks.filter((item) => item.status === "conflict").length;
+  const unknownCount = checks.filter((item) => item.status === "unknown").length;
+  const matchedCount = checks.length - conflictCount - unknownCount;
+  return {
+    totalCount: checks.length,
+    matchedCount,
+    unknownCount,
+    conflictCount,
+    complete: checks.length > 0 && conflictCount === 0 && unknownCount === 0,
+  };
+}
+
 export function summarizePhysicalChecks(checks) {
   const uniqueChecks = Array.from(
     new Map(

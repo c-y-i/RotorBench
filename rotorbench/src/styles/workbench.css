@@ -5729,6 +5729,7 @@
 
 .starter-platform-evidence,
 .starter-platform-fit,
+.starter-platform-joints,
 .starter-platform-geometry,
 .starter-platform-metric {
   justify-self: start;
@@ -5761,6 +5762,21 @@
 .starter-platform-fit.is-measured {
   color: var(--ok);
   background: #e8f5ee;
+}
+
+.starter-platform-joints.is-verified {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.starter-platform-joints.is-review {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+}
+
+.starter-platform-joints.is-conflict {
+  color: var(--warn);
+  background: var(--accent-soft);
 }
 
 .starter-platform-geometry.is-fallback {

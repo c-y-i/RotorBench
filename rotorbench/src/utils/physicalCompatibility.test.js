@@ -6,6 +6,7 @@ import {
   checkPowerConnector,
   checkPropellerFit,
   physicalChecksFor,
+  summarizeAssemblyInterfaces,
   summarizePowerPath,
   summarizePhysicalChecks,
 } from "./physicalCompatibility";
@@ -116,6 +117,63 @@ test("source-backed power termination remains manual when no connector is suppli
   )).toMatchObject({
     status: "unknown",
     message: expect.stringMatching(/does not publish its connector type/i),
+  });
+});
+
+test("assembly interface summaries count matched, review, and conflict joints", () => {
+  expect(summarizeAssemblyInterfaces({
+    frame: {
+      id: "frame",
+      name: "Frame",
+      stackMountPatternsMm: [[20, 20]],
+      motorMountPatternsMm: [[12, 12]],
+    },
+    motor: {
+      id: "motor",
+      name: "Motor",
+      mountingPatternMm: [12, 12],
+      propShaftMm: 1.5,
+    },
+    propeller: {
+      id: "prop",
+      name: "Prop",
+      shaftMm: 1.5,
+    },
+    flightController: {
+      id: "fc",
+      name: "FC",
+      mountingPatternMm: [20, 20],
+    },
+    esc: {
+      id: "esc",
+      name: "ESC",
+      mountingPatternMm: [20, 20],
+      includedPowerConnector: "XT30",
+    },
+    battery: {
+      id: "battery",
+      name: "Battery",
+      dischargeConnector: "XT30",
+    },
+  })).toEqual({
+    totalCount: 5,
+    matchedCount: 5,
+    unknownCount: 0,
+    conflictCount: 0,
+    complete: true,
+  });
+
+  expect(summarizeAssemblyInterfaces({
+    frame: { id: "frame", name: "Incomplete frame" },
+    motor: { id: "motor", name: "Motor" },
+    propeller: { id: "prop", name: "Prop" },
+    esc: { id: "esc", name: "ESC" },
+    battery: { id: "battery", name: "Battery" },
+  })).toMatchObject({
+    matchedCount: 0,
+    unknownCount: 4,
+    conflictCount: 0,
+    complete: false,
   });
 });
 

@@ -55,6 +55,8 @@ test("offers all complete source-backed platforms from an empty overview", async
     .getByText("Estimated thrust data")).toBeInTheDocument();
   expect(within(screen.getByRole("button", { name: "Open 3.5-inch source build" }))
     .getByText("Fit verified")).toBeInTheDocument();
+  expect(within(screen.getByRole("button", { name: "Open 3.5-inch source build" }))
+    .getByText("5 joints matched")).toBeInTheDocument();
   expect(within(screen.getByRole("button", {
     name: "Open 7-inch long-range source build",
   })).getByText("Thrust data unavailable")).toBeInTheDocument();
@@ -73,7 +75,7 @@ test("offers all complete source-backed platforms from an empty overview", async
   expect(screen.getByRole("button", {
     name: "Open 5-inch AOS 5 V5 source build",
   })).toHaveAccessibleDescription(
-    /7 fallback meshes.*Build weight \d+ g.*Catalog total \$\d+\.\d{2}/i,
+    /5 joints matched.*7 fallback meshes.*Build weight \d+ g.*Catalog total \$\d+\.\d{2}/i,
   );
   expect(screen.getByText("Sample assembly")).toBeInTheDocument();
   expect(await getA11yViolations(container)).toEqual([]);
