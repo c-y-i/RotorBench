@@ -3588,7 +3588,7 @@
 }
 
 .home-preview-panel .viewer-container.is-preview-pending {
-  min-height: clamp(360px, 53vh, 630px);
+  height: clamp(320px, 52vh, 620px);
 }
 
 .home-preview-panel .viewer-container.is-preview-pending .viewer-preview-pending {
@@ -4921,10 +4921,6 @@
     min-height: 320px;
   }
 
-  .home-preview-panel .viewer-container.is-preview-pending {
-    min-height: 320px;
-  }
-
   .build-preview-panel .build-viewer-frame,
   .build-preview-panel .build-viewer-frame .drone-wrapper {
     min-height: 340px;
@@ -4967,10 +4963,6 @@
 
   .home-preview-panel .drone-wrapper {
     height: 34vh;
-    min-height: 270px;
-  }
-
-  .home-preview-panel .viewer-container.is-preview-pending {
     min-height: 270px;
   }
 
