@@ -89,13 +89,16 @@ export default function ComparePage() {
         <header className="compare-page-header">
           <div>
             <h1>Compare builds</h1>
-            <p>Select two saved builds from the Saved page to compare them.</p>
+            <p>
+              Compare the current working build with a saved baseline, or select
+              two saved revisions from the Saved page.
+            </p>
           </div>
         </header>
         <div className="compare-empty">
           <p>
             {sharedComparison.error
-              || "Two build configurations are required for this view."}
+              || "Open Saved builds to choose the current build and a saved baseline, or two saved revisions."}
           </p>
           <button type="button" className="action-btn save" onClick={() => navigate("/saved")}>
             <ArrowLeft size={17} aria-hidden="true" />
@@ -168,7 +171,7 @@ export default function ComparePage() {
         <div>
           <h1>Compare builds</h1>
           <p>
-            Catalog-level comparison of two saved configurations. Performance values
+            Catalog-level comparison of two configurations. Performance values
             require a separate analysis run.
           </p>
         </div>

@@ -53,6 +53,7 @@ const componentDefinitions = [
     { key: "flightControllerId", category: "flight_controllers", label: "Flight controller", Icon: Cpu },
     { key: "receiverId", category: "receivers", label: "Receiver", Icon: Radio },
 ];
+const CURRENT_BUILD_COMPARE_ID = "__current-build__";
 
 const getBuildComponents = (build) => {
     const ids = build?.componentIds || {};
@@ -88,6 +89,20 @@ export default function SavedConfigsPage() {
     const [message, setMessage] = useState({ type: "", text: "" });
     const [renamingId, setRenamingId] = useState(null);
     const [renameValue, setRenameValue] = useState("");
+    const currentWorkingBuild = readJsonStorage("currentBuild", null);
+    const currentBuildComparable = Boolean(
+      currentWorkingBuild?.componentIds
+      && Object.values(currentWorkingBuild.componentIds).some(Boolean),
+    );
+    const currentComparisonBuild = currentBuildComparable
+      ? {
+          ...currentWorkingBuild,
+          id: `current-build:${currentWorkingBuild.id || "draft"}`,
+          name: currentWorkingBuild.name
+            ? `${currentWorkingBuild.name} · Current`
+            : "Current working build",
+        }
+      : null;
 
     const navigate = useNavigate();
     const userId = localStorage.getItem("userId");
@@ -435,7 +450,9 @@ export default function SavedConfigsPage() {
 
     const openComparison = () => {
         const builds = comparisonIds
-            .map((id) => items.find((item) => item.id === id))
+            .map((id) => id === CURRENT_BUILD_COMPARE_ID
+                ? currentComparisonBuild
+                : items.find((item) => item.id === id))
             .filter(Boolean)
             .slice(0, 2);
         if (builds.length === 2) {
@@ -517,6 +534,21 @@ export default function SavedConfigsPage() {
                             onChange={handleImportSheet}
                         />
                     </label>
+                    {currentBuildComparable && (
+                        <button
+                            className="action-btn secondary saved-current-compare"
+                            aria-label={
+                                comparisonIds.includes(CURRENT_BUILD_COMPARE_ID)
+                                    ? "Remove current build from comparison"
+                                    : "Use current build for comparison"
+                            }
+                            aria-pressed={comparisonIds.includes(CURRENT_BUILD_COMPARE_ID)}
+                            onClick={() => toggleComparison(CURRENT_BUILD_COMPARE_ID)}
+                        >
+                            <Columns3 size={17} aria-hidden="true" />
+                            Current build
+                        </button>
+                    )}
                     <button
                         className="action-btn secondary"
                         onClick={openComparison}

@@ -1144,6 +1144,12 @@
     width: 100%;
   }
 
+.saved-page .saved-current-compare[aria-pressed="true"] {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border-color: var(--brand);
+}
+
   .saved-page .saved-toolbar > button:last-child {
     grid-column: 1 / -1;
   }

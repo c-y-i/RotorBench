@@ -1,8 +1,18 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import SavedConfigsPage from "./SavedConfigsPage";
 import { createBenchEvidenceScope } from "../utils/benchEvidenceAttachment";
 import { getA11yViolations } from "../test/a11y";
+
+function CompareLocationProbe() {
+  const location = useLocation();
+  const builds = location.state?.builds || [];
+  return (
+    <div>
+      Compare route: {builds.map((build) => `${build.id}:${build.name}`).join(" | ")}
+    </div>
+  );
+}
 
 const offlineBuild = {
   id: "offline-build",
@@ -80,6 +90,42 @@ test("offline builds can be renamed and duplicated with their saved plan and evi
     attachedAt: "2026-11-20T12:00:00.000Z",
     rfEvidenceComplete: true,
   });
+});
+
+test("compares the current working build with one saved build", async () => {
+  localStorage.setItem("currentBuild", JSON.stringify({
+    id: "working-build",
+    name: "Working tune",
+    componentIds: {
+      frameId: "frame-5inch-220mm",
+      motorId: "motor-2207-1750kv",
+      propellerId: "prop-5040-tri",
+      batteryId: "battery-4s-1550mah-95c",
+    },
+  }));
+  const { container } = render(
+    <MemoryRouter initialEntries={["/saved"]}>
+      <Routes>
+        <Route path="/saved" element={<SavedConfigsPage />} />
+        <Route path="/compare" element={<CompareLocationProbe />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
+  await screen.findByRole("heading", { name: "Offline build" });
+  fireEvent.click(screen.getByRole("button", {
+    name: "Use current build for comparison",
+  }));
+  expect(screen.getByRole("button", {
+    name: "Remove current build from comparison",
+  })).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("checkbox", { name: "Compare" }));
+  fireEvent.click(screen.getByRole("button", { name: /Compare 2\/2/ }));
+
+  expect(screen.getByText(
+    /current-build:working-build:Working tune · Current \| offline-build:Offline build/,
+  )).toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("a valid build sheet imports as a new offline build", async () => {
