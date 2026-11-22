@@ -5,6 +5,12 @@ const GROUPS = [
   {
     id: "arming",
     label: "Arming and receiver",
+    matches: (name) => (
+      name === "brd_alt_config"
+      || name === "rssi_type"
+      || name === "rc_protocols"
+      || /^serial[1-8]_(?:protocol|baud)$/.test(name)
+    ),
     names: new Set([
       "arm_channel",
       "arm_hold_ms",
@@ -93,7 +99,9 @@ export function groupFcParameters(values = {}) {
   Object.entries(values)
     .sort(([left], [right]) => left.localeCompare(right))
     .forEach(([name, value]) => {
-      const group = GROUPS.find((candidate) => candidate.names.has(name))
+      const group = GROUPS.find((candidate) => (
+        candidate.names.has(name) || candidate.matches?.(name)
+      ))
         || grouped.get("other");
       grouped.get(group.id).entries.push({ name, value: String(value) });
     });

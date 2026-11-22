@@ -1233,7 +1233,13 @@ export function parseBenchEvidenceBundle(
   );
   const importedFcParameterChecks = fcParameterChecks(
     fcParameters,
-    expectedFc?.plan || null,
+    expectedFc?.plan
+      ? {
+          ...expectedFc.plan,
+          firmwareFamily:
+            expectedFc.plan.firmwareFamily || expectedFc.firmwareFamily || null,
+        }
+      : null,
   );
   checks.push(...importedFcParameterChecks);
   const fcParameterCoverageComplete = Boolean(

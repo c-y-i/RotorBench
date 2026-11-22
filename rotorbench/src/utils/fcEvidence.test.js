@@ -368,3 +368,71 @@ test("marks planned parameters missing from a partial snapshot as unverified", (
   expect(checks.find((check) => check.id === "fc-param-rc-min").status)
     .toBe("unverified");
 });
+
+test("parses Mission Planner and QGroundControl parameter files", () => {
+  const missionPlanner = parseFcParameterSnapshotText(
+    [
+      "# Mission Planner export",
+      "BRD_ALT_CONFIG,1",
+      "SERIAL7_PROTOCOL,23",
+      "SERIAL7_BAUD,57",
+    ].join("\n"),
+  );
+  expect(missionPlanner).toMatchObject({
+    kind: "fc-parameters",
+    format: "mission-planner",
+    values: {
+      brd_alt_config: "1",
+      serial7_protocol: "23",
+      serial7_baud: "57",
+    },
+  });
+
+  const qgroundControl = parseFcParameterSnapshotText(
+    [
+      "# MAV ID COMPONENT ID PARAM NAME VALUE TYPE",
+      "1\t1\tBRD_ALT_CONFIG\t1\t6",
+      "1\t1\tSERIAL7_PROTOCOL\t23\t6",
+    ].join("\n"),
+  );
+  expect(qgroundControl).toMatchObject({
+    kind: "fc-parameters",
+    format: "qgroundcontrol",
+    values: {
+      brd_alt_config: "1",
+      serial7_protocol: "23",
+    },
+  });
+});
+
+test("checks the documented H743 UART6 requirements in ArduPilot snapshots", () => {
+  const matching = parseFcParameterSnapshotText(
+    "BRD_ALT_CONFIG,1\nSERIAL7_PROTOCOL,23",
+  );
+  const plan = {
+    profileId: "matek-h743-wing-v3-ardupilot",
+    receiverProtocol: "crsf",
+    firmwareFamily: "ardupilot",
+  };
+  const checks = fcParameterChecks(matching, plan);
+
+  expect(checks.find((check) => check.id === "fc-param-brd-alt-config")).toMatchObject({
+    status: "pass",
+    detail: expect.stringMatching(/true UART RX on UART6/i),
+  });
+  expect(checks.find((check) => check.id === "fc-param-serial7-protocol")).toMatchObject({
+    status: "pass",
+    detail: expect.stringMatching(/CRSF\/ELRS on SERIAL7/i),
+  });
+  expect(checks.some((check) => check.id === "fc-param-rc-protocol"))
+    .toBe(false);
+
+  const mismatch = fcParameterChecks(
+    parseFcParameterSnapshotText("BRD_ALT_CONFIG,0\nSERIAL7_PROTOCOL,2"),
+    plan,
+  );
+  expect(mismatch.find((check) => check.id === "fc-param-brd-alt-config").status)
+    .toBe("fail");
+  expect(mismatch.find((check) => check.id === "fc-param-serial7-protocol").status)
+    .toBe("fail");
+});

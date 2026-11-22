@@ -183,7 +183,7 @@ test("reviews a complete pair file without claiming RotorBench observed hardware
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(pairEvidence),
   );
 
@@ -202,7 +202,7 @@ test("a plan UID mismatch is shown as a failed check", async () => {
   render(<BenchEvidenceReview expectedUid="aa:bb:cc:dd:ee:ff" />);
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(pairEvidence),
   );
 
@@ -232,7 +232,7 @@ test("correlates one report with TX and RX boot diagnostics", async () => {
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile(pairEvidence, "pair.json"),
       evidenceFile(txBoot, "tx-boot.json"),
@@ -263,7 +263,7 @@ test("correlates one report with TX and RX boot diagnostics", async () => {
 test("downloads a sanitized portable review summary", async () => {
   render(<BenchEvidenceReview expectedUid="10:73:a1:1f:a8:0f" />);
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(pairEvidence),
   );
   await screen.findByText("Required RF gates are present in the file");
@@ -312,7 +312,7 @@ test("explicitly attaches a sanitized evidence summary to the current build", as
     />,
   );
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(pairEvidence),
   );
   await screen.findByText("Required RF gates are present in the file");
@@ -446,7 +446,7 @@ test("shows local evidence history and compares it with the current run", async 
 
 test("invalid JSON is rejected without retaining prior evidence", async () => {
   render(<BenchEvidenceReview />);
-  const input = screen.getByLabelText("Choose Aerial Kit evidence JSON files");
+  const input = screen.getByLabelText("Choose hardware evidence files");
 
   userEvent.upload(input, {
     name: "bad.json",
@@ -459,7 +459,7 @@ test("invalid JSON is rejected without retaining prior evidence", async () => {
 test("native CRSF observation reports expose timing and integrity diagnostics", async () => {
   render(<BenchEvidenceReview />);
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile({
       schema: "rotorbench.crsf-observation.v1",
       status: "frames-observed",
@@ -527,7 +527,7 @@ test("correlates matching TX and RX observations without claiming RF", async () 
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     [
       observationEvidence("tx", "tx-observation.json"),
       observationEvidence("rx", "rx-observation.json"),
@@ -555,7 +555,7 @@ test("reviews imported flight-controller status and preflight evidence", async (
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile(fcStatusEvidence, "fc-status.json"),
       textEvidenceFile(fcPreflightText, "fc-preflight.txt"),
@@ -583,7 +583,7 @@ test("does not call Betaflight MSP status a receiver-link pass", async () => {
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile({
         identity: "protocol=betaflight product=BTFL firmware=2026.6.1",
@@ -609,7 +609,7 @@ test("filters imported evidence to failed and unverified review items", async ()
     />,
   );
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile({
         identity: "protocol=betaflight product=BTFL firmware=2026.6.1",
@@ -650,7 +650,7 @@ test("shows fresh FC RC channels without claiming RF verification", async () => 
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile({
         identity: "protocol=betaflight product=BTFL firmware=2026.6.1",
@@ -691,7 +691,7 @@ test("recognizes a standalone FC RC observation without completing FC evidence",
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile({
       protocol: "betaflight",
       link_live: null,
@@ -722,7 +722,7 @@ test("reviews radio device status without exposing serial identity", async () =>
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(radioStatusEvidence, "tx-status.json"),
   );
 
@@ -748,7 +748,7 @@ test("names a radio endpoint mismatch instead of falling back to the generic RF 
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(radioStatusEvidence, "tx-status.json"),
   );
 
@@ -767,7 +767,7 @@ test("compares an imported FC parameter snapshot with the staged plan", async ()
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile(
       "arm_channel=6 status=0\nrc_min=180 status=0",
       "fc-params.txt",
@@ -793,7 +793,7 @@ test("does not call a partial FC parameter snapshot a plan match", async () => {
   );
 
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile("arm_channel=5 status=0", "fc-params.txt"),
   );
 
@@ -803,6 +803,35 @@ test("does not call a partial FC parameter snapshot a plan match", async () => {
   expect(screen.getByText("FC parameters covered")).toBeInTheDocument();
   expect(screen.getByText("1 / 3")).toBeInTheDocument();
   expect(screen.getByText(/does not include mode_channel/i)).toBeInTheDocument();
+});
+
+test("reviews Mission Planner parameters for the documented H743 receiver path", async () => {
+  render(
+    <BenchEvidenceReview
+      expectedFc={{
+        firmwareFamily: "ardupilot",
+        plan: {
+          profileId: "matek-h743-wing-v3-ardupilot",
+          receiverProtocol: "crsf",
+        },
+      }}
+    />,
+  );
+
+  userEvent.upload(
+    screen.getByLabelText("Choose hardware evidence files"),
+    textEvidenceFile(
+      "BRD_ALT_CONFIG,1\nSERIAL7_PROTOCOL,23",
+      "h743-wing.param",
+    ),
+  );
+
+  expect(await screen.findByText(
+    "FC parameters match the staged plan; hardware remains unverified",
+  )).toBeInTheDocument();
+  expect(screen.getByText("Observed parameter snapshot")).toBeInTheDocument();
+  expect(screen.getByText(/true UART RX on UART6/i)).toBeInTheDocument();
+  expect(screen.getByText(/CRSF\/ELRS on SERIAL7/i)).toBeInTheDocument();
 });
 
 test("adopts only selected observed FC values through an explicit local action", async () => {
@@ -826,7 +855,7 @@ test("adopts only selected observed FC values through an explicit local action",
     />,
   );
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile(
       "arm_channel=5 status=0\narm_hold_ms=750 status=0",
       "fc-params.txt",
@@ -873,7 +902,7 @@ test("blocks observed-value adoption after the reviewed plan scope changes", asy
     />,
   );
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile("arm_channel=5 status=0", "fc-params.txt"),
   );
   await screen.findByText("Apply observed flight-controller values");
@@ -932,7 +961,7 @@ test("adopts observed TX radio settings independently from FC evidence", async (
     />,
   );
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile(pairEvidence, "pair.json"),
       textEvidenceFile(txParametersText, "tx-params.txt"),
@@ -991,7 +1020,7 @@ test("blocks radio adoption without matching endpoint identity evidence", async 
     />,
   );
   userEvent.upload(
-    screen.getByLabelText("Choose Aerial Kit evidence JSON files"),
+    screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile(pairEvidence, "pair.json"),
       textEvidenceFile(txParametersText, "tx-params.txt"),

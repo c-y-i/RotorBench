@@ -33,6 +33,27 @@ test("groups imported FC parameters without changing their values", () => {
     .toEqual([{ name: "custom_threshold", value: "42" }]);
 });
 
+test("groups ArduPilot receiver and serial parameters with the receiver plan", () => {
+  const groups = groupFcParameters({
+    brd_alt_config: "1",
+    serial7_protocol: "23",
+    serial7_baud: "57",
+    rssi_type: "3",
+  });
+
+  expect(groups).toHaveLength(1);
+  expect(groups[0]).toMatchObject({
+    id: "arming",
+    label: "Arming and receiver",
+    entries: [
+      { name: "brd_alt_config", value: "1" },
+      { name: "rssi_type", value: "3" },
+      { name: "serial7_baud", value: "57" },
+      { name: "serial7_protocol", value: "23" },
+    ],
+  });
+});
+
 test("filters the snapshot and states the read-only boundary", async () => {
   render(<FcParameterSnapshot values={values} />);
 

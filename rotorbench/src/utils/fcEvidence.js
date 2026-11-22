@@ -580,26 +580,75 @@ function comparableParameterValue(value) {
 
 export function parseFcParameterSnapshotText(text) {
   if (typeof text !== "string" || !text.trim()) {
-    throw new Error("Choose a non-empty Aerial Kit parameter snapshot.");
+    throw new Error("Choose a non-empty flight-controller parameter snapshot.");
   }
-  const values = {};
-  for (const rawLine of text.split(/\r?\n/)) {
-    if (!rawLine.trim()) continue;
-    const match = rawLine.trim().match(/^([a-z0-9_]+)=(.+?)\s+status=\S+$/i);
-    if (!match) {
-      throw new Error("The selected text is not an ak fc get parameter snapshot.");
-    }
-    values[match[1].toLowerCase()] = match[2].trim();
-  }
-  if (!Object.keys(values).length) {
+  const lines = text.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"));
+  if (!lines.length) {
     throw new Error("The parameter snapshot contains no values.");
   }
-  return { kind: "fc-parameters", values };
+
+  const aerialKitValues = {};
+  const aerialKitRows = lines.map(
+    (line) => line.match(/^([a-z0-9_]+)=(.+?)\s+status=\S+$/i),
+  );
+  if (aerialKitRows.every(Boolean)) {
+    aerialKitRows.forEach((match) => {
+      aerialKitValues[match[1].toLowerCase()] = match[2].trim();
+    });
+    return { kind: "fc-parameters", format: "aerial-kit", values: aerialKitValues };
+  }
+
+  const structuredRows = lines.map((line) => (
+    line.includes("\t") ? line.split("\t") : line.split(/\s+/)
+  )).map((row) => row.map((cell) => cell.trim()));
+  const isQgcSnapshot = structuredRows.every((row) => (
+    row.length >= 5
+    && /^\d+$/.test(row[0])
+    && /^\d+$/.test(row[1])
+    && /^[A-Za-z][A-Za-z0-9_]*$/.test(row[2])
+    && Number.isFinite(Number(row[3]))
+    && /^\d+$/.test(row[4])
+  ));
+  if (isQgcSnapshot) {
+    return {
+      kind: "fc-parameters",
+      format: "qgroundcontrol",
+      values: Object.fromEntries(structuredRows.map((row) => [
+        row[2].toLowerCase(),
+        row[3],
+      ])),
+    };
+  }
+
+  const commaRows = lines.map((line) => line.split(",").map((cell) => cell.trim()));
+  const isMissionPlannerSnapshot = commaRows.every((row) => (
+    row.length === 2
+    && /^[A-Za-z][A-Za-z0-9_]*$/.test(row[0])
+    && Number.isFinite(Number(row[1]))
+  ));
+  if (isMissionPlannerSnapshot) {
+    return {
+      kind: "fc-parameters",
+      format: "mission-planner",
+      values: Object.fromEntries(commaRows.map(([name, value]) => [
+        name.toLowerCase(),
+        value,
+      ])),
+    };
+  }
+
+  throw new Error(
+    "The selected text is not a supported Aerial Kit, Mission Planner, or QGroundControl parameter snapshot.",
+  );
 }
 
 export function fcParameterChecks(snapshot, plan) {
   if (!snapshot || !plan) return [];
-  return Object.entries(PARAMETER_PLAN_KEYS)
+  const checks = (plan.firmwareFamily === "ardupilot"
+    ? []
+    : Object.entries(PARAMETER_PLAN_KEYS)
     .filter(([, planKey]) => {
       const value = plan[planKey];
       return value !== null && value !== undefined && value !== "";
@@ -624,5 +673,33 @@ export function fcParameterChecks(snapshot, plan) {
           ? `Imported ${runtimeName}=${actual}, matching the staged plan.`
           : `Imported ${runtimeName}=${actual}; the staged plan expects ${expected}.`,
       );
-    });
+    }));
+
+  const ardupilotChecks = plan.profileId === "matek-h743-wing-v3-ardupilot"
+    && plan.receiverProtocol === "crsf"
+    ? [
+        ["BRD_ALT_CONFIG", "1", "true UART RX on UART6"],
+        ["SERIAL7_PROTOCOL", "23", "CRSF/ELRS on SERIAL7"],
+      ].map(([runtimeName, expected, requirement]) => {
+        const actual = snapshot.values[runtimeName.toLowerCase()];
+        if (actual === undefined) {
+          return makeCheck(
+            `fc-param-${runtimeName.toLowerCase().replaceAll("_", "-")}`,
+            `FC parameter ${runtimeName}`,
+            "unverified",
+            `The imported snapshot does not include ${runtimeName}, so ${requirement} remains unverified.`,
+          );
+        }
+        return makeCheck(
+          `fc-param-${runtimeName.toLowerCase().replaceAll("_", "-")}`,
+          `FC parameter ${runtimeName}`,
+          comparableParameterValue(actual) === expected ? "pass" : "fail",
+          comparableParameterValue(actual) === expected
+            ? `Imported ${runtimeName}=${actual}, matching the documented H743 ${requirement} requirement.`
+            : `Imported ${runtimeName}=${actual}; the documented H743 plan requires ${expected} for ${requirement}.`,
+        );
+      })
+    : [];
+
+  return [...checks, ...ardupilotChecks];
 }

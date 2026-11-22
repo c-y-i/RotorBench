@@ -704,10 +704,10 @@ export default function BenchEvidenceReview({
         <div>
           <FileSearch size={18} aria-hidden="true" />
           <span>
-            <strong id="bench-file-review-title">Review Aerial Kit evidence</strong>
+            <strong id="bench-file-review-title">Review hardware evidence</strong>
             <small>
-              Import one report or matching TX/RX native observations, plus diagnostics
-              and a TX parameter snapshot
+              Import Aerial Kit reports, observations, diagnostics, or Aerial Kit,
+              Mission Planner, and QGroundControl parameter snapshots
             </small>
           </span>
         </div>
@@ -766,8 +766,8 @@ export default function BenchEvidenceReview({
           className="bench-file-review-input"
           type="file"
           multiple
-          accept="application/json,.json,text/plain,.txt"
-          aria-label="Choose Aerial Kit evidence JSON files"
+          accept="application/json,.json,text/plain,.txt,.param,.params,.parm"
+          aria-label="Choose hardware evidence files"
           onChange={importFile}
         />
         {evidence && (
