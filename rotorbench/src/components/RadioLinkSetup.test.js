@@ -205,6 +205,24 @@ test("RadioMaster Pocket selects its internal ELRS target without a host bay", (
   })).toBeInTheDocument();
 });
 
+test("TX16S Mark II selects its internal ELRS target without a module bay", () => {
+  render(<RadioLinkSetup />);
+  fireEvent.change(screen.getByLabelText("Device"), {
+    target: { value: "radiomaster-tx16s-mkii-elrs-24-tx" },
+  });
+
+  expect(screen.getByLabelText("Host transport")).toHaveValue("internal-rf");
+  expect(screen.getByText("Internal RF module")).toBeInTheDocument();
+  expect(screen.queryByLabelText("Handset")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Handset bay")).not.toBeInTheDocument();
+  expect(screen.getByText(/Internal 2.4 GHz ExpressLRS SX1280 RF/i))
+    .toBeInTheDocument();
+  expect(screen.getByText(/6\.6-8\.4 V.*450-530 mA/i)).toBeInTheDocument();
+  expect(screen.getByRole("option", {
+    name: /LBT · 20 dBm \/ 100 mW max/i,
+  })).toBeInTheDocument();
+});
+
 test("sub-GHz receiver mismatch offers an explicit compatible target", () => {
   render(
     <RadioLinkSetup

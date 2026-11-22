@@ -315,6 +315,42 @@ export const RADIO_TARGETS = [
     manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/Pocket_A1.8.pdf?v=1770617495",
   },
   {
+    id: "radiomaster-tx16s-mkii-elrs-24-tx",
+    name: "RadioMaster TX16S Mark II Internal ELRS 2.4 GHz",
+    description: "EdgeTX full-size handset with internal ExpressLRS 2.4 GHz RF using an SX1280 transmitter module.",
+    frequency: "2.4 GHz",
+    frequencyBands: ["2.4 GHz"],
+    defaultHostTransport: "internal-rf",
+    defaultHostBay: "verify",
+    supportedHostBays: [],
+    firmwareVersion: "EdgeTX with internal ExpressLRS",
+    roles: ["tx"],
+    packetRateModes: ["25", "50", "100-full", "150", "250", "500"],
+    serial: {
+      txBaud: null,
+      rxBaud: null,
+      frame: "Internal 2.4 GHz ExpressLRS SX1280 RF; no external module-bay or host CRSF transport",
+      note: "USB and SD card are used for EdgeTX and firmware configuration. They are not the RF link and do not prove transmission.",
+    },
+    hostLink: {
+      internalRf: {
+        note: "Configure the fitted TX16S Mark II internal ELRS module in EdgeTX. The handset's 6.6-8.4 V radio supply and 450-530 mA ELRS working current do not define the aircraft power path.",
+      },
+    },
+    power: {
+      defaultDbm: null,
+      defaultMw: null,
+      regulatoryMaxima: [
+        { region: "LBT", dbm: 20, mw: 100 },
+      ],
+      menuVerified: false,
+      note: "RadioMaster states that FCC maximum power depends on the installed hardware and that the LBT/CE edition is limited to 100 mW. The default drive value is not published here.",
+    },
+    source: "RadioMaster TX16S Mark II product page, comparison chart, and official manual",
+    sourceUrl: "https://radiomasterrc.com/products/tx16s-mark-ii-radio-controller",
+    manualUrl: "https://cdn.shopify.com/s/files/1/0701/8066/7584/files/TX16SMKII_2.0.pdf?v=1770617496",
+  },
+  {
     id: "generic-elrs-24-tx",
     name: "Generic ExpressLRS 2.4 GHz TX",
     description: "Planning profile for a handset or USB ExpressLRS transmitter.",
