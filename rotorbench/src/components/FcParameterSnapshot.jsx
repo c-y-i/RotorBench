@@ -101,19 +101,46 @@ export function groupFcParameters(values = {}) {
   return [...grouped.values()].filter((group) => group.entries.length > 0);
 }
 
-export default function FcParameterSnapshot({ values = {} }) {
+const STATUS_LABELS = {
+  pass: "Matches plan",
+  fail: "Differs",
+  unverified: "Unverified",
+};
+
+const parameterCheckId = (name) => `fc-param-${name.replaceAll("_", "-")}`;
+
+export default function FcParameterSnapshot({ values = {}, checks = [] }) {
   const [query, setQuery] = useState("");
-  const groups = useMemo(() => groupFcParameters(values), [values]);
+  const [differencesOnly, setDifferencesOnly] = useState(false);
+  const groups = useMemo(() => {
+    const statusByCheckId = new Map(checks.map((check) => [check.id, check.status]));
+    return groupFcParameters(values).map((group) => ({
+      ...group,
+      entries: group.entries.map((entry) => {
+        const status = statusByCheckId.get(parameterCheckId(entry.name)) || "observed";
+        return {
+          ...entry,
+          status,
+          statusLabel: STATUS_LABELS[status] || "Observed",
+        };
+      }),
+    }));
+  }, [checks, values]);
+  const matches = groups.flatMap((group) => group.entries)
+    .filter((entry) => entry.status === "pass").length;
+  const differences = groups.flatMap((group) => group.entries)
+    .filter((entry) => entry.status === "fail").length;
   const normalizedQuery = query.trim().toLowerCase();
-  const visibleGroups = normalizedQuery
-    ? groups.map((group) => ({
-        ...group,
-        entries: group.entries.filter(({ name, value }) => (
-          name.includes(normalizedQuery)
-          || value.toLowerCase().includes(normalizedQuery)
-        )),
-      })).filter((group) => group.entries.length > 0)
-    : groups;
+  const visibleGroups = groups.map((group) => ({
+    ...group,
+    entries: group.entries.filter(({ name, value, status, statusLabel }) => {
+      const matchesQuery = !normalizedQuery
+        || name.includes(normalizedQuery)
+        || value.toLowerCase().includes(normalizedQuery)
+        || statusLabel.toLowerCase().includes(normalizedQuery);
+      return matchesQuery && (!differencesOnly || status === "fail");
+    }),
+  })).filter((group) => group.entries.length > 0);
   const parameterCount = Object.keys(values).length;
 
   if (!parameterCount) return null;
@@ -127,6 +154,9 @@ export default function FcParameterSnapshot({ values = {} }) {
           <small>
             {parameterCount} read-only value{parameterCount === 1 ? "" : "s"} from
             the imported file
+            {checks.length
+              ? ` · ${matches} match${matches === 1 ? "" : "es"} · ${differences} differ${differences === 1 ? "s" : ""}`
+              : ""}
           </small>
         </span>
         <em>Not written</em>
@@ -146,15 +176,28 @@ export default function FcParameterSnapshot({ values = {} }) {
           Values below are shown exactly as the imported snapshot reported them.
           RotorBench did not write, save, or re-read them from the controller.
         </p>
+        {differences > 0 && (
+          <button
+            type="button"
+            className="fc-parameter-difference-filter"
+            aria-pressed={differencesOnly}
+            onClick={() => setDifferencesOnly((current) => !current)}
+          >
+            Differences only · {differences}
+          </button>
+        )}
         {visibleGroups.length ? (
           <div className="fc-parameter-groups">
             {visibleGroups.map((group) => (
               <section key={group.id} aria-label={`${group.label} parameters`}>
                 <h5>{group.label}</h5>
                 <dl>
-                  {group.entries.map(({ name, value }) => (
+                  {group.entries.map(({ name, value, status, statusLabel }) => (
                     <div key={name}>
-                      <dt>{name}</dt>
+                      <dt>
+                        <span>{name}</span>
+                        <em className={`is-${status}`}>{statusLabel}</em>
+                      </dt>
                       <dd>{value}</dd>
                     </div>
                   ))}
@@ -164,8 +207,20 @@ export default function FcParameterSnapshot({ values = {} }) {
           </div>
         ) : (
           <div className="fc-parameter-empty">
-            <span>No observed parameters match “{query}”.</span>
-            <button type="button" onClick={() => setQuery("")}>Clear filter</button>
+            <span>
+              {differencesOnly
+                ? "No imported parameters differ from the staged plan."
+                : `No observed parameters match “${query}”.`}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setDifferencesOnly(false);
+              }}
+            >
+              Clear filter
+            </button>
           </div>
         )}
       </div>

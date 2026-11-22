@@ -901,7 +901,10 @@ export default function BenchEvidenceReview({
           </dl>
 
           {evidence.fcEvidence?.parameters?.values && (
-            <FcParameterSnapshot values={evidence.fcEvidence.parameters.values} />
+            <FcParameterSnapshot
+              values={evidence.fcEvidence.parameters.values}
+              checks={evidence.checks}
+            />
           )}
           {evidence.bundle?.txParameters?.entries && (
             <RadioParameterSnapshot

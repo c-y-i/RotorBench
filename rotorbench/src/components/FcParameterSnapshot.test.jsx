@@ -60,3 +60,39 @@ test("filters the snapshot and states the read-only boundary", async () => {
   expect(screen.getByRole("region", { name: "Arming and receiver parameters" }))
     .toBeInTheDocument();
 });
+
+test("identifies plan matches and differences inline", async () => {
+  render(
+    <FcParameterSnapshot
+      values={values}
+      checks={[
+        { id: "fc-param-arm-channel", status: "pass" },
+        { id: "fc-param-rc-min", status: "fail" },
+        { id: "fc-param-mode-channel", status: "unverified" },
+      ]}
+    />,
+  );
+
+  await userEvent.click(screen.getByText("Observed parameter snapshot"));
+  const arming = screen.getByRole("region", {
+    name: "Arming and receiver parameters",
+  });
+  expect(within(arming).getByText("Matches plan")).toBeInTheDocument();
+  expect(within(arming).getByText("Differs")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "Modes and channels parameters",
+  })).getByText("Unverified")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", {
+    name: "Hand launch parameters",
+  })).getByText("Observed")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: /Differences only · 1/,
+  }));
+  expect(within(screen.getByRole("region", {
+    name: "Arming and receiver parameters",
+  })).getByText("rc_min")).toBeInTheDocument();
+  expect(screen.queryByText("arm_channel")).not.toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Modes and channels parameters" }))
+    .not.toBeInTheDocument();
+});
