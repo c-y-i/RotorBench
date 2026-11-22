@@ -30,6 +30,7 @@ import {
 } from "../assembly/assemblyTransforms";
 import { getCameraView } from "../assembly/cameraViews";
 import { supportsWebGL } from "../assembly/webglSupport";
+import { getFrameServoPositionsMm } from "../utils/frameHardware";
 
 const FIXED_UNIT_SCALE = 0.001; // 1 mm -> 0.001 Babylon units (meters)
 
@@ -367,6 +368,37 @@ const createBoardFallback = (scene, type, part = {}, level, label) => {
   board.material = createMaterial(scene, `${type}_${label}_mat`, color);
   tagFallbackMeshes(root.getChildMeshes(), type);
   root.metadata = { componentType: type, assemblyFallback: true };
+  return root;
+};
+
+const createServoFallback = (scene, hardware, position, index) => {
+  const dimensions = (Array.isArray(hardware.dimensionsMm)
+    ? hardware.dimensionsMm
+    : [23, 12, 24]).map((value) => Number(value) * MM_TO_SCENE);
+  const [width, height, depth] = dimensions;
+  const root = new TransformNode(`servo_${index}_root`, scene);
+  root.position = position;
+
+  const body = MeshBuilder.CreateBox(`servo_${index}_fallback_body`, {
+    width: Math.max(width, 0.018),
+    height: Math.max(height, 0.009),
+    depth: Math.max(depth, 0.02),
+  }, scene);
+  body.parent = root;
+  body.position.y = Math.max(height, 0.009) * 0.5;
+  body.material = createMaterial(scene, `servo_${index}_body_mat`, "#293432");
+
+  const horn = MeshBuilder.CreateCylinder(`servo_${index}_fallback_horn`, {
+    height: 0.002,
+    diameter: Math.max(width * 0.5, 0.009),
+    tessellation: 18,
+  }, scene);
+  horn.parent = root;
+  horn.position.y = Math.max(height, 0.009) + 0.001;
+  horn.material = createMaterial(scene, `servo_${index}_horn_mat`, "#d5ff4f");
+
+  tagFallbackMeshes(root.getChildMeshes(), "servo");
+  root.metadata = { componentType: "servo", assemblyFallback: true };
   return root;
 };
 
@@ -1276,7 +1308,7 @@ const BabylonViewer = ({
     const shouldAssemble = Boolean(assemblySpec?.frame);
     if (shouldAssemble) {
       scene.__assemblyInProgress = true;
-      ["frame", "motor", "propeller", "battery", "esc", "flight_controller", "receiver"]
+      ["frame", "motor", "propeller", "servo", "battery", "esc", "flight_controller", "receiver"]
         .forEach(disposeComponentType);
     }
 
@@ -1427,6 +1459,22 @@ const BabylonViewer = ({
       }
     };
 
+    const buildServos = async () => {
+      if (clearedComponents.includes("servo")) return;
+      const positions = getFrameServoPositionsMm(frameSpec);
+      if (positions.length === 0 || !frameSpec.servoHardware) return;
+      await waitForFrameReady();
+      disposeComponentType("servo");
+      scene.__servoRoots = positions.map((position, index) => (
+        createServoFallback(
+          scene,
+          frameSpec.servoHardware,
+          toSceneVectorMm(position),
+          index,
+        )
+      ));
+    };
+
     const buildMotors = async () => {
       if (clearedComponents.includes("motor")) return;
       const canBuildFallback = Boolean(motorSpec?.id);
@@ -1542,6 +1590,7 @@ const BabylonViewer = ({
     const assembleComponents = async () => {
       try {
         await waitForFrameReady();
+        await buildServos();
         await loadStackComponents();
         const motorAssemblyPromise = buildMotors();
         await buildPropellers(motorAssemblyPromise);

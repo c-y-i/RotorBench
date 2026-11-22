@@ -73,6 +73,7 @@ import {
 import { readJsonStorage, writeJsonStorage } from "../utils/storage";
 import { upsertBuild } from "../utils/savedBuilds";
 import { humanizeProvenanceFields } from "../utils/provenanceLabels";
+import { getFrameServoHardware } from "../utils/frameHardware";
 import {
   BatteryCharging,
   Box,
@@ -758,6 +759,10 @@ export default function BuildPage() {
       workingBuildId,
     ],
   );
+  const frameServoHardware = useMemo(
+    () => getFrameServoHardware(selectedFramePart),
+    [selectedFramePart],
+  );
   const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
   const missionControlsLabel = describeMissionControls(hardwareReadiness);
   const viewerPlacementAudit = useMemo(
@@ -1297,6 +1302,12 @@ export default function BuildPage() {
                   { id: "flight_controller", label: "FC", Icon: Cpu, has: selectedFC },
                   { id: "esc", label: "ESC", Icon: Zap, has: selectedESC },
                   { id: "receiver", label: "RX", Icon: Radio, has: selectedReceiver },
+                  {
+                    id: "servo",
+                    label: "Servos",
+                    Icon: Settings2,
+                    has: frameServoHardware,
+                  },
                 ].filter((comp) => comp.has).map(({ id, label, Icon }) => {
                   const isHidden = clearedComponents.includes(id);
                   return (
@@ -1762,6 +1773,52 @@ export default function BuildPage() {
                   <em>Inspect</em>
                 </div>
               </div>
+            </section>
+          )}
+
+          {frameServoHardware && (
+            <section
+              className="frame-servo-hardware"
+              aria-label="Control-surface hardware"
+            >
+              <div className="frame-servo-hardware-heading">
+                <Settings2 size={15} aria-hidden="true" />
+                <span>
+                  <strong>Control-surface hardware</strong>
+                  <small>Frame-recommended servo set</small>
+                </span>
+                <em>{frameServoHardware.quantity} servos</em>
+              </div>
+              <div className="frame-servo-hardware-body">
+                <span>
+                  <strong>{frameServoHardware.name}</strong>
+                  <small>
+                    {frameServoHardware.cableAllocation} ·{" "}
+                    {frameServoHardware.gear} gears ·{" "}
+                    {frameServoHardware.voltage?.min}–{frameServoHardware.voltage?.max} V
+                  </small>
+                </span>
+                <span className="frame-servo-hardware-metrics">
+                  <em>{frameServoHardware.weight} g</em>
+                  <em>${Number(frameServoHardware.price).toFixed(2)}</em>
+                </span>
+                {frameServoHardware.sourceUrl && (
+                  <a
+                    href={frameServoHardware.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Open servo source for ${frameServoHardware.name}`}
+                  >
+                    Source
+                    <ExternalLink size={11} aria-hidden="true" />
+                  </a>
+                )}
+              </div>
+              <p>
+                Cable allocation, dimensions, voltage range, and estimated
+                positions require physical confirmation. Servo direction and
+                travel remain flight-controller plan values.
+              </p>
             </section>
           )}
 

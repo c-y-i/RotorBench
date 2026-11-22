@@ -96,6 +96,26 @@ export interface Frame extends ComponentCatalogMetadata {
   motorCount: number; // quad or non-quad motor count
   airframeShape?: "quad" | "wing";
   motorPositionsMm?: [number, number, number][];
+  servoCount?: number;
+  servoHardware?: {
+    name: string;
+    quantity: number;
+    unitWeightG: number;
+    weight: number;
+    unitPrice: number;
+    price: number;
+    voltage: { min: number; max: number };
+    cableLengthsMm: number[];
+    cableAllocation: string;
+    gear: string;
+    digital: boolean;
+    dimensionsMm?: [number, number, number];
+    positionsMm: [number, number, number][];
+    sourceUrl?: string;
+    priceSourceUrl?: string;
+    dataStatus?: string;
+    estimatedFields?: string[];
+  };
   maxPropSize: number; // inches
   stackHeight: number; // mm (mounting hole spacing)
   price: number;

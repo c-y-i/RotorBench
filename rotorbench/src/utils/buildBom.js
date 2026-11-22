@@ -1,5 +1,6 @@
 import componentsData from "../data/components.json";
 import { summarizePowerPath } from "./physicalCompatibility";
+import { createFrameHardwareBomRows } from "./frameHardware";
 
 const categories = [
   { key: "frameId", category: "frames", label: "Frame" },
@@ -95,7 +96,10 @@ export function createBuildBomRows(build) {
         : 0,
       catalogItem: true,
     }];
-  }).concat(createDerivedPowerRows(build));
+  }).concat(
+    createFrameHardwareBomRows(frame),
+    createDerivedPowerRows(build),
+  );
 }
 
 export function createBuildBomCsv(build) {

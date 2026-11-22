@@ -85,6 +85,11 @@ class CatalogContractTests(unittest.TestCase):
             [[-230, 4.75, -240], [230, 4.75, -240]],
         )
         self.assertEqual(frame.source_url, "https://www.heewing.com/products/t1-ranger-kit")
+        self.assertEqual(frame.servo_count, 3)
+        self.assertEqual(frame.servo_hardware.quantity, 3)
+        self.assertEqual(frame.servo_hardware.weight, 21)
+        self.assertEqual(frame.servo_hardware.price, 30)
+        self.assertEqual(frame.servo_hardware.cable_lengths_mm, [180, 400])
 
     def test_adafruit_feather_f405_keeps_public_product_provenance(self):
         record = next(

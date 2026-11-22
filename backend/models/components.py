@@ -134,6 +134,41 @@ class FlightController(ComponentCatalogMetadata):
         populate_by_name = True
 
 
+class FrameServoHardware(ComponentCatalogMetadata):
+    name: str
+    quantity: int = Field(..., ge=1)
+    unit_weight_g: float = Field(..., alias="unitWeightG", gt=0)
+    weight: float = Field(..., gt=0)
+    unit_price: float = Field(..., alias="unitPrice", ge=0)
+    price: float = Field(..., ge=0)
+    voltage: VoltageRange
+    cable_lengths_mm: List[float] = Field(..., alias="cableLengthsMm")
+    cable_allocation: str = Field(..., alias="cableAllocation")
+    gear: str
+    digital: bool
+    positions_mm: List[List[float]] = Field(..., alias="positionsMm")
+
+    class Config:
+        populate_by_name = True
+
+    @field_validator("cable_lengths_mm")
+    @classmethod
+    def validate_cable_lengths(cls, value):
+        if not value or any(length <= 0 for length in value):
+            raise ValueError("cableLengthsMm must contain positive lengths")
+        return value
+
+    @field_validator("positions_mm")
+    @classmethod
+    def validate_positions(cls, value):
+        if not value:
+            raise ValueError("positionsMm must not be empty")
+        for position in value:
+            if len(position) != 3 or any(not math.isfinite(entry) for entry in position):
+                raise ValueError("each servo position must have three finite coordinates")
+        return value
+
+
 class Frame(ComponentCatalogMetadata):
     id: str
     name: str
@@ -149,6 +184,11 @@ class Frame(ComponentCatalogMetadata):
         None,
         alias="motorPositionsMm",
         description="Motor mount centers in the viewer coordinate system",
+    )
+    servo_count: Optional[int] = Field(None, alias="servoCount", ge=0)
+    servo_hardware: Optional[FrameServoHardware] = Field(
+        None,
+        alias="servoHardware",
     )
     max_prop_size: float = Field(..., alias="maxPropSize", description="Maximum propeller size in inches")
     stack_height: float = Field(..., alias="stackHeight", description="Stack mounting height in mm")

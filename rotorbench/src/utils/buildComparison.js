@@ -10,6 +10,7 @@ import {
   summarizeElectricalChecks,
 } from "./electricalCompatibility";
 import { applyMeasuredGeometry } from "./buildGeometry";
+import { getFrameServoHardware } from "./frameHardware";
 import {
   describeMissionControls,
   describeNavigationSafety,
@@ -50,6 +51,7 @@ export function summarizeBuild(build) {
     parts.map(({ category, part }) => [category, part]),
   );
   const motorCount = Number(byCategory.frames?.motorCount) || 4;
+  const frameServoHardware = getFrameServoHardware(byCategory.frames);
   const quantity = {
     frames: 1,
     motors: motorCount,
@@ -64,12 +66,12 @@ export function summarizeBuild(build) {
     (total, { category, part }) =>
       total + (Number(part?.weight) || 0) * (quantity[category] || 1),
     0,
-  );
+  ) + (Number(frameServoHardware?.weight) || 0);
   const totalPrice = parts.reduce(
     (total, { category, part }) =>
       total + (Number(part?.price) || 0) * (quantity[category] || 1),
     0,
-  );
+  ) + (Number(frameServoHardware?.price) || 0);
   const assemblySpec = {
     frame: byCategory.frames,
     motor: byCategory.motors,
@@ -148,6 +150,7 @@ export function summarizeBuild(build) {
     parts,
     selectedCount: parts.filter(({ part }) => part).length,
     motorCount,
+    frameServoHardware,
     totalWeight,
     totalPrice,
     physicalFitStatus,

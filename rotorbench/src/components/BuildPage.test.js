@@ -409,6 +409,18 @@ test("the T1 Ranger starter loads a two-motor wing assembly", async () => {
   })).toBeVisible();
   expect(screen.getByText("LEFT")).toBeVisible();
   expect(screen.getByText("RIGHT")).toBeVisible();
+  const servos = screen.getByRole("region", {
+    name: "Control-surface hardware",
+  });
+  expect(within(servos).getByText("3 servos")).toBeInTheDocument();
+  expect(within(servos).getByText(
+    "HeeWing FX-7G Digital Metal Gear Servo Set",
+  )).toBeInTheDocument();
+  expect(within(servos).getByText(/2 × 180 mm aileron, 1 × 400 mm tail/i))
+    .toBeInTheDocument();
+  expect(within(servos).getByRole("link", {
+    name: /open servo source/i,
+  })).toHaveAttribute("href", expect.stringContaining("7g-digital-metal-gear-servo"));
 });
 
 test("a saved Aerial Kit wing plan maps the T1 left and right outputs", async () => {

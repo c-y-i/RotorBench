@@ -68,6 +68,8 @@ def calculate_total_weight(build: DroneBuild) -> float:
     
     if build.components.frame:
         total += build.components.frame.weight
+        if build.components.frame.servo_hardware:
+            total += build.components.frame.servo_hardware.weight
     
     if build.components.motors:
         motor_count = build.components.frame.motor_count if build.components.frame else 4
@@ -587,6 +589,8 @@ def calculate_total_cost(build: DroneBuild) -> float:
     
     if build.components.frame:
         total += build.components.frame.price
+        if build.components.frame.servo_hardware:
+            total += build.components.frame.servo_hardware.price
     
     if build.components.motors:
         motor_count = build.components.frame.motor_count if build.components.frame else 4
