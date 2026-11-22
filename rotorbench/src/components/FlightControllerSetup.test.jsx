@@ -57,6 +57,9 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Notch Q · hundredths")).toHaveValue(300);
   expect(screen.getByLabelText("Search low")).toHaveValue(100);
   expect(screen.getByLabelText("Search high")).toHaveValue(600);
+  expect(screen.getByRole("checkbox", { name: /Filtering/i })).not.toBeChecked();
+  expect(screen.getByLabelText("Manual cutoff")).toHaveValue(0);
+  expect(screen.getByLabelText("Auto factor")).toHaveValue(30);
   expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
   expect(screen.getByLabelText("Centre slope")).toHaveValue(0);
   expect(screen.getByLabelText("Rate expo")).toHaveValue(0);
@@ -177,6 +180,47 @@ test("plans the Aerial Kit dynamic notch gate and analysis resolution", async ()
     dynNotchCount: 0,
   }));
   expect(screen.getAllByText("Off").length).toBeGreaterThan(0);
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("aligns Aerial Kit RC smoothing with the nominal radio link", async () => {
+  const onChange = jest.fn();
+  const { container } = render(
+    <FlightControllerSetup
+      onChange={onChange}
+      radioLinkRateHz={250}
+      radioPacketRateMode="250"
+    />,
+  );
+
+  expect(screen.getByText("RC smoothing")).toBeInTheDocument();
+  expect(screen.getAllByText("Disabled").length).toBeGreaterThan(0);
+  expect(screen.getByText("250 Hz · 250")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("checkbox", { name: /Filtering/i }));
+  expect(screen.getAllByText("Auto from radio").length).toBeGreaterThan(0);
+  expect(screen.getByText("93.8 Hz")).toBeInTheDocument();
+  expect(screen.getAllByText("Runtime unverified").length).toBeGreaterThan(0);
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    rcSmooth: 1,
+    rcSmoothHz: 0,
+    rcSmoothFactor: 30,
+  }));
+
+  fireEvent.change(screen.getByLabelText("Manual cutoff"), {
+    target: { value: "56" },
+  });
+  expect(screen.getAllByText("Manual cutoff").length).toBeGreaterThan(0);
+  expect(screen.getByText("56 Hz", { selector: "dd" })).toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Auto factor"), {
+    target: { value: "60" },
+  });
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+    rcSmooth: 1,
+    rcSmoothHz: 56,
+    rcSmoothFactor: 60,
+  }));
   expect(await getA11yViolations(container)).toEqual([]);
 });
 

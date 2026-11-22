@@ -250,6 +250,9 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     dynNotchQ: 300,
     dynNotchMinHz: 100,
     dynNotchMaxHz: 600,
+    rcSmooth: 0,
+    rcSmoothHz: 0,
+    rcSmoothFactor: 30,
   });
   const issues = validateFlightControllerConfig({
     ...config,
@@ -290,6 +293,27 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
       code: "dyn-notch-count-range",
     }),
   ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    rcSmooth: 2,
+    rcSmoothHz: 300,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "rc-smooth-range",
+    }),
+    expect.objectContaining({
+      severity: "error",
+      code: "rc-smooth-hz-range",
+    }),
+  ]));
+  expect(buildFlightControllerSummary(
+    { ...config, rcSmooth: 1, gyroRateHz: 4000, pidDenom: 2 },
+    getBoardProfile(config.profileId),
+    { radioLinkRateHz: 250, radioPacketRateMode: "250" },
+  ).join("\n")).toContain(
+    "RC smoothing: enabled from nominal radio packet rate 250 Hz (250), requested cutoff 93.8 Hz, factor 30",
+  );
 });
 
 test("documented Aerial Kit boards do not enable unfitted sensors", () => {

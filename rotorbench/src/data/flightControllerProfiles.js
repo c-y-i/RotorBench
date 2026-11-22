@@ -3,6 +3,7 @@ import {
   buildAerialKitFilterPlan,
 } from "../utils/aerialKitFilters";
 import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
+import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
 
 export const FIRMWARE_FAMILIES = [
   {
@@ -1771,6 +1772,9 @@ export function createDefaultFlightControllerConfig(
     dynNotchQ: 300,
     dynNotchMinHz: 100,
     dynNotchMaxHz: 600,
+    rcSmooth: 0,
+    rcSmoothHz: 0,
+    rcSmoothFactor: 30,
     maxRateDps: 700,
     rateCenterDps: 0,
     rateExpo: 0,
@@ -2206,6 +2210,38 @@ export function validateFlightControllerConfig(
         severity: "warning",
         code: "dyn-notch-band-order",
         message: "Dynamic notch search high must be above its low edge; the firmware refuses this bank.",
+      });
+    }
+    if (
+      !integer(config.rcSmooth)
+      || ![0, 1].includes(Number(config.rcSmooth))
+    ) {
+      issues.push({
+        severity: "error",
+        code: "rc-smooth-range",
+        message: "RC smoothing must be 0 (off) or 1 (on).",
+      });
+    }
+    if (
+      !finite(config.rcSmoothHz)
+      || Number(config.rcSmoothHz) < 0
+      || Number(config.rcSmoothHz) > 250
+    ) {
+      issues.push({
+        severity: "error",
+        code: "rc-smooth-hz-range",
+        message: "Manual RC smoothing cutoff must be between 0 and 250 Hz; 0 derives it from the measured link rate.",
+      });
+    }
+    if (
+      !finite(config.rcSmoothFactor)
+      || Number(config.rcSmoothFactor) < 0
+      || Number(config.rcSmoothFactor) > 250
+    ) {
+      issues.push({
+        severity: "error",
+        code: "rc-smooth-factor-range",
+        message: "RC smoothing auto factor must be between 0 and 250.",
       });
     }
     if (
@@ -2891,7 +2927,14 @@ export function buildArmingGatePreview(
   };
 }
 
-export function buildFlightControllerSummary(config, profile = getBoardProfile(config.profileId)) {
+export function buildFlightControllerSummary(
+  config,
+  profile = getBoardProfile(config.profileId),
+  {
+    radioLinkRateHz = null,
+    radioPacketRateMode = null,
+  } = {},
+) {
   const family = FIRMWARE_FAMILIES.find((item) => item.id === config.firmwareFamily);
   const protocol = RECEIVER_PROTOCOLS.find((item) => item.value === config.receiverProtocol);
   const enabledFeatures = FC_FEATURES
@@ -2933,6 +2976,12 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
   const notchPlan = config.firmwareFamily === "aerialkit"
     ? buildAerialKitNotchPlan(config)
     : null;
+  const rcSmoothingPlan = config.firmwareFamily === "aerialkit"
+    ? buildAerialKitRcSmoothingPlan(config, {
+        linkRateHz: radioLinkRateHz,
+        linkRateLabel: radioPacketRateMode,
+      })
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -2960,6 +3009,21 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Dynamic notch: ${notchPlan.count === 0
             ? "disabled"
             : `${notchPlan.count} per axis, ${notchPlan.requestedMinHz}–${notchPlan.requestedMaxHz} Hz, Q ${notchPlan.q}`}; ${notchPlan.detail}`,
+          `RC smoothing: ${
+            rcSmoothingPlan.status === "off"
+              ? "disabled"
+              : rcSmoothingPlan.status === "waiting"
+                ? "enabled, but no nominal radio link rate or manual cutoff is available"
+                : `enabled from ${rcSmoothingPlan.source === "manual"
+                  ? `manual ${rcSmoothingPlan.manualHz} Hz`
+                  : `nominal radio packet rate ${rcSmoothingPlan.linkRateHz} Hz (${rcSmoothingPlan.linkRateLabel || "mode not supplied"})`}, requested cutoff ${Math.round(rcSmoothingPlan.derivedCutoffHz * 10) / 10} Hz, factor ${rcSmoothingPlan.factor}${
+                  rcSmoothingPlan.appliedCutoffHz == null
+                    ? "; runtime PT3 clamp unverified because the board driver owns the loop rate"
+                    : rcSmoothingPlan.clamped
+                      ? `; clamped to ${Math.round(rcSmoothingPlan.appliedCutoffHz * 10) / 10} Hz by the requested loop`
+                      : ""
+                }`
+          }`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,
           ...(supportsAerialKitWingFailsafe(config.airframe)

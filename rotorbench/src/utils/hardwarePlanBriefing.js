@@ -35,7 +35,11 @@ export function createHardwarePlanBriefing({
   timingWarnings = [],
 }) {
   const radioTarget = getRadioTarget(radioPlan?.targetId);
-  const fcSummary = buildFlightControllerSummary(fcPlan, fcProfile);
+  const packetIntervalMs = getRadioPacketIntervalMs(radioPlan?.packetRateMode);
+  const fcSummary = buildFlightControllerSummary(fcPlan, fcProfile, {
+    radioLinkRateHz: packetIntervalMs ? 1000 / packetIntervalMs : null,
+    radioPacketRateMode: radioPlan?.packetRateMode || null,
+  });
   const channelRoles = getRadioChannelRoles(channelLimit, controlRoles);
   const mappedChannels = channelRoles.flatMap((role) => {
     const channel = radioPlan?.channelMap?.[role.key];

@@ -6,7 +6,10 @@ import { DEFAULT_RADIO_CONFIG } from "../data/radioProfiles";
 import { createHardwarePlanBriefing } from "./hardwarePlanBriefing";
 
 test("creates a concise hardware briefing without binding material", () => {
-  const fcPlan = createDefaultFlightControllerConfig();
+  const fcPlan = {
+    ...createDefaultFlightControllerConfig(),
+    rcSmooth: 1,
+  };
   const fcProfile = getBoardProfile(fcPlan.profileId);
   const briefing = createHardwarePlanBriefing({
     build: { name: "Bench quad" },
@@ -18,6 +21,7 @@ test("creates a concise hardware briefing without binding material", () => {
     }],
     radioPlan: {
       ...DEFAULT_RADIO_CONFIG,
+      packetRateMode: "250",
       bindingPhrase: "do-not-export",
       uid: "aa:bb:cc:dd:ee:ff",
     },
@@ -43,6 +47,9 @@ test("creates a concise hardware briefing without binding material", () => {
   expect(briefing.text).toContain("FC warning: Custom-board mapping requires review.");
   expect(briefing.text).toContain("Timing: FC timeout spans fewer than two frames.");
   expect(briefing.text).toContain("- Control cadence: 4.0 ms nominal");
+  expect(briefing.text).toContain(
+    "- RC smoothing: enabled from nominal radio packet rate 250 Hz (250), requested cutoff 93.8 Hz, factor 30",
+  );
   expect(briefing.text).toContain("Nothing was connected, written, flashed, calibrated, or armed.");
   expect(briefing.text).not.toContain("do-not-export");
   expect(briefing.text).not.toContain("aa:bb:cc:dd:ee:ff");

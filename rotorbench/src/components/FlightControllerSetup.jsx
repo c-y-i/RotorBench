@@ -57,6 +57,7 @@ import {
 } from "../utils/aerialKitRateCurve";
 import { buildAerialKitFilterPlan } from "../utils/aerialKitFilters";
 import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
+import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -768,6 +769,127 @@ function FilterChainsPanel({
   );
 }
 
+function RcSmoothingPanel({
+  config,
+  plan,
+  onUpdate,
+  radioPacketRateMode,
+}) {
+  const statusLabel = {
+    off: "Disabled",
+    waiting: "Waiting for link",
+    manual: "Manual cutoff",
+    auto: "Auto from radio",
+  }[plan.status];
+
+  return (
+    <fieldset className={`fc-rc-smoothing is-${plan.status}`}>
+      <legend>RC smoothing</legend>
+      <div className="fc-rc-smoothing-status" role="note">
+        <span>
+          <small>PT3 stick filter</small>
+          <strong>{statusLabel}</strong>
+        </span>
+        <dl>
+          <div>
+            <dt>Nominal radio rate</dt>
+            <dd>
+              {plan.linkRateHz
+                ? `${formatFilterHz(plan.linkRateHz)}${plan.linkRateLabel ? ` · ${plan.linkRateLabel}` : ""}`
+                : "Not supplied"}
+            </dd>
+          </div>
+          <div>
+            <dt>Requested cutoff</dt>
+            <dd>
+              {plan.derivedCutoffHz > 0
+                ? formatFilterHz(plan.derivedCutoffHz)
+                : "No filter"}
+            </dd>
+          </div>
+          <div>
+            <dt>Applied cutoff</dt>
+            <dd>
+              {plan.appliedCutoffHz == null
+                ? "Runtime unverified"
+                : formatFilterHz(plan.appliedCutoffHz)}
+            </dd>
+          </div>
+        </dl>
+      </div>
+      <div className="fc-rc-smoothing-fields">
+        <div className="fc-field">
+          <label htmlFor="fc-rc-smooth">Filtering</label>
+          <label className="fc-rc-smoothing-toggle" htmlFor="fc-rc-smooth">
+            <input
+              id="fc-rc-smooth"
+              type="checkbox"
+              checked={plan.enabled}
+              onChange={(event) => onUpdate("rcSmooth", event.target.checked ? 1 : 0)}
+            />
+            <span>{plan.enabled ? "Enabled" : "Off"}</span>
+          </label>
+          <small>PT3 on roll, pitch, yaw, and throttle</small>
+        </div>
+        <Field
+          label="Manual cutoff"
+          htmlFor="fc-rc-smooth-hz"
+          hint="0 derives from the measured radio link rate"
+          hintId="fc-rc-smooth-hz-hint"
+        >
+          <input
+            id="fc-rc-smooth-hz"
+            type="number"
+            min="0"
+            max="250"
+            step="0.1"
+            aria-invalid={filterInputInvalid(config.rcSmoothHz)}
+            aria-describedby="fc-rc-smooth-hz-hint"
+            value={filterInputValue(config.rcSmoothHz)}
+            onChange={(event) => onUpdate(
+              "rcSmoothHz",
+              filterInputNumber(event.target.value),
+            )}
+          />
+        </Field>
+        <Field
+          label="Auto factor"
+          htmlFor="fc-rc-smooth-factor"
+          hint="0 to 250; higher values produce a lower cutoff"
+          hintId="fc-rc-smooth-factor-hint"
+        >
+          <input
+            id="fc-rc-smooth-factor"
+            type="number"
+            min="0"
+            max="250"
+            step="1"
+            aria-invalid={filterInputInvalid(config.rcSmoothFactor)}
+            aria-describedby="fc-rc-smooth-factor-hint"
+            value={filterInputValue(config.rcSmoothFactor)}
+            onChange={(event) => onUpdate(
+              "rcSmoothFactor",
+              filterInputNumber(event.target.value),
+            )}
+          />
+        </Field>
+      </div>
+      <p>
+        {plan.status === "waiting"
+          ? "The filter is enabled, but no manual cutoff or radio link rate is available. The firmware leaves it unbuilt."
+          : plan.appliedCutoffHz == null
+            ? "The requested loop is not known, so the PT3 runtime clamp remains unverified."
+            : plan.clamped
+              ? "The requested cutoff exceeds what this PT3 can represent at the requested loop and will be clamped."
+              : "The nominal radio rate and filter math line up with the requested pilot loop. Live link rate and airtime remain unobserved."}
+        {radioPacketRateMode
+          ? ` Radio plan mode: ${radioPacketRateMode}.`
+          : ""}
+      </p>
+    </fieldset>
+  );
+}
+
 function featuresForBoard(profile, receiverProtocol, firmwareFamily) {
   const supported = profile.featureSupport || {};
   return Object.fromEntries(
@@ -793,6 +915,8 @@ export default function FlightControllerSetup({
   onSave,
   selectedFlightController = null,
   selectedReceiver = null,
+  radioLinkRateHz = null,
+  radioPacketRateMode = null,
   buildMotorCount = null,
   buildServoCount = null,
   storageKey = "rotorbench:flightControllerPlan",
@@ -877,6 +1001,13 @@ export default function FlightControllerSetup({
   const notchPlan = useMemo(
     () => buildAerialKitNotchPlan(config),
     [config],
+  );
+  const rcSmoothingPlan = useMemo(
+    () => buildAerialKitRcSmoothingPlan(config, {
+      linkRateHz: radioLinkRateHz,
+      linkRateLabel: radioPacketRateMode,
+    }),
+    [config, radioLinkRateHz, radioPacketRateMode],
   );
   const aerialKitRoleKeys = new Set(
     aerialKitControlRoles.map((role) => role.key),
@@ -981,8 +1112,11 @@ export default function FlightControllerSetup({
     (issue) => issue.code === "build-servo-coverage",
   );
   const summary = useMemo(
-    () => buildFlightControllerSummary(config, profile),
-    [config, profile],
+    () => buildFlightControllerSummary(config, profile, {
+      radioLinkRateHz,
+      radioPacketRateMode,
+    }),
+    [config, profile, radioLinkRateHz, radioPacketRateMode],
   );
   const armingPreview = useMemo(
     () => buildArmingGatePreview(config, profile, issues),
@@ -2044,6 +2178,15 @@ export default function FlightControllerSetup({
                 </p>
               </div>
             </div>
+
+            {config.firmwareFamily === "aerialkit" && (
+              <RcSmoothingPanel
+                config={config}
+                plan={rcSmoothingPlan}
+                onUpdate={(key, nextValue) => update(key, nextValue)}
+                radioPacketRateMode={radioPacketRateMode}
+              />
+            )}
 
             {pwmOnlyReceiver ? (
               <div className="fc-pwm-output-note" role="note">

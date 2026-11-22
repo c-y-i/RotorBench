@@ -22,6 +22,7 @@ import {
   getRadioHandset,
   getRadioHandsetBayCompatibility,
   getRadioHostBay,
+  getRadioPacketIntervalMs,
   getRadioRegulatoryLimit,
   getRadioRegulatoryOptions,
   getRadioReceiverBandCompatibility,
@@ -39,6 +40,10 @@ import {
   AERIALKIT_DYNAMIC_NOTCH_FIELDS,
   buildAerialKitNotchPlan,
 } from "./aerialKitNotch";
+import {
+  AERIALKIT_RC_SMOOTHING_FIELDS,
+  buildAerialKitRcSmoothingPlan,
+} from "./aerialKitRcSmoothing";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -126,6 +131,18 @@ export function summarizeHardwareReadiness({
   });
   const fcPlanConfigured = Boolean(storedFc);
   const radioPlanConfigured = Boolean(storedRadio);
+  const radioControlIntervalMs = radioPlanConfigured
+    ? getRadioPacketIntervalMs(radioPlan.packetRateMode)
+    : null;
+  const nominalRadioControlRateHz = radioControlIntervalMs
+    ? 1000 / radioControlIntervalMs
+    : null;
+  const fcRcSmoothingPlan = fcPlan.firmwareFamily === "aerialkit"
+    ? buildAerialKitRcSmoothingPlan(fcPlan, {
+        linkRateHz: nominalRadioControlRateHz,
+        linkRateLabel: radioPlanConfigured ? radioPlan.packetRateMode : null,
+      })
+    : null;
   const radioWarnings = radioPlanConfigured
     ? buildRadioWarnings(radioPlan, {
         channelLimit: fcPlan.firmwareFamily === "aerialkit" ? 8 : 16,
@@ -433,6 +450,17 @@ export function summarizeHardwareReadiness({
     fcDynamicNotchLoopHz: fcNotchPlan?.loopHz ?? null,
     fcDynamicNotchAnalysisRateHz: fcNotchPlan?.analysisRateHz ?? null,
     fcDynamicNotchBinHz: fcNotchPlan?.binHz ?? null,
+    ...Object.fromEntries(AERIALKIT_RC_SMOOTHING_FIELDS.map(({ key }) => [
+      `fc${key[0].toUpperCase()}${key.slice(1)}`,
+      fcPlan.firmwareFamily === "aerialkit" ? fcPlan[key] : null,
+    ])),
+    fcRcSmoothingStatus: fcRcSmoothingPlan?.status ?? null,
+    fcRcSmoothingLinkRateHz: fcRcSmoothingPlan?.linkRateHz ?? null,
+    fcRcSmoothingDerivedCutoffHz:
+      fcRcSmoothingPlan?.derivedCutoffHz ?? null,
+    fcRcSmoothingAppliedCutoffHz:
+      fcRcSmoothingPlan?.appliedCutoffHz ?? null,
+    fcRcSmoothingClamped: fcRcSmoothingPlan?.clamped ?? null,
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
@@ -608,6 +636,17 @@ export function sanitizeHardwareReadiness(readiness) {
     fcDynamicNotchAnalysisRateHz:
       readiness.fcDynamicNotchAnalysisRateHz ?? null,
     fcDynamicNotchBinHz: readiness.fcDynamicNotchBinHz ?? null,
+    ...Object.fromEntries(AERIALKIT_RC_SMOOTHING_FIELDS.map(({ key }) => {
+      const readinessKey = `fc${key[0].toUpperCase()}${key.slice(1)}`;
+      return [readinessKey, readiness[readinessKey] ?? null];
+    })),
+    fcRcSmoothingStatus: readiness.fcRcSmoothingStatus || null,
+    fcRcSmoothingLinkRateHz: readiness.fcRcSmoothingLinkRateHz ?? null,
+    fcRcSmoothingDerivedCutoffHz:
+      readiness.fcRcSmoothingDerivedCutoffHz ?? null,
+    fcRcSmoothingAppliedCutoffHz:
+      readiness.fcRcSmoothingAppliedCutoffHz ?? null,
+    fcRcSmoothingClamped: readiness.fcRcSmoothingClamped ?? null,
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
     fcRateCenterDps: readiness.fcRateCenterDps ?? null,
     fcRateExpo: readiness.fcRateExpo ?? null,

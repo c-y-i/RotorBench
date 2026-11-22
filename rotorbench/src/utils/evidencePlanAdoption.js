@@ -11,6 +11,7 @@ import {
 } from "./flightControllerCommands";
 import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
+import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
 
 const INFERRED_AIRFRAMES = Object.fromEntries(
   Object.entries(AERIALKIT_AIRFRAME_IDS).map(([name, id]) => [id, name]),
@@ -568,6 +569,24 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
         }
         if (key === "dynNotchQ") return `Q ${value / 100}`;
         return `${value} Hz`;
+      },
+    })),
+    ...AERIALKIT_RC_SMOOTHING_FIELDS.map(({ key, runtimeName, label }) => ({
+      key,
+      source: runtimeName,
+      snapshotKey: runtimeName,
+      label,
+      parse: (raw) => {
+        if (key === "rcSmooth") return boundedInteger(raw, 0, 1);
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 250
+          ? number
+          : null;
+      },
+      display: (value) => {
+        if (key === "rcSmooth") return value === 1 ? "On" : "Off";
+        if (key === "rcSmoothHz" && value === 0) return "Derive from link";
+        return String(value);
       },
     })),
     {

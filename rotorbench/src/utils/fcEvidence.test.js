@@ -1031,6 +1031,9 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     "dyn_notch_q=300 status=0",
     "dyn_notch_min_hz=100 status=0",
     "dyn_notch_max_hz=700 status=0",
+    "rc_smooth=1 status=0",
+    "rc_smooth_hz=0 status=0",
+    "rc_smooth_factor=35 status=0",
   ].join("\n"));
   const checks = fcParameterChecks(snapshot, {
     gyroLpf1StaticHz: 250,
@@ -1042,6 +1045,9 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     dynNotchQ: 300,
     dynNotchMinHz: 100,
     dynNotchMaxHz: 600,
+    rcSmooth: 1,
+    rcSmoothHz: 0,
+    rcSmoothFactor: 30,
   });
 
   expect(checks.find((check) => check.id === "fc-param-gyro-lpf1-static-hz").status)
@@ -1063,6 +1069,15 @@ test("compares staged Aerial Kit filter chains with imported parameters", () => 
     .toMatchObject({
       status: "fail",
       detail: expect.stringMatching(/plan expects 600/i),
+    });
+  expect(checks.find((check) => check.id === "fc-param-rc-smooth").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-rc-smooth-hz").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-rc-smooth-factor"))
+    .toMatchObject({
+      status: "fail",
+      detail: expect.stringMatching(/plan expects 30/i),
     });
 });
 

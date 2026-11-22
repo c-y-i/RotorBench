@@ -44,6 +44,7 @@ import {
   buildRadioWarnings,
   getRadioBindingValidationMessage,
   getRadioChannelRoles,
+  getRadioPacketIntervalMs,
   getRadioTarget,
   normalizeRadioConfig,
   sanitizeRadioChannelMap,
@@ -399,6 +400,10 @@ export default function SetupPage() {
     () => buildFcRadioTimingWarning(fcPlan, radioPlan),
     [fcPlan, radioPlan],
   );
+  const radioControlRateHz = useMemo(() => {
+    const intervalMs = getRadioPacketIntervalMs(radioPlan.packetRateMode);
+    return intervalMs ? 1000 / intervalMs : null;
+  }, [radioPlan.packetRateMode]);
   const benchRunbook = useMemo(
     () => buildBenchRunbook(fcPlan, radioPlan),
     [fcPlan, radioPlan],
@@ -1373,6 +1378,8 @@ export default function SetupPage() {
             onSave={saveFcPlan}
             selectedFlightController={selectedFlightController}
             selectedReceiver={selectedReceiver}
+            radioLinkRateHz={radioControlRateHz}
+            radioPacketRateMode={radioPlan.packetRateMode}
             buildMotorCount={selectedFrame?.motorCount ?? null}
             buildServoCount={selectedFrame?.servoHardware?.quantity ?? null}
             storageKey={fcStorageKey}

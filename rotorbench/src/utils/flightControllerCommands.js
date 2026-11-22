@@ -6,6 +6,7 @@ import {
 } from "../data/flightControllerProfiles";
 import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
+import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
 
 export const AERIALKIT_AIRFRAME_IDS = {
   quadx: 0,
@@ -169,6 +170,14 @@ export function buildFlightControllerCommands(
     Number(config.dynNotchMinHz) <= 250 &&
     Number(config.dynNotchMaxHz) >= 200 &&
     Number(config.dynNotchMaxHz) <= 1000 &&
+    integer(config.rcSmooth) &&
+    [0, 1].includes(Number(config.rcSmooth)) &&
+    finite(config.rcSmoothHz) &&
+    Number(config.rcSmoothHz) >= 0 &&
+    Number(config.rcSmoothHz) <= 250 &&
+    finite(config.rcSmoothFactor) &&
+    Number(config.rcSmoothFactor) >= 0 &&
+    Number(config.rcSmoothFactor) <= 250 &&
     finite(config.maxRateDps) &&
     finite(config.rateCenterDps) &&
     finite(config.rateExpo) &&
@@ -263,6 +272,9 @@ export function buildFlightControllerCommands(
       `set ${runtimeName} ${Number(config[key])}`
     )),
     ...AERIALKIT_DYNAMIC_NOTCH_FIELDS.map(({ key, runtimeName }) => (
+      `set ${runtimeName} ${Number(config[key])}`
+    )),
+    ...AERIALKIT_RC_SMOOTHING_FIELDS.map(({ key, runtimeName }) => (
       `set ${runtimeName} ${Number(config[key])}`
     )),
     `set max_rate_dps ${Number(config.maxRateDps)}`,

@@ -435,10 +435,61 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
     fcDynamicNotchEligible: false,
     fcDynamicNotchLoopHz: 1600,
     fcDynamicNotchAnalysisRateHz: null,
+    fcRcSmooth: 0,
+    fcRcSmoothHz: 0,
+    fcRcSmoothFactor: 30,
+    fcRcSmoothingStatus: "off",
+    fcRcSmoothingLinkRateHz: null,
+    fcRcSmoothingDerivedCutoffHz: 0,
+    fcRcSmoothingAppliedCutoffHz: 0,
+    fcRcSmoothingClamped: false,
   });
   expect(describeNavigationSafety(readiness)).toBe(
     "Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",
   );
+});
+
+test("aligns saved RC smoothing with the saved radio packet cadence", () => {
+  const base = "rotorbench:hardware-plan:build-smoothing";
+  const storage = memoryStorage({
+    [`${base}:fc`]: JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: fc.id,
+      selectedReceiverId: receiver.id,
+      firmwareFamily: "aerialkit",
+      profileId: "esp32dev",
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+      gyroRateHz: 1000,
+      pidDenom: 1,
+      rcSmooth: 1,
+      rcSmoothHz: 0,
+      rcSmoothFactor: 30,
+    }),
+    [`${base}:radio`]: JSON.stringify({
+      planVersion: 3,
+      selectedReceiverId: receiver.id,
+      packetRateMode: "100-full",
+    }),
+  });
+  const readiness = summarizeHardwareReadiness({
+    buildId: "build-smoothing",
+    flightController: fc,
+    receiver,
+    storage,
+  });
+
+  expect(readiness).toMatchObject({
+    fcRcSmooth: 1,
+    fcRcSmoothHz: 0,
+    fcRcSmoothFactor: 30,
+    fcRcSmoothingStatus: "auto",
+    fcRcSmoothingLinkRateHz: 100,
+    fcRcSmoothingDerivedCutoffHz: 37.5,
+    fcRcSmoothingAppliedCutoffHz: 37.5,
+    fcRcSmoothingClamped: false,
+  });
 });
 
 test("mission and launch controls remain available outside Setup", () => {
