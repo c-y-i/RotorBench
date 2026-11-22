@@ -582,6 +582,15 @@ test("selecting Matek H743-WING exposes the ArduPilot UART and servo map", () =>
     .toBeInTheDocument();
   expect(within(parameterPlan).getByText("SERIAL7_PROTOCOL=23"))
     .toBeInTheDocument();
+  expect(within(parameterPlan).getByRole("link", {
+    name: /ardupilot\.org/i,
+  })).toHaveAttribute(
+    "href",
+    "https://ardupilot.org/plane/docs/common-matekh743-wing.html",
+  );
+  expect(within(parameterPlan).getByRole("link", {
+    name: /raw\.githubusercontent\.com/i,
+  })).toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText("Firmware family"), {
     target: { value: "inav" },

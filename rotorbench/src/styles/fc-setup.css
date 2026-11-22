@@ -557,6 +557,37 @@
   border-color: var(--brand);
 }
 
+.fc-ardupilot-parameter-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.fc-ardupilot-parameter-sources > span {
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.fc-ardupilot-parameter-sources a {
+  min-height: var(--control-min-height);
+  color: var(--brand-strong);
+  font-size: 10px;
+  line-height: var(--control-min-height);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.fc-ardupilot-parameter-sources a:hover {
+  color: var(--ink);
+}
+
 .fc-calibration-heading {
   display: flex;
   align-items: baseline;

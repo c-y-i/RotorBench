@@ -244,6 +244,13 @@ export default function FlightControllerSetup({
     config,
     profile,
   );
+  const ardupilotSourceLinks = (profile.sourceRefs || []).flatMap((url) => {
+    try {
+      return [{ url, label: new URL(url).hostname }];
+    } catch {
+      return [];
+    }
+  });
   const channelPreset = getChannelPreset(config);
   const availableChannelPresets = CHANNEL_PRESETS.filter((preset) => (
     config.firmwareFamily === "aerialkit"
@@ -1322,6 +1329,25 @@ export default function FlightControllerSetup({
                       </button>
                     )}
                   </div>
+                  {ardupilotSourceLinks.length > 0 && (
+                    <div
+                      className="fc-ardupilot-parameter-sources"
+                      aria-label="ArduPilot parameter sources"
+                    >
+                      <span>Sources</span>
+                      {ardupilotSourceLinks.map(({ url, label }) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open ${label} source in a new tab`}
+                        >
+                          {label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
