@@ -185,7 +185,7 @@ const createFrameFallback = (scene, frame = {}) => {
   const dimensions = getFallbackDimensionsMm("frame", frame).map((value) => value * MM_TO_SCENE);
   const [width, height, depth] = dimensions;
   const mounts = getFrameMountPointsMm(frame).map((point) => toSceneVectorMm(point));
-  const carbon = createMaterial(scene, "frame_carbon", "#17201e");
+  const carbon = createMaterial(scene, "frame_carbon", "#628178", true);
   const edge = createMaterial(scene, "frame_edge", "#53d7c8", true);
 
   if (frame.airframeShape === "wing") {
@@ -287,7 +287,7 @@ const createMotorFallback = (scene, motor = {}, position, index) => {
   }, scene);
   body.parent = root;
   body.position.y = dimensions[1] * 0.31;
-  body.material = createMaterial(scene, `motor_${index}_body_mat`, "#202624");
+  body.material = createMaterial(scene, `motor_${index}_body_mat`, "#485a55");
 
   const cap = MeshBuilder.CreateCylinder(`motor_${index}_fallback_cap`, {
     height: Math.max(dimensions[1] * 0.18, 0.004),
@@ -391,7 +391,7 @@ const createServoFallback = (scene, hardware, position, index) => {
   }, scene);
   body.parent = root;
   body.position.y = Math.max(height, 0.009) * 0.5;
-  body.material = createMaterial(scene, `servo_${index}_body_mat`, "#293432");
+  body.material = createMaterial(scene, `servo_${index}_body_mat`, "#526963");
 
   const horn = MeshBuilder.CreateCylinder(`servo_${index}_fallback_horn`, {
     height: 0.002,
