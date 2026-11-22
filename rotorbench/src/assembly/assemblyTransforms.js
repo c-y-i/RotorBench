@@ -149,6 +149,19 @@ export function getFallbackDimensionsMm(type, part = {}) {
   return [...COMPONENT_FALLBACK_DIMENSIONS_MM[type]];
 }
 
+export function getUniformModelScale(actualExtents, targetDimensionsMm, unitScale = MM_TO_SCENE) {
+  const actual = numericVector(actualExtents);
+  const target = numericVector(targetDimensionsMm);
+  if (!actual || !target || !Number.isFinite(unitScale) || unitScale <= 0) return 1;
+  const ratios = actual
+    .map((value, index) => value / (target[index] * unitScale))
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((left, right) => left - right);
+  if (ratios.length !== 3) return 1;
+  const scale = ratios[1];
+  return scale >= 0.05 && scale <= 20 ? scale : 1;
+}
+
 export function getPropellerHubDiameterMm(propeller = {}) {
   const explicit = Number(propeller.hubDiameterMm);
   if (Number.isFinite(explicit) && explicit > 0) return explicit;

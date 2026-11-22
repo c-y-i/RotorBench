@@ -440,6 +440,8 @@ Saved builds can import those v1 sheets. Import validates the schema and every r
 
 The viewer is `rotorbench/src/components/BabylonViewer.jsx`. The pure transform and placement logic is `rotorbench/src/assembly/assemblyTransforms.js`.
 
+Imported catalog GLBs with a complete three-axis catalog envelope are uniformly scaled to that envelope before placement. The scale uses the median ratio across width, height, and depth so model proportions are preserved; matching is skipped for missing, non-positive, or implausible dimensions. Catalogue GLBs with only a planform or no trustworthy full envelope remain unscaled. Source-backed assembly notes label envelope-targeted assets separately from plain legacy-unverified GLBs.
+
 The intended assembly contract is:
 
 1. The selected frame defines four motor mount positions.

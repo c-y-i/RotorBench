@@ -194,6 +194,13 @@ function sourceStateFor(part, fields) {
 function modelLabelFor(part, category) {
   const modelEntry = getCatalogModelEntry(part, category);
   if (!modelEntry) return "Generated fallback";
+  if (
+    Array.isArray(part.dimensionsMm)
+    && part.dimensionsMm.length === 3
+    && part.dimensionsMm.every((value) => Number(value) > 0)
+  ) {
+    return "Catalog GLB · envelope-targeted";
+  }
   return modelEntry.contractStatus === "legacy-unverified"
     ? "Catalog GLB · legacy contract"
     : "Catalog GLB";

@@ -12,6 +12,7 @@ import {
   getPropellerSweepDiameterMm,
   getPropellerVariant,
   getStackLevelsMm,
+  getUniformModelScale,
 } from "./assemblyTransforms";
 
 const frame = {
@@ -64,6 +65,21 @@ test("published planforms drive fallback footprints without inventing thickness"
     planformMm: [34, 27],
     dimensionsMm: [35, 8, 35],
   })).toEqual([35, 8, 35]);
+});
+
+test("imported models can match a complete catalog envelope with uniform scale", () => {
+  expect(getUniformModelScale(
+    [0.2, 0.1, 0.2],
+    [100, 50, 100],
+  )).toBeCloseTo(2);
+  expect(getUniformModelScale(
+    [0.2, 0.1, 0.2],
+    null,
+  )).toBe(1);
+  expect(getUniformModelScale(
+    [0.000001, 0.000001, 0.000001],
+    [100, 50, 100],
+  )).toBe(1);
 });
 
 test("propellers sit above each motor shaft with alternating handedness", () => {

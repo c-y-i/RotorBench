@@ -24,6 +24,7 @@ import {
   getPropellerSweepDiameterMm,
   getPropellerVariant,
   getStackLevelsMm,
+  getUniformModelScale,
   MM_TO_SCENE,
   toSceneVectorMm,
 } from "../assembly/assemblyTransforms";
@@ -118,6 +119,7 @@ const createNormalizedInstance = ({
   index,
   position,
   variant = null,
+  targetDimensionsMm = null,
 }) => {
   const root = new TransformNode(`${prefix}_${index}_root`, scene);
   const rootName = `${prefix}_${index}_root`;
@@ -135,6 +137,23 @@ const createNormalizedInstance = ({
   }
 
   alignRootChildrenToBase(root);
+  const bounds = getGroupBounds(root.getChildMeshes());
+  const actualExtents = bounds
+    ? [
+        bounds.max.x - bounds.min.x,
+        bounds.max.y - bounds.min.y,
+        bounds.max.z - bounds.min.z,
+      ]
+    : null;
+  const normalizationScale = getUniformModelScale(
+    actualExtents,
+    targetDimensionsMm,
+  );
+  root.scaling = new Vector3(
+    normalizationScale,
+    normalizationScale,
+    normalizationScale,
+  );
 
   const toFinite = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0);
   root.position = new Vector3(
@@ -142,7 +161,11 @@ const createNormalizedInstance = ({
     toFinite(position?.y ?? position?.[1]),
     toFinite(position?.z ?? position?.[2]),
   );
-  root.metadata = { componentType, propellerVariant: variant };
+  root.metadata = {
+    componentType,
+    propellerVariant: variant,
+    normalizationScale,
+  };
   tagFallbackMeshes(clones, componentType, variant);
   clones.forEach((mesh) => {
     mesh.metadata.assemblyFallback = false;
@@ -1225,6 +1248,7 @@ const BabylonViewer = ({
         prefix: "frame",
         index: 0,
         position: Vector3.Zero(),
+        targetDimensionsMm: assemblySpec.frame?.dimensionsMm,
       });
       if (normalizedRoot) {
         scene.__frameRoot = normalizedRoot;
@@ -1302,6 +1326,7 @@ const BabylonViewer = ({
               prefix: entry.key,
               index: 0,
               position: placement,
+              targetDimensionsMm: entry.fallbackSpec?.dimensionsMm,
             });
             meshes.forEach((mesh) => mesh.dispose());
           }
@@ -1342,6 +1367,7 @@ const BabylonViewer = ({
             prefix: "battery",
             index: 0,
             position: batteryOrigin,
+            targetDimensionsMm: batterySpec?.dimensionsMm,
           });
           meshes.forEach((mesh) => mesh.dispose());
         }
@@ -1391,6 +1417,7 @@ const BabylonViewer = ({
               prefix: "motor",
               index,
               position,
+              targetDimensionsMm: motorSpec?.dimensionsMm,
             });
             if (root) motorRoots.push(root);
           });
@@ -1450,6 +1477,7 @@ const BabylonViewer = ({
             index,
             position,
             variant,
+            targetDimensionsMm: propellerSpec?.dimensionsMm,
           });
           if (root) mountedRoots.push(root);
         } else {

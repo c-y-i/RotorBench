@@ -105,6 +105,14 @@ test("shows a published board footprint when full thickness is not catalogued", 
   expect(notes[0].sourceState.label).toBe("Footprint + estimate");
 });
 
+test("labels catalog GLBs that can be scaled to a complete envelope", () => {
+  const notes = getAssemblyNotes({
+    esc: getPart("escs", "esc-holybro-tekko32-50a"),
+  });
+
+  expect(notes[0].modelLabel).toBe("Catalog GLB · envelope-targeted");
+});
+
 test("copies a source-labelled handoff without upgrading the planning boundary", async () => {
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
