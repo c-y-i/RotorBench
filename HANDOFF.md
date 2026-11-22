@@ -8,6 +8,23 @@ Read this file before changing the project. Inspect `git status --short --branch
 
 The product is RotorBench, an FPV drone build configurator and performance analysis tool. The active goal has been to make the catalog useful and to make the 3D preview behave like an actual quad assembly rather than a collection of unrelated models.
 
+## Latest session checkpoint (2026-11-22)
+
+The UI and Aerial Kit-inspired configuration work now reaches the planning/evidence boundary directly:
+
+* Setup has a hardware claim ledger that keeps `Requested`, `Echoed`, `Applied`, and `Persisted` separate. Importing a reviewed device identity or parameter snapshot updates the `Echoed` fact; RotorBench still leaves application and persistence unestablished.
+* Evidence review accepts a read-only Aerial Kit identity report containing `protocol: "akp"`, protocol version, product, parameter count, changed count, capability word, and configuration hash. `features: null` is rendered as an older firmware that cannot report its capability word; `features: 0` is rendered as a reported word with no known bits. The HELLO `version` is labelled as the protocol version, not a firmware release.
+* The capability panel names the compiled bits (`PARAM_INFO`, `APPLIES_ON_WRITE`, `GATES_ON_ARMED`, `RC_CHANNELS`, `PREFLIGHT`, and the rest), preserves unknown bits, and states that a capability claim does not prove a command was sent, applied, or persisted.
+* Flight-controller feature chips now name unavailable board-profile features in place, with visible reasons and accessible descriptions, instead of relying on hover titles.
+* The Build desktop command bar is in document flow rather than covering the canvas/manifest; its phone layout remains sticky above the bottom navigation.
+* The phone starter-platform filters scroll in one row so the first real source build is visible in the initial viewport.
+* Empty Analysis now uses the same open workbench header as Compare instead of a detached white utility band.
+* Radio warnings now say when a dual-band receiver has only one of its documented bands configured by the selected transmitter, even when some shared coverage exists.
+
+Verification at this checkpoint: `66` frontend suites and `677` tests pass, the production build succeeds, and the Impeccable mechanical detector reports no findings. Latest relevant commits are `74f8e8d`, `e2dca58`, `3ce1b5f`, `716da97`, `860d8b2`, and `8bb7e28`.
+
+The next highest-value feature remains an explicit, opt-in, read-only Aerial Kit FC session for HELLO/STATUS/RC polling with stale-state handling. Do not fold that into the current local-plan or CRSF capture components, and do not add writes, arming, flashing, or RF-pass claims until the separate capability-gated session layer and hardware evidence support them.
+
 ## Current product state
 
 The frontend is a React 18 app under `rotorbench/`. The backend is FastAPI under `backend/`. The runtime component catalog is `rotorbench/src/data/components.json`, and the backend reads that same file through `backend/utils/component_data.py`.
