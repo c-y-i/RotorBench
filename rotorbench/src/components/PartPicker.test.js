@@ -371,9 +371,22 @@ test("receiver radio facets isolate bands and PWM-capable outputs", () => {
           frequencyBands: ["2.4 GHz"],
           channels: 16,
           pwmOutputs: 6,
+          outputMode: "serial-pwm",
           weight: 14.5,
           price: 24.99,
           sourceUrl: "https://example.com/er6",
+        },
+        {
+          id: "rx-er3c-i",
+          name: "RadioMaster ER3C-i",
+          protocol: "CRSF",
+          frequencyBands: ["2.4 GHz"],
+          channels: 16,
+          pwmOutputs: 3,
+          outputMode: "pwm",
+          weight: 4.2,
+          price: 16.99,
+          sourceUrl: "https://example.com/er3c-i",
         },
         {
           id: "rx-bandit-br3",
@@ -414,8 +427,16 @@ test("receiver radio facets isolate bands and PWM-capable outputs", () => {
   fireEvent.click(within(facets).getByRole("button", {
     name: "PWM outputs",
   }));
-  expect(within(results()).getAllByRole("option")).toHaveLength(1);
+  expect(within(results()).getAllByRole("option")).toHaveLength(2);
   expect(within(results()).getByText("RadioMaster ER6")).toBeInTheDocument();
+  expect(within(results()).getByText("RadioMaster ER3C-i")).toBeInTheDocument();
+
+  fireEvent.click(within(facets).getByRole("button", {
+    name: "PWM only",
+  }));
+  expect(within(results()).getAllByRole("option")).toHaveLength(1);
+  expect(within(results()).getByText("RadioMaster ER3C-i")).toBeInTheDocument();
+  expect(within(results()).getByText(/PWM-only topology/i)).toBeInTheDocument();
 
   fireEvent.click(within(facets).getByRole("button", {
     name: "Dual band",

@@ -81,6 +81,11 @@ const CATEGORY_FACETS = {
         label: "PWM outputs",
         match: (part) => Number(part.pwmOutputs) > 0,
       },
+      {
+        value: "pwm-only",
+        label: "PWM only",
+        match: (part) => part.outputMode === "pwm",
+      },
     ],
   },
 };
@@ -188,6 +193,7 @@ function getMeta(category, part) {
         Number(part.pwmOutputs)
           ? `${Number(part.pwmOutputs)} PWM outputs`
           : null,
+        part.outputMode === "pwm" ? "PWM-only topology" : null,
         part.telemetryPowerMw
           ? `${part.telemetryPowerMw} mW telemetry`
           : null,
@@ -205,6 +211,7 @@ function searchText(part, category) {
     part.manufacturer,
     part.size,
     part.kv,
+    part.outputMode,
     ...getMeta(category, part),
   ]
     .filter(Boolean)
