@@ -28,6 +28,11 @@ test("summarizes planning weight and price using frame motor count", () => {
   expect(summary.planningAllowanceG).toBe(50);
   expect(summary.totalWeight).toBeGreaterThan(0);
   expect(summary.totalPrice).toBeGreaterThan(0);
+  expect(summary).toMatchObject({
+    modelSourceSelectedCount: 7,
+    catalogModelCount: 7,
+    legacyNormalizationCount: 7,
+  });
 });
 
 test("comparison rows include all seven component categories", () => {
@@ -45,6 +50,8 @@ test("comparison rows include all seven component categories", () => {
       "estimated-fields",
       "measured-geometry",
       "geometry-fallbacks",
+      "catalog-model-assets",
+      "legacy-normalized-glbs",
       "hardware-plan",
       "receiver-wiring",
       "board-map",

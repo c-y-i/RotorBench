@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ComparePage from "./ComparePage";
 import { getA11yViolations } from "../test/a11y";
@@ -45,6 +45,14 @@ test("comparison surfaces fit, evidence, and hardware-plan state", async () => {
   expect(screen.getByText("Physical fit")).toBeInTheDocument();
   expect(screen.getByText("Electrical limits")).toBeInTheDocument();
   expect(screen.getByText("Source-backed parts")).toBeInTheDocument();
+  expect(screen.getByText("Catalog model coverage")).toBeInTheDocument();
+  expect(within(screen.getByRole("rowheader", {
+    name: "Catalog model coverage",
+  }).closest("tr")).getAllByText("7/7")).toHaveLength(2);
+  expect(screen.getByText("Legacy-normalized GLBs")).toBeInTheDocument();
+  expect(within(screen.getByRole("rowheader", {
+    name: "Legacy-normalized GLBs",
+  }).closest("tr")).getAllByText("7")).toHaveLength(2);
   expect(screen.getByText("Hardware plan")).toBeInTheDocument();
   expect(screen.getAllByText("Fit needs review").length).toBeGreaterThan(1);
   expect(screen.getAllByText("Electrical limits verified").length).toBeGreaterThan(1);

@@ -24,6 +24,7 @@ import {
   sanitizePlanComparisonMetadata,
   summarizeBenchEvidenceAttachment,
 } from "./benchEvidenceAttachment";
+import { summarizeModelSources } from "./modelAssets";
 
 export { BUILD_WEIGHT_ALLOWANCE_G } from "./planningSummary";
 
@@ -108,6 +109,7 @@ export function summarizeBuild(build) {
       ? "verified"
       : "unverified";
   const evidence = summarizeBuildEvidence(assemblySpec);
+  const modelSources = summarizeModelSources(assemblySpec);
   const hardwareReadiness = summarizeHardwareReadiness({
     buildId: build?.id,
     flightController: byCategory.flight_controllers,
@@ -159,6 +161,9 @@ export function summarizeBuild(build) {
     estimatedFieldCount: evidence.estimatedFieldCount,
     measuredFieldCount: evidence.measuredFieldCount,
     geometryFallbackCount: evidence.geometryFallbackCount,
+    modelSourceSelectedCount: modelSources.selectedCount,
+    catalogModelCount: modelSources.catalogModelCount,
+    legacyNormalizationCount: modelSources.legacyNormalizationCount,
     hardwarePlanStatus: readHardwarePlanStatus(build?.id),
     hardwareReadinessStatus: hardwareReadiness.status,
     hardwareReadinessLabel: hardwareReadiness.label,
@@ -519,6 +524,21 @@ export function comparisonRows(left, right) {
       label: "Geometry fallbacks",
       left: left.geometryFallbackCount,
       right: right.geometryFallbackCount,
+      format: (value) => String(value),
+      lowerIsBetter: true,
+    },
+    {
+      id: "catalog-model-assets",
+      label: "Catalog model coverage",
+      left: `${left.catalogModelCount}/${left.modelSourceSelectedCount}`,
+      right: `${right.catalogModelCount}/${right.modelSourceSelectedCount}`,
+      format: (value) => value,
+    },
+    {
+      id: "legacy-normalized-glbs",
+      label: "Legacy-normalized GLBs",
+      left: left.legacyNormalizationCount,
+      right: right.legacyNormalizationCount,
       format: (value) => String(value),
       lowerIsBetter: true,
     },
