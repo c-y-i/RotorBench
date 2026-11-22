@@ -114,6 +114,7 @@ export default function SetupPage() {
   const [setupBenchToolsOpen, setSetupBenchToolsOpen] = useState(false);
   const [benchRunbookOpen, setBenchRunbookOpen] = useState(false);
   const [focusBenchEvidence, setFocusBenchEvidence] = useState(false);
+  const [reviewedEvidence, setReviewedEvidence] = useState(null);
   const [plansLoaded, setPlansLoaded] = useState(false);
   const [recoveredDraft, setRecoveredDraft] = useState({
     fc: false,
@@ -385,6 +386,23 @@ export default function SetupPage() {
   const radioIssueCount = radioWarnings.length + mappingWarnings.length;
   const issueCount = fcIssues.length + radioIssueCount;
   const setupReady = issueCount === 0;
+  const reviewedFcIdentity = reviewedEvidence?.fcEvidence?.identity || null;
+  const reviewedFcParameters = reviewedEvidence?.fcEvidence?.parameters || null;
+  const readbackReviewed = Boolean(reviewedFcIdentity || reviewedFcParameters);
+  const readbackStatus = reviewedFcParameters
+    ? "Parameter snapshot reviewed"
+    : reviewedFcIdentity
+      ? "Firmware identity reviewed"
+      : "Readback not imported";
+  const readbackDetail = reviewedFcParameters
+    ? "Imported controller values were compared, not sent or re-read."
+    : reviewedFcIdentity?.features == null
+      ? "HELLO predates the capability word, so this firmware cannot say what it supports."
+      : reviewedFcIdentity
+        ? `${reviewedFcIdentity.featureNames.length} capability bit${
+          reviewedFcIdentity.featureNames.length === 1 ? "" : "s"
+        } reported by HELLO; values remain separate.`
+        : "A device answer can show reception, not that a controller applied it.";
   const readinessLabel = issueCount
     ? [
         `${issueCount} combined check${issueCount === 1 ? "" : "s"}`,
@@ -806,13 +824,10 @@ export default function SetupPage() {
                 : "This is a local request, not a hardware state."}
             </small>
           </li>
-          <li>
+          <li className={readbackReviewed ? "is-reviewed" : ""}>
             <span>Echoed</span>
-            <strong>Readback not imported</strong>
-            <small>
-              A device answer can show reception, not that a controller
-              applied it.
-            </small>
+            <strong>{readbackStatus}</strong>
+            <small>{readbackDetail}</small>
           </li>
           <li>
             <span>Applied</span>
@@ -1060,6 +1075,7 @@ export default function SetupPage() {
               plan: radioPlan,
             }}
             onAdoptPlanPatch={adoptObservedPlanPatch}
+            onEvidenceChange={setReviewedEvidence}
             open={benchRunbookOpen}
             onOpenChange={setBenchRunbookOpen}
           />

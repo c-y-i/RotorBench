@@ -199,9 +199,11 @@ test("reviews a complete pair file without claiming RotorBench observed hardware
 });
 
 test("shows Aerial Kit firmware capabilities as compiled claims, not hardware proof", async () => {
+  const onEvidenceChange = jest.fn();
   render(
     <BenchEvidenceReview
       expectedFc={{ firmwareFamily: "aerialkit" }}
+      onEvidenceChange={onEvidenceChange}
     />,
   );
 
@@ -233,6 +235,9 @@ test("shows Aerial Kit firmware capabilities as compiled claims, not hardware pr
   expect(within(identity).getByText("Armed write gate")).toBeInTheDocument();
   expect(within(identity).getByText(/do not show that a command was sent/i))
     .toBeInTheDocument();
+  expect(onEvidenceChange).toHaveBeenCalledWith(expect.objectContaining({
+    kind: "fc-identity",
+  }));
 });
 
 test("a plan UID mismatch is shown as a failed check", async () => {

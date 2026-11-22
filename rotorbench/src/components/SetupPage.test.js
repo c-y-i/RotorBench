@@ -56,10 +56,31 @@ jest.mock("./RadioLinkSetup", () => function MockRadioLinkSetup(props = {}) {
   );
 });
 jest.mock("./BenchRunbook", () => function MockBenchRunbook(props = {}) {
-  const { runbook, expectedUid, onAdoptPlanPatch, open } = props;
+  const {
+    runbook,
+    expectedUid,
+    onAdoptPlanPatch,
+    onEvidenceChange,
+    open,
+  } = props;
   return (
     <div data-testid="mock-bench-runbook" data-open={String(Boolean(open))}>
       Bench runbook: {runbook.stages.length} stages · plan UID: {expectedUid || "none"}
+      <button
+        type="button"
+        onClick={() => onEvidenceChange?.({
+          fcEvidence: {
+            identity: {
+              product: "aerialkit-f405",
+              protocolVersion: 49,
+              features: 0x11d,
+              featureNames: ["PARAM_INFO", "APPLIES_ON_WRITE", "GATES_ON_ARMED"],
+            },
+          },
+        })}
+      >
+        Import mock FC identity
+      </button>
       <button
         type="button"
         onClick={() => onAdoptPlanPatch?.({
@@ -166,6 +187,14 @@ test("renders the hardware planning page and switches to radio setup", async () 
   expect(within(claimLedger).getByText("Readback not imported"))
     .toBeInTheDocument();
   expect(within(claimLedger).getAllByText("Not established")).toHaveLength(2);
+  fireEvent.click(screen.getByText("Bench tools"));
+  fireEvent.click(screen.getByRole("button", {
+    name: "Import mock FC identity",
+  }));
+  expect(within(claimLedger).getByText("Firmware identity reviewed"))
+    .toBeInTheDocument();
+  expect(within(claimLedger).getByText(/3 capability bits reported by HELLO/i))
+    .toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("tab", { name: "Radio link" }));
   expect(screen.getByText(/Radio panel: none \/ roles arm,flightMode,velocity/)).toBeInTheDocument();

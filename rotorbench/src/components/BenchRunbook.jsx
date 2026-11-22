@@ -16,6 +16,7 @@ export default function BenchRunbook({
   expectedFc = null,
   expectedRadio = null,
   onAdoptPlanPatch = null,
+  onEvidenceChange = null,
   open,
   onOpenChange = null,
 }) {
@@ -159,6 +160,7 @@ export default function BenchRunbook({
           expectedFc={expectedFc}
           expectedRadio={expectedRadio}
           onAdoptPlanPatch={onAdoptPlanPatch}
+          onEvidenceChange={onEvidenceChange}
         />
 
         <ul className="bench-runbook-warnings" aria-label="Bench safety boundaries">

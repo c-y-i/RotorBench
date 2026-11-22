@@ -201,6 +201,10 @@
   background: color-mix(in srgb, var(--accent-soft) 52%, transparent);
 }
 
+.setup-claim-ledger-items li.is-reviewed {
+  background: color-mix(in srgb, var(--brand-soft) 56%, transparent);
+}
+
 .setup-claim-ledger-items span {
   color: var(--ink-faint);
   font-family: "IBM Plex Mono", monospace;
@@ -212,6 +216,10 @@
 
 .setup-claim-ledger-items li.is-requested span {
   color: var(--warn);
+}
+
+.setup-claim-ledger-items li.is-reviewed span {
+  color: var(--brand-strong);
 }
 
 .setup-claim-ledger-items strong {

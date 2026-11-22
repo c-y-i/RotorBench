@@ -225,6 +225,7 @@ export default function BenchEvidenceReview({
   expectedFc = null,
   expectedRadio = null,
   onAdoptPlanPatch = null,
+  onEvidenceChange = null,
 }) {
   const [evidence, setEvidence] = useState(null);
   const [error, setError] = useState("");
@@ -275,17 +276,20 @@ export default function BenchEvidenceReview({
       setFcAdoptIds([]);
       setRadioAdoptIds([]);
       setAttachedAt(null);
+      onEvidenceChange?.(parsed);
       setMessage(
         `${files.length} evidence file${files.length === 1 ? "" : "s"} reviewed locally and not yet attached.`,
       );
     } catch (readError) {
       setEvidence(null);
+      onEvidenceChange?.(null);
       setError(readError.message);
     }
   };
 
   const clearEvidence = () => {
     setEvidence(null);
+    onEvidenceChange?.(null);
     setCheckFilter("all");
     setReviewedScope(null);
     setFcAdoptIds([]);
