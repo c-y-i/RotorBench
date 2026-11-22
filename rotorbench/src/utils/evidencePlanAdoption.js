@@ -12,6 +12,7 @@ import {
 import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
 import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
+import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
 
 const INFERRED_AIRFRAMES = Object.fromEntries(
   Object.entries(AERIALKIT_AIRFRAME_IDS).map(([name, id]) => [id, name]),
@@ -588,6 +589,34 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
         if (key === "rcSmoothHz" && value === 0) return "Derive from link";
         return String(value);
       },
+    })),
+    ...AERIALKIT_FEED_FORWARD_FIELDS.map(({ key, runtimeName, label }) => ({
+      key,
+      source: runtimeName,
+      snapshotKey: runtimeName,
+      label,
+      parse: (raw) => {
+        const number = finite(raw);
+        const maximum = [
+          "rateFfdRoll",
+          "rateFfdPitch",
+          "rateFfdYaw",
+        ].includes(key)
+          ? 0.5
+          : key === "ffSmoothFactor"
+            ? 95
+            : key === "ffJitterFactor"
+              ? 20
+              : key === "ffBoost"
+                ? 50
+                : 150;
+        return number != null && number >= 0 && number <= maximum
+          ? number
+          : null;
+      },
+      display: (value) => key.startsWith("rateFfd")
+        ? value === 0 ? "Off" : String(value)
+        : String(value),
     })),
     {
       key: "maxRateDps",

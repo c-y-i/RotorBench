@@ -44,6 +44,10 @@ import {
   AERIALKIT_RC_SMOOTHING_FIELDS,
   buildAerialKitRcSmoothingPlan,
 } from "./aerialKitRcSmoothing";
+import {
+  AERIALKIT_FEED_FORWARD_FIELDS,
+  buildAerialKitFeedForwardPlan,
+} from "./aerialKitFeedForward";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -139,6 +143,12 @@ export function summarizeHardwareReadiness({
     : null;
   const fcRcSmoothingPlan = fcPlan.firmwareFamily === "aerialkit"
     ? buildAerialKitRcSmoothingPlan(fcPlan, {
+        linkRateHz: nominalRadioControlRateHz,
+        linkRateLabel: radioPlanConfigured ? radioPlan.packetRateMode : null,
+      })
+    : null;
+  const fcFeedForwardPlan = fcPlan.firmwareFamily === "aerialkit"
+    ? buildAerialKitFeedForwardPlan(fcPlan, {
         linkRateHz: nominalRadioControlRateHz,
         linkRateLabel: radioPlanConfigured ? radioPlan.packetRateMode : null,
       })
@@ -461,6 +471,15 @@ export function summarizeHardwareReadiness({
     fcRcSmoothingAppliedCutoffHz:
       fcRcSmoothingPlan?.appliedCutoffHz ?? null,
     fcRcSmoothingClamped: fcRcSmoothingPlan?.clamped ?? null,
+    ...Object.fromEntries(AERIALKIT_FEED_FORWARD_FIELDS.map(({ key }) => [
+      `fc${key[0].toUpperCase()}${key.slice(1)}`,
+      fcPlan.firmwareFamily === "aerialkit" ? fcPlan[key] : null,
+    ])),
+    fcFeedForwardStatus: fcFeedForwardPlan?.status ?? null,
+    fcFeedForwardEnabled: fcFeedForwardPlan?.enabled ?? null,
+    fcFeedForwardLinkRateHz: fcFeedForwardPlan?.linkRateHz ?? null,
+    fcFeedForwardTauMs: fcFeedForwardPlan?.tauMs ?? null,
+    fcFeedForwardFilterK: fcFeedForwardPlan?.filterK ?? null,
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
@@ -647,6 +666,15 @@ export function sanitizeHardwareReadiness(readiness) {
     fcRcSmoothingAppliedCutoffHz:
       readiness.fcRcSmoothingAppliedCutoffHz ?? null,
     fcRcSmoothingClamped: readiness.fcRcSmoothingClamped ?? null,
+    ...Object.fromEntries(AERIALKIT_FEED_FORWARD_FIELDS.map(({ key }) => {
+      const readinessKey = `fc${key[0].toUpperCase()}${key.slice(1)}`;
+      return [readinessKey, readiness[readinessKey] ?? null];
+    })),
+    fcFeedForwardStatus: readiness.fcFeedForwardStatus || null,
+    fcFeedForwardEnabled: readiness.fcFeedForwardEnabled ?? null,
+    fcFeedForwardLinkRateHz: readiness.fcFeedForwardLinkRateHz ?? null,
+    fcFeedForwardTauMs: readiness.fcFeedForwardTauMs ?? null,
+    fcFeedForwardFilterK: readiness.fcFeedForwardFilterK ?? null,
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
     fcRateCenterDps: readiness.fcRateCenterDps ?? null,
     fcRateExpo: readiness.fcRateExpo ?? null,

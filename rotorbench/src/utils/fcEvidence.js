@@ -3,6 +3,7 @@ import { buildAerialKitRouteSummary } from "./aerialKitWaypoints";
 import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
 import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
+import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
 
 const STATUS_PROTOCOLS = new Set(["akp", "betaflight"]);
 const PREFLIGHT_VERDICTS = {
@@ -1558,6 +1559,10 @@ const PARAMETER_PLAN_KEYS = {
     key,
   ])),
   ...Object.fromEntries(AERIALKIT_RC_SMOOTHING_FIELDS.map(({ runtimeName, key }) => [
+    runtimeName,
+    key,
+  ])),
+  ...Object.fromEntries(AERIALKIT_FEED_FORWARD_FIELDS.map(({ runtimeName, key }) => [
     runtimeName,
     key,
   ])),

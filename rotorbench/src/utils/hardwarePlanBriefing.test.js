@@ -9,6 +9,7 @@ test("creates a concise hardware briefing without binding material", () => {
   const fcPlan = {
     ...createDefaultFlightControllerConfig(),
     rcSmooth: 1,
+    rateFfdRoll: 0.012,
   };
   const fcProfile = getBoardProfile(fcPlan.profileId);
   const briefing = createHardwarePlanBriefing({
@@ -49,6 +50,9 @@ test("creates a concise hardware briefing without binding material", () => {
   expect(briefing.text).toContain("- Control cadence: 4.0 ms nominal");
   expect(briefing.text).toContain(
     "- RC smoothing: enabled from nominal radio packet rate 250 Hz (250), requested cutoff 93.8 Hz, factor 30",
+  );
+  expect(briefing.text).toContain(
+    "- Stick feed-forward: Roll 0.012; smooth factor 65, nominal 0.35 PT1 coefficient at 250 Hz, jitter factor 7, boost 15, max-rate limit 90",
   );
   expect(briefing.text).toContain("Nothing was connected, written, flashed, calibrated, or armed.");
   expect(briefing.text).not.toContain("do-not-export");

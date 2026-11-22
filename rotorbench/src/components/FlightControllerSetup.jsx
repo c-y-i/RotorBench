@@ -58,6 +58,7 @@ import {
 import { buildAerialKitFilterPlan } from "../utils/aerialKitFilters";
 import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
 import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
+import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -135,6 +136,13 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "dyn-notch-min-range": { id: "fc-dyn-notch-min", label: "dynamic notch low" },
   "dyn-notch-max-range": { id: "fc-dyn-notch-max", label: "dynamic notch high" },
   "dyn-notch-band-order": { id: "fc-dyn-notch-min", label: "dynamic notch band" },
+  "rateFfdRoll-range": { id: "fc-rate-ffd-roll", label: "roll feed-forward gain" },
+  "rateFfdPitch-range": { id: "fc-rate-ffd-pitch", label: "pitch feed-forward gain" },
+  "rateFfdYaw-range": { id: "fc-rate-ffd-yaw", label: "yaw feed-forward gain" },
+  "ffSmoothFactor-range": { id: "fc-ff-smooth", label: "feed-forward smoothing" },
+  "ffJitterFactor-range": { id: "fc-ff-jitter", label: "feed-forward jitter reduction" },
+  "ffBoost-range": { id: "fc-ff-boost", label: "feed-forward boost" },
+  "ffMaxRateLimit-range": { id: "fc-ff-limit", label: "feed-forward rate limit" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -363,6 +371,12 @@ function formatFilterHz(value) {
   if (value == null || !Number.isFinite(Number(value))) return "Unverified";
   const rounded = Math.round(Number(value) * 10) / 10;
   return `${rounded} Hz`;
+}
+
+function formatMilliseconds(value) {
+  if (value == null || !Number.isFinite(Number(value))) return "Unverified";
+  const rounded = Math.round(Number(value) * 10) / 10;
+  return `${rounded} ms`;
 }
 
 function formatFilterRange(stage, applied = false) {
@@ -890,6 +904,198 @@ function RcSmoothingPanel({
   );
 }
 
+function FeedForwardPanel({
+  config,
+  plan,
+  onUpdate,
+}) {
+  const statusLabel = {
+    off: "No axis enabled",
+    unverified: "Radio rate unverified",
+    planned: "Shaping staged",
+  }[plan.status];
+  const axesLabel = plan.enabledAxes.length
+    ? plan.enabledAxes.map((axis) => `${axis.label} ${axis.gain}`).join(" · ")
+    : "Roll, pitch, and yaw gains are 0";
+
+  return (
+    <details className={`fc-feed-forward is-${plan.status}`}>
+      <summary>
+        <span>
+          <strong>Stick feed-forward</strong>
+          <small>{axesLabel}</small>
+        </span>
+        <em>{statusLabel}</em>
+      </summary>
+      <div className="fc-feed-forward-body">
+        <div className="fc-feed-forward-status" role="note">
+          <span>
+            <small>Setpoint-speed shaping</small>
+            <strong>{statusLabel}</strong>
+          </span>
+          <dl>
+            <div>
+              <dt>Nominal link</dt>
+              <dd>
+                {plan.linkRateHz
+                  ? `${formatFilterHz(plan.linkRateHz)}${plan.linkRateLabel ? ` · ${plan.linkRateLabel}` : ""}`
+                  : "Not supplied"}
+              </dd>
+            </div>
+            <div>
+              <dt>Frame interval</dt>
+              <dd>{formatMilliseconds(plan.sampleIntervalMs)}</dd>
+            </div>
+            <div>
+              <dt>Smoothing tau</dt>
+              <dd>{formatMilliseconds(plan.tauMs)}</dd>
+            </div>
+            <div>
+              <dt>PT1 coefficient</dt>
+              <dd>
+                {plan.filterK == null
+                  ? "Unverified"
+                  : plan.filterK.toFixed(3)}
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <fieldset className="fc-feed-forward-gains">
+          <legend>Axis gains</legend>
+          <p>
+            Torque per radian per second squared. These gains remain off until
+            the airframe tune supplies a tested value.
+          </p>
+          <div className="fc-field-grid fc-field-grid-three">
+            {[
+              ["rateFfdRoll", "Roll gain", "fc-rate-ffd-roll"],
+              ["rateFfdPitch", "Pitch gain", "fc-rate-ffd-pitch"],
+              ["rateFfdYaw", "Yaw gain", "fc-rate-ffd-yaw"],
+            ].map(([key, label, id]) => (
+              <Field
+                key={key}
+                label={label}
+                htmlFor={id}
+                hint="0 to 0.5; 0 disables this axis"
+                hintId={`${id}-hint`}
+              >
+                <input
+                  id={id}
+                  type="number"
+                  min="0"
+                  max="0.5"
+                  step="0.0001"
+                  aria-invalid={filterInputInvalid(config[key])}
+                  aria-describedby={`${id}-hint`}
+                  value={filterInputValue(config[key])}
+                  onChange={(event) => onUpdate(
+                    key,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="fc-feed-forward-shaping">
+          <legend>Shaping</legend>
+          <div className="fc-field-grid">
+            <Field
+              label="Smooth factor"
+              htmlFor="fc-ff-smooth"
+              hint="0 to 95; firmware default 65"
+              hintId="fc-ff-smooth-hint"
+            >
+              <input
+                id="fc-ff-smooth"
+                type="number"
+                min="0"
+                max="95"
+                step="1"
+                aria-invalid={filterInputInvalid(config.ffSmoothFactor)}
+                aria-describedby="fc-ff-smooth-hint"
+                value={filterInputValue(config.ffSmoothFactor)}
+                onChange={(event) => onUpdate(
+                  "ffSmoothFactor",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Jitter factor"
+              htmlFor="fc-ff-jitter"
+              hint="0 to 20; firmware default 7"
+              hintId="fc-ff-jitter-hint"
+            >
+              <input
+                id="fc-ff-jitter"
+                type="number"
+                min="0"
+                max="20"
+                step="1"
+                aria-invalid={filterInputInvalid(config.ffJitterFactor)}
+                aria-describedby="fc-ff-jitter-hint"
+                value={filterInputValue(config.ffJitterFactor)}
+                onChange={(event) => onUpdate(
+                  "ffJitterFactor",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Boost"
+              htmlFor="fc-ff-boost"
+              hint="0 to 50; firmware default 15"
+              hintId="fc-ff-boost-hint"
+            >
+              <input
+                id="fc-ff-boost"
+                type="number"
+                min="0"
+                max="50"
+                step="1"
+                aria-invalid={filterInputInvalid(config.ffBoost)}
+                aria-describedby="fc-ff-boost-hint"
+                value={filterInputValue(config.ffBoost)}
+                onChange={(event) => onUpdate(
+                  "ffBoost",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+            <Field
+              label="Max-rate limit"
+              htmlFor="fc-ff-limit"
+              hint="0 to 150%; firmware default 90"
+              hintId="fc-ff-limit-hint"
+            >
+              <input
+                id="fc-ff-limit"
+                type="number"
+                min="0"
+                max="150"
+                step="1"
+                aria-invalid={filterInputInvalid(config.ffMaxRateLimit)}
+                aria-describedby="fc-ff-limit-hint"
+                value={filterInputValue(config.ffMaxRateLimit)}
+                onChange={(event) => onUpdate(
+                  "ffMaxRateLimit",
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+          </div>
+        </fieldset>
+        <p className="fc-feed-forward-note">
+          The coefficient is descriptive: it uses the radio plan&apos;s nominal
+          frame interval and Aerial Kit&apos;s shape factor, not measured airtime,
+          link jitter, or aircraft response. Feed-forward is rate-mode only.
+        </p>
+      </div>
+    </details>
+  );
+}
+
 function featuresForBoard(profile, receiverProtocol, firmwareFamily) {
   const supported = profile.featureSupport || {};
   return Object.fromEntries(
@@ -1004,6 +1210,13 @@ export default function FlightControllerSetup({
   );
   const rcSmoothingPlan = useMemo(
     () => buildAerialKitRcSmoothingPlan(config, {
+      linkRateHz: radioLinkRateHz,
+      linkRateLabel: radioPacketRateMode,
+    }),
+    [config, radioLinkRateHz, radioPacketRateMode],
+  );
+  const feedForwardPlan = useMemo(
+    () => buildAerialKitFeedForwardPlan(config, {
       linkRateHz: radioLinkRateHz,
       linkRateLabel: radioPacketRateMode,
     }),
@@ -1983,6 +2196,11 @@ export default function FlightControllerSetup({
                   </div>
                 </div>
               </div>
+              <FeedForwardPanel
+                config={config}
+                plan={feedForwardPlan}
+                onUpdate={(key, nextValue) => update(key, nextValue)}
+              />
               {profile.buildScope === "workspace" && (
                 <fieldset className="fc-sysid-plan">
                   <legend>System identification</legend>

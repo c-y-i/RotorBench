@@ -443,6 +443,18 @@ test("Aerial Kit battery telemetry remains available outside Setup", () => {
     fcRcSmoothingDerivedCutoffHz: 0,
     fcRcSmoothingAppliedCutoffHz: 0,
     fcRcSmoothingClamped: false,
+    fcRateFfdRoll: 0,
+    fcRateFfdPitch: 0,
+    fcRateFfdYaw: 0,
+    fcFfSmoothFactor: 65,
+    fcFfJitterFactor: 7,
+    fcFfBoost: 15,
+    fcFfMaxRateLimit: 90,
+    fcFeedForwardStatus: "off",
+    fcFeedForwardEnabled: false,
+    fcFeedForwardLinkRateHz: null,
+    fcFeedForwardTauMs: 7.428571428571429,
+    fcFeedForwardFilterK: null,
   });
   expect(describeNavigationSafety(readiness)).toBe(
     "Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",
@@ -489,7 +501,11 @@ test("aligns saved RC smoothing with the saved radio packet cadence", () => {
     fcRcSmoothingDerivedCutoffHz: 37.5,
     fcRcSmoothingAppliedCutoffHz: 37.5,
     fcRcSmoothingClamped: false,
+    fcFeedForwardStatus: "off",
+    fcFeedForwardEnabled: false,
+    fcFeedForwardLinkRateHz: 100,
   });
+  expect(readiness.fcFeedForwardFilterK).toBeCloseTo(0.5738, 4);
 });
 
 test("mission and launch controls remain available outside Setup", () => {

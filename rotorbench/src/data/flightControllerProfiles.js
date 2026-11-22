@@ -4,6 +4,7 @@ import {
 } from "../utils/aerialKitFilters";
 import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
 import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
+import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
 
 export const FIRMWARE_FAMILIES = [
   {
@@ -1775,6 +1776,13 @@ export function createDefaultFlightControllerConfig(
     rcSmooth: 0,
     rcSmoothHz: 0,
     rcSmoothFactor: 30,
+    rateFfdRoll: 0,
+    rateFfdPitch: 0,
+    rateFfdYaw: 0,
+    ffSmoothFactor: 65,
+    ffJitterFactor: 7,
+    ffBoost: 15,
+    ffMaxRateLimit: 90,
     maxRateDps: 700,
     rateCenterDps: 0,
     rateExpo: 0,
@@ -2244,6 +2252,41 @@ export function validateFlightControllerConfig(
         message: "RC smoothing auto factor must be between 0 and 250.",
       });
     }
+    [
+      ["rateFfdRoll", "Roll"],
+      ["rateFfdPitch", "Pitch"],
+      ["rateFfdYaw", "Yaw"],
+    ].forEach(([key, axis]) => {
+      if (
+        !finite(config[key])
+        || Number(config[key]) < 0
+        || Number(config[key]) > 0.5
+      ) {
+        issues.push({
+          severity: "error",
+          code: `${key}-range`,
+          message: `${axis} stick feed-forward gain must be between 0 and 0.5; 0 disables that axis.`,
+        });
+      }
+    });
+    [
+      ["ffSmoothFactor", "Feed-forward smooth factor", 95, "0 to 95"],
+      ["ffJitterFactor", "Feed-forward jitter factor", 20, "0 to 20"],
+      ["ffBoost", "Feed-forward boost", 50, "0 to 50"],
+      ["ffMaxRateLimit", "Feed-forward max-rate limit", 150, "0 to 150"],
+    ].forEach(([key, label, maximum, range]) => {
+      if (
+        !finite(config[key])
+        || Number(config[key]) < 0
+        || Number(config[key]) > maximum
+      ) {
+        issues.push({
+          severity: "error",
+          code: `${key}-range`,
+          message: `${label} must be between ${range}.`,
+        });
+      }
+    });
     if (
       !finite(config.maxRateDps)
       || Number(config.maxRateDps) < 10
@@ -2982,6 +3025,12 @@ export function buildFlightControllerSummary(
         linkRateLabel: radioPacketRateMode,
       })
     : null;
+  const feedForwardPlan = config.firmwareFamily === "aerialkit"
+    ? buildAerialKitFeedForwardPlan(config, {
+        linkRateHz: radioLinkRateHz,
+        linkRateLabel: radioPacketRateMode,
+      })
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -3023,6 +3072,13 @@ export function buildFlightControllerSummary(
                       ? `; clamped to ${Math.round(rcSmoothingPlan.appliedCutoffHz * 10) / 10} Hz by the requested loop`
                       : ""
                 }`
+          }`,
+          `Stick feed-forward: ${
+            feedForwardPlan.status === "off"
+              ? "off on every axis"
+              : `${feedForwardPlan.enabledAxes.map((axis) => `${axis.label} ${axis.gain}`).join(", ")}; smooth factor ${feedForwardPlan.smoothFactor}${feedForwardPlan.filterK == null
+                ? ", radio-rate response unverified"
+                : `, nominal ${Math.round(feedForwardPlan.filterK * 1000) / 1000} PT1 coefficient at ${feedForwardPlan.linkRateHz} Hz`}, jitter factor ${feedForwardPlan.jitterFactor}, boost ${feedForwardPlan.boost}, max-rate limit ${feedForwardPlan.maxRateLimit}`
           }`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,

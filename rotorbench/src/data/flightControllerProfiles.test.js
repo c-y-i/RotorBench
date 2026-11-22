@@ -253,6 +253,13 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     rcSmooth: 0,
     rcSmoothHz: 0,
     rcSmoothFactor: 30,
+    rateFfdRoll: 0,
+    rateFfdPitch: 0,
+    rateFfdYaw: 0,
+    ffSmoothFactor: 65,
+    ffJitterFactor: 7,
+    ffBoost: 15,
+    ffMaxRateLimit: 90,
   });
   const issues = validateFlightControllerConfig({
     ...config,
@@ -307,12 +314,39 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
       code: "rc-smooth-hz-range",
     }),
   ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    rateFfdRoll: 0.6,
+    ffSmoothFactor: 96,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "rateFfdRoll-range",
+    }),
+    expect.objectContaining({
+      severity: "error",
+      code: "ffSmoothFactor-range",
+    }),
+  ]));
   expect(buildFlightControllerSummary(
-    { ...config, rcSmooth: 1, gyroRateHz: 4000, pidDenom: 2 },
+    {
+      ...config,
+      rcSmooth: 1,
+      rateFfdRoll: 0.012,
+      gyroRateHz: 4000,
+      pidDenom: 2,
+    },
     getBoardProfile(config.profileId),
     { radioLinkRateHz: 250, radioPacketRateMode: "250" },
   ).join("\n")).toContain(
     "RC smoothing: enabled from nominal radio packet rate 250 Hz (250), requested cutoff 93.8 Hz, factor 30",
+  );
+  expect(buildFlightControllerSummary(
+    { ...config, rateFfdRoll: 0.012 },
+    getBoardProfile(config.profileId),
+    { radioLinkRateHz: 250, radioPacketRateMode: "250" },
+  ).join("\n")).toContain(
+    "Stick feed-forward: Roll 0.012; smooth factor 65, nominal 0.35 PT1 coefficient at 250 Hz",
   );
 });
 
