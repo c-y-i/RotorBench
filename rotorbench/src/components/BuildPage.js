@@ -1428,6 +1428,7 @@ export default function BuildPage() {
                 </button>
                 {selectedMotor
                   && selectedPropeller
+                  && hardwareReadiness.fcPlanConfigured
                   && hardwareReadiness.fcMotorOutputs?.length > 0 && (
                   <button
                     type="button"
@@ -1497,7 +1498,9 @@ export default function BuildPage() {
                   motorUrl={motorModelUrl}
                   motorMountingPoint={motorMountingPoint}
                   motorLabels={
-                    showMotorLabels ? hardwareReadiness.fcMotorOutputs : []
+                    showMotorLabels && hardwareReadiness.fcPlanConfigured
+                      ? hardwareReadiness.fcMotorOutputs
+                      : []
                   }
                   frameCornerPositions={frameCornerPositions}
                   propellerUrl={propellerModelUrl}

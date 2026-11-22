@@ -840,9 +840,15 @@ export default function HomePage() {
                   propellerDirection={assemblyPropellerDirection}
                   clearedComponents={clearedComponents}
                   motorOutputByCorner={
-                    hardwarePlanState.fcMotorOutputByCorner
+                    hardwarePlanState.fcPlanConfigured
+                      ? hardwarePlanState.fcMotorOutputByCorner
+                      : null
                   }
-                  motorOutputs={hardwarePlanState.fcMotorOutputs}
+                  motorOutputs={
+                    hardwarePlanState.fcPlanConfigured
+                      ? hardwarePlanState.fcMotorOutputs
+                      : []
+                  }
                   measuredCg={measuredAssemblyCenterOfGravity(
                     currentBuild?.geometryOverrides,
                   )}

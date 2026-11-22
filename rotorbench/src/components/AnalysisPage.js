@@ -682,7 +682,9 @@ export default function AnalysisPage() {
                   <dd>{hardwareReadiness.fcPropellerDirection}</dd>
                 </div>
               )}
-              {hasHardwareSelection && hardwareReadiness.fcMaxRateDps != null && (
+              {hasHardwareSelection
+                && hardwareReadiness.fcPlanConfigured
+                && hardwareReadiness.fcMaxRateDps != null && (
                 <>
                   <div>
                     <dt>Rate response</dt>

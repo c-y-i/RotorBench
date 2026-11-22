@@ -145,6 +145,8 @@ test("renders the completed analysis and opens the browser print dialog", async 
   expect(within(hardwareSection).getByText("Native USB CDC · documented"))
     .toBeInTheDocument();
   expect(within(hardwareSection).getByText("XT30 match")).toBeInTheDocument();
+  expect(within(hardwareSection).queryByText("Rate response"))
+    .not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole("button", { name: "Download report" }));
   expect(URL.createObjectURL).toHaveBeenCalledTimes(1);

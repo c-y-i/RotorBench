@@ -765,8 +765,36 @@ test("a saved Aerial Kit wing plan maps the T1 left and right outputs", async ()
 });
 
 test("motor IDs can be overlaid from the saved output map", async () => {
+  const motorBuild = {
+    ...build,
+    id: "motor-id-output-map",
+    componentIds: {
+      frameId: "frame-aos-5-v5",
+      motorId: "motor-iflight-xing2-2207-1855kv",
+      propellerId: "prop-hqprop-pizzacutters-5037-3",
+      escId: "esc-speedybee-bl32-50a",
+      flightControllerId: "fc-holybro-kakute-h7-v2",
+      batteryId: "battery-tattu-rline-v3-6s-1050-120c",
+      receiverId: "rx-radiomaster-rp4td",
+    },
+  };
+  localStorage.setItem(
+    "rotorbench:hardware-plan:motor-id-output-map:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-holybro-kakute-h7-v2",
+      selectedReceiverId: "rx-radiomaster-rp4td",
+      firmwareFamily: "betaflight",
+      profileId: "kakute-h7-v2",
+      airframe: "quadx",
+      receiverProtocol: "crsf",
+      receiverUart: "UART6",
+      receiverBaud: 420000,
+      motorDirection: "props-in",
+    }),
+  );
   render(
-    <MemoryRouter initialEntries={["/build?preset=source-5-aos-v5"]}>
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build: motorBuild } }]}>
       <BuildProvider>
         <BuildPage />
       </BuildProvider>
@@ -781,6 +809,20 @@ test("motor IDs can be overlaid from the saved output map", async () => {
   fireEvent.click(motorIds);
   expect(motorIds).toHaveAttribute("aria-pressed", "true");
   expect(viewer).toHaveAttribute("data-motor-label-count", "4");
+});
+
+test("motor ID labels are withheld until an FC plan is saved", async () => {
+  render(
+    <MemoryRouter initialEntries={["/build?preset=source-5-aos-v5"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await screen.findByTestId("assembly-viewer");
+  expect(screen.queryByRole("button", { name: "Motor IDs" }))
+    .not.toBeInTheDocument();
 });
 
 test("the 5.5-inch XING2 6S preset exposes estimated geometry honestly", async () => {
