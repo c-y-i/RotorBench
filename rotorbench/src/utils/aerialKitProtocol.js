@@ -1562,6 +1562,7 @@ export function createAerialKitStatusEvidence({
   mission = null,
   calibration = null,
   waypointInventory = null,
+  missionProximity = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -1705,6 +1706,14 @@ export function createAerialKitStatusEvidence({
           ...waypointInventory,
           observedAt: Number.isFinite(waypointInventory.observedAtMs)
             ? new Date(waypointInventory.observedAtMs).toISOString()
+            : null,
+        }
+      : null,
+    missionProximity: missionProximity
+      ? {
+          ...missionProximity,
+          evaluatedAt: Number.isFinite(missionProximity.evaluatedAtMs)
+            ? new Date(missionProximity.evaluatedAtMs).toISOString()
             : null,
         }
       : null,

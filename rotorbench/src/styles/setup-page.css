@@ -3556,6 +3556,58 @@
   font-size: 9px;
 }
 
+.aerial-kit-mission-proximity {
+  display: grid;
+  gap: 4px;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-mission-proximity.is-ok {
+  background: #e8f5ee;
+  border-color: #b8ddc8;
+}
+
+.aerial-kit-mission-proximity > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.aerial-kit-mission-proximity > div span {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.aerial-kit-mission-proximity > div strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-mission-proximity > p,
+.aerial-kit-mission-proximity > small,
+.aerial-kit-mission-proximity > span small {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.aerial-kit-mission-proximity > span {
+  display: grid;
+  gap: 2px;
+}
+
+.aerial-kit-mission-proximity > span strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
 .aerial-kit-log-frames {
   display: grid;
   gap: 5px;

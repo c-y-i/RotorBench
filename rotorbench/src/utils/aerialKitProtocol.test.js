@@ -1144,6 +1144,27 @@ test("creates a sanitized live-status evidence boundary", () => {
         errors: [],
       }],
     },
+    missionProximity: {
+      status: "ok",
+      reason: null,
+      waypoint: {
+        index: 0,
+        lat: 37.6774,
+        lon: -122.4194,
+      },
+      distanceM: 10,
+      ageMs: 100,
+      positionSource: "status",
+      position: {
+        lat: 37.6775,
+        lon: -122.4194,
+        gpsFixType: 3,
+      },
+      evaluatedAtMs: 1250,
+      boundaries: {
+        horizontalGreatCircleOnly: true,
+      },
+    },
     logInventory: [{
       status: "available",
       requestedSource: 0,
@@ -1291,6 +1312,14 @@ test("creates a sanitized live-status evidence boundary", () => {
         lat: 37.6774,
         lon: -122.4194,
       }],
+    },
+    missionProximity: {
+      status: "ok",
+      waypoint: {
+        index: 0,
+      },
+      distanceM: 10,
+      evaluatedAt: "1970-01-01T00:00:01.250Z",
     },
     logInventory: [{
       requestedSource: 0,

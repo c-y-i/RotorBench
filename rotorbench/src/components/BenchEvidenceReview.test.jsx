@@ -493,6 +493,27 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
           },
         ],
       },
+      missionProximity: {
+        status: "ok",
+        reason: null,
+        waypoint: {
+          index: 1,
+          lat: 37.7,
+          lon: -122.4,
+        },
+        distanceM: 1234,
+        ageMs: 100,
+        positionSource: "status",
+        position: {
+          lat: 37.6,
+          lon: -122.4,
+          gpsFixType: 3,
+        },
+        evaluatedAt: new Date().toISOString(),
+        boundaries: {
+          horizontalGreatCircleOnly: true,
+        },
+      },
       logInventory: [{
         status: "available",
         requestedSource: 0,
@@ -607,6 +628,8 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByRole("img", {
     name: "Local north-up sketch of board-reported waypoint coordinates",
   })).toBeInTheDocument();
+  expect(screen.getByText("Distance to active waypoint")).toBeInTheDocument();
+  expect(screen.getByText("1.234 km")).toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();

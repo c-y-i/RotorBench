@@ -640,6 +640,36 @@ function normalizedWaypointInventory(value) {
   };
 }
 
+function normalizedMissionProximity(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const status = value.status === "ok" ? "ok" : "unavailable";
+  const position = value.position
+    ? {
+        lat: sensorNumber(value.position.lat),
+        lon: sensorNumber(value.position.lon),
+        gpsFixType: sensorNumber(value.position.gpsFixType),
+      }
+    : null;
+  const waypoint = value.waypoint
+    ? {
+        index: sensorNumber(value.waypoint.index),
+        lat: sensorNumber(value.waypoint.lat),
+        lon: sensorNumber(value.waypoint.lon),
+      }
+    : null;
+  return {
+    status,
+    reason: sensorString(value.reason),
+    waypoint,
+    distanceM: sensorNumber(value.distanceM),
+    ageMs: sensorNumber(value.ageMs),
+    positionSource: sensorString(value.positionSource),
+    position,
+    evaluatedAtMs: timestampMilliseconds(value.evaluatedAt),
+    boundaries: value.boundaries || null,
+  };
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -957,6 +987,7 @@ export function parseAerialKitLiveStatusJson(payload) {
   const routeSummary = waypointInventory
     ? buildAerialKitRouteSummary(waypointInventory)
     : null;
+  const missionProximity = normalizedMissionProximity(payload.missionProximity);
   return {
     kind: "fc-live-status",
     identity,
@@ -982,6 +1013,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     calibration,
     waypointInventory,
     routeSummary,
+    missionProximity,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

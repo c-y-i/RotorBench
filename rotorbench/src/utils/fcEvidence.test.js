@@ -299,6 +299,27 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
         },
       ],
     },
+    missionProximity: {
+      status: "ok",
+      reason: null,
+      waypoint: {
+        index: 1,
+        lat: 37.7,
+        lon: -122.4,
+      },
+      distanceM: 1234,
+      ageMs: 100,
+      positionSource: "status",
+      position: {
+        lat: 37.6,
+        lon: -122.4,
+        gpsFixType: 3,
+      },
+      evaluatedAt: "2026-11-22T10:00:00.000Z",
+      boundaries: {
+        horizontalGreatCircleOnly: true,
+      },
+    },
     routeSummary: {
       status: "ok",
       waypointCount: 2,
@@ -507,6 +528,17 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
           complete: true,
         },
       ],
+    },
+    missionProximity: {
+      status: "ok",
+      waypoint: {
+        index: 1,
+      },
+      distanceM: 1234,
+      positionSource: "status",
+      position: {
+        gpsFixType: 3,
+      },
     },
     logInventory: [{
       status: "available",

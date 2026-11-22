@@ -221,3 +221,105 @@ export function buildAerialKitRouteSketch(inventory) {
     northUp: true,
   };
 }
+
+export function buildAerialKitMissionProximity({
+  position = null,
+  positionObservedAtMs = null,
+  positionSource = null,
+  mission = null,
+  inventory = null,
+  nowMs = Date.now(),
+  staleAfterMs = 2000,
+} = {}) {
+  const ageMs = Number.isFinite(positionObservedAtMs)
+    ? Math.max(0, nowMs - positionObservedAtMs)
+    : null;
+  const base = {
+    evaluatedAtMs: nowMs,
+    ageMs,
+    positionSource,
+    position: position
+      ? {
+          lat: Number.isFinite(position.lat) ? position.lat : null,
+          lon: Number.isFinite(position.lon) ? position.lon : null,
+          gpsFixType: Number.isInteger(position.gpsFixType)
+            ? position.gpsFixType
+            : null,
+        }
+      : null,
+    waypoint: null,
+    distanceM: null,
+    boundaries: {
+      horizontalGreatCircleOnly: true,
+      terrainNotConsidered: true,
+      crossTrackNotAssessed: true,
+      flightReadinessClaimed: false,
+    },
+  };
+  if (!mission || mission.active !== true || mission.index == null) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "no-active-waypoint",
+    };
+  }
+  if (
+    !position
+    || !Number.isFinite(position.lat)
+    || !Number.isFinite(position.lon)
+    || !Number.isInteger(position.gpsFixType)
+  ) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "position-missing",
+    };
+  }
+  if (![2, 3, 4].includes(position.gpsFixType)) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "position-fix-unavailable",
+    };
+  }
+  if (ageMs == null || ageMs > staleAfterMs) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "position-stale",
+    };
+  }
+  if (!inventory || inventory.status !== "ok" || inventory.complete !== true) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "waypoint-inventory-unavailable",
+    };
+  }
+  const waypoint = inventory.slots.find(
+    (slot) => slot.index === mission.index && slot.complete,
+  );
+  if (!waypoint) {
+    return {
+      ...base,
+      status: "unavailable",
+      reason: "active-waypoint-missing",
+    };
+  }
+  return {
+    ...base,
+    status: "ok",
+    reason: null,
+    waypoint: {
+      index: waypoint.index,
+      lat: waypoint.lat,
+      lon: waypoint.lon,
+    },
+    distanceM: greatCircleDistanceM(
+      position.lat,
+      position.lon,
+      waypoint.lat,
+      waypoint.lon,
+    ),
+  };
+}

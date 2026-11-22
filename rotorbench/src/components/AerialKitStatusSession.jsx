@@ -65,6 +65,7 @@ import {
 } from "../utils/aerialKitLogExport";
 import {
   buildAerialKitRouteSummary,
+  buildAerialKitMissionProximity,
   buildAerialKitWaypointInventory,
 } from "../utils/aerialKitWaypoints";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
@@ -73,6 +74,7 @@ import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
 import AerialKitLogReadings from "./AerialKitLogReadings";
 import AerialKitWaypointRouteSummary from "./AerialKitWaypointRouteSummary";
 import AerialKitRouteSketch from "./AerialKitRouteSketch";
+import AerialKitMissionProximity from "./AerialKitMissionProximity";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -1632,6 +1634,7 @@ export default function AerialKitStatusSession({
       mission,
       calibration,
       waypointInventory,
+      missionProximity,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -1717,6 +1720,37 @@ export default function AerialKitStatusSession({
       : null,
     [waypointInventory],
   );
+  const positionCandidate = telemetryFresh && telemetryStream?.latest
+    ? {
+        position: {
+          lat: telemetryStream.latest.latitude,
+          lon: telemetryStream.latest.longitude,
+          gpsFixType: telemetryStream.latest.gpsFixType,
+        },
+        observedAtMs: telemetryStream.lastObservedAtMs,
+        source: "telemetry",
+      }
+    : armed.fresh && liveStatus
+      ? {
+          position: {
+            lat: liveStatus.latitude,
+            lon: liveStatus.longitude,
+            gpsFixType: liveStatus.gpsFixType,
+          },
+          observedAtMs: lastStatusAt,
+          source: "status",
+        }
+      : null;
+  const missionProximity = mission?.status === "ok" && waypointInventory
+    ? buildAerialKitMissionProximity({
+        position: positionCandidate?.position || null,
+        positionObservedAtMs: positionCandidate?.observedAtMs || null,
+        positionSource: positionCandidate?.source || null,
+        mission,
+        inventory: waypointInventory,
+        nowMs: clockNow,
+      })
+    : null;
   const canDownload = Boolean(
     hello
       || liveStatus
@@ -2328,6 +2362,7 @@ export default function AerialKitStatusSession({
                       && waypointInventory.count === 0 && (
                       <p>No waypoints are configured. This is an empty list, not missing hardware.</p>
                     )}
+                    <AerialKitMissionProximity proximity={missionProximity} />
                     {waypointInventory.slots.length > 0 && (
                       <ol aria-label="Board-reported waypoint coordinates">
                         {waypointInventory.slots.map((slot) => (

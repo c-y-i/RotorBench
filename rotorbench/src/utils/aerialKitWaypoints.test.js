@@ -2,6 +2,7 @@ import {
   buildAerialKitRouteSketch,
   buildAerialKitRouteSummary,
   buildAerialKitWaypointInventory,
+  buildAerialKitMissionProximity,
   greatCircleDistanceM,
 } from "./aerialKitWaypoints";
 
@@ -198,5 +199,88 @@ test("centers a single waypoint and keeps empty sketches separate", () => {
   expect(buildAerialKitRouteSketch(empty)).toMatchObject({
     status: "empty",
     points: [],
+  });
+});
+
+test("measures mission proximity only with a fresh position-bearing fix", () => {
+  const inventory = buildAerialKitWaypointInventory([
+    { name: "wp_count", value: "2" },
+    { name: "wp0_lat", value: "37.6774" },
+    { name: "wp0_lon", value: "-122.4194" },
+    { name: "wp1_lat", value: "37.7000" },
+    { name: "wp1_lon", value: "-122.4000" },
+  ]);
+  const common = {
+    mission: { active: true, index: 1 },
+    inventory,
+    nowMs: 5000,
+    positionObservedAtMs: 4000,
+    positionSource: "telemetry",
+  };
+  expect(buildAerialKitMissionProximity({
+    ...common,
+    position: {
+      lat: 37.7,
+      lon: -122.4,
+      gpsFixType: 3,
+    },
+  })).toMatchObject({
+    status: "ok",
+    reason: null,
+    waypoint: {
+      index: 1,
+      lat: 37.7,
+      lon: -122.4,
+    },
+    distanceM: 0,
+    ageMs: 1000,
+    positionSource: "telemetry",
+  });
+  expect(buildAerialKitMissionProximity({
+    ...common,
+    position: {
+      lat: 37.7,
+      lon: -122.4,
+      gpsFixType: 5,
+    },
+  })).toMatchObject({
+    status: "unavailable",
+    reason: "position-fix-unavailable",
+  });
+  expect(buildAerialKitMissionProximity({
+    ...common,
+    positionObservedAtMs: 0,
+    position: {
+      lat: 37.7,
+      lon: -122.4,
+      gpsFixType: 3,
+    },
+  })).toMatchObject({
+    status: "unavailable",
+    reason: "position-stale",
+  });
+  expect(buildAerialKitMissionProximity({
+    ...common,
+    mission: { active: false, index: null },
+    position: {
+      lat: 37.7,
+      lon: -122.4,
+      gpsFixType: 3,
+    },
+  })).toMatchObject({
+    status: "unavailable",
+    reason: "no-active-waypoint",
+  });
+  expect(buildAerialKitMissionProximity({
+    ...common,
+    mission: { active: true, index: 9 },
+    position: {
+      lat: 37.7,
+      lon: -122.4,
+      gpsFixType: 3,
+    },
+  })).toMatchObject({
+    status: "unavailable",
+    reason: "active-waypoint-missing",
   });
 });

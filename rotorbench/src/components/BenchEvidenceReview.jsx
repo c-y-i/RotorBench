@@ -30,6 +30,7 @@ import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
 import AerialKitLogReadings from "./AerialKitLogReadings";
 import AerialKitWaypointRouteSummary from "./AerialKitWaypointRouteSummary";
 import AerialKitRouteSketch from "./AerialKitRouteSketch";
+import AerialKitMissionProximity from "./AerialKitMissionProximity";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -1597,6 +1598,9 @@ export default function BenchEvidenceReview({
               />
               <AerialKitWaypointRouteSummary
                 route={evidence.fcEvidence.liveStatus.routeSummary}
+              />
+              <AerialKitMissionProximity
+                proximity={evidence.fcEvidence.liveStatus.missionProximity}
               />
             </section>
           )}

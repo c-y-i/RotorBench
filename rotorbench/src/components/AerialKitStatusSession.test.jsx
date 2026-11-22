@@ -92,10 +92,10 @@ function telemetryFrame(uptimeMs, {
   return buildAerialKitFrame(0x08, payload);
 }
 
-function missionReply(status = 0) {
+function missionReply(status = 0, index = 2) {
   const payload = new Uint8Array(17);
   const view = new DataView(payload.buffer);
-  payload.set([status, 0, 1, 1, 4, 2, 7], 0);
+  payload.set([status, 0, 1, 1, 4, index, 7], 0);
   view.setUint16(7, 2, true);
   view.setUint16(9, 3, true);
   view.setUint16(11, 1, true);
@@ -156,6 +156,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   telemetryAgreedHz = 20,
   telemetryPushCount = 2,
   missionStatus = 0,
+  missionIndex = 2,
   calibrationStatus = 0,
   calibrationVerb = 1,
   calibrationActive = true,
@@ -372,7 +373,7 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
         }
       }
       else if (command === 0x14) {
-        deliver(missionReply(missionStatus));
+        deliver(missionReply(missionStatus, missionIndex));
       }
       else if (command === 0x13) {
         deliver(calibrationReply({
@@ -1046,6 +1047,7 @@ test("does not present calibration results after an armed refusal", async () => 
 
 test("reads a waypoint inventory from advertised parameters without upload controls", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_WITH_WAYPOINTS, {
+    missionIndex: 1,
     parameterValues: [
       { name: "wp_count", value: "2" },
       { name: "wp0_lat", value: "37.6774000" },
@@ -1063,6 +1065,10 @@ test("reads a waypoint inventory from advertised parameters without upload contr
   }));
   expect(await screen.findByText("Monitoring")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", {
+    name: "Read mission status",
+  }));
+  expect(await screen.findByText("Mission active")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
     name: "Read waypoint inventory",
   }));
 
@@ -1077,6 +1083,8 @@ test("reads a waypoint inventory from advertised parameters without upload contr
     name: "Local north-up sketch of board-reported waypoint coordinates",
   })).toBeInTheDocument();
   expect(screen.getByText(/not a basemap or flown path/i)).toBeInTheDocument();
+  expect(screen.getByText("Distance to active waypoint")).toBeInTheDocument();
+  expect(screen.getByText(/WP 1 · STATUS position · fix 3/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /upload waypoint/i }))
     .not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /save mission/i }))
