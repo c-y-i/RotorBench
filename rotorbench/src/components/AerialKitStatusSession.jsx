@@ -2382,6 +2382,9 @@ export default function AerialKitStatusSession({
                       currentPosition={missionProximity?.status === "ok"
                         ? missionProximity.position
                         : null}
+                      activeWaypointIndex={mission?.status === "ok" && mission.active
+                        ? mission.index
+                        : null}
                     />
                     <AerialKitWaypointRouteSummary route={routeSummary} />
                   </div>

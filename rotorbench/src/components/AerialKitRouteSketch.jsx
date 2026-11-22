@@ -1,7 +1,11 @@
 import React from "react";
 import { buildAerialKitRouteSketch } from "../utils/aerialKitWaypoints";
 
-export default function AerialKitRouteSketch({ inventory, currentPosition = null }) {
+export default function AerialKitRouteSketch({
+  inventory,
+  currentPosition = null,
+  activeWaypointIndex = null,
+}) {
   const sketch = buildAerialKitRouteSketch(inventory, currentPosition);
   if (sketch.status === "unavailable") return null;
   if (sketch.status === "empty") {
@@ -20,14 +24,24 @@ export default function AerialKitRouteSketch({ inventory, currentPosition = null
   const boardPosition = sketch.currentPosition?.insideExtent
     ? sketch.currentPosition
     : null;
+  const activePoint = Number.isInteger(activeWaypointIndex)
+    ? sketch.points.find((point) => point.index === activeWaypointIndex) || null
+    : null;
+  const activeTargetLabel = activePoint ? ` WP ${activePoint.index} is the active target.` : "";
+  const positionLabel = boardPosition ? " Fresh board position shown." : "";
+  const outsideLabel = sketch.currentPosition && !boardPosition
+    ? " Fresh board position lies outside this sketch extent."
+    : "";
   return (
     <figure className="aerial-kit-route-sketch">
       <svg
         viewBox="0 0 100 100"
         role="img"
-        aria-label={boardPosition
-          ? "Local north-up sketch of waypoint coordinates with fresh board position"
-          : "Local north-up sketch of board-reported waypoint coordinates"}
+        aria-label={[
+          "Local north-up sketch of",
+          boardPosition ? "waypoint coordinates with fresh board position" : "board-reported waypoint coordinates",
+          activePoint ? `and active target WP ${activePoint.index}` : "",
+        ].filter(Boolean).join(" ")}
       >
         <title>Local waypoint route sketch</title>
         <desc>
@@ -36,6 +50,9 @@ export default function AerialKitRouteSketch({ inventory, currentPosition = null
           {boardPosition
             ? " The marked board position is a fresh observation, not the flown path."
             : ""}
+          {activePoint
+            ? ` WP ${activePoint.index} is marked as the active target.`
+            : ""}
         </desc>
         <line className="route-north-line" x1="88" y1="12" x2="88" y2="4" />
         <path className="route-north-arrow" d="M 85 7 L 88 3 L 91 7" />
@@ -43,10 +60,31 @@ export default function AerialKitRouteSketch({ inventory, currentPosition = null
         {sketch.points.length > 1 && (
           <polyline className="route-line" points={polyline} />
         )}
+        {boardPosition && activePoint && (
+          <line
+            className="route-observation-line"
+            x1={boardPosition.x}
+            y1={boardPosition.y}
+            x2={activePoint.x}
+            y2={activePoint.y}
+          />
+        )}
         {sketch.points.map((point, index) => (
           <g key={point.index}>
+            {point.index === activeWaypointIndex && (
+              <circle
+                className="route-active-ring"
+                cx={point.x}
+                cy={point.y}
+                r="4.2"
+              />
+            )}
             <circle
-              className={`route-point ${index === 0 ? "is-start" : ""}`}
+              className={[
+                "route-point",
+                index === 0 ? "is-start" : "",
+                point.index === activeWaypointIndex ? "is-active" : "",
+              ].filter(Boolean).join(" ")}
               cx={point.x}
               cy={point.y}
               r="2.2"
@@ -80,11 +118,12 @@ export default function AerialKitRouteSketch({ inventory, currentPosition = null
       </svg>
       <figcaption>
         Local equirectangular sketch · north up · not a basemap or flown path.
-        {boardPosition
-          ? " Fresh board position shown."
-          : sketch.currentPosition && !sketch.currentPosition.insideExtent
-          ? " Fresh board position lies outside this sketch extent."
+        {activeTargetLabel}
+        {positionLabel}
+        {boardPosition && activePoint
+          ? " The dashed link is an observation, not a flight track."
           : ""}
+        {outsideLabel}
       </figcaption>
     </figure>
   );

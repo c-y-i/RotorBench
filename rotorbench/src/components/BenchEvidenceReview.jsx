@@ -1599,6 +1599,10 @@ export default function BenchEvidenceReview({
                   === "ok"
                   ? evidence.fcEvidence.liveStatus.missionProximity.position
                   : null}
+                activeWaypointIndex={evidence.fcEvidence.liveStatus.mission?.status
+                  === "ok" && evidence.fcEvidence.liveStatus.mission.active
+                  ? evidence.fcEvidence.liveStatus.mission.index
+                  : null}
               />
               <AerialKitWaypointRouteSummary
                 route={evidence.fcEvidence.liveStatus.routeSummary}

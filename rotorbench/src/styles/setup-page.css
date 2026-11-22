@@ -3500,6 +3500,13 @@
   stroke-linecap: round;
 }
 
+.route-observation-line {
+  stroke: var(--brand);
+  stroke-width: 0.8;
+  stroke-dasharray: 1.6 1.5;
+  stroke-linecap: round;
+}
+
 .route-point {
   fill: var(--surface-raised);
   stroke: currentColor;
@@ -3508,6 +3515,19 @@
 
 .route-point.is-start {
   fill: currentColor;
+}
+
+.route-point.is-active {
+  fill: var(--signal);
+  stroke: var(--brand);
+  stroke-width: 1.2;
+}
+
+.route-active-ring {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 1.1;
+  stroke-dasharray: 1.1 0.9;
 }
 
 .route-point-label {

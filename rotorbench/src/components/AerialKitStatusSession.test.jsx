@@ -1080,8 +1080,10 @@ test("reads a waypoint inventory from advertised parameters without upload contr
   expect(screen.getByText("WP 0 → WP 1")).toBeInTheDocument();
   expect(screen.getByText(/Spherical great-circle estimate/i)).toBeInTheDocument();
   expect(screen.getByRole("img", {
-    name: "Local north-up sketch of board-reported waypoint coordinates",
+    name: "Local north-up sketch of board-reported waypoint coordinates and active target WP 1",
   })).toBeInTheDocument();
+  expect(screen.getByText(/WP 1 is the active target/i)).toBeInTheDocument();
+  expect(screen.queryByText("Board")).not.toBeInTheDocument();
   expect(screen.getByText(/not a basemap or flown path/i)).toBeInTheDocument();
   expect(screen.getByText("Distance to active waypoint")).toBeInTheDocument();
   expect(screen.getByText(/WP 1 · STATUS position · fix 3/)).toBeInTheDocument();
