@@ -703,6 +703,10 @@ const BabylonViewer = ({
     let engine;
     try {
       engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+      // Babylon defaults the render canvas to tabindex 1 for keyboard capture.
+      // This viewer exposes camera actions as labelled buttons, so an unlabeled
+      // first-stop canvas only adds an unusable keyboard stop.
+      engine.canvasTabIndex = -1;
     } catch {
       setViewerError(
         "The 3D preview could not start WebGL. Enable hardware acceleration or use a WebGL-capable browser.",
@@ -1662,7 +1666,15 @@ const BabylonViewer = ({
         position: "relative",
       }}
     >
-      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+      <canvas
+        ref={canvasRef}
+        role="img"
+        aria-label="3D assembly preview. Use the camera and component controls to inspect the build."
+        style={{ width: "100%", height: "100%", display: "block" }}
+      >
+        3D assembly preview. Use the camera and component controls to inspect
+        the build.
+      </canvas>
       {viewerError && (
         <div className="viewer-webgl-fallback" role="alert">
           <strong>3D preview unavailable</strong>

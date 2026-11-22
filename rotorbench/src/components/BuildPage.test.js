@@ -506,6 +506,45 @@ test("a starter-platform deep link selects all seven components and consumes the
   expect(screen.getByText(/Verified interface/)).toBeInTheDocument();
 });
 
+test("keeps the current build available when reopening Build directly", async () => {
+  const currentBuild = {
+    id: "current-build-round-trip",
+    name: "Current build round trip",
+    componentIds: {
+      frameId: "frame-aos-35-v51",
+      motorId: "motor-tmotor-f1404-3800kv",
+      propellerId: "prop-gemfan-hurricane-3520-3",
+      escId: "esc-speedybee-bls-35a-mini-v2",
+      flightControllerId: "fc-speedybee-f405-mini",
+      batteryId: "battery-tattu-rline-4s-850-95c",
+      receiverId: "rx-radiomaster-rp1-v2",
+    },
+  };
+  localStorage.setItem("currentBuild", JSON.stringify(currentBuild));
+
+  render(
+    <MemoryRouter initialEntries={["/build"]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  await waitFor(() => {
+    expect(JSON.parse(localStorage.getItem("currentBuild"))).toMatchObject({
+      id: "current-build-round-trip",
+      componentIds: {
+        frameId: "frame-aos-35-v51",
+        flightControllerId: "fc-speedybee-f405-mini",
+      },
+    });
+  });
+});
+
 test("the T1 Ranger starter loads a two-motor wing assembly", async () => {
   render(
     <MemoryRouter initialEntries={["/build?preset=source-t1-ranger"]}>

@@ -697,7 +697,11 @@ export default function SavedConfigsPage() {
                                             </div>
                                         </div>
 
-                                        <div className="saved-build-state" aria-label="Build readiness">
+                                        <div
+                                            className="saved-build-state"
+                                            role="group"
+                                            aria-label="Build readiness"
+                                        >
                                             <span className={`is-fit-${buildSummary.physicalFitStatus}`}>
                                                 {fitLabels[buildSummary.physicalFitStatus]}
                                             </span>
@@ -808,7 +812,11 @@ export default function SavedConfigsPage() {
                                             )}
                                         </div>
 
-                                        <div className="saved-part-preview" aria-label="Selected components">
+                                        <div
+                                            className="saved-part-preview"
+                                            role="group"
+                                            aria-label="Selected components"
+                                        >
                                             {previewRows.length > 0 ? (
                                                 <>
                                                     {previewRows.map(({ key, part, Icon }) => (

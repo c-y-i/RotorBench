@@ -179,7 +179,8 @@ test("renders the hardware planning page and switches to radio setup", async () 
   const initialSession = screen.getByText(/^…/).textContent;
   fireEvent.click(screen.getByRole("button", { name: "New capture session" }));
   expect(screen.getByText(/^…/).textContent).not.toBe(initialSession);
-  expect(screen.getByLabelText("Import combined hardware plan")).toBeInTheDocument();
+  expect(screen.getByLabelText("Import combined hardware plan"))
+    .toHaveAttribute("tabindex", "-1");
   const claimLedger = screen.getByRole("region", {
     name: "What the plan can prove",
   });

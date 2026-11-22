@@ -3370,6 +3370,7 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     padding-bottom: 2px;
+    scroll-padding-inline: 10px;
     scrollbar-width: none;
   }
 
@@ -3393,6 +3394,7 @@
 
   .visibility-chip {
     flex: 0 0 auto;
+    scroll-margin-inline: 8px;
   }
 
   .build-preview-panel .camera-preset-row,

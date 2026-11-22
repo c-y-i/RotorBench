@@ -77,6 +77,7 @@ import { readJsonStorage, writeJsonStorage } from "../utils/storage";
 import { upsertBuild } from "../utils/savedBuilds";
 import { humanizeProvenanceFields } from "../utils/provenanceLabels";
 import { getFrameServoHardware } from "../utils/frameHardware";
+import { revealFocusedTrackControl } from "../utils/revealFocusedTrackControl";
 import {
   BatteryCharging,
   Box,
@@ -287,7 +288,7 @@ export default function BuildPage() {
     // If a new build page is created, clear the old currentBuild.
     if (requestedBuild) {
       updateBuild(requestedBuild);
-    } else {
+    } else if (!sourceBuild || sourceBuild.id !== currentBuild?.id) {
       updateBuild(null); // Clear context
     }
     if (sourceBuild?.componentIds) {
@@ -1374,6 +1375,7 @@ export default function BuildPage() {
                 className="camera-preset-row"
                 role="group"
                 aria-label="3D inspection view"
+                onFocus={revealFocusedTrackControl}
               >
                 {Object.values(CAMERA_VIEWS).map((view) => (
                   <button
@@ -1396,7 +1398,12 @@ export default function BuildPage() {
                   {explodedAssembly ? "Assembled" : "Exploded"}
                 </button>
               </div>
-              <div className="visibility-chip-row">
+              <div
+                className="visibility-chip-row"
+                role="group"
+                aria-label="Assembly component visibility"
+                onFocus={revealFocusedTrackControl}
+              >
                 <button
                   type="button"
                   className={`visibility-chip viewer-fit-toggle ${
@@ -1911,7 +1918,11 @@ export default function BuildPage() {
               <p>{powerPath.message}</p>
               <div className="power-path-review">
                 {powerPath.adapterLabel && (
-                  <div className="is-required" aria-label="Connector adapter requirement">
+                  <div
+                    className="is-required"
+                    role="note"
+                    aria-label="Connector adapter requirement"
+                  >
                     <Cable size={15} aria-hidden="true" />
                     <span>
                       <strong>{powerPath.adapterLabel}</strong>
@@ -1923,7 +1934,11 @@ export default function BuildPage() {
                     <em>Required</em>
                   </div>
                 )}
-                <div className="is-inspect" aria-label="Power polarity inspection">
+                <div
+                  className="is-inspect"
+                  role="note"
+                  aria-label="Power polarity inspection"
+                >
                   <ShieldCheck size={15} aria-hidden="true" />
                   <span>
                     <strong>Polarity and connector gender</strong>
@@ -1976,6 +1991,7 @@ export default function BuildPage() {
               {hardwareReadiness.servoOutputCoverageLabel && (
                 <div
                   className={`frame-servo-output-coverage is-${hardwareReadiness.servoOutputCoverageStatus}`}
+                  role="group"
                   aria-label="Servo output coverage"
                 >
                   <Cable size={14} aria-hidden="true" />

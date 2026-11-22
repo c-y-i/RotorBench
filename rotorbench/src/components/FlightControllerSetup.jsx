@@ -1339,6 +1339,7 @@ export default function FlightControllerSetup({
                   {ardupilotSourceLinks.length > 0 && (
                     <div
                       className="fc-ardupilot-parameter-sources"
+                      role="group"
                       aria-label="ArduPilot parameter sources"
                     >
                       <span>Sources</span>

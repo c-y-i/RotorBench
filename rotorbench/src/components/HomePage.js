@@ -8,6 +8,7 @@ import { summarizeBuild } from "../utils/buildComparison";
 import { summarizeAssemblyInterfaces } from "../utils/physicalCompatibility";
 import { getFrameMountPointsMm } from "../assembly/assemblyTransforms";
 import { getFrameServoHardware } from "../utils/frameHardware";
+import { revealFocusedTrackControl } from "../utils/revealFocusedTrackControl";
 import {
   hasCatalogModel,
   resolveModelForComponent,
@@ -739,6 +740,7 @@ export default function HomePage() {
                 className="visibility-chip-row"
                 role="group"
                 aria-label="Assembly component visibility"
+                onFocus={revealFocusedTrackControl}
               >
                 {[
                   { id: "frame", label: "Frame", Icon: Box },

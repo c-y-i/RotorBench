@@ -489,6 +489,17 @@ select:focus-visible {
 }
 
 @media (max-width: 900px) {
+  html {
+    scroll-padding-block:
+      76px
+      calc(86px + env(safe-area-inset-bottom, 0px));
+  }
+
+  html:has(.build-command-bar) {
+    scroll-padding-block-end:
+      calc(166px + env(safe-area-inset-bottom, 0px));
+  }
+
   .app-sidebar {
     display: none;
   }

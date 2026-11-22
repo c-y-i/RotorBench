@@ -1049,6 +1049,7 @@ export default function SetupPage() {
             type="file"
             accept="application/json,.json"
             aria-label="Import combined hardware plan"
+            tabIndex={-1}
             onChange={importCombinedPlan}
           />
         </div>
