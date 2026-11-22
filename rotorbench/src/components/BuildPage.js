@@ -35,7 +35,7 @@ import {
   matchesPlatformPreset,
 } from "../data/platformPresets";
 import { summarizeBuildEvidence } from "../utils/buildEvidence";
-import { summarizeBuild } from "../utils/buildComparison";
+import { summarizeBuildPlanning } from "../utils/planningSummary";
 import { createBuildBriefing } from "../utils/buildBriefing";
 import {
   applyMeasuredGeometryToAssemblySpec,
@@ -228,7 +228,7 @@ export default function BuildPage() {
   const [selectedFC, setSelectedFC] = useState(initialComponentIds.flightControllerId || "");
   const [selectedBattery, setSelectedBattery] = useState(initialComponentIds.batteryId || "");
   const [selectedReceiver, setSelectedReceiver] = useState(initialComponentIds.receiverId || "");
-  const planningSummary = useMemo(() => summarizeBuild({
+  const planningSummary = useMemo(() => summarizeBuildPlanning({
     id: workingBuildId,
     componentIds: {
       frameId: selectedFrame || null,
@@ -1007,6 +1007,15 @@ export default function BuildPage() {
         id: workingBuildId,
         name: workingBuildName,
         note: buildNote,
+        componentIds: {
+          frameId: selectedFrame || null,
+          motorId: selectedMotor || null,
+          propellerId: selectedPropeller || null,
+          escId: selectedESC || null,
+          flightControllerId: selectedFC || null,
+          batteryId: selectedBattery || null,
+          receiverId: selectedReceiver || null,
+        },
         geometryOverrides,
       },
       assemblySpec,

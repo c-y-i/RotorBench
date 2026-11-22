@@ -1,4 +1,5 @@
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
+import { summarizeBuildPlanning } from "./planningSummary";
 import {
   normalizeGeometryOverrides,
   summarizeMeasuredGeometry,
@@ -49,6 +50,7 @@ export function createAnalysisReport(
   if (!analysis?.performance || !analysis?.flightSimulation) {
     throw new Error("A completed analysis result is required.");
   }
+  const planning = summarizeBuildPlanning(build);
 
   return {
     schema: ANALYSIS_REPORT_SCHEMA,
@@ -69,6 +71,18 @@ export function createAnalysisReport(
       analysisIsEstimate: true,
       hardwareVerified: false,
       evidenceAuthenticityVerified: false,
+    },
+    planning: {
+      scope: "catalog planning estimate; not measured takeoff weight",
+      selectedPartCount: planning.selectedCount,
+      catalogWeightG: planning.catalogWeight,
+      planningAllowanceG: planning.planningAllowanceG,
+      totalWeightG: planning.totalWeight,
+      totalPriceUsd: planning.totalPrice,
+      publishedTakeoffRangeG: planning.publishedTakeoffRangeG,
+      takeoffEnvelopeStatus: planning.takeoffEnvelopeStatus,
+      takeoffEnvelopeShortLabel: planning.takeoffEnvelopeShortLabel,
+      takeoffEnvelopeLabel: planning.takeoffEnvelopeLabel,
     },
     hardwarePlan: sanitizeHardwareReadiness(hardwarePlan),
     importedEvidence: sanitizeImportedEvidence(importedEvidence),

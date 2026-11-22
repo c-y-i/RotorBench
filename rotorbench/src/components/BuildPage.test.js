@@ -827,6 +827,8 @@ test("copies a sanitized human-readable build briefing", async () => {
     const briefing = writeText.mock.calls[0][0];
     expect(briefing).toContain("# RotorBench briefing:");
     expect(briefing).toContain("## Parts");
+    expect(briefing).toContain("## Planning");
+    expect(briefing).toMatch(/Planning weight: \d+(?:\.\d)? g/);
     expect(briefing).toContain("XT30 match");
     expect(briefing).toContain("Hardware, wiring, continuity, RF link, and flight readiness are not verified.");
   } finally {

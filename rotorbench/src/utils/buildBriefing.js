@@ -1,4 +1,5 @@
 import { summarizeMeasuredGeometry } from "./buildGeometry";
+import { summarizeBuildPlanning } from "./planningSummary";
 import { summarizePowerPath } from "./physicalCompatibility";
 import {
   describeMissionControls,
@@ -31,6 +32,7 @@ export function createBuildBriefing({
     assemblySpec,
     build.geometryOverrides,
   );
+  const planning = summarizeBuildPlanning(build);
   const lines = [
     `# RotorBench briefing: ${build.name || "Untitled build"}`,
     `Generated: ${generatedAt}`,
@@ -45,6 +47,20 @@ export function createBuildBriefing({
     const part = assemblySpec[key];
     lines.push(`- ${label}: ${part?.name || "Not selected"}`);
   });
+
+  if (planning.selectedCount > 0) {
+    lines.push(
+      "",
+      "## Planning",
+      `- Planning weight: ${Math.round(planning.totalWeight * 10) / 10} g (${planning.catalogWeight} g catalog parts + ${planning.planningAllowanceG} g allowance; not measured)`,
+      `- Catalog price: $${planning.totalPrice.toFixed(2)}`,
+    );
+    if (planning.takeoffEnvelopeStatus !== "unavailable") {
+      lines.push(
+        `- Published takeoff envelope: ${planning.publishedTakeoffRangeG.join("–")} g / ${planning.takeoffEnvelopeShortLabel} / verify with a scale`,
+      );
+    }
+  }
 
   lines.push(
     "",

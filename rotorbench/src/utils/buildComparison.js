@@ -10,8 +10,8 @@ import {
   summarizeElectricalChecks,
 } from "./electricalCompatibility";
 import { applyMeasuredGeometry } from "./buildGeometry";
-import { summarizeTakeoffWeight } from "./flightEnvelope";
 import { getFrameServoHardware } from "./frameHardware";
+import { summarizeBuildPlanning } from "./planningSummary";
 import {
   describeMissionControls,
   describeNavigationSafety,
@@ -23,7 +23,7 @@ import {
   summarizeBenchEvidenceAttachment,
 } from "./benchEvidenceAttachment";
 
-export const BUILD_WEIGHT_ALLOWANCE_G = 50;
+export { BUILD_WEIGHT_ALLOWANCE_G } from "./planningSummary";
 
 const partDefinitions = [
   { key: "frameId", category: "frames", label: "Frame" },
@@ -53,33 +53,8 @@ export function summarizeBuild(build) {
   const byCategory = Object.fromEntries(
     parts.map(({ category, part }) => [category, part]),
   );
-  const motorCount = Number(byCategory.frames?.motorCount) || 4;
+  const planning = summarizeBuildPlanning(build);
   const frameServoHardware = getFrameServoHardware(byCategory.frames);
-  const quantity = {
-    frames: 1,
-    motors: motorCount,
-    propellers: motorCount,
-    batteries: 1,
-    escs: 1,
-    flight_controllers: 1,
-    receivers: 1,
-  };
-
-  const catalogWeight = parts.reduce(
-    (total, { category, part }) =>
-      total + (Number(part?.weight) || 0) * (quantity[category] || 1),
-    0,
-  ) + (Number(frameServoHardware?.weight) || 0);
-  const totalWeight = catalogWeight + BUILD_WEIGHT_ALLOWANCE_G;
-  const totalPrice = parts.reduce(
-    (total, { category, part }) =>
-      total + (Number(part?.price) || 0) * (quantity[category] || 1),
-    0,
-  ) + (Number(frameServoHardware?.price) || 0);
-  const takeoffEnvelope = summarizeTakeoffWeight(
-    totalWeight,
-    byCategory.frames?.flightEnvelope,
-  );
   const assemblySpec = {
     frame: byCategory.frames,
     motor: byCategory.motors,
@@ -157,20 +132,17 @@ export function summarizeBuild(build) {
     note: build?.note || "",
     updatedAt: build?.updatedAt || build?.createdAt || null,
     parts,
-    selectedCount: parts.filter(({ part }) => part).length,
-    motorCount,
+    selectedCount: planning.selectedCount,
+    motorCount: planning.motorCount,
     frameServoHardware,
-    catalogWeight,
-    planningAllowanceG: BUILD_WEIGHT_ALLOWANCE_G,
-    totalWeight,
-    totalPrice,
-    publishedTakeoffRangeG:
-      byCategory.frames?.flightEnvelope?.takeoffWeightG || null,
-    takeoffEnvelopeStatus: takeoffEnvelope?.status || "unavailable",
-    takeoffEnvelopeShortLabel:
-      takeoffEnvelope?.shortLabel || "No published envelope",
-    takeoffEnvelopeLabel:
-      takeoffEnvelope?.label || "No published takeoff envelope",
+    catalogWeight: planning.catalogWeight,
+    planningAllowanceG: planning.planningAllowanceG,
+    totalWeight: planning.totalWeight,
+    totalPrice: planning.totalPrice,
+    publishedTakeoffRangeG: planning.publishedTakeoffRangeG,
+    takeoffEnvelopeStatus: planning.takeoffEnvelopeStatus,
+    takeoffEnvelopeShortLabel: planning.takeoffEnvelopeShortLabel,
+    takeoffEnvelopeLabel: planning.takeoffEnvelopeLabel,
     physicalFitStatus,
     physicalFitSummary: physicalFit.reason,
     powerPathStatus: powerPath.displayState,

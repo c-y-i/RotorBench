@@ -123,3 +123,34 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
   );
   expect(briefing.text).toContain("readiness are not verified");
 });
+
+test("briefs planning weight and a published takeoff-envelope fit", () => {
+  const briefing = createBuildBriefing({
+    build: {
+      name: "T1 Ranger",
+      componentIds: {
+        frameId: "frame-heewing-t1-ranger",
+        motorId: "motor-heewing-fx1406-3150kv",
+        propellerId: "prop-heewing-fx3830-2",
+        escId: "esc-heewing-fx20a-bls-twin",
+        flightControllerId: "fc-matek-f405-wmn",
+        batteryId: "battery-cnhl-black-4s-1500-100c",
+        receiverId: "rx-radiomaster-rp4td-m",
+      },
+    },
+    assemblySpec: {
+      frame: { name: "HeeWing T1 Ranger 730mm Wing" },
+      motor: { name: "HeeWing FX1406 3150KV" },
+      propeller: { name: "HeeWing FX-3830 2-Blade" },
+    },
+    generatedAt: "2026-11-21T00:00:00.000Z",
+  });
+
+  expect(briefing.text).toContain(
+    "Planning weight: 506 g (456 g catalog parts + 50 g allowance; not measured)",
+  );
+  expect(briefing.text).toContain("Catalog price: $297.89");
+  expect(briefing.text).toContain(
+    "Published takeoff envelope: 350–500 g / +6 g over 500 g envelope / verify with a scale",
+  );
+});

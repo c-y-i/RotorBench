@@ -138,6 +138,11 @@ test("creates a versioned analysis report without mutating the build", () => {
       hardwareVerified: false,
       evidenceAuthenticityVerified: false,
     },
+    planning: {
+      selectedPartCount: 4,
+      planningAllowanceG: 50,
+      takeoffEnvelopeStatus: "unavailable",
+    },
     hardwarePlan: {
       status: "review",
       label: "3 checks open",
@@ -187,6 +192,50 @@ test("creates a versioned analysis report without mutating the build", () => {
   expect(JSON.stringify(report)).not.toContain("must-not-export");
   expect(report.importedEvidence).not.toHaveProperty("rawFiles");
   expect(JSON.stringify(report)).not.toContain("/dev/tty");
+});
+
+test("analysis reports carry the planning weight and published envelope", () => {
+  const t1Build = {
+    ...build,
+    id: "t1-analysis-report",
+    name: "T1 Ranger",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-f405-wmn",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  const t1Analysis = {
+    ...analysis,
+    performance: {
+      ...analysis.performance,
+      totalWeight: 506,
+      dataAvailable: false,
+    },
+    totalCost: 297.89,
+  };
+  const report = createAnalysisReport(
+    t1Build,
+    t1Analysis,
+    "2026-11-21T00:00:00.000Z",
+  );
+
+  expect(report.planning).toEqual({
+    scope: "catalog planning estimate; not measured takeoff weight",
+    selectedPartCount: 7,
+    catalogWeightG: 456,
+    planningAllowanceG: 50,
+    totalWeightG: 506,
+    totalPriceUsd: 297.89,
+    publishedTakeoffRangeG: [350, 500],
+    takeoffEnvelopeStatus: "above",
+    takeoffEnvelopeShortLabel: "+6 g over 500 g envelope",
+    takeoffEnvelopeLabel: "506 g planning estimate · 6 g over the 500 g published maximum · verify with a scale",
+  });
 });
 
 test("rejects incomplete build or analysis data", () => {
