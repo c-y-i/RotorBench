@@ -3,6 +3,16 @@ import componentsData from "../data/components.json";
 
 export const MODEL_MANIFEST = componentsData.modelManifest;
 
+const MODEL_SOURCE_COMPONENTS = [
+  ["frame", "Frame", "frames"],
+  ["motor", "Motors", "motors"],
+  ["propeller", "Propellers", "propellers"],
+  ["battery", "Battery", "batteries"],
+  ["esc", "ESC", "escs"],
+  ["flightController", "Flight controller", "flight_controllers"],
+  ["receiver", "Receiver", "receivers"],
+];
+
 export function createModelConversionUrl(category, filename, apiBase = API_BASE) {
   if (!category || !filename) return null;
   return `${apiBase}/api/models/convert/${category}/${encodeURIComponent(filename)}?format=glb`;
@@ -109,5 +119,40 @@ export function resolvePropellerModelPair(
     cw: asset.cwUrl,
     ccw: asset.ccwUrl,
     provenance: asset.provenance,
+  };
+}
+
+export function summarizeModelSources(
+  assemblySpec = {},
+  { catalog = componentsData } = {},
+) {
+  const sources = MODEL_SOURCE_COMPONENTS.flatMap(([key, label, category]) => {
+    const part = assemblySpec?.[key];
+    if (!part?.id) return [];
+    const asset = resolveModelAsset(category, part, API_BASE, catalog);
+    return [{
+      key,
+      label,
+      category,
+      id: part.id,
+      name: part.name || part.id,
+      kind: asset.kind,
+      catalogModel: asset.kind === "catalog-glb",
+      provenance: asset.provenance,
+      legacyNormalizationUnverified:
+        asset.provenance === "Catalog GLB · legacy normalization unverified",
+    }];
+  });
+  const catalogModelCount = sources.filter((source) => source.catalogModel).length;
+  const legacyNormalizationCount = sources.filter(
+    (source) => source.legacyNormalizationUnverified,
+  ).length;
+  return {
+    scope: "catalog model assets; not a product-exact or hardware-verification claim",
+    selectedCount: sources.length,
+    catalogModelCount,
+    generatedFallbackCount: sources.length - catalogModelCount,
+    legacyNormalizationCount,
+    sources,
   };
 }

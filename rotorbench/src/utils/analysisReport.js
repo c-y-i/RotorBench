@@ -5,6 +5,7 @@ import {
   summarizeMeasuredGeometry,
 } from "./buildGeometry";
 import { summarizePowerPath } from "./physicalCompatibility";
+import { summarizeModelSources } from "./modelAssets";
 import { sanitizePlanComparisonMetadata } from "./benchEvidenceAttachment";
 
 export const ANALYSIS_REPORT_SCHEMA = "rotorbench.analysis-report.v1";
@@ -95,6 +96,7 @@ export function createAnalysisReport(
       assemblySpec || {},
       build.geometryOverrides,
     ),
+    modelSources: summarizeModelSources(assemblySpec || {}),
     powerPath: summarizePowerPath(
       assemblySpec?.battery,
       assemblySpec?.esc,

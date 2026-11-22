@@ -63,6 +63,17 @@ test("creates a concise human-readable briefing without binding material", () =>
   expect(briefing.text).toContain("# RotorBench briefing: Bench quad");
   expect(briefing.text).toContain("Check props-off setup.");
   expect(briefing.text).toContain("Motor test");
+  expect(briefing.text).toContain(
+    "Model sources: 0/5 catalog GLBs, 5 generated fallbacks, 0 legacy normalization warnings",
+  );
+  expect(briefing.text).toContain(
+    "Generated fallback parts: Frame, Motors, Propellers, Battery, ESC",
+  );
+  expect(briefing.modelSources).toMatchObject({
+    selectedCount: 5,
+    catalogModelCount: 0,
+    generatedFallbackCount: 5,
+  });
   expect(briefing.text).toContain("XT60 match");
   expect(briefing.text).toContain("Receiver wiring: Pins documented");
   expect(briefing.text).toContain("Radio host: Native USB CDC / documented");

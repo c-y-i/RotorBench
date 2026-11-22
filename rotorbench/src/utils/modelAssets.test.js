@@ -4,6 +4,7 @@ import {
   resolveModelAsset,
   resolveModelForComponent,
   resolvePropellerModelPair,
+  summarizeModelSources,
 } from "./modelAssets";
 
 test("resolves explicit single-file catalog models without directory scans", () => {
@@ -90,4 +91,36 @@ test("returns fallback assets and encodes explicit filenames", () => {
     kind: "missing-selection",
     modelUrl: null,
   });
+});
+
+test("summarizes catalog and fallback model sources once for portable reports", () => {
+  const summary = summarizeModelSources({
+    frame: { id: "frame-aos-35-v51", name: "AOS 3.5 V5.1" },
+    flightController: {
+      id: "fc-holybro-kakute-f7",
+      name: "Kakute F7 AIO",
+    },
+  });
+
+  expect(summary).toMatchObject({
+    selectedCount: 2,
+    catalogModelCount: 1,
+    generatedFallbackCount: 1,
+    legacyNormalizationCount: 1,
+  });
+  expect(summary.sources).toEqual([
+    expect.objectContaining({
+      key: "frame",
+      name: "AOS 3.5 V5.1",
+      catalogModel: false,
+      kind: "generated-fallback",
+    }),
+    expect.objectContaining({
+      key: "flightController",
+      name: "Kakute F7 AIO",
+      catalogModel: true,
+      kind: "catalog-glb",
+      legacyNormalizationUnverified: true,
+    }),
+  ]);
 });

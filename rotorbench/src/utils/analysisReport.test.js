@@ -169,6 +169,11 @@ test("creates a versioned analysis report without mutating the build", () => {
         }],
       }],
     },
+    modelSources: {
+      selectedCount: 1,
+      catalogModelCount: 0,
+      generatedFallbackCount: 1,
+    },
     powerPath: {
       displayState: "pending",
       label: "Select battery",

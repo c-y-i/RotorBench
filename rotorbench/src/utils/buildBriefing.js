@@ -1,4 +1,5 @@
 import { summarizeMeasuredGeometry } from "./buildGeometry";
+import { summarizeModelSources } from "./modelAssets";
 import { summarizeBuildPlanning } from "./planningSummary";
 import { summarizePowerPath } from "./physicalCompatibility";
 import {
@@ -34,6 +35,7 @@ export function createBuildBriefing({
     assemblySpec,
     build.geometryOverrides,
   );
+  const modelSources = summarizeModelSources(assemblySpec);
   const planning = summarizeBuildPlanning(build);
   const lines = [
     `# RotorBench briefing: ${build.name || "Untitled build"}`,
@@ -68,6 +70,15 @@ export function createBuildBriefing({
     "",
     "## Geometry",
     `- Viewer placement: ${Number(placement.verifiedCount) || 0}/${placement.checks?.length || 0} verified, ${Number(placement.measuredCount) || 0} measured, ${Number(placement.estimatedCount) || 0} estimated, ${Number(placement.fallbackCount) || 0} fallback, ${Number(placement.awaitingCount) || 0} awaiting, ${Number(placement.conflictCount) || 0} conflict`,
+    `- Model sources: ${modelSources.catalogModelCount}/${modelSources.selectedCount} catalog GLBs, ${modelSources.generatedFallbackCount} generated fallback${modelSources.generatedFallbackCount === 1 ? "" : "s"}, ${modelSources.legacyNormalizationCount} legacy normalization warning${modelSources.legacyNormalizationCount === 1 ? "" : "s"}`,
+    ...(modelSources.generatedFallbackCount > 0
+      ? [
+          `- Generated fallback parts: ${modelSources.sources
+            .filter((source) => !source.catalogModel)
+            .map((source) => source.label)
+            .join(", ")}`,
+        ]
+      : []),
     `- Build-local measurements: ${measured.fieldCount} field${measured.fieldCount === 1 ? "" : "s"} across ${measured.partCount} part${measured.partCount === 1 ? "" : "s"}`,
   );
   measured.parts.forEach((part) => {
@@ -189,5 +200,6 @@ export function createBuildBriefing({
     generatedAt,
     scope: "planning and catalog comparison; hardware not verified",
     text: lines.join("\n"),
+    modelSources,
   };
 }

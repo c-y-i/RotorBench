@@ -1,36 +1,15 @@
 import React, { useState } from "react";
 import { Box, Check, Clipboard } from "lucide-react";
-import { resolveModelForComponent } from "../utils/modelAssets";
-
-const MODEL_PARTS = [
-  ["frame", "Frame", "frames"],
-  ["motor", "Motors", "motors"],
-  ["propeller", "Propellers", "propellers"],
-  ["battery", "Battery", "batteries"],
-  ["esc", "ESC", "escs"],
-  ["flightController", "Flight controller", "flight_controllers"],
-  ["receiver", "Receiver", "receivers"],
-];
+import { summarizeModelSources } from "../utils/modelAssets";
 
 export default function ModelAssetAudit({ parts = {} }) {
   const [message, setMessage] = useState("");
-  const entries = MODEL_PARTS.flatMap(([key, label, category]) => {
-    const part = parts[key];
-    if (!part?.id) return [];
-    const asset = resolveModelForComponent(category, part.id);
-    return [{
-      key,
-      label,
-      part,
-      category,
-      asset,
-      catalogModel: asset.kind === "catalog-glb",
-    }];
-  });
+  const summary = summarizeModelSources(parts);
+  const entries = summary.sources;
   if (!entries.length) return null;
 
-  const catalogCount = entries.filter((entry) => entry.catalogModel).length;
-  const fallbackCount = entries.length - catalogCount;
+  const catalogCount = summary.catalogModelCount;
+  const fallbackCount = summary.generatedFallbackCount;
   const stateLabel = catalogCount === entries.length
     ? "All catalog"
     : catalogCount === 0
@@ -97,9 +76,9 @@ export default function ModelAssetAudit({ parts = {} }) {
               <span>
                 <strong>{entry.label}</strong>
                 <small>
-                  {entry.part.name}
+                  {entry.name}
                   {entry.catalogModel
-                    && entry.asset.provenance.includes("legacy normalization unverified")
+                    && entry.legacyNormalizationUnverified
                     ? " · legacy normalization unverified"
                     : ""}
                 </small>
@@ -114,28 +93,17 @@ export default function ModelAssetAudit({ parts = {} }) {
 }
 
 export function createModelSourceReport(parts = {}) {
-  const entries = MODEL_PARTS.flatMap(([key, label, category]) => {
-    const part = parts[key];
-    if (!part?.id) return [];
-    const asset = resolveModelForComponent(category, part.id);
-    return [{
-      label,
-      part,
-      catalogModel: asset.kind === "catalog-glb",
-      provenance: asset.provenance,
-    }];
-  });
-  const catalogCount = entries.filter((entry) => entry.catalogModel).length;
-  const fallbackCount = entries.length - catalogCount;
+  const summary = summarizeModelSources(parts);
+  const entries = summary.sources;
   return [
     "RotorBench model source report",
     "Local planning metadata only. No hardware verification is claimed.",
-    `Selected parts: ${entries.length}`,
-    `Catalog GLBs: ${catalogCount}`,
-    `Generated fallbacks: ${fallbackCount}`,
+    `Selected parts: ${summary.selectedCount}`,
+    `Catalog GLBs: ${summary.catalogModelCount}`,
+    `Generated fallbacks: ${summary.generatedFallbackCount}`,
     "",
     ...entries.map((entry) => (
-      `- ${entry.label}: ${entry.part.name || entry.part.id} | ${
+      `- ${entry.label}: ${entry.name} | ${
         entry.catalogModel ? entry.provenance : "Generated fallback geometry"
       }`
     )),

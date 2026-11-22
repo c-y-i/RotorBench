@@ -15,6 +15,7 @@ import {
 } from "./buildGeometry";
 import { sanitizeHardwareReadiness } from "./hardwareReadiness";
 import { summarizeBuildPlanning } from "./planningSummary";
+import { summarizeModelSources } from "./modelAssets";
 import {
   parsePlanComparisonMetadata,
   sanitizePlanComparisonMetadata,
@@ -122,6 +123,7 @@ export function createBuildSheet({
       assemblySpec,
       build.geometryOverrides,
     ),
+    modelSources: summarizeModelSources(assemblySpec),
     powerPath: summarizePowerPath(
       assemblySpec.battery,
       assemblySpec.esc,

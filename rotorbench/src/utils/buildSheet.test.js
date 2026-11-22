@@ -85,6 +85,11 @@ test("build sheets include source, estimate, fallback, and fit state", () => {
       estimatedFieldCount: 2,
       geometryFallbackCount: 3,
     },
+    modelSources: {
+      selectedCount: 3,
+      catalogModelCount: 0,
+      generatedFallbackCount: 3,
+    },
   });
 });
 
