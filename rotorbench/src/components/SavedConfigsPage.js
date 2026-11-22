@@ -639,6 +639,11 @@ export default function SavedConfigsPage() {
                                                     {buildSummary.fcMotorDirectionLabel}
                                                 </span>
                                             )}
+                                            {buildSummary.servoOutputCoverageLabel && (
+                                                <span className={`is-servo-${buildSummary.servoOutputCoverageStatus}`}>
+                                                    {buildSummary.servoOutputCoverageLabel}
+                                                </span>
+                                            )}
                                             {buildSummary.hasHardwareParts
                                                 && buildSummary.navigationSafetyLabel && (
                                                 <span>

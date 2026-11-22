@@ -76,6 +76,8 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
       radioHostBayCompatible: false,
       fcMotorDirectionLabel: "Normal · props in",
       fcMotorOrder: "1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+      servoOutputCoverageLabel: "2/3 outputs mapped",
+      servoOutputCoverageDetail: "1 catalogued servo output remains unassigned by the saved firmware mixer.",
       fcFenceEnabled: true,
       fcFenceRadiusM: 250,
       fcFenceCeilingM: 120,
@@ -103,6 +105,9 @@ test("briefs a module-bay handset fit without claiming hardware verification", (
   );
   expect(briefing.text).toContain(
     "Motor order: Normal · props in / 1 RR CW · 2 FR CCW · 3 RL CCW · 4 FL CW",
+  );
+  expect(briefing.text).toContain(
+    "Servo output coverage: 2/3 outputs mapped / 1 catalogued servo output remains unassigned by the saved firmware mixer.",
   );
   expect(briefing.text).toContain(
     "Navigation safety: Fence 250 m / 120 m ceiling · Floor 30 m · GPS 8 sats · Pack RTH on",

@@ -83,6 +83,11 @@ export function createBuildBriefing({
             `- Motor order: ${hardwareReadiness.fcMotorDirectionLabel} / ${hardwareReadiness.fcMotorOrder}`,
           ]
         : []),
+      ...(hardwareReadiness.servoOutputCoverageLabel
+        ? [
+            `- Servo output coverage: ${hardwareReadiness.servoOutputCoverageLabel} / ${hardwareReadiness.servoOutputCoverageDetail}`,
+          ]
+        : []),
       ...(describeNavigationSafety(hardwareReadiness)
         ? [
             `- Navigation safety: ${describeNavigationSafety(hardwareReadiness)}`,

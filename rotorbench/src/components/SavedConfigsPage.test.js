@@ -142,6 +142,48 @@ test("saved hardware builds expose their documented board target", async () => {
     .toBeInTheDocument();
 });
 
+test("saved T1 builds expose incomplete servo output coverage", async () => {
+  const t1Build = {
+    ...offlineBuild,
+    id: "t1-saved-coverage",
+    name: "T1 saved coverage",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-f405-wmn",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  localStorage.setItem("offlineBuilds", JSON.stringify([t1Build]));
+  localStorage.setItem(
+    "rotorbench:hardware-plan:t1-saved-coverage:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-matek-f405-wmn",
+      selectedReceiverId: "rx-radiomaster-rp4td-m",
+      firmwareFamily: "aerialkit",
+      profileId: "esp32dev",
+      airframe: "elevonwing",
+      armChannel: 6,
+      modeChannel: 5,
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+    }),
+  );
+
+  render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText("2/3 outputs mapped")).toBeInTheDocument();
+});
+
 test("malformed offline build storage recovers to an empty state", async () => {
   localStorage.setItem("offlineBuilds", "{");
   render(

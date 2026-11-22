@@ -300,3 +300,55 @@ test("saved build summaries and comparisons retain mission and launch controls",
     right: "Not configured",
   });
 });
+
+test("saved wing summaries retain catalogued servo output coverage", () => {
+  localStorage.clear();
+  const t1Build = {
+    id: "t1-coverage-build",
+    name: "T1 coverage",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-f405-wmn",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  localStorage.setItem(
+    "rotorbench:hardware-plan:t1-coverage-build:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-matek-f405-wmn",
+      selectedReceiverId: "rx-radiomaster-rp4td-m",
+      firmwareFamily: "aerialkit",
+      profileId: "esp32dev",
+      airframe: "elevonwing",
+      armChannel: 6,
+      modeChannel: 5,
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+    }),
+  );
+
+  const summary = summarizeBuild(t1Build);
+  expect(summary).toMatchObject({
+    buildServoCount: 3,
+    fcServoOutputCount: 2,
+    servoOutputCoverageStatus: "under-mapped",
+    servoOutputCoverageLabel: "2/3 outputs mapped",
+    servoOutputCoverageDetail: expect.stringMatching(
+      /1 catalogued servo output remains unassigned/i,
+    ),
+  });
+  expect(comparisonRows(summary, summarizeBuild({
+    ...t1Build,
+    id: "t1-coverage-empty",
+  })).find((row) => row.id === "servo-output-coverage")).toMatchObject({
+    changed: true,
+    left: "2/3 outputs mapped",
+    right: "Servo map not saved",
+  });
+});

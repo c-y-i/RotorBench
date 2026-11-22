@@ -614,6 +614,23 @@
   background: var(--accent-soft);
 }
 
+.saved-build-state .is-servo-complete {
+  color: var(--ok);
+  background: #e8f5ee;
+}
+
+.saved-build-state .is-servo-under-mapped,
+.saved-build-state .is-servo-extra,
+.saved-build-state .is-servo-no-map {
+  color: var(--warn);
+  background: var(--accent-soft);
+}
+
+.saved-build-state .is-servo-unconfigured {
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+}
+
 .saved-build-state .is-power-verified {
   color: var(--ok);
   background: #e8f5ee;

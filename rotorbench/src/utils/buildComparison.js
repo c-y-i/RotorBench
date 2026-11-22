@@ -195,6 +195,11 @@ export function summarizeBuild(build) {
     fcMotorOrder: hardwareReadiness.fcMotorOrder,
     navigationSafetyLabel: describeNavigationSafety(hardwareReadiness),
     missionControlsLabel: describeMissionControls(hardwareReadiness),
+    buildServoCount: hardwareReadiness.buildServoCount,
+    fcServoOutputCount: hardwareReadiness.fcServoOutputCount,
+    servoOutputCoverageStatus: hardwareReadiness.servoOutputCoverageStatus,
+    servoOutputCoverageLabel: hardwareReadiness.servoOutputCoverageLabel,
+    servoOutputCoverageDetail: hardwareReadiness.servoOutputCoverageDetail,
     hardwareIssueCount: hardwareReadiness.configured
       ? hardwareReadiness.issueCount
       : null,
@@ -565,6 +570,13 @@ export function comparisonRows(left, right) {
       right: right.fcMotorOrder
         ? `${right.fcMotorDirectionLabel} · ${right.fcMotorOrder}`
         : right.fcMotorDirectionLabel || "No verified motor map",
+      format: (value) => value,
+    },
+    {
+      id: "servo-output-coverage",
+      label: "Servo output coverage",
+      left: left.servoOutputCoverageLabel || "Not configured",
+      right: right.servoOutputCoverageLabel || "Not configured",
       format: (value) => value,
     },
     {
