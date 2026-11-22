@@ -399,6 +399,18 @@ export function summarizeHardwareReadiness({
     fcPidDenom: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.pidDenom
       : null,
+    fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.maxRateDps
+      : null,
+    fcMaxTiltDeg: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.maxTiltDeg
+      : null,
+    fcYawRateDps: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.yawRateDps
+      : null,
+    fcMaxDtMs: fcPlan.firmwareFamily === "aerialkit"
+      ? fcPlan.maxDtMs
+      : null,
     fcServoOutputs,
     fcServoOutputCount,
     servoOutputCoverageStatus,
@@ -499,6 +511,10 @@ export function sanitizeHardwareReadiness(readiness) {
     fcAlignmentYawDeg: readiness.fcAlignmentYawDeg ?? null,
     fcGyroRateHz: readiness.fcGyroRateHz ?? null,
     fcPidDenom: readiness.fcPidDenom ?? null,
+    fcMaxRateDps: readiness.fcMaxRateDps ?? null,
+    fcMaxTiltDeg: readiness.fcMaxTiltDeg ?? null,
+    fcYawRateDps: readiness.fcYawRateDps ?? null,
+    fcMaxDtMs: readiness.fcMaxDtMs ?? null,
     fcServoOutputs: Array.isArray(readiness.fcServoOutputs)
       ? readiness.fcServoOutputs.map((servo) => ({
           output: Number(servo.output),

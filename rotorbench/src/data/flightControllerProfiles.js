@@ -1744,6 +1744,10 @@ export function createDefaultFlightControllerConfig(
     alignYawDeg: 0,
     gyroRateHz: 0,
     pidDenom: 1,
+    maxRateDps: 700,
+    maxTiltDeg: 35,
+    yawRateDps: 350,
+    maxDtMs: 50,
     servo1Reverse: false,
     servo1TrimUs: 0,
     servo1TravelUs: AERIALKIT_SERVO_LIMITS.defaultTravelUs,
@@ -2065,6 +2069,46 @@ export function validateFlightControllerConfig(
         severity: "error",
         code: "pid-denom-range",
         message: "Control-loop divisor must be a whole number from 1 to 32 gyro samples.",
+      });
+    }
+    if (
+      !finite(config.maxRateDps)
+      || Number(config.maxRateDps) < 10
+      || Number(config.maxRateDps) > 1800
+    ) {
+      issues.push({
+        severity: "error",
+        code: "max-rate-range",
+        message: "Maximum rate-mode angular rate must be between 10 and 1800 degrees per second.",
+      });
+    }
+    if (
+      !finite(config.maxTiltDeg)
+      || Number(config.maxTiltDeg) < 5
+      || Number(config.maxTiltDeg) > 80
+    ) {
+      issues.push({
+        severity: "error",
+        code: "max-tilt-range",
+        message: "Maximum angle-mode tilt must be between 5 and 80 degrees.",
+      });
+    }
+    if (
+      !finite(config.yawRateDps)
+      || Number(config.yawRateDps) < 10
+      || Number(config.yawRateDps) > 1000
+    ) {
+      issues.push({
+        severity: "error",
+        code: "yaw-rate-range",
+        message: "Full-stick yaw rate must be between 10 and 1000 degrees per second.",
+      });
+    }
+    if (!integer(config.maxDtMs) || Number(config.maxDtMs) < 5 || Number(config.maxDtMs) > 200) {
+      issues.push({
+        severity: "error",
+        code: "max-dt-range",
+        message: "Longest integration step must be a whole number from 5 to 200 milliseconds.",
       });
     }
     for (const servo of AERIALKIT_SERVO_OUTPUTS.slice(0, airframe?.servos || 0)) {
@@ -2585,6 +2629,7 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Receiver calibration: min ${config.rcMin}, mid ${config.rcMid}, max ${config.rcMax}, deadband ${config.rcDeadband}`,
           `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
           `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
+          `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Battery telemetry: divider ${config.vbatRatio}:1, cells ${Number(config.vbatCells) === 0 ? "auto" : config.vbatCells}, warning ${config.vbatWarnCell} V/cell, minimum ${config.vbatMinCell} V/cell, critical-pack return ${config.batteryRthEnabled ? "enabled" : "disabled"}`,
           `Geofence: ${config.fenceEnabled ? "enabled" : "disabled"}; radius ${config.fenceRadiusM} m, ceiling ${Number(config.fenceCeilingM) === 0 ? "none" : `${config.fenceCeilingM} m`}, GPS gate ${config.gpsMinSats} satellites`,
           `Return floor: ${Number(config.rthMinAltM) === 0 ? "none" : `${config.rthMinAltM} m`}`,

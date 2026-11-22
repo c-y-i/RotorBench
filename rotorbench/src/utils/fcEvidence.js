@@ -1542,6 +1542,10 @@ const PARAMETER_PLAN_KEYS = {
   align_yaw_deg: "alignYawDeg",
   gyro_rate_hz: "gyroRateHz",
   pid_denom: "pidDenom",
+  max_rate_dps: "maxRateDps",
+  max_tilt_deg: "maxTiltDeg",
+  yaw_rate_dps: "yawRateDps",
+  max_dt_ms: "maxDtMs",
   rth_enable: "rthEnabled",
 };
 

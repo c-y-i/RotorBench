@@ -385,6 +385,10 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     alignYawDeg: null,
     gyroRateHz: 8001,
     pidDenom: 33,
+    maxRateDps: 1801,
+    maxTiltDeg: 81,
+    yawRateDps: 1001,
+    maxDtMs: 201,
   });
 
   expect(issues.map((issue) => issue.code)).toEqual(expect.arrayContaining([
@@ -396,6 +400,10 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     "align-yaw-range",
     "gyro-rate-range",
     "pid-denom-range",
+    "max-rate-range",
+    "max-tilt-range",
+    "yaw-rate-range",
+    "max-dt-range",
     "battery-rth-without-gps",
     "fence-without-gps",
     "fence-radius-required",
@@ -403,6 +411,30 @@ test("Aerial Kit battery telemetry stays inside firmware ranges", () => {
     "rth-min-alt-range",
     "gps-min-sats-range",
   ]));
+});
+
+test("Aerial Kit flight limits use documented firmware defaults and ranges", () => {
+  const defaults = createDefaultFlightControllerConfig();
+  expect(defaults).toMatchObject({
+    maxRateDps: 700,
+    maxTiltDeg: 35,
+    yawRateDps: 350,
+    maxDtMs: 50,
+  });
+  expect(validateFlightControllerConfig({
+    ...defaults,
+    maxRateDps: 10,
+    maxTiltDeg: 80,
+    yawRateDps: 1000,
+    maxDtMs: 200,
+  })).not.toEqual(expect.arrayContaining([
+    expect.objectContaining({ code: "max-rate-range" }),
+    expect.objectContaining({ code: "max-tilt-range" }),
+    expect.objectContaining({ code: "yaw-rate-range" }),
+    expect.objectContaining({ code: "max-dt-range" }),
+  ]));
+  expect(buildFlightControllerSummary(defaults).join("\n"))
+    .toContain("Flight limits: rate mode 700°/s, angle tilt 35°, yaw 350°/s, integration step ≤50 ms");
 });
 
 test("Betaflight summary fingerprints its own normal QUAD X motor order", () => {

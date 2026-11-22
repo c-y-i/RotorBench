@@ -521,6 +521,47 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => `1 / ${value}`,
     },
     {
+      key: "maxRateDps",
+      source: "max_rate_dps",
+      snapshotKey: "max_rate_dps",
+      label: "Maximum rate-mode angular rate",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 10 && number <= 1800 ? number : null;
+      },
+      display: (value) => `${value}°/s`,
+    },
+    {
+      key: "maxTiltDeg",
+      source: "max_tilt_deg",
+      snapshotKey: "max_tilt_deg",
+      label: "Maximum angle-mode tilt",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 5 && number <= 80 ? number : null;
+      },
+      display: (value) => `${value}°`,
+    },
+    {
+      key: "yawRateDps",
+      source: "yaw_rate_dps",
+      snapshotKey: "yaw_rate_dps",
+      label: "Full-stick yaw rate",
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 10 && number <= 1000 ? number : null;
+      },
+      display: (value) => `${value}°/s`,
+    },
+    {
+      key: "maxDtMs",
+      source: "max_dt_ms",
+      snapshotKey: "max_dt_ms",
+      label: "Longest integration step",
+      parse: (raw) => boundedInteger(raw, 5, 200),
+      display: (value) => `${value} ms`,
+    },
+    {
       key: "rthEnabled",
       source: "rth_enable",
       snapshotKey: "rth_enable",

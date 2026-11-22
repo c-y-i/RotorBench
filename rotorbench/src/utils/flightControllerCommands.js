@@ -140,6 +140,10 @@ export function buildFlightControllerCommands(
     finite(config.alignYawDeg) &&
     integer(config.gyroRateHz) &&
     integer(config.pidDenom) &&
+    finite(config.maxRateDps) &&
+    finite(config.maxTiltDeg) &&
+    finite(config.yawRateDps) &&
+    integer(config.maxDtMs) &&
     activeServoOutputs.every((servo) => (
       typeof config[servo.reverseKey] === "boolean" &&
       finite(config[servo.trimKey]) &&
@@ -210,6 +214,10 @@ export function buildFlightControllerCommands(
     `set align_yaw_deg ${Number(config.alignYawDeg)}`,
     `set gyro_rate_hz ${Number(config.gyroRateHz)}`,
     `set pid_denom ${Number(config.pidDenom)}`,
+    `set max_rate_dps ${Number(config.maxRateDps)}`,
+    `set max_tilt_deg ${Number(config.maxTiltDeg)}`,
+    `set yaw_rate_dps ${Number(config.yawRateDps)}`,
+    `set max_dt_ms ${Number(config.maxDtMs)}`,
     `set rth_enable ${config.rthEnabled ? 1 : 0}`,
   );
 

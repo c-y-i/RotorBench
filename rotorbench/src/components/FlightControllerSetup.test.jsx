@@ -45,6 +45,10 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Alignment yaw")).toHaveValue(0);
   expect(screen.getByLabelText("Requested gyro rate")).toHaveValue(0);
   expect(screen.getByLabelText("Loop divisor")).toHaveValue(1);
+  expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
+  expect(screen.getByLabelText("Integration-step cap")).toHaveValue(50);
+  expect(screen.getByLabelText("Maximum angle-mode tilt")).toHaveValue(35);
+  expect(screen.getByLabelText("Full-stick yaw rate")).toHaveValue(350);
   expect(screen.getByRole("status")).toHaveTextContent("Driver default");
 });
 

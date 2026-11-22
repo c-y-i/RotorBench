@@ -44,6 +44,10 @@ const config = {
   alignYawDeg: 90,
   gyroRateHz: 3200,
   pidDenom: 2,
+  maxRateDps: 700,
+  maxTiltDeg: 35,
+  yawRateDps: 350,
+  maxDtMs: 50,
   rthEnabled: false,
 };
 
@@ -90,6 +94,10 @@ test("Aerial Kit preview uses current runtime parameter names and omits save", (
     "set align_yaw_deg 90",
     "set gyro_rate_hz 3200",
     "set pid_denom 2",
+    "set max_rate_dps 700",
+    "set max_tilt_deg 35",
+    "set yaw_rate_dps 350",
+    "set max_dt_ms 50",
     "set rth_enable 0",
     "set velocity_channel 0",
   ]));

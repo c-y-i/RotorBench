@@ -148,6 +148,33 @@ test("rejects malformed FC values instead of coercing them into the plan", () =>
   expect(patch.invalidFields).toHaveLength(3);
 });
 
+test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", () => {
+  const patch = buildFcEvidencePlanPatch(
+    {
+      values: {
+        max_rate_dps: "680.5",
+        max_tilt_deg: "40",
+        yaw_rate_dps: "320",
+        max_dt_ms: "25",
+      },
+    },
+    {
+      maxRateDps: 700,
+      maxTiltDeg: 35,
+      yawRateDps: 350,
+      maxDtMs: 50,
+    },
+  );
+
+  expect(patch.supported).toBe(true);
+  expect(patch.fields).toEqual(expect.arrayContaining([
+    expect.objectContaining({ key: "maxRateDps", observedValue: 680.5 }),
+    expect.objectContaining({ key: "maxTiltDeg", observedValue: 40 }),
+    expect.objectContaining({ key: "yawRateDps", observedValue: 320 }),
+    expect.objectContaining({ key: "maxDtMs", observedValue: 25 }),
+  ]));
+});
+
 test("builds radio plan differences from module labels", () => {
   const patch = buildRadioEvidencePlanPatch(
     {

@@ -106,6 +106,10 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "align-yaw-range": { id: "fc-align-yaw", label: "board alignment" },
   "gyro-rate-range": { id: "fc-gyro-rate", label: "requested gyro rate" },
   "pid-denom-range": { id: "fc-pid-denom", label: "control-loop divisor" },
+  "max-rate-range": { id: "fc-max-rate", label: "maximum angular rate" },
+  "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
+  "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
+  "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
   "servo-reverse": { id: "fc-servo1-reverse", label: "servo reversal" },
   "servo-trim-range": { id: "fc-servo1-trim", label: "servo centre trim" },
   "servo-travel-range": { id: "fc-servo1-travel", label: "servo travel" },
@@ -913,6 +917,38 @@ export default function FlightControllerSetup({
                       onChange={(event) => update("pidDenom", numericInput(event.target.value))}
                     />
                   </Field>
+                  <Field
+                    label="Maximum angular rate"
+                    htmlFor="fc-max-rate"
+                    hint="Rate mode at full stick, 10 to 1800 °/s"
+                  >
+                    <input
+                      id="fc-max-rate"
+                      type="number"
+                      min="10"
+                      max="1800"
+                      step="1"
+                      aria-invalid={numericInvalid(config.maxRateDps)}
+                      value={numericValue(config.maxRateDps)}
+                      onChange={(event) => update("maxRateDps", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field
+                    label="Integration-step cap"
+                    htmlFor="fc-max-dt"
+                    hint="Longest step, 5 to 200 ms"
+                  >
+                    <input
+                      id="fc-max-dt"
+                      type="number"
+                      min="5"
+                      max="200"
+                      step="1"
+                      aria-invalid={integerInvalid(config.maxDtMs)}
+                      value={numericValue(config.maxDtMs)}
+                      onChange={(event) => update("maxDtMs", numericInput(event.target.value))}
+                    />
+                  </Field>
                 </>
               )}
 
@@ -1636,8 +1672,8 @@ export default function FlightControllerSetup({
             <div className="fc-section-heading">
               <Gauge size={18} aria-hidden="true" />
               <div>
-                <h3 id="fc-safety-title">Arming and failsafe</h3>
-                <p>These values describe the intended setup. They do not arm, calibrate, flash, or test a physical aircraft.</p>
+                <h3 id="fc-safety-title">Arming, limits, and failsafe</h3>
+                <p>These values bound the intended setup. They do not arm, calibrate, flash, or test a physical aircraft.</p>
               </div>
             </div>
 
@@ -1816,6 +1852,42 @@ export default function FlightControllerSetup({
                   onChange={(event) => update("armMaxTiltDeg", numericInput(event.target.value))}
                 />
               </Field>
+              {config.firmwareFamily === "aerialkit" && (
+                <>
+                  <Field
+                    label="Maximum angle-mode tilt"
+                    htmlFor="fc-max-tilt"
+                    hint="Angle mode, 5 to 80 degrees"
+                  >
+                    <input
+                      id="fc-max-tilt"
+                      type="number"
+                      min="5"
+                      max="80"
+                      step="1"
+                      aria-invalid={numericInvalid(config.maxTiltDeg)}
+                      value={numericValue(config.maxTiltDeg)}
+                      onChange={(event) => update("maxTiltDeg", numericInput(event.target.value))}
+                    />
+                  </Field>
+                  <Field
+                    label="Full-stick yaw rate"
+                    htmlFor="fc-yaw-rate"
+                    hint="10 to 1000 °/s"
+                  >
+                    <input
+                      id="fc-yaw-rate"
+                      type="number"
+                      min="10"
+                      max="1000"
+                      step="1"
+                      aria-invalid={numericInvalid(config.yawRateDps)}
+                      value={numericValue(config.yawRateDps)}
+                      onChange={(event) => update("yawRateDps", numericInput(event.target.value))}
+                    />
+                  </Field>
+                </>
+              )}
               <Field label="Link-loss action" htmlFor="fc-failsafe">
                 <select id="fc-failsafe" value={config.failsafeAction} onChange={(event) => update("failsafeAction", event.target.value)}>
                   {FAILSAFE_ACTIONS.map((action) => (
