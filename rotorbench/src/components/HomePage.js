@@ -496,7 +496,7 @@ export default function HomePage() {
             >
               <option value="size">Size · ascending</option>
               <option value="name">Name · A–Z</option>
-              <option value="weight">Total weight · low first</option>
+              <option value="weight">Planning weight · low first</option>
               <option value="price">Catalog price · low first</option>
             </select>
           </div>
@@ -593,7 +593,7 @@ export default function HomePage() {
                     </span>
                     <span id={statusId} className="visually-hidden">
                       {thrustLabel}. {PLATFORM_FIT_LABELS[fitStatus]}. {jointLabel}.{" "}
-                      {geometryLabel}. Build weight {weightLabel}. Catalog total{" "}
+                      {geometryLabel}. Planning weight {weightLabel}. Catalog total{" "}
                       {priceLabel}.
                     </span>
                   </span>
@@ -768,9 +768,9 @@ export default function HomePage() {
               <small>Minutes</small>
             </div>
             <div className="telemetry-kpi telemetry-kpi-wide">
-              <span>All-up weight</span>
+              <span>Planning weight</span>
               <strong>{hasAnalysis ? analysisResults.performance.totalWeight : "—"}<small>g</small></strong>
-              <small>Estimated system mass</small>
+              <small>Catalog parts + 50 g allowance</small>
             </div>
           </div>
 

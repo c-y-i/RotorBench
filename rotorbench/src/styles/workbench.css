@@ -3486,6 +3486,7 @@
 .home-preview-panel .visibility-chip,
 .home-preview-panel .preview-debug-toggle,
 .home-preview-panel .preview-controls-heading select {
+  color: #d9e1d9;
   border-color: #3a4742;
   background: #202b27;
 }
