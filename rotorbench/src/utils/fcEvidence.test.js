@@ -1021,6 +1021,36 @@ test("marks planned parameters missing from a partial snapshot as unverified", (
     .toBe("unverified");
 });
 
+test("compares staged Aerial Kit filter chains with imported parameters", () => {
+  const snapshot = parseFcParameterSnapshotText([
+    "gyro_lpf1_static_hz=250 status=0",
+    "gyro_lpf1_dyn_min_hz=250 status=0",
+    "gyro_lpf1_dyn_max_hz=400 status=0",
+    "dterm_lpf1_dyn_max_hz=150 status=0",
+  ].join("\n"));
+  const checks = fcParameterChecks(snapshot, {
+    gyroLpf1StaticHz: 250,
+    gyroLpf1DynMinHz: 250,
+    gyroLpf1DynMaxHz: 500,
+    gyroLpf2StaticHz: 500,
+    dtermLpf1DynMaxHz: 150,
+  });
+
+  expect(checks.find((check) => check.id === "fc-param-gyro-lpf1-static-hz").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-gyro-lpf1-dyn-min-hz").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-gyro-lpf1-dyn-max-hz"))
+    .toMatchObject({
+      status: "fail",
+      detail: expect.stringMatching(/plan expects 500/i),
+    });
+  expect(checks.find((check) => check.id === "fc-param-dterm-lpf1-dyn-max-hz").status)
+    .toBe("pass");
+  expect(checks.find((check) => check.id === "fc-param-gyro-lpf2-static-hz").status)
+    .toBe("unverified");
+});
+
 test("parses Mission Planner and QGroundControl parameter files", () => {
   const missionPlanner = parseFcParameterSnapshotText(
     [

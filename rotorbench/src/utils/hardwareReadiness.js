@@ -31,6 +31,10 @@ import {
 } from "../data/radioProfiles";
 import { buildReceiverWiringPlan } from "./receiverWiring";
 import { buildRadioEndpointPlan } from "./radioEndpointPlan";
+import {
+  AERIALKIT_FILTER_FIELDS,
+  buildAerialKitFilterPlan,
+} from "./aerialKitFilters";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -101,6 +105,9 @@ export function summarizeHardwareReadiness({
     },
   });
   const profile = getBoardProfile(fcPlan.profileId, flightController);
+  const fcFilterPlan = fcPlan.firmwareFamily === "aerialkit"
+    ? buildAerialKitFilterPlan(fcPlan)
+    : null;
   const fcParameterRequirements = getArdupilotParameterRequirements(
     fcPlan,
     profile,
@@ -402,6 +409,14 @@ export function summarizeHardwareReadiness({
     fcPidDenom: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.pidDenom
       : null,
+    ...Object.fromEntries(AERIALKIT_FILTER_FIELDS.map(({ key }) => [
+      `fc${key[0].toUpperCase()}${key.slice(1)}`,
+      fcPlan.firmwareFamily === "aerialkit" ? fcPlan[key] : null,
+    ])),
+    fcFilterClampKnown: fcFilterPlan?.clampKnown ?? null,
+    fcFilterLoopHz: fcFilterPlan?.loopHz ?? null,
+    fcFilterMaxCutoffHz: fcFilterPlan?.maxFilterHz ?? null,
+    fcFilterClampedCount: fcFilterPlan?.clampedCount ?? null,
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
@@ -559,6 +574,14 @@ export function sanitizeHardwareReadiness(readiness) {
     fcAlignmentYawDeg: readiness.fcAlignmentYawDeg ?? null,
     fcGyroRateHz: readiness.fcGyroRateHz ?? null,
     fcPidDenom: readiness.fcPidDenom ?? null,
+    ...Object.fromEntries(AERIALKIT_FILTER_FIELDS.map(({ key }) => {
+      const readinessKey = `fc${key[0].toUpperCase()}${key.slice(1)}`;
+      return [readinessKey, readiness[readinessKey] ?? null];
+    })),
+    fcFilterClampKnown: readiness.fcFilterClampKnown ?? null,
+    fcFilterLoopHz: readiness.fcFilterLoopHz ?? null,
+    fcFilterMaxCutoffHz: readiness.fcFilterMaxCutoffHz ?? null,
+    fcFilterClampedCount: readiness.fcFilterClampedCount ?? null,
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
     fcRateCenterDps: readiness.fcRateCenterDps ?? null,
     fcRateExpo: readiness.fcRateExpo ?? null,

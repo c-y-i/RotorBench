@@ -9,6 +9,7 @@ import {
   AERIALKIT_AIRFRAME_IDS,
   AERIALKIT_RC_PROTOCOL_IDS,
 } from "./flightControllerCommands";
+import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 
 const INFERRED_AIRFRAMES = Object.fromEntries(
   Object.entries(AERIALKIT_AIRFRAME_IDS).map(([name, id]) => [id, name]),
@@ -520,6 +521,24 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       parse: (raw) => boundedInteger(raw, 1, 32),
       display: (value) => `1 / ${value}`,
     },
+    ...AERIALKIT_FILTER_FIELDS.map(({ key, runtimeName, label }) => ({
+      key,
+      source: runtimeName,
+      snapshotKey: runtimeName,
+      label,
+      parse: (raw) => {
+        const number = finite(raw);
+        return number != null && number >= 0 && number <= 1000
+          ? number
+          : null;
+      },
+      display: (value) => {
+        if (value !== 0) return `${value} Hz`;
+        return key.includes("DynMin")
+          ? "Use static cutoff"
+          : "Disabled";
+      },
+    })),
     {
       key: "maxRateDps",
       source: "max_rate_dps",

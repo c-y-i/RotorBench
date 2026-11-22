@@ -55,6 +55,7 @@ import {
   buildAerialKitRateCurve,
   summarizeAerialKitRateFeel,
 } from "../utils/aerialKitRateCurve";
+import { buildAerialKitFilterPlan } from "../utils/aerialKitFilters";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -117,6 +118,16 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "rate-expo-range": { id: "fc-rate-expo", label: "rate-curve expo" },
   "tpa-rate-range": { id: "fc-tpa-rate", label: "throttle-gain scaling" },
   "tpa-breakpoint-range": { id: "fc-tpa-breakpoint", label: "throttle-gain breakpoint" },
+  "gyroLpf1StaticHz-range": { id: "fc-gyro-lpf1-static", label: "gyro LPF1 static cutoff" },
+  "gyroLpf1DynMinHz-range": { id: "fc-gyro-lpf1-dyn-min", label: "gyro LPF1 dynamic low" },
+  "gyroLpf1DynMaxHz-range": { id: "fc-gyro-lpf1-dyn-max", label: "gyro LPF1 dynamic high" },
+  "gyroLpf2StaticHz-range": { id: "fc-gyro-lpf2-static", label: "gyro LPF2 static cutoff" },
+  "dtermLpf1StaticHz-range": { id: "fc-dterm-lpf1-static", label: "D-term LPF1 static cutoff" },
+  "dtermLpf1DynMinHz-range": { id: "fc-dterm-lpf1-dyn-min", label: "D-term LPF1 dynamic low" },
+  "dtermLpf1DynMaxHz-range": { id: "fc-dterm-lpf1-dyn-max", label: "D-term LPF1 dynamic high" },
+  "dtermLpf2StaticHz-range": { id: "fc-dterm-lpf2-static", label: "D-term LPF2 static cutoff" },
+  "gyro-filter-dynamic-order": { id: "fc-gyro-lpf1-dyn-min", label: "gyro filter bounds" },
+  "dterm-filter-dynamic-order": { id: "fc-dterm-lpf1-dyn-min", label: "D-term filter bounds" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -341,6 +352,265 @@ function Field({ label, hint, hintId, children, htmlFor }) {
   );
 }
 
+function formatFilterHz(value) {
+  if (value == null || !Number.isFinite(Number(value))) return "Unverified";
+  const rounded = Math.round(Number(value) * 10) / 10;
+  return `${rounded} Hz`;
+}
+
+function formatFilterRange(stage, applied = false) {
+  if (stage.mode === "off") return "Off";
+  const low = applied ? stage.appliedLowHz : stage.requestedLowHz;
+  const high = applied ? stage.appliedHighHz : stage.requestedHighHz;
+  if (low == null || high == null) return "Needs loop rate";
+  return low === high
+    ? formatFilterHz(low)
+    : `${formatFilterHz(low)} – ${formatFilterHz(high)}`;
+}
+
+function filterInputValue(value) {
+  return (
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    Number.isFinite(Number(value))
+  ) ? Number(value) : "";
+}
+
+function filterInputInvalid(value) {
+  return (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    !Number.isFinite(Number(value))
+  );
+}
+
+function filterInputNumber(value) {
+  return value === "" ? null : Number(value);
+}
+
+function FilterStageRow({
+  stage,
+  label,
+  maxFilterHz,
+}) {
+  const modeLabel = stage.mode === "off"
+    ? "Off"
+    : stage.mode === "dynamic"
+      ? stage.noDynamicMovement ? "Dynamic · fixed" : "Dynamic"
+      : "Static";
+  const scaleLow = stage.appliedLowHz ?? stage.requestedLowHz;
+  const scaleHigh = stage.appliedHighHz ?? stage.requestedHighHz;
+  const left = Math.max(0, Math.min(100, (scaleLow / 1000) * 100));
+  const right = Math.max(0, Math.min(100, (scaleHigh / 1000) * 100));
+  const clampLeft = maxFilterHz == null
+    ? null
+    : Math.max(0, Math.min(100, (maxFilterHz / 1000) * 100));
+
+  return (
+    <div className={`fc-filter-stage is-${stage.mode}`}>
+      <div className="fc-filter-stage-heading">
+        <span>
+          <small>{label}</small>
+          <strong>{modeLabel}</strong>
+        </span>
+        <em>
+          {stage.mode === "off"
+            ? "No filtering"
+            : !stage.clampKnown
+              ? "Clamp unverified"
+              : stage.clamped
+                ? "Clamped"
+                : "As requested"}
+        </em>
+      </div>
+      <div
+        className="fc-filter-scale"
+        aria-hidden="true"
+        style={{
+          "--filter-left": `${left}%`,
+          "--filter-width": `${Math.max(0.8, right - left)}%`,
+          "--filter-clamp": clampLeft == null ? null : `${clampLeft}%`,
+        }}
+      >
+        <span className="fc-filter-scale-fill" />
+        {clampLeft != null && <span className="fc-filter-scale-clamp" />}
+        <span className="fc-filter-scale-min">0</span>
+        <span className="fc-filter-scale-max">1000 Hz</span>
+      </div>
+      <dl>
+        <div>
+          <dt>Requested</dt>
+          <dd>{formatFilterRange(stage)}</dd>
+        </div>
+        <div>
+          <dt>Applied</dt>
+          <dd>{formatFilterRange(stage, true)}</dd>
+        </div>
+      </dl>
+      {(stage.ignoredStaticHz || stage.dynamicMaxBelowFloor) && (
+        <p className={stage.dynamicMaxBelowFloor ? "is-warning" : "is-info"}>
+          {stage.dynamicMaxBelowFloor
+            ? "Dynamic high is below the low bound; the firmware holds the low cutoff."
+            : "Dynamic low is active, so the static LPF1 cutoff is ignored."}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function FilterChainsPanel({ config, plan, onFilterChange }) {
+  return (
+    <section className="fc-section" aria-labelledby="fc-filters-title">
+      <div className="fc-section-heading">
+        <SlidersHorizontal size={18} aria-hidden="true" />
+        <div>
+          <h3 id="fc-filters-title">Filter chains</h3>
+          <p>
+            Stage the gyro and D-term low-pass cutoffs Aerial Kit will accept.
+            Applied values account for the firmware&apos;s quarter-loop clamp.
+          </p>
+        </div>
+      </div>
+
+      <div className={`fc-filter-clamp ${plan.clampKnown ? "is-known" : "is-unverified"}`} role="note">
+        <span>
+          <small>Quarter-loop ceiling</small>
+          <strong>
+            {plan.clampKnown
+              ? formatFilterHz(plan.maxFilterHz)
+              : "Unverified at runtime"}
+          </strong>
+        </span>
+        <p>
+          {plan.clampKnown
+            ? `Requested ${formatFilterHz(plan.loopHz)} loop ÷ 4. ${plan.clampedCount} cutoff${plan.clampedCount === 1 ? "" : "s"} exceed the ceiling.`
+            : "Gyro rate 0 leaves the sample rate to the board driver. Requested cutoffs are shown without inventing an applied value."}
+        </p>
+        <em>{plan.clampKnown ? "Plan clamp" : "Needs live rate"}</em>
+      </div>
+
+      <div className="fc-filter-chains">
+        {plan.chains.map((chain) => (
+          <fieldset className="fc-filter-chain" key={chain.id}>
+            <legend>
+              <span>{chain.signal}</span>
+              <small>
+                {chain.primary.mode === "dynamic"
+                  ? "Throttle-linked LPF1"
+                  : "Static LPF1 fallback"}
+              </small>
+            </legend>
+            <div className="fc-filter-stages">
+              <FilterStageRow
+                stage={chain.primary}
+                label="LPF 1"
+                maxFilterHz={plan.maxFilterHz}
+              />
+              <FilterStageRow
+                stage={chain.secondary}
+                label="LPF 2"
+                maxFilterHz={plan.maxFilterHz}
+              />
+            </div>
+            <div className="fc-filter-input-grid">
+              <Field
+                label={`${chain.signal} LPF1 static`}
+                htmlFor={`fc-${chain.id}-lpf1-static`}
+                hint="Fallback when dynamic low is 0; 0 disables it"
+                hintId={`fc-${chain.id}-lpf1-static-hint`}
+              >
+                <input
+                  id={`fc-${chain.id}-lpf1-static`}
+                  type="number"
+                  min="0"
+                  max="1000"
+                  step="1"
+                  aria-invalid={filterInputInvalid(config[chain.staticKey])}
+                  aria-describedby={`fc-${chain.id}-lpf1-static-hint`}
+                  value={filterInputValue(config[chain.staticKey])}
+                  onChange={(event) => onFilterChange(
+                    chain.staticKey,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+              <Field
+                label={`${chain.signal} LPF1 dynamic low`}
+                htmlFor={`fc-${chain.id}-lpf1-dyn-min`}
+                hint="0 selects the static cutoff; otherwise cutoff at zero throttle"
+                hintId={`fc-${chain.id}-lpf1-dyn-min-hint`}
+              >
+                <input
+                  id={`fc-${chain.id}-lpf1-dyn-min`}
+                  type="number"
+                  min="0"
+                  max="1000"
+                  step="1"
+                  aria-invalid={filterInputInvalid(config[chain.dynMinKey])}
+                  aria-describedby={`fc-${chain.id}-lpf1-dyn-min-hint`}
+                  value={filterInputValue(config[chain.dynMinKey])}
+                  onChange={(event) => onFilterChange(
+                    chain.dynMinKey,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+              <Field
+                label={`${chain.signal} LPF1 dynamic high`}
+                htmlFor={`fc-${chain.id}-lpf1-dyn-max`}
+                hint="Cutoff at full throttle; equal to low means no movement"
+                hintId={`fc-${chain.id}-lpf1-dyn-max-hint`}
+              >
+                <input
+                  id={`fc-${chain.id}-lpf1-dyn-max`}
+                  type="number"
+                  min="0"
+                  max="1000"
+                  step="1"
+                  aria-invalid={filterInputInvalid(config[chain.dynMaxKey])}
+                  aria-describedby={`fc-${chain.id}-lpf1-dyn-max-hint`}
+                  value={filterInputValue(config[chain.dynMaxKey])}
+                  onChange={(event) => onFilterChange(
+                    chain.dynMaxKey,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+              <Field
+                label={`${chain.signal} LPF2 static`}
+                htmlFor={`fc-${chain.id}-lpf2-static`}
+                hint="Second fixed pole; 0 disables it"
+                hintId={`fc-${chain.id}-lpf2-static-hint`}
+              >
+                <input
+                  id={`fc-${chain.id}-lpf2-static`}
+                  type="number"
+                  min="0"
+                  max="1000"
+                  step="1"
+                  aria-invalid={filterInputInvalid(config[chain.secondaryKey])}
+                  aria-describedby={`fc-${chain.id}-lpf2-static-hint`}
+                  value={filterInputValue(config[chain.secondaryKey])}
+                  onChange={(event) => onFilterChange(
+                    chain.secondaryKey,
+                    filterInputNumber(event.target.value),
+                  )}
+                />
+              </Field>
+            </div>
+          </fieldset>
+        ))}
+      </div>
+      <p className="fc-filter-boundary">
+        These are staged firmware values. RotorBench has not measured the
+        spectrum, loop timing, or filter response on the selected aircraft.
+      </p>
+    </section>
+  );
+}
+
 function featuresForBoard(profile, receiverProtocol, firmwareFamily) {
   const supported = profile.featureSupport || {};
   return Object.fromEntries(
@@ -443,6 +713,10 @@ export default function FlightControllerSetup({
   const rateFeelSummary = summarizeAerialKitRateFeel(config, {
     fixedWing: aerialKitFixedWing,
   });
+  const filterPlan = useMemo(
+    () => buildAerialKitFilterPlan(config),
+    [config],
+  );
   const aerialKitRoleKeys = new Set(
     aerialKitControlRoles.map((role) => role.key),
   );
@@ -979,7 +1253,10 @@ export default function FlightControllerSetup({
             items={[
               { id: "fc-profile-title", label: "Board" },
               ...(config.firmwareFamily === "aerialkit"
-                ? [{ id: "fc-rate-feel-title", label: "Rate feel" }]
+                ? [
+                    { id: "fc-rate-feel-title", label: "Rate feel" },
+                    { id: "fc-filters-title", label: "Filters" },
+                  ]
                 : []),
               { id: "fc-receiver-title", label: "Receiver" },
               ...(config.firmwareFamily === "aerialkit"
@@ -1482,6 +1759,14 @@ export default function FlightControllerSetup({
                 </fieldset>
               )}
             </section>
+          )}
+
+          {config.firmwareFamily === "aerialkit" && (
+            <FilterChainsPanel
+              config={config}
+              plan={filterPlan}
+              onFilterChange={(key, nextValue) => update(key, nextValue)}
+            />
           )}
 
           {config.firmwareFamily === "aerialkit" && airframeSpec?.servos > 0 && (

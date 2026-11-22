@@ -1,5 +1,6 @@
 import { getBoardProfile } from "../data/flightControllerProfiles";
 import { buildAerialKitRouteSummary } from "./aerialKitWaypoints";
+import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 
 const STATUS_PROTOCOLS = new Set(["akp", "betaflight"]);
 const PREFLIGHT_VERDICTS = {
@@ -1546,6 +1547,10 @@ const PARAMETER_PLAN_KEYS = {
   align_yaw_deg: "alignYawDeg",
   gyro_rate_hz: "gyroRateHz",
   pid_denom: "pidDenom",
+  ...Object.fromEntries(AERIALKIT_FILTER_FIELDS.map(({ runtimeName, key }) => [
+    runtimeName,
+    key,
+  ])),
   max_rate_dps: "maxRateDps",
   rate_center_dps: "rateCenterDps",
   rate_expo: "rateExpo",

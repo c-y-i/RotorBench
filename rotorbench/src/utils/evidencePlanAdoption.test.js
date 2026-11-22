@@ -152,6 +152,14 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
   const patch = buildFcEvidencePlanPatch(
     {
       values: {
+        gyro_lpf1_static_hz: "220",
+        gyro_lpf1_dyn_min_hz: "180",
+        gyro_lpf1_dyn_max_hz: "430",
+        gyro_lpf2_static_hz: "480",
+        dterm_lpf1_static_hz: "70",
+        dterm_lpf1_dyn_min_hz: "65",
+        dterm_lpf1_dyn_max_hz: "140",
+        dterm_lpf2_static_hz: "0",
         max_rate_dps: "680.5",
         rate_center_dps: "300",
         rate_expo: "0.35",
@@ -172,6 +180,14 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
       },
     },
     {
+      gyroLpf1StaticHz: 250,
+      gyroLpf1DynMinHz: 250,
+      gyroLpf1DynMaxHz: 500,
+      gyroLpf2StaticHz: 500,
+      dtermLpf1StaticHz: 75,
+      dtermLpf1DynMinHz: 75,
+      dtermLpf1DynMaxHz: 150,
+      dtermLpf2StaticHz: 150,
       maxRateDps: 700,
       rateCenterDps: 0,
       rateExpo: 0,
@@ -194,6 +210,18 @@ test("adopts reviewed Aerial Kit flight-limit values into typed plan fields", ()
 
   expect(patch.supported).toBe(true);
   expect(patch.fields).toEqual(expect.arrayContaining([
+    expect.objectContaining({ key: "gyroLpf1StaticHz", observedValue: 220 }),
+    expect.objectContaining({ key: "gyroLpf1DynMinHz", observedValue: 180 }),
+    expect.objectContaining({ key: "gyroLpf1DynMaxHz", observedValue: 430 }),
+    expect.objectContaining({ key: "gyroLpf2StaticHz", observedValue: 480 }),
+    expect.objectContaining({ key: "dtermLpf1StaticHz", observedValue: 70 }),
+    expect.objectContaining({ key: "dtermLpf1DynMinHz", observedValue: 65 }),
+    expect.objectContaining({ key: "dtermLpf1DynMaxHz", observedValue: 140 }),
+    expect.objectContaining({
+      key: "dtermLpf2StaticHz",
+      observedValue: 0,
+      observedDisplay: "Disabled",
+    }),
     expect.objectContaining({ key: "maxRateDps", observedValue: 680.5 }),
     expect.objectContaining({ key: "rateCenterDps", observedValue: 300 }),
     expect.objectContaining({ key: "rateExpo", observedValue: 0.35 }),

@@ -1,3 +1,8 @@
+import {
+  AERIALKIT_FILTER_FIELDS,
+  buildAerialKitFilterPlan,
+} from "../utils/aerialKitFilters";
+
 export const FIRMWARE_FAMILIES = [
   {
     id: "aerialkit",
@@ -1753,6 +1758,14 @@ export function createDefaultFlightControllerConfig(
     alignYawDeg: 0,
     gyroRateHz: 0,
     pidDenom: 1,
+    gyroLpf1StaticHz: 250,
+    gyroLpf1DynMinHz: 250,
+    gyroLpf1DynMaxHz: 500,
+    gyroLpf2StaticHz: 500,
+    dtermLpf1StaticHz: 75,
+    dtermLpf1DynMinHz: 75,
+    dtermLpf1DynMaxHz: 150,
+    dtermLpf2StaticHz: 150,
     maxRateDps: 700,
     rateCenterDps: 0,
     rateExpo: 0,
@@ -2093,6 +2106,46 @@ export function validateFlightControllerConfig(
         message: "Control-loop divisor must be a whole number from 1 to 32 gyro samples.",
       });
     }
+    AERIALKIT_FILTER_FIELDS.forEach((filter) => {
+      if (
+        !finite(config[filter.key])
+        || Number(config[filter.key]) < 0
+        || Number(config[filter.key]) > 1000
+      ) {
+        issues.push({
+          severity: "error",
+          code: `${filter.key}-range`,
+          message: `${filter.label} must be between 0 and 1000 Hz; 0 disables a fixed stage or selects the static LPF1 cutoff when used as the dynamic low bound.`,
+        });
+      }
+    });
+    [
+      {
+        label: "Gyro",
+        minKey: "gyroLpf1DynMinHz",
+        maxKey: "gyroLpf1DynMaxHz",
+        code: "gyro-filter-dynamic-order",
+      },
+      {
+        label: "D-term",
+        minKey: "dtermLpf1DynMinHz",
+        maxKey: "dtermLpf1DynMaxHz",
+        code: "dterm-filter-dynamic-order",
+      },
+    ].forEach(({ label, minKey, maxKey, code }) => {
+      if (
+        finite(config[minKey])
+        && finite(config[maxKey])
+        && Number(config[minKey]) > 0
+        && Number(config[maxKey]) < Number(config[minKey])
+      ) {
+        issues.push({
+          severity: "warning",
+          code,
+          message: `${label} LPF1 dynamic high is below its low bound. The firmware floor keeps the cutoff at ${config[minKey]} Hz.`,
+        });
+      }
+    });
     if (
       !finite(config.maxRateDps)
       || Number(config.maxRateDps) < 10
@@ -2812,6 +2865,9 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
       ? "reversed props-out"
       : "normal props-in"} QUAD X motor order`
     : "Motor order";
+  const filterPlan = config.firmwareFamily === "aerialkit"
+    ? buildAerialKitFilterPlan(config)
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -2831,6 +2887,11 @@ export function buildFlightControllerSummary(config, profile = getBoardProfile(c
           `Receiver calibration: min ${config.rcMin}, mid ${config.rcMid}, max ${config.rcMax}, deadband ${config.rcDeadband}`,
           `Board alignment: roll ${config.alignRollDeg}°, pitch ${config.alignPitchDeg}°, yaw ${config.alignYawDeg}° (applied roll, then pitch, then yaw; verify sensor signs)`,
           `Control loop request: gyro ${Number(config.gyroRateHz) === 0 ? "driver default" : `${config.gyroRateHz} Hz`}, one pass every ${config.pidDenom} gyro sample${Number(config.pidDenom) === 1 ? "" : "s"}`,
+          `Filter chains: gyro LPF1 ${filterPlan.chains[0].primary.requestedLowHz}–${filterPlan.chains[0].primary.requestedHighHz} Hz, gyro LPF2 ${filterPlan.chains[0].secondary.requestedLowHz} Hz, D-term LPF1 ${filterPlan.chains[1].primary.requestedLowHz}–${filterPlan.chains[1].primary.requestedHighHz} Hz, D-term LPF2 ${filterPlan.chains[1].secondary.requestedLowHz} Hz; ${
+            filterPlan.clampKnown
+              ? `${filterPlan.clampedCount} cutoff${filterPlan.clampedCount === 1 ? "" : "s"} clamped to the ${filterPlan.maxFilterHz} Hz quarter-loop ceiling`
+              : "runtime quarter-loop clamp unverified because gyro rate follows the board driver"
+          }`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,
           ...(supportsAerialKitWingFailsafe(config.airframe)

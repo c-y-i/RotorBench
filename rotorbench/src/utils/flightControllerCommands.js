@@ -4,6 +4,7 @@ import {
   BETAFLIGHT_FAILSAFE_THROTTLE,
   supportsAerialKitWingFailsafe,
 } from "../data/flightControllerProfiles";
+import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 
 export const AERIALKIT_AIRFRAME_IDS = {
   quadx: 0,
@@ -152,6 +153,11 @@ export function buildFlightControllerCommands(
     finite(config.alignYawDeg) &&
     integer(config.gyroRateHz) &&
     integer(config.pidDenom) &&
+    AERIALKIT_FILTER_FIELDS.every(({ key }) => (
+      finite(config[key])
+      && Number(config[key]) >= 0
+      && Number(config[key]) <= 1000
+    )) &&
     finite(config.maxRateDps) &&
     finite(config.rateCenterDps) &&
     finite(config.rateExpo) &&
@@ -242,6 +248,9 @@ export function buildFlightControllerCommands(
     `set align_yaw_deg ${Number(config.alignYawDeg)}`,
     `set gyro_rate_hz ${Number(config.gyroRateHz)}`,
     `set pid_denom ${Number(config.pidDenom)}`,
+    ...AERIALKIT_FILTER_FIELDS.map(({ key, runtimeName }) => (
+      `set ${runtimeName} ${Number(config[key])}`
+    )),
     `set max_rate_dps ${Number(config.maxRateDps)}`,
     `set rate_center_dps ${Number(config.rateCenterDps)}`,
     `set rate_expo ${Number(config.rateExpo)}`,

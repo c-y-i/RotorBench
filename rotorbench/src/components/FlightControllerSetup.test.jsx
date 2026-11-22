@@ -45,6 +45,14 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Alignment yaw")).toHaveValue(0);
   expect(screen.getByLabelText("Requested gyro rate")).toHaveValue(0);
   expect(screen.getByLabelText("Loop divisor")).toHaveValue(1);
+  expect(screen.getByLabelText("Gyro LPF1 static")).toHaveValue(250);
+  expect(screen.getByLabelText("Gyro LPF1 dynamic low")).toHaveValue(250);
+  expect(screen.getByLabelText("Gyro LPF1 dynamic high")).toHaveValue(500);
+  expect(screen.getByLabelText("Gyro LPF2 static")).toHaveValue(500);
+  expect(screen.getByLabelText("D-term LPF1 static")).toHaveValue(75);
+  expect(screen.getByLabelText("D-term LPF1 dynamic low")).toHaveValue(75);
+  expect(screen.getByLabelText("D-term LPF1 dynamic high")).toHaveValue(150);
+  expect(screen.getByLabelText("D-term LPF2 static")).toHaveValue(150);
   expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
   expect(screen.getByLabelText("Centre slope")).toHaveValue(0);
   expect(screen.getByLabelText("Rate expo")).toHaveValue(0);
@@ -89,6 +97,43 @@ test("plans and previews the Aerial Kit Actual-rate curve", async () => {
   expect(screen.getByText("Firmware rate curve")).toBeInTheDocument();
   expect(screen.getByText("×0.80")).toBeInTheDocument();
   expect(screen.getByText(/Multirotor TPA scales P and D/i)).toBeInTheDocument();
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("plans Aerial Kit filter chains against the requested loop clamp", async () => {
+  const onChange = jest.fn();
+  const { container } = render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.getByRole("heading", { name: "Filter chains" }))
+    .toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Filters" })).toBeInTheDocument();
+  expect(screen.getByText("Unverified at runtime")).toBeInTheDocument();
+  expect(screen.getByText(/requested cutoffs are shown without inventing an applied value/i))
+    .toBeInTheDocument();
+
+  fireEvent.change(screen.getByLabelText("Requested gyro rate"), {
+    target: { value: "1000" },
+  });
+  fireEvent.change(screen.getByLabelText("Loop divisor"), {
+    target: { value: "2" },
+  });
+
+  expect(screen.getByText(/4 cutoffs exceed the ceiling/i)).toBeInTheDocument();
+  expect(screen.getAllByText("125 Hz").length).toBeGreaterThan(1);
+
+  fireEvent.change(screen.getByLabelText("Gyro LPF1 static"), {
+    target: { value: "210" },
+  });
+  fireEvent.change(screen.getByLabelText("Gyro LPF1 dynamic low"), {
+    target: { value: "0" },
+  });
+
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+    gyroLpf1StaticHz: 210,
+    gyroLpf1DynMinHz: 0,
+    dtermLpf1DynMaxHz: 150,
+  }));
+  expect(screen.getAllByText("Static").length).toBeGreaterThan(0);
   expect(await getA11yViolations(container)).toEqual([]);
 });
 

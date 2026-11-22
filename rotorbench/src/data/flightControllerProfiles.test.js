@@ -234,6 +234,41 @@ test("Feather profile rejects a four-motor airframe", () => {
   ]));
 });
 
+test("Aerial Kit plans carry source filter defaults and review inverted bounds", () => {
+  const config = createDefaultFlightControllerConfig();
+
+  expect(config).toMatchObject({
+    gyroLpf1StaticHz: 250,
+    gyroLpf1DynMinHz: 250,
+    gyroLpf1DynMaxHz: 500,
+    gyroLpf2StaticHz: 500,
+    dtermLpf1StaticHz: 75,
+    dtermLpf1DynMinHz: 75,
+    dtermLpf1DynMaxHz: 150,
+    dtermLpf2StaticHz: 150,
+  });
+  const issues = validateFlightControllerConfig({
+    ...config,
+    dtermLpf1DynMinHz: 140,
+    dtermLpf1DynMaxHz: 100,
+  });
+  expect(issues).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "warning",
+      code: "dterm-filter-dynamic-order",
+    }),
+  ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    gyroLpf2StaticHz: 1001,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "gyroLpf2StaticHz-range",
+    }),
+  ]));
+});
+
 test("documented Aerial Kit boards do not enable unfitted sensors", () => {
   expect(getBoardProfile("feather-f405").featureSupport).toMatchObject({
     barometer: false,
