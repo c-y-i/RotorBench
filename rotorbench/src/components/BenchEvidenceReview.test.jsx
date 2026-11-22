@@ -442,6 +442,29 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
         holdAltMm: 120000,
         observedAt: new Date().toISOString(),
       },
+      calibration: {
+        status: "done",
+        verb: "gyro",
+        verbRaw: 1,
+        active: true,
+        step: null,
+        faces: 0,
+        facesDone: 0,
+        samples: 1000,
+        rejected: 3,
+        results: [-1, -2, -3, 0, 0, 0],
+        resultNames: [
+          "bias roll (mdps)",
+          "bias pitch (mdps)",
+          "bias yaw (mdps)",
+        ],
+        resultValues: [
+          { name: "bias roll (mdps)", value: -1 },
+          { name: "bias pitch (mdps)", value: -2 },
+          { name: "bias yaw (mdps)", value: -3 },
+        ],
+        observedAt: new Date().toISOString(),
+      },
       logInventory: [{
         status: "available",
         requestedSource: 0,
@@ -542,6 +565,11 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("Mission active")).toBeInTheDocument();
   expect(screen.getByText("CH 7")).toBeInTheDocument();
   expect(screen.getByText("120000 mm")).toBeInTheDocument();
+  expect(screen.getByRole("region", {
+    name: "Imported Aerial Kit calibration status",
+  })).toBeInTheDocument();
+  expect(screen.getAllByText("gyro").length).toBeGreaterThan(0);
+  expect(screen.getByText("bias roll (mdps)")).toBeInTheDocument();
   expect(screen.getByText("Record #0")).toBeInTheDocument();
   expect(screen.getByText("DONE at #2")).toBeInTheDocument();
   expect(screen.getByText("15800 mV")).toBeInTheDocument();

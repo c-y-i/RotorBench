@@ -19,6 +19,7 @@ const HELLO_PAYLOAD_WITH_PREFLIGHT = "0161657269616c6b69742d663430350002003000f1
 const HELLO_PAYLOAD_WITH_PERF = "0161657269616c6b69742d663430350002003000f1130000920638cf";
 const HELLO_PAYLOAD_WITH_MOTORS = "0161657269616c6b69742d663430350002003000f1330000920638cf";
 const HELLO_PAYLOAD_WITH_MISSION = "0161657269616c6b69742d663430350002003000f13b0000920638cf";
+const HELLO_PAYLOAD_WITH_CALIBRATION = "0161657269616c6b69742d663430350002003000f13f0000920638cf";
 const STATUS_REPLY = "aa550185160101030b7d00d8ff84038768111f3f0ef90228283c3c8598";
 
 function setSerial(value) {
@@ -101,6 +102,27 @@ function missionReply(status = 0) {
   return buildAerialKitFrame(0x94, payload);
 }
 
+function calibrationReply({
+  status = 0,
+  verb = 1,
+  active = true,
+  step = 255,
+  faces = 0,
+  samples = 1000,
+  rejected = 3,
+  results = [-1, -2, -3, 0, 0, 0],
+} = {}) {
+  const payload = new Uint8Array(37);
+  const view = new DataView(payload.buffer);
+  payload.set([status, verb, active ? 1 : 0, step, faces], 0);
+  view.setUint32(5, samples, true);
+  view.setUint32(9, rejected, true);
+  results.forEach((value, index) => {
+    view.setInt32(13 + index * 4, value, true);
+  });
+  return buildAerialKitFrame(0x93, payload);
+}
+
 function logRecordBody(bytes, timeMs) {
   const payload = new Uint8Array(bytes);
   const view = new DataView(payload.buffer);
@@ -133,6 +155,14 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   telemetryAgreedHz = 20,
   telemetryPushCount = 2,
   missionStatus = 0,
+  calibrationStatus = 0,
+  calibrationVerb = 1,
+  calibrationActive = true,
+  calibrationStep = 255,
+  calibrationFaces = 0,
+  calibrationSamples = 1000,
+  calibrationRejected = 3,
+  calibrationResults = [-1, -2, -3, 0, 0, 0],
 } = {}) {
   const waiters = [];
   const queued = [];
@@ -335,6 +365,18 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
       }
       else if (command === 0x14) {
         deliver(missionReply(missionStatus));
+      }
+      else if (command === 0x13) {
+        deliver(calibrationReply({
+          status: calibrationStatus,
+          verb: calibrationVerb,
+          active: calibrationActive,
+          step: calibrationStep,
+          faces: calibrationFaces,
+          samples: calibrationSamples,
+          rejected: calibrationRejected,
+          results: calibrationResults,
+        }));
       }
       else if (command === 0x09) {
         const source = frame[5];
@@ -895,6 +937,99 @@ test("keeps a no-navigator mission refusal distinct from an empty mission", asyn
   expect(await screen.findByText("Mission state not available")).toBeInTheDocument();
   expect(screen.getByText(/answered no-navigator/)).toBeInTheDocument();
   expect(screen.queryByText("Waypoint list")).not.toBeInTheDocument();
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads calibration-session status without exposing calibration verbs", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_WITH_CALIBRATION);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read calibration status",
+  }));
+
+  expect(await screen.findByText("Sampling")).toBeInTheDocument();
+  expect(screen.getByText("gyro")).toBeInTheDocument();
+  expect(screen.getByText("1000 / 3")).toBeInTheDocument();
+  expect(screen.getByText("bias roll (mdps)")).toBeInTheDocument();
+  expect(screen.getByText("-1")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /calibrate gyro/i }))
+    .not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /abort calibration/i }))
+    .not.toBeInTheDocument();
+
+  const calibrationRequests = writer.write.mock.calls
+    .map(([frame]) => frame)
+    .filter((frame) => frame[3] === 0x13)
+    .map((frame) => frame[5]);
+  expect(calibrationRequests).toEqual([0]);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("keeps no calibration session distinct from zeroed measurements", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_WITH_CALIBRATION, {
+    calibrationVerb: 255,
+    calibrationActive: false,
+    calibrationSamples: 0,
+    calibrationRejected: 0,
+    calibrationResults: [0, 0, 0, 0, 0, 0],
+  });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read calibration status",
+  }));
+
+  expect(await screen.findAllByText("No session named")).not.toHaveLength(0);
+  expect(screen.getByText(/zeroed result slots are not measurements/i))
+    .toBeInTheDocument();
+  expect(screen.queryByText("bias roll (mdps)")).not.toBeInTheDocument();
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("does not present calibration results after an armed refusal", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_WITH_CALIBRATION, {
+    calibrationStatus: 2,
+    calibrationVerb: 255,
+    calibrationActive: false,
+    calibrationResults: [1, 2, 3, 4, 5, 6],
+  });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read calibration status",
+  }));
+
+  expect(await screen.findByText("Calibration response")).toBeInTheDocument();
+  expect(screen.getByText(/answered aircraft-armed/)).toBeInTheDocument();
+  expect(screen.queryByText("bias roll (mdps)")).not.toBeInTheDocument();
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

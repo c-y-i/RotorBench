@@ -1545,6 +1545,80 @@ export default function BenchEvidenceReview({
             </section>
           )}
 
+          {evidence.fcEvidence?.liveStatus?.calibration && (
+            <section
+              className="aerial-kit-calibration"
+              aria-label="Imported Aerial Kit calibration status"
+            >
+              <div className="aerial-kit-section-heading">
+                <strong>Imported calibration session</strong>
+                <span>{evidence.fcEvidence.liveStatus.calibration.status}</span>
+              </div>
+              {evidence.fcEvidence.liveStatus.calibration.status === "done" ? (
+                <>
+                  <dl className="aerial-kit-calibration-state">
+                    <div>
+                      <dt>Session</dt>
+                      <dd>{evidence.fcEvidence.liveStatus.calibration.verb || "No session named"}</dd>
+                    </div>
+                    <div>
+                      <dt>State</dt>
+                      <dd>{evidence.fcEvidence.liveStatus.calibration.active ? "Sampling" : "Idle"}</dd>
+                    </div>
+                    <div>
+                      <dt>Face</dt>
+                      <dd>
+                        {evidence.fcEvidence.liveStatus.calibration.step == null
+                          ? "Not sampling"
+                          : evidence.fcEvidence.liveStatus.calibration.step}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Faces complete</dt>
+                      <dd>
+                        {evidence.fcEvidence.liveStatus.calibration.verb === "accel"
+                          ? `${evidence.fcEvidence.liveStatus.calibration.facesDone} / 6`
+                          : "Not applicable"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Samples / rejected</dt>
+                      <dd>
+                        {evidence.fcEvidence.liveStatus.calibration.samples} /{" "}
+                        {evidence.fcEvidence.liveStatus.calibration.rejected}
+                      </dd>
+                    </div>
+                  </dl>
+                  {evidence.fcEvidence.liveStatus.calibration.resultValues.length > 0 && (
+                    <dl className="aerial-kit-calibration-results">
+                      {evidence.fcEvidence.liveStatus.calibration.resultValues.map((result) => (
+                        <div key={result.name}>
+                          <dt>{result.name}</dt>
+                          <dd>{result.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                </>
+              ) : (
+                <div className="aerial-kit-preflight-empty" role="note">
+                  <Activity size={16} aria-hidden="true" />
+                  <span>
+                    <strong>Calibration response</strong>
+                    <small>
+                      The imported board reply was {evidence.fcEvidence.liveStatus.calibration.status}.
+                      Its result slots are not presented as a completed calibration.
+                    </small>
+                  </span>
+                </div>
+              )}
+              <p>
+                This is an imported status observation. It did not start, abort,
+                or apply a calibration.
+              </p>
+            </section>
+          )}
+
           {evidence.fcEvidence?.liveStatus?.motorTelemetry && (
             <section
               className="aerial-kit-motors"

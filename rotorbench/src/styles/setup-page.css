@@ -2800,6 +2800,7 @@
 .aerial-kit-logs,
 .aerial-kit-telemetry-stream,
 .aerial-kit-mission,
+.aerial-kit-calibration,
 .aerial-kit-parameters,
 .aerial-kit-hardware {
   display: grid;
@@ -3264,6 +3265,55 @@
 }
 
 .aerial-kit-mission-state dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-calibration > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.aerial-kit-calibration-state,
+.aerial-kit-calibration-results {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.aerial-kit-calibration-state {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.aerial-kit-calibration-results {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.aerial-kit-calibration-state > div,
+.aerial-kit-calibration-results > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-calibration-state dt,
+.aerial-kit-calibration-results dt {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+
+.aerial-kit-calibration-state dd,
+.aerial-kit-calibration-results dd {
   overflow-wrap: anywhere;
   margin: 0;
   color: var(--ink);
@@ -5125,6 +5175,15 @@
   }
 
   .aerial-kit-mission-state > div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .aerial-kit-calibration-state,
+  .aerial-kit-calibration-results {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aerial-kit-calibration-state > div:last-child {
     grid-column: 1 / -1;
   }
 

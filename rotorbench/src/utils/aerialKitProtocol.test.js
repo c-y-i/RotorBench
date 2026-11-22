@@ -14,6 +14,7 @@ import {
   parseAerialKitLogSource,
   parseAerialKitLogStreamFrame,
   parseAerialKitLogStreamReply,
+  parseAerialKitCalibrationStatus,
   parseAerialKitMissionStatus,
   parseAerialKitMotorTelemetry,
   parseAerialKitOutputInfo,
@@ -413,6 +414,66 @@ test("parses read-only mission status without flattening requested and active", 
     .toThrow(/predates MISSION/i);
   expect(() => parseAerialKitMissionStatus(new Uint8Array(16)))
     .toThrow(/17-byte state/i);
+});
+
+test("parses calibration-session status and names only the slots its verb defines", () => {
+  const bytes = new Uint8Array(37);
+  const view = new DataView(bytes.buffer);
+  bytes.set([0, 1, 1, 255, 0], 0);
+  view.setUint32(5, 1000, true);
+  view.setUint32(9, 3, true);
+  [-1, -2, -3, 0, 0, 0].forEach((value, index) => {
+    view.setInt32(13 + index * 4, value, true);
+  });
+  expect(parseAerialKitCalibrationStatus(bytes)).toMatchObject({
+    status: "done",
+    verb: "gyro",
+    verbRaw: 1,
+    active: true,
+    step: null,
+    facesDone: 0,
+    samples: 1000,
+    rejected: 3,
+    results: [-1, -2, -3, 0, 0, 0],
+    resultNames: [
+      "bias roll (mdps)",
+      "bias pitch (mdps)",
+      "bias yaw (mdps)",
+    ],
+    resultValues: [
+      { name: "bias roll (mdps)", value: -1 },
+      { name: "bias pitch (mdps)", value: -2 },
+      { name: "bias yaw (mdps)", value: -3 },
+    ],
+  });
+
+  bytes.set([0, 3, 1, 2, 0x07], 0);
+  expect(parseAerialKitCalibrationStatus(bytes)).toMatchObject({
+    verb: "accel",
+    step: 2,
+    facesDone: 3,
+    resultNames: [
+      "bias x (ug)",
+      "bias y (ug)",
+      "bias z (ug)",
+      "scale x (x1e6)",
+      "scale y (x1e6)",
+      "scale z (x1e6)",
+    ],
+  });
+
+  bytes.set([0, 255, 0, 255, 0], 0);
+  expect(parseAerialKitCalibrationStatus(bytes)).toMatchObject({
+    verb: null,
+    verbRaw: 255,
+    active: false,
+    resultNames: [],
+    resultValues: [],
+  });
+  expect(() => parseAerialKitCalibrationStatus(Uint8Array.of(0x7f)))
+    .toThrow(/predates CALIBRATE/i);
+  expect(() => parseAerialKitCalibrationStatus(new Uint8Array(36)))
+    .toThrow(/37-byte session/i);
 });
 
 test("parses motor telemetry without inventing stopped or measured fields", () => {
@@ -1047,6 +1108,25 @@ test("creates a sanitized live-status evidence boundary", () => {
       holdAltMm: 120000,
       observedAtMs: 1250,
     },
+    calibration: {
+      status: "done",
+      verb: "gyro",
+      verbRaw: 1,
+      active: true,
+      step: null,
+      faces: 0,
+      facesDone: 0,
+      samples: 1000,
+      rejected: 3,
+      results: [-1, -2, -3, 0, 0, 0],
+      resultNames: ["bias roll (mdps)", "bias pitch (mdps)", "bias yaw (mdps)"],
+      resultValues: [
+        { name: "bias roll (mdps)", value: -1 },
+        { name: "bias pitch (mdps)", value: -2 },
+        { name: "bias yaw (mdps)", value: -3 },
+      ],
+      observedAtMs: 1250,
+    },
     logInventory: [{
       status: "available",
       requestedSource: 0,
@@ -1121,6 +1201,7 @@ test("creates a sanitized live-status evidence boundary", () => {
         "LOG_STREAM",
         "TELEMETRY",
         "MISSION",
+        "CALIBRATE",
       ],
     },
     status: {
@@ -1175,6 +1256,13 @@ test("creates a sanitized live-status evidence boundary", () => {
       active: true,
       requested: true,
       holdAltMm: 120000,
+      observedAt: "1970-01-01T00:00:01.250Z",
+    },
+    calibration: {
+      status: "done",
+      verb: "gyro",
+      active: true,
+      samples: 1000,
       observedAt: "1970-01-01T00:00:01.250Z",
     },
     logInventory: [{

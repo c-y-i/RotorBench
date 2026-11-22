@@ -23,6 +23,7 @@ import {
   AERIAL_KIT_FEATURE_SENSOR_INFO,
   AERIAL_KIT_FEATURE_OUTPUT_INFO,
   AERIAL_KIT_FEATURE_PREFLIGHT,
+  AERIAL_KIT_FEATURE_CALIBRATE,
   AERIAL_KIT_FEATURE_MISSION,
   AERIAL_KIT_FEATURE_PERF,
   AERIAL_KIT_FEATURE_MOTOR_TELEMETRY,
@@ -43,6 +44,7 @@ import {
   parseAerialKitLogSource,
   parseAerialKitLogStreamReply,
   parseAerialKitMotorTelemetry,
+  parseAerialKitCalibrationStatus,
   parseAerialKitMissionStatus,
   parseAerialKitPerf,
   parseAerialKitPreflightPage,
@@ -195,6 +197,9 @@ export default function AerialKitStatusSession({
   const [mission, setMission] = useState(null);
   const [missionState, setMissionState] = useState("idle");
   const [missionError, setMissionError] = useState("");
+  const [calibration, setCalibration] = useState(null);
+  const [calibrationState, setCalibrationState] = useState("idle");
+  const [calibrationError, setCalibrationError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -283,6 +288,9 @@ export default function AerialKitStatusSession({
     setMission(null);
     setMissionState("idle");
     setMissionError("");
+    setCalibration(null);
+    setCalibrationState("idle");
+    setCalibrationError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -597,6 +605,54 @@ export default function AerialKitStatusSession({
       if (!mountedRef.current) return;
       setMissionState("error");
       setMissionError(readError.message);
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
+  const readCalibrationStatus = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_CALIBRATE) === 0
+    ) {
+      setCalibrationError(
+        "The HELLO capability word does not claim CALIBRATE, so RotorBench did not ask for calibration status.",
+      );
+      setCalibrationState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setCalibrationError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setCalibrationError("");
+    setCalibrationState("reading");
+    try {
+      const status = parseAerialKitCalibrationStatus(
+        await session.request(
+          AERIAL_KIT_COMMANDS.calibrate,
+          Uint8Array.of(0),
+        ),
+      );
+      if (!mountedRef.current) return;
+      setCalibration({
+        ...status,
+        observedAtMs: Date.now(),
+      });
+      setCalibrationState("ready");
+      setMessage(
+        "Read calibration-session status only. No calibration or abort verb was sent.",
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setCalibrationState("error");
+      setCalibrationError(readError.message);
     } finally {
       pollBusyRef.current = false;
       if (activeRef.current) schedulePoll(session, hello);
@@ -1491,6 +1547,7 @@ export default function AerialKitStatusSession({
       logSample,
       telemetryStream,
       mission,
+      calibration,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -1596,6 +1653,8 @@ export default function AerialKitStatusSession({
     || (hello.features & AERIAL_KIT_FEATURE_LOG_STREAM) !== 0;
   const missionClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_MISSION) !== 0;
+  const calibrationClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_CALIBRATE) !== 0;
   const busy = ["selecting", "connecting", "stopping"].includes(sessionState);
   const active = ["connecting", "monitoring"].includes(sessionState);
 
@@ -2113,6 +2172,128 @@ export default function AerialKitStatusSession({
                       </dd>
                     </div>
                   </dl>
+                )}
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-calibration"
+                aria-label="Aerial Kit calibration status"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Calibration session</strong>
+                  <span>
+                    {calibrationState === "reading"
+                      ? "Reading"
+                      : calibrationState === "ready"
+                        ? calibration.status
+                        : calibrationState === "error"
+                          ? "Read stopped"
+                          : !calibrationClaimed
+                            ? "Not claimed"
+                            : "Not read"}
+                  </span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || calibrationState === "reading"
+                      || !calibrationClaimed
+                    }
+                    onClick={readCalibrationStatus}
+                  >
+                    <Activity size={15} aria-hidden="true" />
+                    Read calibration status
+                  </button>
+                  <span>
+                    {calibration?.observedAtMs
+                      ? `Observed ${ageLabel(calibration.observedAtMs, clockNow)}`
+                      : "Status verb only"}
+                  </span>
+                </div>
+                <p>
+                  This panel reads the current calibration session. It has no
+                  gyro, RC, accelerometer, battery, or abort controls.
+                </p>
+                {calibrationError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Calibration status unavailable</strong>
+                      <small>{calibrationError}</small>
+                    </span>
+                  </div>
+                )}
+                {calibration && calibration.status !== "done" && (
+                  <div className="aerial-kit-preflight-empty" role="note">
+                    <Activity size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Calibration response</strong>
+                      <small>
+                        The board answered {calibration.status}. No result value is
+                        presented as a completed calibration.
+                      </small>
+                    </span>
+                  </div>
+                )}
+                {calibration?.status === "done" && (
+                  <>
+                    <dl className="aerial-kit-calibration-state">
+                      <div>
+                        <dt>Session</dt>
+                        <dd>{calibration.verb || "No session named"}</dd>
+                      </div>
+                      <div>
+                        <dt>State</dt>
+                        <dd>{calibration.active ? "Sampling" : "Idle"}</dd>
+                      </div>
+                      <div>
+                        <dt>Face</dt>
+                        <dd>{calibration.step == null ? "Not sampling" : calibration.step}</dd>
+                      </div>
+                      <div>
+                        <dt>Faces complete</dt>
+                        <dd>
+                          {calibration.verb === "accel"
+                            ? `${calibration.facesDone} / 6`
+                            : "Not applicable"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Samples / rejected</dt>
+                        <dd>{calibration.samples} / {calibration.rejected}</dd>
+                      </div>
+                    </dl>
+                    {calibration.resultValues.length > 0 && (
+                      <dl
+                        className="aerial-kit-calibration-results"
+                        aria-label="Board-reported calibration results"
+                      >
+                        {calibration.resultValues.map((result) => (
+                          <div key={result.name}>
+                            <dt>{result.name}</dt>
+                            <dd>{result.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    )}
+                    {calibration.verb == null && (
+                      <div className="aerial-kit-preflight-empty" role="note">
+                        <Activity size={16} aria-hidden="true" />
+                        <span>
+                          <strong>No session named</strong>
+                          <small>
+                            The board returned no calibration verb, so its zeroed
+                            result slots are not measurements.
+                          </small>
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
               </section>
             )}

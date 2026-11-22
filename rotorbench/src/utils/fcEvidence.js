@@ -527,6 +527,80 @@ function normalizedMissionStatus(value) {
   };
 }
 
+const CALIBRATION_RESULT_NAMES = Object.freeze({
+  1: ["bias roll (mdps)", "bias pitch (mdps)", "bias yaw (mdps)"],
+  2: ["centre (us)", "roll off centre (us)", "pitch off centre (us)", "yaw off centre (us)"],
+  3: [
+    "bias x (ug)",
+    "bias y (ug)",
+    "bias z (ug)",
+    "scale x (x1e6)",
+    "scale y (x1e6)",
+    "scale z (x1e6)",
+  ],
+  4: ["ratio (x1e6)"],
+});
+
+function normalizedCalibrationStatus(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const allowedStatuses = [
+    "done",
+    "no-such-verb",
+    "aircraft-armed",
+    "session-busy",
+    "nothing-to-calibrate",
+    "not-enough-still-samples",
+    "implausible-result",
+    "nothing-to-abort",
+    "no-such-face",
+    "invalid-value",
+  ];
+  if (!allowedStatuses.includes(value.status)) {
+    throw new Error("The Aerial Kit calibration status is not one the protocol defines.");
+  }
+  const verbRaw = sensorNumber(value.verbRaw);
+  const step = sensorNumber(value.step);
+  const faces = sensorNumber(value.faces);
+  const samples = sensorNumber(value.samples);
+  const rejected = sensorNumber(value.rejected);
+  const results = sensorVector(value.results, 6);
+  if (
+    !Number.isInteger(verbRaw)
+    || verbRaw < 0
+    || verbRaw > 0xff
+    || !Number.isInteger(faces)
+    || faces < 0
+    || faces > 0xff
+    || !Number.isInteger(samples)
+    || samples < 0
+    || !Number.isInteger(rejected)
+    || rejected < 0
+    || !results
+  ) {
+    throw new Error("The Aerial Kit calibration status has invalid counters or results.");
+  }
+  const resultNames = CALIBRATION_RESULT_NAMES[verbRaw] || [];
+  return {
+    status: value.status,
+    verb: sensorString(value.verb),
+    verbRaw,
+    active: value.active === true,
+    step: Number.isInteger(step) ? step : null,
+    faces,
+    facesDone: Array.from({ length: 6 }, (_, bit) => bit)
+      .filter((bit) => (faces & (1 << bit)) !== 0).length,
+    samples,
+    rejected,
+    results,
+    resultNames,
+    resultValues: resultNames.map((name, index) => ({
+      name,
+      value: results[index],
+    })),
+    observedAtMs: timestampMilliseconds(value.observedAt),
+  };
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -839,6 +913,7 @@ export function parseAerialKitLiveStatusJson(payload) {
   const logSample = normalizedLogSample(payload.logSample);
   const telemetryStream = normalizedTelemetryStream(payload.telemetryStream);
   const mission = normalizedMissionStatus(payload.mission);
+  const calibration = normalizedCalibrationStatus(payload.calibration);
   return {
     kind: "fc-live-status",
     identity,
@@ -861,6 +936,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     logSample,
     telemetryStream,
     mission,
+    calibration,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

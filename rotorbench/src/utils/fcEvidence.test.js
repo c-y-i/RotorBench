@@ -248,6 +248,29 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       holdAltMm: 120000,
       observedAt: "2026-11-22T10:00:00.000Z",
     },
+    calibration: {
+      status: "done",
+      verb: "gyro",
+      verbRaw: 1,
+      active: true,
+      step: null,
+      faces: 0,
+      facesDone: 0,
+      samples: 1000,
+      rejected: 3,
+      results: [-1, -2, -3, 0, 0, 0],
+      resultNames: [
+        "bias roll (mdps)",
+        "bias pitch (mdps)",
+        "bias yaw (mdps)",
+      ],
+      resultValues: [
+        { name: "bias roll (mdps)", value: -1 },
+        { name: "bias pitch (mdps)", value: -2 },
+        { name: "bias yaw (mdps)", value: -3 },
+      ],
+      observedAt: "2026-11-22T10:00:00.000Z",
+    },
     logInventory: [{
       status: "available",
       requestedSource: 0,
@@ -416,6 +439,17 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       index: 2,
       channel: 7,
       holdAltMm: 120000,
+    },
+    calibration: {
+      status: "done",
+      verb: "gyro",
+      active: true,
+      samples: 1000,
+      resultValues: [
+        { name: "bias roll (mdps)", value: -1 },
+        { name: "bias pitch (mdps)", value: -2 },
+        { name: "bias yaw (mdps)", value: -3 },
+      ],
     },
     logInventory: [{
       status: "available",

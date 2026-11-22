@@ -15,6 +15,7 @@ export const AERIAL_KIT_FEATURE_SENSOR_INFO = 1 << 5;
 export const AERIAL_KIT_FEATURE_OUTPUT_INFO = 1 << 6;
 export const AERIAL_KIT_FEATURE_LOG_STREAM = 1 << 8;
 export const AERIAL_KIT_FEATURE_PREFLIGHT = 1 << 9;
+export const AERIAL_KIT_FEATURE_CALIBRATE = 1 << 10;
 export const AERIAL_KIT_FEATURE_MISSION = 1 << 11;
 export const AERIAL_KIT_FEATURE_PERF = 1 << 12;
 export const AERIAL_KIT_FEATURE_MOTOR_TELEMETRY = 1 << 13;
@@ -38,6 +39,7 @@ export const AERIAL_KIT_COMMANDS = Object.freeze({
   outputInfo: 0x0f,
   logStream: 0x11,
   preflight: 0x12,
+  calibrate: 0x13,
   mission: 0x14,
   perf: 0x15,
   motorTelemetry: 0x16,
@@ -111,6 +113,42 @@ const MISSION_STATUS_NAMES = Object.freeze({
   2: "no-navigator",
   3: "no-waypoints",
   4: "no-fix",
+});
+
+const CALIBRATION_STATUS_NAMES = Object.freeze({
+  0: "done",
+  1: "no-such-verb",
+  2: "aircraft-armed",
+  3: "session-busy",
+  4: "nothing-to-calibrate",
+  5: "not-enough-still-samples",
+  6: "implausible-result",
+  7: "nothing-to-abort",
+  8: "no-such-face",
+  9: "invalid-value",
+});
+
+const CALIBRATION_VERB_NAMES = Object.freeze({
+  0: "status",
+  1: "gyro",
+  2: "rc",
+  3: "accel",
+  4: "vbat",
+  5: "abort",
+});
+
+const CALIBRATION_RESULT_NAMES = Object.freeze({
+  1: ["bias roll (mdps)", "bias pitch (mdps)", "bias yaw (mdps)"],
+  2: ["centre (us)", "roll off centre (us)", "pitch off centre (us)", "yaw off centre (us)"],
+  3: [
+    "bias x (ug)",
+    "bias y (ug)",
+    "bias z (ug)",
+    "scale x (x1e6)",
+    "scale y (x1e6)",
+    "scale z (x1e6)",
+  ],
+  4: ["ratio (x1e6)"],
 });
 
 export const AERIAL_KIT_PARAMETER_TYPES = Object.freeze({
@@ -835,6 +873,51 @@ export function parseAerialKitMissionStatus(payload) {
   };
 }
 
+export function parseAerialKitCalibrationStatus(payload) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) throw new Error("Aerial Kit CALIBRATE payload is empty.");
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates CALIBRATE and answered with the unknown-command status.",
+    );
+  }
+  if (!Object.hasOwn(CALIBRATION_STATUS_NAMES, bytes[0])) {
+    throw new Error(`CALIBRATE returned status ${bytes[0]}.`);
+  }
+  if (bytes.length !== 37) {
+    throw new Error(
+      `CALIBRATE must carry a 37-byte session and this reply has ${bytes.length}.`,
+    );
+  }
+  const verbRaw = bytes[1];
+  const step = bytes[3];
+  const faces = bytes[4];
+  const resultNames = CALIBRATION_RESULT_NAMES[verbRaw] || [];
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const results = Array.from(
+    { length: 6 },
+    (_, index) => view.getInt32(13 + index * 4, true),
+  );
+  return {
+    status: CALIBRATION_STATUS_NAMES[bytes[0]],
+    verb: CALIBRATION_VERB_NAMES[verbRaw] || null,
+    verbRaw,
+    active: bytes[2] !== 0,
+    step: step === 255 ? null : step,
+    faces,
+    facesDone: Array.from({ length: 6 }, (_, bit) => bit)
+      .filter((bit) => (faces & (1 << bit)) !== 0).length,
+    samples: u32le(bytes, 5, "CALIBRATE samples"),
+    rejected: u32le(bytes, 9, "CALIBRATE rejected"),
+    results,
+    resultNames,
+    resultValues: resultNames.map((name, index) => ({
+      name,
+      value: results[index],
+    })),
+  };
+}
+
 export function parseAerialKitMotorTelemetry(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) {
@@ -1477,6 +1560,7 @@ export function createAerialKitStatusEvidence({
   logSample = null,
   telemetryStream = null,
   mission = null,
+  calibration = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -1522,6 +1606,7 @@ export function createAerialKitStatusEvidence({
         ...(logSample ? ["LOG_STREAM"] : []),
         ...(telemetryStream ? ["TELEMETRY"] : []),
         ...(mission ? ["MISSION"] : []),
+        ...(calibration ? ["CALIBRATE"] : []),
       ],
     },
     hello,
@@ -1603,6 +1688,14 @@ export function createAerialKitStatusEvidence({
           ...mission,
           observedAt: Number.isFinite(mission.observedAtMs)
             ? new Date(mission.observedAtMs).toISOString()
+            : null,
+        }
+      : null,
+    calibration: calibration
+      ? {
+          ...calibration,
+          observedAt: Number.isFinite(calibration.observedAtMs)
+            ? new Date(calibration.observedAtMs).toISOString()
             : null,
         }
       : null,
