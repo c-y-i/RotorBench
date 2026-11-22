@@ -171,6 +171,24 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
         },
       ],
     },
+    performance: {
+      status: "ok",
+      observedAt: "2026-11-22T10:00:00.000Z",
+      loops: 1200,
+      samples: 1190,
+      nominalUs: 500,
+      periodLastUs: 503,
+      periodMinUs: 496,
+      periodMaxUs: 612,
+      late: 4,
+      jitterP50Us: 12,
+      jitterP99Us: 31,
+      jitterMaxUs: 72,
+      jitterOver: 11,
+      sectionAvgUsX10: [21, 22, 23, 24, 25],
+      sectionMaxUs: [30, 31, 32, 33, 34],
+      loadPermille: 123,
+    },
   });
 
   expect(parsed).toMatchObject({
@@ -241,6 +259,13 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
           detail: "receiver: 8412 bytes",
         },
       ],
+    },
+    performance: {
+      status: "ok",
+      loops: 1200,
+      periodLastUs: 503,
+      sectionAvgUsX10: [21, 22, 23, 24, 25],
+      loadPermille: 123,
     },
   });
 });

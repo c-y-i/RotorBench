@@ -182,6 +182,45 @@ function normalizedSensorBody(topic, body) {
   return null;
 }
 
+function normalizedPerformanceWindow(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!["ok", "none"].includes(value.status)) {
+    throw new Error("The Aerial Kit performance window has an invalid status.");
+  }
+  const scalarFields = [
+    "loops",
+    "samples",
+    "nominalUs",
+    "periodLastUs",
+    "periodMinUs",
+    "periodMaxUs",
+    "late",
+    "jitterP50Us",
+    "jitterP99Us",
+    "jitterMaxUs",
+    "jitterOver",
+    "loadPermille",
+  ];
+  const scalars = Object.fromEntries(
+    scalarFields.map((field) => [field, sensorNumber(value[field])]),
+  );
+  if (Object.values(scalars).some((number) => number == null)) {
+    throw new Error("The Aerial Kit performance window has incomplete fields.");
+  }
+  const sectionAvgUsX10 = sensorVector(value.sectionAvgUsX10, 5);
+  const sectionMaxUs = sensorVector(value.sectionMaxUs, 5);
+  if (!sectionAvgUsX10 || !sectionMaxUs) {
+    throw new Error("The Aerial Kit performance window has incomplete sections.");
+  }
+  return {
+    status: value.status,
+    ...scalars,
+    sectionAvgUsX10,
+    sectionMaxUs,
+    observedAtMs: timestampMilliseconds(value.observedAt),
+  };
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -488,6 +527,7 @@ export function parseAerialKitLiveStatusJson(payload) {
       };
     }
   }
+  const performance = normalizedPerformanceWindow(payload.performance);
   return {
     kind: "fc-live-status",
     identity,
@@ -504,6 +544,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     sensorMetadata,
     outputMetadata,
     preflight,
+    performance,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

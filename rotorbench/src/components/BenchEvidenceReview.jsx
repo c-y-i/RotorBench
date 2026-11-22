@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Activity,
   Download,
   FileCheck2,
   FileSearch,
@@ -24,6 +25,7 @@ import {
 import FcParameterSnapshot from "./FcParameterSnapshot";
 import RadioParameterSnapshot from "./RadioParameterSnapshot";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
+import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -1297,6 +1299,41 @@ export default function BenchEvidenceReview({
                 controller. They do not arm, fly, or authorize the build.
               </p>
             </div>
+          )}
+
+          {evidence.fcEvidence?.liveStatus?.performance && (
+            <section
+              className="aerial-kit-perf"
+              aria-label="Imported Aerial Kit performance window"
+            >
+              <div className="aerial-kit-section-heading">
+                <strong>Imported loop performance</strong>
+                <span>
+                  {evidence.fcEvidence.liveStatus.performance.status === "none"
+                    ? "No profiler"
+                    : `${evidence.fcEvidence.liveStatus.performance.loops} loops · ${evidence.fcEvidence.liveStatus.performance.late} late`}
+                </span>
+              </div>
+              <p>
+                Period, jitter, section time, and instrumented load are preserved
+                from the imported read-only snapshot. Load is a lower bound.
+              </p>
+              {evidence.fcEvidence.liveStatus.performance.status === "none" ? (
+                <div className="aerial-kit-preflight-empty" role="note">
+                  <Activity size={16} aria-hidden="true" />
+                  <span>
+                    <strong>No profiler in this build</strong>
+                    <small>
+                      The zeroed window is not a performance reading.
+                    </small>
+                  </span>
+                </div>
+              ) : (
+                <AerialKitPerformanceReadings
+                  performance={evidence.fcEvidence.liveStatus.performance}
+                />
+              )}
+            </section>
           )}
 
           {evidence.fcEvidence?.rc && (

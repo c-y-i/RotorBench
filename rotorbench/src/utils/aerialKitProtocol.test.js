@@ -13,6 +13,7 @@ import {
   parseAerialKitParamInfoPage,
   parseAerialKitOutputInfo,
   parseAerialKitParamGet,
+  parseAerialKitPerf,
   parseAerialKitPreflightPage,
   parseAerialKitRcChannels,
   parseAerialKitStatus,
@@ -283,6 +284,58 @@ test("parses PREFLIGHT pages without turning no checklist into a pass", () => {
     .toThrow(/predates PREFLIGHT/i);
   expect(() => parseAerialKitPreflightPage(Uint8Array.of(2, 0), 0, 0))
     .toThrow(/one status byte/i);
+});
+
+test("parses the PERF window in its exact wire units", () => {
+  const bytes = new Uint8Array(59);
+  const view = new DataView(bytes.buffer);
+  bytes[0] = 0;
+  view.setUint32(1, 1200, true);
+  view.setUint32(5, 1190, true);
+  view.setUint16(9, 500, true);
+  view.setUint32(11, 503, true);
+  view.setUint32(15, 496, true);
+  view.setUint32(19, 612, true);
+  view.setUint32(23, 4, true);
+  view.setUint16(27, 12, true);
+  view.setUint16(29, 31, true);
+  view.setUint16(31, 72, true);
+  view.setUint32(33, 11, true);
+  [21, 22, 23, 24, 25].forEach((value, index) => {
+    view.setUint16(37 + index * 2, value, true);
+  });
+  [30, 31, 32, 33, 34].forEach((value, index) => {
+    view.setUint16(47 + index * 2, value, true);
+  });
+  view.setUint16(57, 123, true);
+  expect(parseAerialKitPerf(bytes)).toEqual({
+    status: "ok",
+    loops: 1200,
+    samples: 1190,
+    nominalUs: 500,
+    periodLastUs: 503,
+    periodMinUs: 496,
+    periodMaxUs: 612,
+    late: 4,
+    jitterP50Us: 12,
+    jitterP99Us: 31,
+    jitterMaxUs: 72,
+    jitterOver: 11,
+    sectionAvgUsX10: [21, 22, 23, 24, 25],
+    sectionMaxUs: [30, 31, 32, 33, 34],
+    loadPermille: 123,
+  });
+  const unavailable = new Uint8Array(59);
+  unavailable[0] = 1;
+  expect(parseAerialKitPerf(unavailable)).toMatchObject({
+    status: "none",
+    loops: 0,
+    sectionAvgUsX10: [0, 0, 0, 0, 0],
+  });
+  expect(() => parseAerialKitPerf(Uint8Array.of(1)))
+    .toThrow(/59-byte window/i);
+  expect(() => parseAerialKitPerf(Uint8Array.of(0x7f)))
+    .toThrow(/predates PERF/i);
 });
 
 test("parses sensor presence without inventing a body for an absent sensor", () => {
@@ -630,6 +683,24 @@ test("creates a sanitized live-status evidence boundary", () => {
       lines: [{ name: "clock", verdict: 1, detail: "clock on the crystal" }],
       observedAtMs: 1250,
     },
+    performance: {
+      status: "ok",
+      loops: 1200,
+      samples: 1190,
+      nominalUs: 500,
+      periodLastUs: 503,
+      periodMinUs: 496,
+      periodMaxUs: 612,
+      late: 4,
+      jitterP50Us: 12,
+      jitterP99Us: 31,
+      jitterMaxUs: 72,
+      jitterOver: 11,
+      sectionAvgUsX10: [21, 22, 23, 24, 25],
+      sectionMaxUs: [30, 31, 32, 33, 34],
+      loadPermille: 123,
+      observedAtMs: 1250,
+    },
     connectionActive: true,
     nowMs: 1500,
   });
@@ -648,6 +719,7 @@ test("creates a sanitized live-status evidence boundary", () => {
         "PARAM_INFO",
         "PARAM_HELP",
         "PREFLIGHT",
+        "PERF",
       ],
     },
     status: {
@@ -672,6 +744,12 @@ test("creates a sanitized live-status evidence boundary", () => {
       status: "ok",
       observedAt: "1970-01-01T00:00:01.250Z",
       lines: [{ name: "clock", verdict: 1, detail: "clock on the crystal" }],
+    },
+    performance: {
+      status: "ok",
+      loops: 1200,
+      loadPermille: 123,
+      observedAt: "1970-01-01T00:00:01.250Z",
     },
     boundaries: {
       readOnlyQueriesOnly: true,

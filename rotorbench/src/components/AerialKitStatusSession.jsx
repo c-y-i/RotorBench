@@ -23,6 +23,7 @@ import {
   AERIAL_KIT_FEATURE_SENSOR_INFO,
   AERIAL_KIT_FEATURE_OUTPUT_INFO,
   AERIAL_KIT_FEATURE_PREFLIGHT,
+  AERIAL_KIT_FEATURE_PERF,
   AERIAL_KIT_PARAMETER_READ_LIMIT,
   AERIAL_KIT_SENSOR_TOPICS,
   AerialKitReadOnlySession,
@@ -33,6 +34,7 @@ import {
   parseAerialKitParamHelpSlice,
   parseAerialKitParamGet,
   parseAerialKitParamInfoPage,
+  parseAerialKitPerf,
   parseAerialKitPreflightPage,
   parseAerialKitSensorInfo,
   parseAerialKitOutputInfo,
@@ -45,6 +47,7 @@ import {
   serialCaptureErrorMessage,
 } from "../utils/webSerialCapture";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
+import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -149,6 +152,9 @@ export default function AerialKitStatusSession({
   const [preflight, setPreflight] = useState(null);
   const [preflightState, setPreflightState] = useState("idle");
   const [preflightError, setPreflightError] = useState("");
+  const [performance, setPerformance] = useState(null);
+  const [perfState, setPerfState] = useState("idle");
+  const [perfError, setPerfError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -215,6 +221,9 @@ export default function AerialKitStatusSession({
     setPreflight(null);
     setPreflightState("idle");
     setPreflightError("");
+    setPerformance(null);
+    setPerfState("idle");
+    setPerfError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -793,6 +802,53 @@ export default function AerialKitStatusSession({
     }
   };
 
+  const readPerformance = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_PERF) === 0
+    ) {
+      setPerfError(
+        "The HELLO capability word does not claim PERF, so RotorBench did not ask for a profiler window.",
+      );
+      setPerfState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setPerfError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setPerfError("");
+    setPerfState("reading");
+    try {
+      const window = parseAerialKitPerf(
+        await session.request(AERIAL_KIT_COMMANDS.perf),
+      );
+      if (!mountedRef.current) return;
+      setPerformance({
+        ...window,
+        observedAtMs: Date.now(),
+      });
+      setPerfState("ready");
+      setMessage(
+        window.status === "ok"
+          ? "Read the board's loop performance window without changing flight state."
+          : "The board reports that this build has no loop profiler.",
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setPerfState("error");
+      setPerfError(readError.message);
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -885,6 +941,7 @@ export default function AerialKitStatusSession({
       sensorMetadata: sensors,
       outputMetadata: outputInfo,
       preflight,
+      performance,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -945,7 +1002,9 @@ export default function AerialKitStatusSession({
     connectionActive: sessionState === "monitoring",
   });
   const rcAgeMs = lastRcAt == null ? null : Math.max(0, clockNow - lastRcAt);
-  const canDownload = Boolean(hello || liveStatus || rc || preflight);
+  const canDownload = Boolean(
+    hello || liveStatus || rc || preflight || performance,
+  );
   const metadataClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) !== 0;
   const sensorClaimed = hello?.features == null
@@ -954,6 +1013,8 @@ export default function AerialKitStatusSession({
     || (hello.features & AERIAL_KIT_FEATURE_OUTPUT_INFO) !== 0;
   const preflightClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_PREFLIGHT) !== 0;
+  const perfClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_PERF) !== 0;
   const busy = ["selecting", "connecting", "stopping"].includes(sessionState);
   const active = ["connecting", "monitoring"].includes(sessionState);
 
@@ -1261,6 +1322,79 @@ export default function AerialKitStatusSession({
                       </li>
                     ))}
                   </ol>
+                )}
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-perf"
+                aria-label="Aerial Kit loop performance window"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>Loop performance window</strong>
+                  <span>
+                    {perfState === "reading"
+                      ? "Reading"
+                      : perfState === "ready"
+                        ? performance.status === "none"
+                          ? "No profiler"
+                          : `${performance.loops} loops · ${performance.late} late`
+                        : perfState === "error"
+                          ? "Read stopped"
+                          : !perfClaimed
+                            ? "Not claimed"
+                            : "Not read"}
+                  </span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || perfState === "reading"
+                      || !perfClaimed
+                    }
+                    onClick={readPerformance}
+                  >
+                    <Activity size={15} aria-hidden="true" />
+                    Read performance window
+                  </button>
+                  <span>
+                    {performance?.observedAtMs
+                      ? `Observed ${ageLabel(performance.observedAtMs, clockNow)}`
+                      : "User-triggered read"}
+                  </span>
+                </div>
+                <p>
+                  Period, jitter, section time, and load come from the board&apos;s
+                  profiler. Load is a lower bound because not every task is
+                  instrumented.
+                </p>
+                {perfError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>Performance unavailable</strong>
+                      <small>{perfError}</small>
+                    </span>
+                  </div>
+                )}
+                {performance?.status === "none" && (
+                  <div className="aerial-kit-preflight-empty" role="note">
+                    <Activity size={16} aria-hidden="true" />
+                    <span>
+                      <strong>No profiler in this build</strong>
+                      <small>
+                        The zeroed window is not a performance reading. RotorBench
+                        does not present it as a loop that costs nothing.
+                      </small>
+                    </span>
+                  </div>
+                )}
+                {performance?.status === "ok" && (
+                  <AerialKitPerformanceReadings performance={performance} />
                 )}
               </section>
             )}

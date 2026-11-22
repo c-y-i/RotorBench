@@ -351,6 +351,24 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
           },
         ],
       },
+      performance: {
+        status: "ok",
+        observedAt: new Date().toISOString(),
+        loops: 1200,
+        samples: 1190,
+        nominalUs: 500,
+        periodLastUs: 503,
+        periodMinUs: 496,
+        periodMaxUs: 612,
+        late: 4,
+        jitterP50Us: 12,
+        jitterP99Us: 31,
+        jitterMaxUs: 72,
+        jitterOver: 11,
+        sectionAvgUsX10: [21, 22, 23, 24, 25],
+        sectionMaxUs: [30, 31, 32, 33, 34],
+        loadPermille: 123,
+      },
     }, "live-status.json"),
   );
 
@@ -374,6 +392,9 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
     .toBeInTheDocument();
   expect(screen.getAllByText("clock on the crystal").length).toBeGreaterThan(0);
   expect(screen.getAllByText("receiver: 8412 bytes").length).toBeGreaterThan(0);
+  expect(screen.getByText("1200 loops · 4 late")).toBeInTheDocument();
+  expect(screen.getByText("503 / 496 / 612 µs")).toBeInTheDocument();
+  expect(screen.getByText("12.3% · 123‰")).toBeInTheDocument();
 });
 
 test("keeps a live snapshot with no preflight checklist unverified", async () => {

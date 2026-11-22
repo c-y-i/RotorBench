@@ -14,9 +14,11 @@ export const AERIAL_KIT_FEATURE_RC_CHANNELS = 1 << 4;
 export const AERIAL_KIT_FEATURE_SENSOR_INFO = 1 << 5;
 export const AERIAL_KIT_FEATURE_OUTPUT_INFO = 1 << 6;
 export const AERIAL_KIT_FEATURE_PREFLIGHT = 1 << 9;
+export const AERIAL_KIT_FEATURE_PERF = 1 << 12;
 export const AERIAL_KIT_PARAMETER_READ_LIMIT = 255;
 export const AERIAL_KIT_PREFLIGHT_MAX_LINES = 32;
 export const AERIAL_KIT_PREFLIGHT_NAME_MAX = 24;
+export const AERIAL_KIT_PERF_SECTIONS = 5;
 export const AERIAL_KIT_COMMANDS = Object.freeze({
   hello: 0x01,
   paramGet: 0x02,
@@ -27,6 +29,7 @@ export const AERIAL_KIT_COMMANDS = Object.freeze({
   sensorInfo: 0x0e,
   outputInfo: 0x0f,
   preflight: 0x12,
+  perf: 0x15,
 });
 
 export const AERIAL_KIT_SENSOR_TOPICS = Object.freeze([
@@ -671,6 +674,61 @@ export function parseAerialKitPreflightPage(
   };
 }
 
+export function parseAerialKitPerf(payload) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) throw new Error("Aerial Kit PERF payload is empty.");
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates PERF and answered with the unknown-command status.",
+    );
+  }
+  if (![0, 1].includes(bytes[0])) {
+    throw new Error(`PERF returned status ${bytes[0]}.`);
+  }
+  if (bytes.length !== 59) {
+    throw new Error(`PERF carries a 59-byte window and this reply has ${bytes.length}.`);
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 1;
+  const u16 = () => {
+    const value = view.getUint16(offset, true);
+    offset += 2;
+    return value;
+  };
+  const u32 = () => {
+    const value = view.getUint32(offset, true);
+    offset += 4;
+    return value;
+  };
+  const window = {
+    status: bytes[0] === 0 ? "ok" : "none",
+    loops: u32(),
+    samples: u32(),
+    nominalUs: u16(),
+    periodLastUs: u32(),
+    periodMinUs: u32(),
+    periodMaxUs: u32(),
+    late: u32(),
+    jitterP50Us: u16(),
+    jitterP99Us: u16(),
+    jitterMaxUs: u16(),
+    jitterOver: u32(),
+    sectionAvgUsX10: Array.from(
+      { length: AERIAL_KIT_PERF_SECTIONS },
+      () => u16(),
+    ),
+    sectionMaxUs: Array.from(
+      { length: AERIAL_KIT_PERF_SECTIONS },
+      () => u16(),
+    ),
+    loadPermille: u16(),
+  };
+  if (offset !== bytes.length) {
+    throw new Error(`PERF left ${bytes.length - offset} bytes unparsed.`);
+  }
+  return window;
+}
+
 export function parseAerialKitSensorInfo(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) throw new Error("Aerial Kit SENSOR_INFO payload is empty.");
@@ -1082,6 +1140,7 @@ export function createAerialKitStatusEvidence({
   sensorMetadata = null,
   outputMetadata = null,
   preflight = null,
+  performance = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -1121,6 +1180,7 @@ export function createAerialKitStatusEvidence({
         ...(sensorMetadata ? ["SENSOR_INFO"] : []),
         ...(outputMetadata ? ["OUTPUT_INFO"] : []),
         ...(preflight ? ["PREFLIGHT"] : []),
+        ...(performance ? ["PERF"] : []),
       ],
     },
     hello,
@@ -1155,6 +1215,14 @@ export function createAerialKitStatusEvidence({
           ...preflight,
           observedAt: Number.isFinite(preflight.observedAtMs)
             ? new Date(preflight.observedAtMs).toISOString()
+            : null,
+        }
+      : null,
+    performance: performance
+      ? {
+          ...performance,
+          observedAt: Number.isFinite(performance.observedAtMs)
+            ? new Date(performance.observedAtMs).toISOString()
             : null,
         }
       : null,

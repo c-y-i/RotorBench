@@ -2795,6 +2795,7 @@
 .aerial-kit-live,
 .aerial-kit-rc,
 .aerial-kit-preflight,
+.aerial-kit-perf,
 .aerial-kit-parameters,
 .aerial-kit-hardware {
   display: grid;
@@ -2908,6 +2909,82 @@
   color: var(--ink-soft);
   font-size: 9px;
   line-height: 1.4;
+}
+
+.aerial-kit-perf > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.aerial-kit-perf-window {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.aerial-kit-perf-window > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-perf-window dt {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+
+.aerial-kit-perf-window dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-perf ol {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aerial-kit-perf li {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.aerial-kit-perf li span {
+  color: var(--ink-soft);
+  font-size: 9px;
+}
+
+.aerial-kit-perf li strong {
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.aerial-kit-perf li small {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
 }
 
 .aerial-kit-hardware > p {
@@ -4654,6 +4731,16 @@
 
   .aerial-kit-sensor-readings {
     grid-template-columns: 1fr;
+  }
+
+  .aerial-kit-perf-window,
+  .aerial-kit-perf ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aerial-kit-perf-window > div:last-child,
+  .aerial-kit-perf li:last-child {
+    grid-column: 1 / -1;
   }
 
   .aerial-kit-outputs > div {

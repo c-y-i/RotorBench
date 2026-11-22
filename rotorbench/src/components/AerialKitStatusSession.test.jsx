@@ -16,6 +16,7 @@ const HELLO_PAYLOAD_NO_RC = "0161657269616c6b69742d66343035002e003000c1010000920
 const HELLO_PAYLOAD_WITH_RC = "0161657269616c6b69742d66343035002e003000d1010000920638cf";
 const HELLO_PAYLOAD_TWO_PARAMETERS = "0161657269616c6b69742d663430350002003000f1010000920638cf";
 const HELLO_PAYLOAD_WITH_PREFLIGHT = "0161657269616c6b69742d663430350002003000f1030000920638cf";
+const HELLO_PAYLOAD_WITH_PERF = "0161657269616c6b69742d663430350002003000f1130000920638cf";
 const STATUS_REPLY = "aa550185160101030b7d00d8ff84038768111f3f0ef90228283c3c8598";
 
 function setSerial(value) {
@@ -51,7 +52,9 @@ function rcReply() {
   return buildAerialKitFrame(0x8d, payload);
 }
 
-function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC) {
+function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
+  perfStatus = 0,
+} = {}) {
   const waiters = [];
   const queued = [];
   const deliver = (value) => {
@@ -211,6 +214,30 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC) {
             ]),
           ));
         }
+      }
+      else if (command === 0x15) {
+        const payload = new Uint8Array(59);
+        const view = new DataView(payload.buffer);
+        payload[0] = perfStatus;
+        view.setUint32(1, 1200, true);
+        view.setUint32(5, 1190, true);
+        view.setUint16(9, 500, true);
+        view.setUint32(11, 503, true);
+        view.setUint32(15, 496, true);
+        view.setUint32(19, 612, true);
+        view.setUint32(23, 4, true);
+        view.setUint16(27, 12, true);
+        view.setUint16(29, 31, true);
+        view.setUint16(31, 72, true);
+        view.setUint32(33, 11, true);
+        [21, 22, 23, 24, 25].forEach((value, index) => {
+          view.setUint16(37 + index * 2, value, true);
+        });
+        [30, 31, 32, 33, 34].forEach((value, index) => {
+          view.setUint16(47 + index * 2, value, true);
+        });
+        view.setUint16(57, 123, true);
+        deliver(buildAerialKitFrame(0x95, payload));
       }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
@@ -469,6 +496,61 @@ test("reads the board preflight checklist without issuing a state change", async
   expect(commands).toContain(0x12);
   expect(commands).not.toContain(0x10);
   expect(commands).not.toContain(0x11);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads the loop performance window in board-reported units", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_WITH_PERF);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read performance window",
+  }));
+  expect(await screen.findByText("1200 loops · 4 late")).toBeInTheDocument();
+  expect(screen.getByText("503 / 496 / 612 µs")).toBeInTheDocument();
+  expect(screen.getByText("12.3% · 123‰")).toBeInTheDocument();
+  expect(screen.getByText("2.1 µs avg")).toBeInTheDocument();
+  expect(screen.getByText("30 µs max")).toBeInTheDocument();
+  expect(screen.getByText("IMU")).toBeInTheDocument();
+  expect(screen.getByText("Output")).toBeInTheDocument();
+
+  const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
+  expect(commands).toContain(0x15);
+  expect(commands).not.toContain(0x10);
+  expect(commands).not.toContain(0x11);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("keeps a zeroed profiler window distinct from measured performance", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_WITH_PERF, { perfStatus: 1 });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read performance window",
+  }));
+
+  expect(await screen.findByText("No profiler in this build"))
+    .toBeInTheDocument();
+  expect(screen.queryByText("503 / 496 / 612 µs")).not.toBeInTheDocument();
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
