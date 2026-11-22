@@ -610,6 +610,7 @@ export default function FlightControllerSetup({
   const receiverPathResolved = Boolean(
     selectedReceiver?.id && wiringPlan.documented,
   );
+  const pwmOnlyReceiver = wiringPlan.outputMode === "pwm-only";
   const serialPorts = useMemo(
     () => getSerialPortAssignments(config, profile),
     [config, profile],
@@ -670,12 +671,15 @@ export default function FlightControllerSetup({
           <div>
             <h3 id="fc-signal-path-title">Control path</h3>
             <p>
-              The selected radio endpoint reaches the planned airframe through
-              this serial and output chain.
+              {pwmOnlyReceiver
+                ? "The selected receiver publishes PWM outputs but no serial flight-controller route. Review the direct-output topology before planning a UART."
+                : "The selected radio endpoint reaches the planned airframe through this serial and output chain."}
             </p>
           </div>
           <span className={receiverPathResolved ? "is-resolved" : "is-unresolved"}>
-            {receiverPathResolved ? "Pins documented" : "Mapping incomplete"}
+            {pwmOnlyReceiver
+              ? "PWM outputs only"
+              : receiverPathResolved ? "Pins documented" : "Mapping incomplete"}
           </span>
         </div>
         <ol>
@@ -691,9 +695,17 @@ export default function FlightControllerSetup({
           <li>
             <Cable size={16} aria-hidden="true" />
             <span>
-              <small>Serial route</small>
-              <strong>{config.receiverUart || "UART not assigned"}</strong>
-              <b>{wiringPlan.pins} · {config.receiverBaud || "rate not set"} baud</b>
+              <small>{pwmOnlyReceiver ? "PWM outputs" : "Serial route"}</small>
+              <strong>
+                {pwmOnlyReceiver
+                  ? `${selectedReceiver?.pwmOutputs || 0} channels`
+                  : config.receiverUart || "UART not assigned"}
+              </strong>
+              <b>
+                {pwmOnlyReceiver
+                  ? wiringPlan.pins
+                  : `${wiringPlan.pins} · ${config.receiverBaud || "rate not set"} baud`}
+              </b>
             </span>
             <ArrowRight size={14} aria-hidden="true" />
           </li>
@@ -1136,11 +1148,31 @@ export default function FlightControllerSetup({
               <Cable size={18} aria-hidden="true" />
               <div>
                 <h3 id="fc-receiver-title">Receiver and serial</h3>
-                <p>CRSF carries control and telemetry. SBUS is input-only and may require an inverter.</p>
+                <p>
+                  {pwmOnlyReceiver
+                    ? "The product data exposes PWM outputs, not a serial route. Do not infer a CRSF UART or baud from the ELRS link."
+                    : "CRSF carries control and telemetry. SBUS is input-only and may require an inverter."}
+                </p>
               </div>
             </div>
 
-            <div className="fc-field-grid">
+            {pwmOnlyReceiver ? (
+              <div className="fc-pwm-output-note" role="note">
+                <Cable size={17} aria-hidden="true" />
+                <div>
+                  <strong>
+                    {selectedReceiver?.pwmOutputs || 0} PWM outputs · no serial route published
+                  </strong>
+                  <p>
+                    Use the receiver outputs directly for their documented devices,
+                    or select a receiver with published CRSF or SBUS serial output.
+                    A flight-controller UART, pins, and baud are intentionally not
+                    inferred here.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="fc-field-grid">
               <Field label="Protocol" htmlFor="fc-protocol">
                 <select id="fc-protocol" value={config.receiverProtocol} onChange={(event) => changeProtocol(event.target.value)}>
                   {RECEIVER_PROTOCOLS.map((item) => (
@@ -1180,7 +1212,8 @@ export default function FlightControllerSetup({
                   onChange={(event) => update("receiverBaud", numericInput(event.target.value))}
                 />
               </Field>
-            </div>
+              </div>
+            )}
 
             <details className="fc-wiring-plan">
               <summary>
@@ -1188,11 +1221,15 @@ export default function FlightControllerSetup({
                 <span>
                   <strong>Receiver wiring</strong>
                   <small>
-                    {wiringPlan.uart} · {wiringPlan.pins} · {wiringPlan.baud || "rate not set"} baud
+                    {pwmOnlyReceiver
+                      ? wiringPlan.pins
+                      : `${wiringPlan.uart} · ${wiringPlan.pins} · ${wiringPlan.baud || "rate not set"} baud`}
                   </small>
                 </span>
                 <em className={wiringPlan.documented ? "is-documented" : "is-unverified"}>
-                  {wiringPlan.documented ? "Pins documented" : "Verify pins"}
+                  {pwmOnlyReceiver
+                    ? "PWM only"
+                    : wiringPlan.documented ? "Pins documented" : "Verify pins"}
                 </em>
               </summary>
               <div>

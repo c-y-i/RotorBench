@@ -669,6 +669,39 @@ test("receiver wiring expands into a documented continuity checklist", () => {
     .toBeInTheDocument();
 });
 
+test("PWM-only receivers replace the serial route with direct-output guidance", () => {
+  render(
+    <FlightControllerSetup
+      selectedReceiver={{
+        id: "rx-er3c-i",
+        name: "RadioMaster ER3C-i",
+        protocol: "CRSF",
+        pwmOutputs: 3,
+        outputMode: "pwm",
+      }}
+    />,
+  );
+
+  const controlPath = screen.getByRole("region", { name: "Control path" });
+  expect(within(controlPath).getByText("PWM outputs only")).toBeInTheDocument();
+  expect(within(controlPath).getByText("PWM outputs")).toBeInTheDocument();
+  expect(within(controlPath).getByText("3 channels")).toBeInTheDocument();
+  expect(screen.getAllByText(
+    /3 PWM outputs · no serial route published/i,
+  ).length).toBeGreaterThan(0);
+  expect(screen.queryByLabelText("Receiver UART")).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Line rate")).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByText("Receiver wiring"));
+  const checklist = screen.getByRole("list", {
+    name: "Receiver wiring checklist",
+  });
+  expect(within(checklist).getByText("Use documented PWM receiver outputs"))
+    .toBeInTheDocument();
+  expect(within(checklist).queryByText("Receiver CRSF TX to FC RX"))
+    .not.toBeInTheDocument();
+});
+
 test("SBUS wiring adds the documented inverter step", () => {
   render(<FlightControllerSetup />);
   fireEvent.change(screen.getByLabelText("Board profile"), {
