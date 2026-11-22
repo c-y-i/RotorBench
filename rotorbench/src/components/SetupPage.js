@@ -5,9 +5,15 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import {
   Activity,
+  ArrowLeft,
   ArrowRight,
   Check,
   CircleStop,
@@ -97,8 +103,10 @@ function createRadioDraft(config, channelLimit, controlRoles) {
 export default function SetupPage() {
   const { currentBuild } = useBuild();
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const build = location.state?.build || currentBuild;
+  const returnToAnalysis = location.state?.returnTo === "analysis";
   const selectedFlightController = findPart(
     "flight_controllers",
     build?.componentIds?.flightControllerId,
@@ -839,6 +847,16 @@ export default function SetupPage() {
             Plan the flight-controller and radio link for this airframe. Nothing here
             connects to, flashes, or arms hardware.
           </p>
+          {returnToAnalysis && (
+            <button
+              type="button"
+              className="setup-return-link"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft size={15} aria-hidden="true" />
+              Back to analysis
+            </button>
+          )}
         </div>
         <div className={`setup-readiness ${setupReady ? "is-ready" : "needs-review"}`}>
           {setupReady ? <Check size={17} aria-hidden="true" /> : <ShieldAlert size={17} aria-hidden="true" />}

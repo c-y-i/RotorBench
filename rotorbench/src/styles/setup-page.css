@@ -26,6 +26,29 @@
   font-size: 14px;
 }
 
+.setup-return-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.setup-return-link:hover {
+  border-color: var(--ink);
+}
+
 .setup-readiness {
   display: flex;
   align-items: center;

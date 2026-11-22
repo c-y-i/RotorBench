@@ -753,7 +753,10 @@ export default function AnalysisPage() {
                   state: {
                     build,
                     ...(portablePlanComparison
-                      ? { focus: "fc-plan-summary" }
+                      ? {
+                          focus: "fc-plan-summary",
+                          returnTo: "analysis",
+                        }
                       : {}),
                   },
                 })}

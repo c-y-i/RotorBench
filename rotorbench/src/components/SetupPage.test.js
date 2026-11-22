@@ -147,6 +147,7 @@ function renderSetup(initialEntries = ["/setup"]) {
       <BuildProvider>
         <Routes>
           <Route path="/setup" element={<SetupPage />} />
+          <Route path="/analysis" element={<div>Analysis route</div>} />
         </Routes>
       </BuildProvider>
     </MemoryRouter>,
@@ -212,11 +213,27 @@ test("renders the hardware planning page and switches to radio setup", async () 
 test("focuses the flight-controller plan summary from an analysis handoff", async () => {
   renderSetup([{
     pathname: "/setup",
-    state: { focus: "fc-plan-summary" },
+    state: { focus: "fc-plan-summary", returnTo: "analysis" },
   }]);
 
   const heading = await screen.findByRole("heading", { name: "Plan summary" });
   await waitFor(() => expect(heading).toHaveFocus());
+  expect(screen.getByRole("button", { name: "Back to analysis" })).toBeInTheDocument();
+});
+
+test("returns to analysis through history after a focused plan handoff", async () => {
+  renderSetup([
+    "/analysis",
+    {
+      pathname: "/setup",
+      state: { focus: "fc-plan-summary", returnTo: "analysis" },
+    },
+  ]);
+
+  fireEvent.click(await screen.findByRole("button", {
+    name: "Back to analysis",
+  }));
+  expect(await screen.findByText("Analysis route")).toBeInTheDocument();
 });
 
 test("does not create setup drafts until a plan changes", () => {
