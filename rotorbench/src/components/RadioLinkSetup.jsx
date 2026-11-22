@@ -62,6 +62,7 @@ import {
 import { getBindingIdentity } from "../utils/elrsBinding";
 import { buildRadioEndpointPlan } from "../utils/radioEndpointPlan";
 import SetupSectionNav from "./SetupSectionNav";
+import RadioLinkTiming from "./RadioLinkTiming";
 import "../styles/radio-setup.css";
 
 function readSavedPlan(storageKey) {
@@ -89,6 +90,7 @@ export default function RadioLinkSetup({
   flightControllerName = "",
   channelLimit = 16,
   controlRoles = null,
+  receiverTimeoutMs = null,
   onChange,
   onSave,
   storageKey = RADIO_STORAGE_KEY,
@@ -909,6 +911,12 @@ export default function RadioLinkSetup({
                 </select>
               </label>
             </div>
+
+            <RadioLinkTiming
+              packetRateMode={config.packetRateMode}
+              telemetryRatio={config.telemetryRatio}
+              receiverTimeoutMs={receiverTimeoutMs}
+            />
 
             <div className="radio-confirmations">
               <label>

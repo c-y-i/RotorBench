@@ -1389,6 +1389,7 @@ export default function SetupPage() {
             flightControllerName={selectedFlightController?.name || ""}
             channelLimit={radioChannelLimit}
             controlRoles={radioControlRoles}
+            receiverTimeoutMs={fcPlan.rcTimeoutMs}
             onChange={setRadioPlan}
             onSave={saveRadioPlan}
             storageKey={radioStorageKey}

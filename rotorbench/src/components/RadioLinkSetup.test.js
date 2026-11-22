@@ -18,6 +18,33 @@ test("renders the radio plan without claiming a hardware connection", () => {
   expect(screen.getByRole("button", { name: "Summary" })).toBeInTheDocument();
 });
 
+test("shows nominal control, telemetry, and timeout timing", () => {
+  const { rerender } = render(
+    <RadioLinkSetup
+      value={{ ...DEFAULT_RADIO_CONFIG, packetRateMode: "250", telemetryRatio: "std" }}
+      receiverTimeoutMs={250}
+    />,
+  );
+
+  const timing = screen.getByRole("region", { name: "Link timing" });
+  expect(within(timing).getByText("4.0 ms")).toBeInTheDocument();
+  expect(within(timing).getByText("256 ms")).toBeInTheDocument();
+  expect(within(timing).getByText("62.50 frames")).toBeInTheDocument();
+  expect(within(timing).getByText(/does not measure airtime/i))
+    .toBeInTheDocument();
+
+  rerender(
+    <RadioLinkSetup
+      value={{ ...DEFAULT_RADIO_CONFIG, packetRateMode: "25", telemetryRatio: "1:16" }}
+      receiverTimeoutMs={50}
+    />,
+  );
+  expect(within(timing).getByText("40.0 ms")).toBeInTheDocument();
+  expect(within(timing).getByText("640 ms")).toBeInTheDocument();
+  expect(within(timing).getByText("1.25 frames")).toBeInTheDocument();
+  expect(within(timing).getByText("Review timeout")).toBeInTheDocument();
+});
+
 test("jumps from the section strip to the radio plan summary", () => {
   render(<RadioLinkSetup />);
 
