@@ -193,6 +193,9 @@ test("captures bytes only after an explicit port selection and never writes", as
   expect(screen.getByText("9 valid · 0 CRC errors")).toBeInTheDocument();
   expect(screen.getByText("88%")).toBeInTheDocument();
   expect(screen.getByText("-90 dBm")).toBeInTheDocument();
+  expect(screen.getByText("Armed state unknown")).toBeInTheDocument();
+  expect(screen.getByText(/cannot prove the aircraft is disarmed/i))
+    .toBeInTheDocument();
   expect(screen.getByText("ANGLE")).toBeInTheDocument();
   expect(screen.getByText(/16\.8 V · 12\.3 A/)).toBeInTheDocument();
   expect(screen.getByText(/88% · 1500 mAh/)).toBeInTheDocument();

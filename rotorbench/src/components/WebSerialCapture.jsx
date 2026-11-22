@@ -12,6 +12,7 @@ import {
   CircleStop,
   Download,
   RadioTower,
+  ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
 import {
@@ -634,6 +635,17 @@ const WebSerialCapture = forwardRef(function WebSerialCapture({
                 <span>
                   {crsfDiagnostics.validFrames} valid
                   {crsfDiagnostics.crcErrors ? ` · ${crsfDiagnostics.crcErrors} CRC errors` : " · 0 CRC errors"}
+                </span>
+              </div>
+
+              <div className="serial-armed-state">
+                <ShieldAlert size={17} aria-hidden="true" />
+                <span>
+                  <strong>Armed state unknown</strong>
+                  <small>
+                    Read-only CRSF capture cannot prove the aircraft is disarmed.
+                    Keep props off and treat arming state as unknown.
+                  </small>
                 </span>
               </div>
 

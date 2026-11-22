@@ -2443,6 +2443,40 @@
   text-transform: uppercase;
 }
 
+.serial-armed-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 11px;
+  color: #6a3508;
+  background: #fff1de;
+  border: 1px solid #e8c89a;
+  border-radius: 5px;
+}
+
+.serial-armed-state > svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.serial-armed-state > span {
+  display: grid;
+  gap: 2px;
+}
+
+.serial-armed-state strong {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.serial-armed-state small {
+  color: #6a3508;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .serial-crsf-evidence-ladder {
   display: flex;
   flex-wrap: wrap;
