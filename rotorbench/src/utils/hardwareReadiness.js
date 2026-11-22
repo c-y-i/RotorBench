@@ -59,6 +59,7 @@ export function summarizeHardwareReadiness({
   flightController = null,
   receiver = null,
   buildMotorCount = null,
+  buildServoCount = null,
   storage = typeof window !== "undefined" ? window.localStorage : null,
 }) {
   const fallbackFc = createDefaultFlightControllerConfig(flightController, receiver);
@@ -219,6 +220,43 @@ export function summarizeHardwareReadiness({
           travelUs: fcPlan[servo.travelKey] ?? null,
         }))
     : [];
+  const fcServoOutputCount = fcServoOutputs.length;
+  const servoOutputCoverageStatus = !Number.isFinite(Number(buildServoCount))
+    || Number(buildServoCount) <= 0
+    ? "not-applicable"
+    : !fcPlanConfigured
+      ? "unconfigured"
+      : fcAirframeSpec?.servos > 0 && fcServoOutputCount === 0
+        ? "no-map"
+        : fcServoOutputCount < Number(buildServoCount)
+          ? "under-mapped"
+          : fcServoOutputCount > Number(buildServoCount)
+            ? "extra"
+            : "complete";
+  const servoOutputCoverageLabel = servoOutputCoverageStatus === "complete"
+    ? `${fcServoOutputCount}/${buildServoCount} outputs mapped`
+    : servoOutputCoverageStatus === "under-mapped"
+      ? `${fcServoOutputCount}/${buildServoCount} outputs mapped`
+      : servoOutputCoverageStatus === "extra"
+        ? `${fcServoOutputCount}/${buildServoCount} outputs mapped`
+        : servoOutputCoverageStatus === "no-map"
+          ? "Servo map unavailable"
+          : servoOutputCoverageStatus === "unconfigured"
+            ? "Servo map not saved"
+            : null;
+  const servoOutputCoverageDetail = servoOutputCoverageStatus === "complete"
+    ? "The saved firmware map covers every catalogued control-surface servo."
+    : servoOutputCoverageStatus === "under-mapped"
+      ? `${Number(buildServoCount) - fcServoOutputCount} catalogued servo output${
+        Number(buildServoCount) - fcServoOutputCount === 1 ? " remains" : "s remain"
+      } unassigned by the saved firmware mixer.`
+      : servoOutputCoverageStatus === "extra"
+        ? "The saved firmware map exposes more servo outputs than the catalogued hardware set."
+        : servoOutputCoverageStatus === "no-map"
+          ? "The selected firmware profile does not bundle a servo-output map."
+          : servoOutputCoverageStatus === "unconfigured"
+            ? "Save a flight-controller plan in Setup to map the catalogued servo hardware."
+            : null;
 
   return {
     status,
@@ -230,6 +268,7 @@ export function summarizeHardwareReadiness({
     issueCount,
     blockerCount,
     buildMotorCount,
+    buildServoCount,
     fcPlan,
     radioPlan,
     profile,
@@ -343,6 +382,10 @@ export function summarizeHardwareReadiness({
       ? fcPlan.pidDenom
       : null,
     fcServoOutputs,
+    fcServoOutputCount,
+    servoOutputCoverageStatus,
+    servoOutputCoverageLabel,
+    servoOutputCoverageDetail,
     hardwareVerified: false,
   };
 }
@@ -404,6 +447,11 @@ export function sanitizeHardwareReadiness(readiness) {
     fcMotorOutputs: Array.isArray(readiness.fcMotorOutputs)
       ? readiness.fcMotorOutputs
       : [],
+    buildServoCount: readiness.buildServoCount ?? null,
+    fcServoOutputCount: readiness.fcServoOutputCount ?? 0,
+    servoOutputCoverageStatus: readiness.servoOutputCoverageStatus || null,
+    servoOutputCoverageLabel: readiness.servoOutputCoverageLabel || null,
+    servoOutputCoverageDetail: readiness.servoOutputCoverageDetail || null,
     fcPropellerDirection: readiness.fcPropellerDirection || null,
     fcMotorLayoutSource: readiness.fcMotorLayoutSource || null,
     fcBatteryDividerRatio: readiness.fcBatteryDividerRatio ?? null,

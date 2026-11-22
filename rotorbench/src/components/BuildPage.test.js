@@ -421,6 +421,8 @@ test("the T1 Ranger starter loads a two-motor wing assembly", async () => {
   expect(within(servos).getByRole("link", {
     name: /open servo source/i,
   })).toHaveAttribute("href", expect.stringContaining("7g-digital-metal-gear-servo"));
+  expect(within(servos).getByLabelText("Servo output coverage"))
+    .toHaveTextContent("Servo map not saved");
 });
 
 test("a saved Aerial Kit wing plan maps the T1 left and right outputs", async () => {
@@ -478,6 +480,13 @@ test("a saved Aerial Kit wing plan maps the T1 left and right outputs", async ()
   expect(screen.getByText("OUT 2")).toBeVisible();
   expect(screen.getByText(/saved flight-controller wing mixer plan/i))
     .toBeVisible();
+  const servos = screen.getByRole("region", {
+    name: "Control-surface hardware",
+  });
+  expect(within(servos).getByLabelText("Servo output coverage"))
+    .toHaveTextContent("2/3 outputs mapped");
+  expect(within(servos).getByLabelText("Servo output coverage"))
+    .toHaveTextContent("1 catalogued servo output remains unassigned");
 });
 
 test("the 5.5-inch XING2 6S preset exposes estimated geometry honestly", async () => {

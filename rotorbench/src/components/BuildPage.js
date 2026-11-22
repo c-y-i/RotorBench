@@ -745,23 +745,25 @@ export default function BuildPage() {
     ),
     [catalogAssemblySpec, geometryOverrides],
   );
+  const frameServoHardware = useMemo(
+    () => getFrameServoHardware(selectedFramePart),
+    [selectedFramePart],
+  );
   const hardwareReadiness = useMemo(
     () => summarizeHardwareReadiness({
       buildId: workingBuildId,
       flightController: selectedFlightControllerPart,
       receiver: selectedReceiverPart,
       buildMotorCount: selectedFramePart?.motorCount ?? null,
+      buildServoCount: frameServoHardware?.quantity ?? null,
     }),
     [
       selectedFlightControllerPart,
       selectedFramePart?.motorCount,
       selectedReceiverPart,
+      frameServoHardware?.quantity,
       workingBuildId,
     ],
-  );
-  const frameServoHardware = useMemo(
-    () => getFrameServoHardware(selectedFramePart),
-    [selectedFramePart],
   );
   const navigationSafetyLabel = describeNavigationSafety(hardwareReadiness);
   const missionControlsLabel = describeMissionControls(hardwareReadiness);
@@ -1814,6 +1816,28 @@ export default function BuildPage() {
                   </a>
                 )}
               </div>
+              {hardwareReadiness.servoOutputCoverageLabel && (
+                <div
+                  className={`frame-servo-output-coverage is-${hardwareReadiness.servoOutputCoverageStatus}`}
+                  aria-label="Servo output coverage"
+                >
+                  <Cable size={14} aria-hidden="true" />
+                  <span>
+                    <strong>{hardwareReadiness.servoOutputCoverageLabel}</strong>
+                    <small>{hardwareReadiness.servoOutputCoverageDetail}</small>
+                  </span>
+                  <em>
+                    {hardwareReadiness.servoOutputCoverageStatus === "complete"
+                      ? "Mapped"
+                      : hardwareReadiness.servoOutputCoverageStatus === "under-mapped"
+                        || hardwareReadiness.servoOutputCoverageStatus === "extra"
+                        ? "Review"
+                        : hardwareReadiness.servoOutputCoverageStatus === "no-map"
+                          ? "Unavailable"
+                          : "Plan"}
+                  </em>
+                </div>
+              )}
               <p>
                 Cable allocation, dimensions, voltage range, and estimated
                 positions require physical confirmation. Servo direction and

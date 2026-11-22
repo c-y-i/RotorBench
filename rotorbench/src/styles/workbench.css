@@ -4211,6 +4211,57 @@
   text-transform: uppercase;
 }
 
+.frame-servo-output-coverage {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 7px;
+  padding: 8px 9px;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  border: 1px solid #acd5cd;
+  border-radius: 5px;
+}
+
+.frame-servo-output-coverage > svg {
+  margin-top: 1px;
+}
+
+.frame-servo-output-coverage > span {
+  display: grid;
+  gap: 2px;
+}
+
+.frame-servo-output-coverage strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.frame-servo-output-coverage small {
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.frame-servo-output-coverage > em {
+  padding: 3px 5px;
+  color: currentColor;
+  background: var(--surface-raised);
+  border-radius: 3px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.frame-servo-output-coverage.is-under-mapped,
+.frame-servo-output-coverage.is-extra {
+  color: var(--warn);
+  background: var(--accent-soft);
+  border-color: #e2bd9e;
+}
+
 .frame-servo-hardware > p {
   margin: 0;
   color: var(--ink-soft);

@@ -128,6 +128,7 @@ export function summarizeBuild(build) {
     flightController: byCategory.flight_controllers,
     receiver: byCategory.receivers,
     buildMotorCount: byCategory.frames?.motorCount ?? null,
+    buildServoCount: frameServoHardware?.quantity ?? null,
   });
   const benchEvidence = summarizeBenchEvidenceAttachment(
     readBenchEvidenceAttachment(build?.id),

@@ -8,6 +8,7 @@ import { summarizeHardwareReadiness } from "../utils/hardwareReadiness";
 import { summarizeBuild } from "../utils/buildComparison";
 import { summarizeAssemblyInterfaces } from "../utils/physicalCompatibility";
 import { getFrameMountPointsMm } from "../assembly/assemblyTransforms";
+import { getFrameServoHardware } from "../utils/frameHardware";
 import {
   hasCatalogModel,
   resolveModelForComponent,
@@ -369,8 +370,9 @@ export default function HomePage() {
       flightController: fc,
       receiver,
       buildMotorCount: frame?.motorCount ?? null,
+      buildServoCount: getFrameServoHardware(frame)?.quantity ?? null,
     }),
-    [currentBuild?.id, fc, frame?.motorCount, receiver],
+    [currentBuild?.id, fc, frame, receiver],
   );
 
   return (
