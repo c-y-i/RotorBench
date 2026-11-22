@@ -95,6 +95,59 @@ test("comparison surfaces published takeoff-envelope fit", async () => {
   expect(await getA11yViolations(container)).toEqual([]);
 });
 
+test("comparison surfaces ArduPilot receiver parameters", async () => {
+  const h743Build = {
+    ...build,
+    id: "h743-compare-ui",
+    name: "H743 compare",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-h743-wing-v3",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  for (const id of ["h743-left", "h743-right"]) {
+    localStorage.setItem(
+      `rotorbench:hardware-plan:${id}:fc`,
+      JSON.stringify({
+        planVersion: 3,
+        selectedFlightControllerId: "fc-matek-h743-wing-v3",
+        selectedReceiverId: "rx-radiomaster-rp4td-m",
+        firmwareFamily: "ardupilot",
+        profileId: "matek-h743-wing-v3-ardupilot",
+        receiverProtocol: "crsf",
+        receiverUart: "UART6",
+      }),
+    );
+  }
+  const { container } = render(
+    <MemoryRouter
+      initialEntries={[{
+        pathname: "/compare",
+        state: {
+          builds: [
+            { ...h743Build, id: "h743-left", name: "H743 left" },
+            { ...h743Build, id: "h743-right", name: "H743 right" },
+          ],
+        },
+      }]}
+    >
+      <ComparePage />
+    </MemoryRouter>,
+  );
+
+  expect(screen.getByRole("rowheader", {
+    name: "ArduPilot receiver parameters",
+  })).toBeInTheDocument();
+  expect(screen.getAllByText("BRD_ALT_CONFIG=1 · SERIAL7_PROTOCOL=23"))
+    .toHaveLength(2);
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
 test("marks changed rows and can show only differences", () => {
   const changed = {
     ...build,

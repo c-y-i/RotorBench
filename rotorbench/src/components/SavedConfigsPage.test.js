@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SavedConfigsPage from "./SavedConfigsPage";
 import { createBenchEvidenceScope } from "../utils/benchEvidenceAttachment";
+import { getA11yViolations } from "../test/a11y";
 
 const offlineBuild = {
   id: "offline-build",
@@ -183,6 +184,50 @@ test("saved T1 builds expose incomplete servo output coverage", async () => {
 
   expect(await screen.findByText("2/3 outputs mapped")).toBeInTheDocument();
   expect(screen.getByText("+6 g over 500 g envelope")).toBeInTheDocument();
+});
+
+test("saved H743 builds expose ArduPilot receiver parameters", async () => {
+  const h743Build = {
+    ...offlineBuild,
+    id: "h743-saved-params",
+    name: "H743 saved parameters",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-h743-wing-v3",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  localStorage.setItem("offlineBuilds", JSON.stringify([h743Build]));
+  localStorage.setItem(
+    "rotorbench:hardware-plan:h743-saved-params:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-matek-h743-wing-v3",
+      selectedReceiverId: "rx-radiomaster-rp4td-m",
+      firmwareFamily: "ardupilot",
+      profileId: "matek-h743-wing-v3-ardupilot",
+      receiverProtocol: "crsf",
+      receiverUart: "UART6",
+    }),
+  );
+
+  const { container } = render(
+    <MemoryRouter>
+      <SavedConfigsPage />
+    </MemoryRouter>,
+  );
+
+  expect(await screen.findByText("H743 saved parameters")).toBeInTheDocument();
+  expect(screen.getByText("BRD_ALT_CONFIG=1 · SERIAL7_PROTOCOL=23"))
+    .toHaveAttribute(
+      "title",
+      "Documented receiver parameters; no controller writes performed",
+    );
+  expect(await getA11yViolations(container)).toEqual([]);
 });
 
 test("malformed offline build storage recovers to an empty state", async () => {
