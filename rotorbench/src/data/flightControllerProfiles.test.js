@@ -260,6 +260,10 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     ffJitterFactor: 7,
     ffBoost: 15,
     ffMaxRateLimit: 90,
+    rateFfRoll: 0,
+    rateFfPitch: 0,
+    rateFfYaw: 0,
+    itermRelaxHz: 0,
   });
   const issues = validateFlightControllerConfig({
     ...config,
@@ -328,6 +332,20 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
       code: "ffSmoothFactor-range",
     }),
   ]));
+  expect(validateFlightControllerConfig({
+    ...config,
+    rateFfRoll: 2.1,
+    itermRelaxHz: 101,
+  })).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      severity: "error",
+      code: "rateFfRoll-range",
+    }),
+    expect.objectContaining({
+      severity: "error",
+      code: "iterm-relax-range",
+    }),
+  ]));
   expect(buildFlightControllerSummary(
     {
       ...config,
@@ -347,6 +365,17 @@ test("Aerial Kit plans carry source filter defaults and review inverted bounds",
     { radioLinkRateHz: 250, radioPacketRateMode: "250" },
   ).join("\n")).toContain(
     "Stick feed-forward: Roll 0.012; smooth factor 65, nominal 0.35 PT1 coefficient at 250 Hz",
+  );
+  expect(buildFlightControllerSummary(
+    {
+      ...config,
+      rateFfRoll: 0.125,
+      rateFfPitch: 0.125,
+      itermRelaxHz: 15,
+    },
+    getBoardProfile(config.profileId),
+  ).join("\n")).toContain(
+    "PID response: static feed-forward Roll 0.125, Pitch 0.125; I-term relax setpoint low-pass 15 Hz",
   );
 });
 

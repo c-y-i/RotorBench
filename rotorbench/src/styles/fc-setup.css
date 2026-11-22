@@ -1101,7 +1101,10 @@
   white-space: nowrap;
 }
 
-.fc-feed-forward.is-planned > summary em {
+.fc-feed-forward.is-planned > summary em,
+.fc-feed-forward.is-feed-forward > summary em,
+.fc-feed-forward.is-relax > summary em,
+.fc-feed-forward.is-combined > summary em {
   color: var(--brand-strong);
   background: var(--brand-soft);
   border-color: transparent;
@@ -1151,7 +1154,10 @@
   font-size: 12px;
 }
 
-.fc-feed-forward.is-planned .fc-feed-forward-status strong {
+.fc-feed-forward.is-planned .fc-feed-forward-status strong,
+.fc-feed-forward.is-feed-forward .fc-feed-forward-status strong,
+.fc-feed-forward.is-relax .fc-feed-forward-status strong,
+.fc-feed-forward.is-combined .fc-feed-forward-status strong {
   color: var(--brand-strong);
 }
 

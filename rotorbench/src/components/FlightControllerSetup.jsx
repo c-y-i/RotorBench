@@ -59,6 +59,7 @@ import { buildAerialKitFilterPlan } from "../utils/aerialKitFilters";
 import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
 import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
 import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
+import { buildAerialKitPidResponsePlan } from "../utils/aerialKitPidResponse";
 import SetupSectionNav from "./SetupSectionNav";
 import "../styles/fc-setup.css";
 
@@ -143,6 +144,10 @@ const FLIGHT_CONTROLLER_ISSUE_TARGETS = Object.freeze({
   "ffJitterFactor-range": { id: "fc-ff-jitter", label: "feed-forward jitter reduction" },
   "ffBoost-range": { id: "fc-ff-boost", label: "feed-forward boost" },
   "ffMaxRateLimit-range": { id: "fc-ff-limit", label: "feed-forward rate limit" },
+  "rateFfRoll-range": { id: "fc-rate-ff-roll", label: "roll static feed-forward" },
+  "rateFfPitch-range": { id: "fc-rate-ff-pitch", label: "pitch static feed-forward" },
+  "rateFfYaw-range": { id: "fc-rate-ff-yaw", label: "yaw static feed-forward" },
+  "iterm-relax-range": { id: "fc-iterm-relax", label: "I-term relax cutoff" },
   "max-tilt-range": { id: "fc-max-tilt", label: "maximum angle-mode tilt" },
   "yaw-rate-range": { id: "fc-yaw-rate", label: "full-stick yaw rate" },
   "max-dt-range": { id: "fc-max-dt", label: "integration-step cap" },
@@ -904,6 +909,117 @@ function RcSmoothingPanel({
   );
 }
 
+function PidResponsePanel({
+  config,
+  plan,
+  onUpdate,
+}) {
+  const statusLabel = {
+    off: "Off",
+    "feed-forward": "Static FF staged",
+    relax: "I-term relax staged",
+    combined: "Both staged",
+  }[plan.status];
+  const axisValue = (id) => plan.axes.find((axis) => axis.id === id)?.gain ?? 0;
+
+  return (
+    <details className={`fc-feed-forward fc-pid-response is-${plan.status}`}>
+      <summary>
+        <span>
+          <strong>PID response</strong>
+          <small>
+            Static feed-forward and I-term relax · no gains are recommended
+          </small>
+        </span>
+        <em>{statusLabel}</em>
+      </summary>
+      <div className="fc-feed-forward-body">
+        <div className="fc-feed-forward-status" role="note">
+          <span>
+            <small>Rate PID additions</small>
+            <strong>{statusLabel}</strong>
+          </span>
+          <dl>
+            <div>
+              <dt>Roll FF</dt>
+              <dd>{axisValue("roll") || "Off"}</dd>
+            </div>
+            <div>
+              <dt>Pitch FF</dt>
+              <dd>{axisValue("pitch") || "Off"}</dd>
+            </div>
+            <div>
+              <dt>Yaw FF</dt>
+              <dd>{axisValue("yaw") || "Off"}</dd>
+            </div>
+            <div>
+              <dt>I-term relax</dt>
+              <dd>{plan.itermRelaxHz ? `${plan.itermRelaxHz} Hz` : "Off"}</dd>
+            </div>
+          </dl>
+        </div>
+        <div className="fc-field-grid">
+          {[
+            ["rateFfRoll", "Roll static FF", "fc-rate-ff-roll"],
+            ["rateFfPitch", "Pitch static FF", "fc-rate-ff-pitch"],
+            ["rateFfYaw", "Yaw static FF", "fc-rate-ff-yaw"],
+          ].map(([key, label, id]) => (
+            <Field
+              key={key}
+              label={label}
+              htmlFor={id}
+              hint="0 to 2; torque per commanded radian per second"
+              hintId={`${id}-hint`}
+            >
+              <input
+                id={id}
+                type="number"
+                min="0"
+                max="2"
+                step="0.001"
+                aria-invalid={filterInputInvalid(config[key])}
+                aria-describedby={`${id}-hint`}
+                value={filterInputValue(config[key])}
+                onChange={(event) => onUpdate(
+                  key,
+                  filterInputNumber(event.target.value),
+                )}
+              />
+            </Field>
+          ))}
+          <Field
+            label="I-term relax cutoff"
+            htmlFor="fc-iterm-relax"
+            hint="0 disables; 0 to 100 Hz setpoint low-pass"
+            hintId="fc-iterm-relax-hint"
+          >
+            <input
+              id="fc-iterm-relax"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              aria-invalid={filterInputInvalid(config.itermRelaxHz)}
+              aria-describedby="fc-iterm-relax-hint"
+              value={filterInputValue(config.itermRelaxHz)}
+              onChange={(event) => onUpdate(
+                "itermRelaxHz",
+                filterInputNumber(event.target.value),
+              )}
+            />
+          </Field>
+        </div>
+        <p className="fc-feed-forward-note">
+          Static feed-forward adds torque directly from the commanded rate.
+          I-term relax low-passes the setpoint so fast stick changes reduce
+          integral growth. These are tuning controls, not measured airframe
+          gains.
+        </p>
+      </div>
+    </details>
+  );
+}
+
 function FeedForwardPanel({
   config,
   plan,
@@ -1221,6 +1337,10 @@ export default function FlightControllerSetup({
       linkRateLabel: radioPacketRateMode,
     }),
     [config, radioLinkRateHz, radioPacketRateMode],
+  );
+  const pidResponsePlan = useMemo(
+    () => buildAerialKitPidResponsePlan(config),
+    [config],
   );
   const aerialKitRoleKeys = new Set(
     aerialKitControlRoles.map((role) => role.key),
@@ -2196,6 +2316,11 @@ export default function FlightControllerSetup({
                   </div>
                 </div>
               </div>
+              <PidResponsePanel
+                config={config}
+                plan={pidResponsePlan}
+                onUpdate={(key, nextValue) => update(key, nextValue)}
+              />
               <FeedForwardPanel
                 config={config}
                 plan={feedForwardPlan}

@@ -8,6 +8,7 @@ import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
 import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
 import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
+import { AERIALKIT_PID_RESPONSE_FIELDS } from "./aerialKitPidResponse";
 
 export const AERIALKIT_AIRFRAME_IDS = {
   quadx: 0,
@@ -190,6 +191,11 @@ export function buildFlightControllerCommands(
     Number(config.ffBoost) <= 50 &&
     Number(config.ffMaxRateLimit) >= 0 &&
     Number(config.ffMaxRateLimit) <= 150 &&
+    AERIALKIT_PID_RESPONSE_FIELDS.every(({ key }) => finite(config[key])) &&
+    [config.rateFfRoll, config.rateFfPitch, config.rateFfYaw]
+      .every((value) => Number(value) >= 0 && Number(value) <= 2) &&
+    Number(config.itermRelaxHz) >= 0 &&
+    Number(config.itermRelaxHz) <= 100 &&
     finite(config.maxRateDps) &&
     finite(config.rateCenterDps) &&
     finite(config.rateExpo) &&
@@ -290,6 +296,9 @@ export function buildFlightControllerCommands(
       `set ${runtimeName} ${Number(config[key])}`
     )),
     ...AERIALKIT_FEED_FORWARD_FIELDS.map(({ key, runtimeName }) => (
+      `set ${runtimeName} ${Number(config[key])}`
+    )),
+    ...AERIALKIT_PID_RESPONSE_FIELDS.map(({ key, runtimeName }) => (
       `set ${runtimeName} ${Number(config[key])}`
     )),
     `set max_rate_dps ${Number(config.maxRateDps)}`,

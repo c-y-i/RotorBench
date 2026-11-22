@@ -48,6 +48,10 @@ import {
   AERIALKIT_FEED_FORWARD_FIELDS,
   buildAerialKitFeedForwardPlan,
 } from "./aerialKitFeedForward";
+import {
+  AERIALKIT_PID_RESPONSE_FIELDS,
+  buildAerialKitPidResponsePlan,
+} from "./aerialKitPidResponse";
 
 function readPlan(storage, key) {
   if (!storage) return null;
@@ -152,6 +156,9 @@ export function summarizeHardwareReadiness({
         linkRateHz: nominalRadioControlRateHz,
         linkRateLabel: radioPlanConfigured ? radioPlan.packetRateMode : null,
       })
+    : null;
+  const fcPidResponsePlan = fcPlan.firmwareFamily === "aerialkit"
+    ? buildAerialKitPidResponsePlan(fcPlan)
     : null;
   const radioWarnings = radioPlanConfigured
     ? buildRadioWarnings(radioPlan, {
@@ -480,6 +487,14 @@ export function summarizeHardwareReadiness({
     fcFeedForwardLinkRateHz: fcFeedForwardPlan?.linkRateHz ?? null,
     fcFeedForwardTauMs: fcFeedForwardPlan?.tauMs ?? null,
     fcFeedForwardFilterK: fcFeedForwardPlan?.filterK ?? null,
+    ...Object.fromEntries(AERIALKIT_PID_RESPONSE_FIELDS.map(({ key }) => [
+      `fc${key[0].toUpperCase()}${key.slice(1)}`,
+      fcPlan.firmwareFamily === "aerialkit" ? fcPlan[key] : null,
+    ])),
+    fcPidResponseStatus: fcPidResponsePlan?.status ?? null,
+    fcStaticFeedForwardEnabled:
+      fcPidResponsePlan?.staticFeedForwardEnabled ?? null,
+    fcItermRelaxEnabled: fcPidResponsePlan?.itermRelaxEnabled ?? null,
     fcMaxRateDps: fcPlan.firmwareFamily === "aerialkit"
       ? fcPlan.maxRateDps
       : null,
@@ -675,6 +690,14 @@ export function sanitizeHardwareReadiness(readiness) {
     fcFeedForwardLinkRateHz: readiness.fcFeedForwardLinkRateHz ?? null,
     fcFeedForwardTauMs: readiness.fcFeedForwardTauMs ?? null,
     fcFeedForwardFilterK: readiness.fcFeedForwardFilterK ?? null,
+    ...Object.fromEntries(AERIALKIT_PID_RESPONSE_FIELDS.map(({ key }) => {
+      const readinessKey = `fc${key[0].toUpperCase()}${key.slice(1)}`;
+      return [readinessKey, readiness[readinessKey] ?? null];
+    })),
+    fcPidResponseStatus: readiness.fcPidResponseStatus || null,
+    fcStaticFeedForwardEnabled:
+      readiness.fcStaticFeedForwardEnabled ?? null,
+    fcItermRelaxEnabled: readiness.fcItermRelaxEnabled ?? null,
     fcMaxRateDps: readiness.fcMaxRateDps ?? null,
     fcRateCenterDps: readiness.fcRateCenterDps ?? null,
     fcRateExpo: readiness.fcRateExpo ?? null,

@@ -5,6 +5,7 @@ import {
 import { buildAerialKitNotchPlan } from "../utils/aerialKitNotch";
 import { buildAerialKitRcSmoothingPlan } from "../utils/aerialKitRcSmoothing";
 import { buildAerialKitFeedForwardPlan } from "../utils/aerialKitFeedForward";
+import { buildAerialKitPidResponsePlan } from "../utils/aerialKitPidResponse";
 
 export const FIRMWARE_FAMILIES = [
   {
@@ -1783,6 +1784,10 @@ export function createDefaultFlightControllerConfig(
     ffJitterFactor: 7,
     ffBoost: 15,
     ffMaxRateLimit: 90,
+    rateFfRoll: 0,
+    rateFfPitch: 0,
+    rateFfYaw: 0,
+    itermRelaxHz: 0,
     maxRateDps: 700,
     rateCenterDps: 0,
     rateExpo: 0,
@@ -2287,6 +2292,34 @@ export function validateFlightControllerConfig(
         });
       }
     });
+    [
+      ["rateFfRoll", "Roll"],
+      ["rateFfPitch", "Pitch"],
+      ["rateFfYaw", "Yaw"],
+    ].forEach(([key, axis]) => {
+      if (
+        !finite(config[key])
+        || Number(config[key]) < 0
+        || Number(config[key]) > 2
+      ) {
+        issues.push({
+          severity: "error",
+          code: `${key}-range`,
+          message: `${axis} static feed-forward gain must be between 0 and 2; 0 disables that axis.`,
+        });
+      }
+    });
+    if (
+      !finite(config.itermRelaxHz)
+      || Number(config.itermRelaxHz) < 0
+      || Number(config.itermRelaxHz) > 100
+    ) {
+      issues.push({
+        severity: "error",
+        code: "iterm-relax-range",
+        message: "I-term relax cutoff must be between 0 and 100 Hz; 0 disables relax.",
+      });
+    }
     if (
       !finite(config.maxRateDps)
       || Number(config.maxRateDps) < 10
@@ -3035,6 +3068,9 @@ export function buildFlightControllerSummary(
         linkRateLabel: radioPacketRateMode,
       })
     : null;
+  const pidResponsePlan = config.firmwareFamily === "aerialkit"
+    ? buildAerialKitPidResponsePlan(config)
+    : null;
 
   return [
     `Firmware: ${family?.label || config.firmwareFamily}`,
@@ -3083,6 +3119,15 @@ export function buildFlightControllerSummary(
               : `${feedForwardPlan.enabledAxes.map((axis) => `${axis.label} ${axis.gain}`).join(", ")}; smooth factor ${feedForwardPlan.smoothFactor}${feedForwardPlan.filterK == null
                 ? ", radio-rate response unverified"
                 : `, nominal ${Math.round(feedForwardPlan.filterK * 1000) / 1000} PT1 coefficient at ${feedForwardPlan.linkRateHz} Hz`}, jitter factor ${feedForwardPlan.jitterFactor}, boost ${feedForwardPlan.boost}, max-rate limit ${feedForwardPlan.maxRateLimit}`
+          }`,
+          `PID response: ${
+            pidResponsePlan.status === "off"
+              ? "static feed-forward and I-term relax are off"
+              : `${pidResponsePlan.staticFeedForwardEnabled
+                ? `static feed-forward ${pidResponsePlan.enabledAxes.map((axis) => `${axis.label} ${axis.gain}`).join(", ")}`
+                : "static feed-forward off"}${pidResponsePlan.itermRelaxEnabled
+                ? `; I-term relax setpoint low-pass ${pidResponsePlan.itermRelaxHz} Hz`
+                : "; I-term relax off"}`
           }`,
           `Flight limits: rate mode ${config.maxRateDps}°/s, angle tilt ${config.maxTiltDeg}°, yaw ${config.yawRateDps}°/s, integration step ≤${config.maxDtMs} ms`,
           `Rate feel: centre slope ${Number(config.rateCenterDps) <= 0 || Number(config.rateCenterDps) >= Number(config.maxRateDps) ? "linear" : `${config.rateCenterDps}°/s`}, expo ${Math.round(Number(config.rateExpo) * 100)}%, TPA ${Math.round(Number(config.tpaRate))}% above ${Math.round(Number(config.tpaBreakpoint) * 100)}% throttle`,

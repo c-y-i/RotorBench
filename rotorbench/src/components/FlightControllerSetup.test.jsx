@@ -67,6 +67,10 @@ test("renders a local flight-controller configuration plan", () => {
   expect(screen.getByLabelText("Jitter factor")).toHaveValue(7);
   expect(screen.getByLabelText("Boost")).toHaveValue(15);
   expect(screen.getByLabelText("Max-rate limit")).toHaveValue(90);
+  expect(screen.getByLabelText("Roll static FF")).toHaveValue(0);
+  expect(screen.getByLabelText("Pitch static FF")).toHaveValue(0);
+  expect(screen.getByLabelText("Yaw static FF")).toHaveValue(0);
+  expect(screen.getByLabelText("I-term relax cutoff")).toHaveValue(0);
   expect(screen.getByLabelText("Maximum angular rate")).toHaveValue(700);
   expect(screen.getByLabelText("Centre slope")).toHaveValue(0);
   expect(screen.getByLabelText("Rate expo")).toHaveValue(0);
@@ -263,6 +267,35 @@ test("previews Aerial Kit feed-forward shaping at the radio plan rate", async ()
   expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
     rateFfdRoll: 0.012,
     ffSmoothFactor: 95,
+  }));
+  expect(await getA11yViolations(container)).toEqual([]);
+});
+
+test("plans Aerial Kit static feed-forward and I-term relax independently", async () => {
+  const onChange = jest.fn();
+  const { container } = render(<FlightControllerSetup onChange={onChange} />);
+
+  expect(screen.getByText("PID response")).toBeInTheDocument();
+  expect(screen.getAllByText("Off").length).toBeGreaterThan(0);
+
+  fireEvent.change(screen.getByLabelText("Roll static FF"), {
+    target: { value: "0.125" },
+  });
+  expect(screen.getAllByText("Static FF staged").length).toBeGreaterThan(0);
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+    rateFfRoll: 0.125,
+    rateFfPitch: 0,
+    rateFfYaw: 0,
+    itermRelaxHz: 0,
+  }));
+
+  fireEvent.change(screen.getByLabelText("I-term relax cutoff"), {
+    target: { value: "15" },
+  });
+  expect(screen.getAllByText("Both staged").length).toBeGreaterThan(0);
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
+    rateFfRoll: 0.125,
+    itermRelaxHz: 15,
   }));
   expect(await getA11yViolations(container)).toEqual([]);
 });

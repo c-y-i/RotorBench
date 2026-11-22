@@ -10,6 +10,8 @@ test("creates a concise hardware briefing without binding material", () => {
     ...createDefaultFlightControllerConfig(),
     rcSmooth: 1,
     rateFfdRoll: 0.012,
+    rateFfRoll: 0.125,
+    itermRelaxHz: 15,
   };
   const fcProfile = getBoardProfile(fcPlan.profileId);
   const briefing = createHardwarePlanBriefing({
@@ -54,6 +56,9 @@ test("creates a concise hardware briefing without binding material", () => {
   );
   expect(briefing.text).toContain(
     "- Stick feed-forward: Roll 0.012; smooth factor 65, nominal 0.35 PT1 coefficient at 250 Hz, jitter factor 7, boost 15, max-rate limit 90",
+  );
+  expect(briefing.text).toContain(
+    "- PID response: static feed-forward Roll 0.125; I-term relax setpoint low-pass 15 Hz",
   );
   expect(briefing.text).toContain("Nothing was connected, written, flashed, calibrated, or armed.");
   expect(briefing.text).not.toContain("do-not-export");

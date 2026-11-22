@@ -13,6 +13,7 @@ import { AERIALKIT_FILTER_FIELDS } from "./aerialKitFilters";
 import { AERIALKIT_DYNAMIC_NOTCH_FIELDS } from "./aerialKitNotch";
 import { AERIALKIT_RC_SMOOTHING_FIELDS } from "./aerialKitRcSmoothing";
 import { AERIALKIT_FEED_FORWARD_FIELDS } from "./aerialKitFeedForward";
+import { AERIALKIT_PID_RESPONSE_FIELDS } from "./aerialKitPidResponse";
 
 const INFERRED_AIRFRAMES = Object.fromEntries(
   Object.entries(AERIALKIT_AIRFRAME_IDS).map(([name, id]) => [id, name]),
@@ -617,6 +618,25 @@ export function buildFcEvidencePlanPatch(snapshot, plan) {
       display: (value) => key.startsWith("rateFfd")
         ? value === 0 ? "Off" : String(value)
         : String(value),
+    })),
+    ...AERIALKIT_PID_RESPONSE_FIELDS.map(({ key, runtimeName, label }) => ({
+      key,
+      source: runtimeName,
+      snapshotKey: runtimeName,
+      label,
+      parse: (raw) => {
+        const number = finite(raw);
+        const maximum = key === "itermRelaxHz" ? 100 : 2;
+        return number != null && number >= 0 && number <= maximum
+          ? number
+          : null;
+      },
+      display: (value) => {
+        if (key === "itermRelaxHz") {
+          return value === 0 ? "Off" : `${value} Hz`;
+        }
+        return value === 0 ? "Off" : String(value);
+      },
     })),
     {
       key: "maxRateDps",
