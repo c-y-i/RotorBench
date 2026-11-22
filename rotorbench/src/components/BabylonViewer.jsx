@@ -432,6 +432,7 @@ const createBatteryFallback = (scene, battery = {}, placement) => {
  *  - modelUrls: string[] (multiple models to load)
  *  - autoRotate: boolean (auto spin models)
  *  - onLoaded: (count: number) => void callback after models loaded
+ *  - onReady: () => void callback after loaded geometry is normalized and camera-fit
  *  - frameCornerPositions: array of Vector3-like objects [{x,y,z},...] for motor placement
  *  - motorUrl: string (source model for a single motor; cloned to 4 corners)
  *  - motorMountingPoint: [x,y,z] offset from motor model origin to mounting point
@@ -445,6 +446,7 @@ const BabylonViewer = ({
   autoRotate = true,
   cameraView = "orbit",
   onLoaded,
+  onReady,
   frameCornerPositions = [], // motor mount positions from frame data
   motorUrl,
   motorMountingPoint = [0, 0, 0], // [x,y,z] offset from motor origin to mounting point
@@ -494,6 +496,7 @@ const BabylonViewer = ({
   });
   const sampleAssemblyActiveRef = useRef(false);
   const onLoadedRef = useRef(onLoaded);
+  const onReadyRef = useRef(onReady);
   const previousModelUrlsRef = useRef([]);
   const frameLoadPromiseRef = useRef(Promise.resolve());
   const previousClearedComponentsRef = useRef([]);
@@ -643,6 +646,7 @@ const BabylonViewer = ({
     if (!changed) return;
     requestAnimationFrame(() => {
       fitCameraToScene(exploded ? 1.8 : 1.5);
+      onReadyRef.current?.();
     });
     // The helper only mutates the current sketch's transform roots.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -788,6 +792,10 @@ const BabylonViewer = ({
   useEffect(() => {
     onLoadedRef.current = onLoaded;
   }, [onLoaded]);
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   // Convert frame corner positions to Vector3 and apply motor mounting point offset
   const computeMotorPositions = (cornerPositions, mountingPoint) => {
@@ -1007,6 +1015,7 @@ const BabylonViewer = ({
           camera.radius = SAMPLE_CAMERA.radius;
         }
       }
+      requestAnimationFrame(() => onReadyRef.current?.());
     }, 120);
   };
 

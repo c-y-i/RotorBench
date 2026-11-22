@@ -426,6 +426,7 @@ export default function BuildPage() {
   const [modelUrls, setModelUrls] = useState([]); // legacy aggregated urls (non-motor components)
   const [loadingModels, setLoadingModels] = useState(false);
   const [modelError, setModelError] = useState("");
+  const [assemblyReady, setAssemblyReady] = useState(false);
   const [motorModelUrl, setMotorModelUrl] = useState(null);
   const [batteryModelUrl, setBatteryModelUrl] = useState(null);
   const [propellerModelUrl, setPropellerModelUrl] = useState(null);
@@ -462,6 +463,24 @@ export default function BuildPage() {
     motionQuery.addEventListener?.("change", updatePreference);
     return () => motionQuery.removeEventListener?.("change", updatePreference);
   }, []);
+
+  useEffect(() => {
+    setAssemblyReady(false);
+  }, [
+    modelUrls,
+    motorModelUrl,
+    batteryModelUrl,
+    propellerModelUrl,
+    propellerCWModelUrl,
+    propellerCCWModelUrl,
+    escModelUrl,
+    fcModelUrl,
+    receiverModelUrl,
+    frameCornerPositions,
+    explodedAssembly,
+    resetKey,
+    clearedComponents,
+  ]);
 
   const setExplodedInspection = (enabled) => {
     setExplodedAssembly(enabled);
@@ -1270,9 +1289,15 @@ export default function BuildPage() {
               <h2>Assembly preview</h2>
               <p>Models appear as you add compatible parts.</p>
             </div>
-            <span className="preview-live-label">
+            <span
+              className={`preview-live-label ${
+                !selectedFrame
+                  ? "is-idle"
+                  : assemblyReady ? "is-ready" : "is-loading"
+              }`}
+            >
               <span aria-hidden="true" />
-              Live
+              {!selectedFrame ? "Idle" : assemblyReady ? "Live" : "Preparing"}
             </span>
           </div>
 
@@ -1430,6 +1455,7 @@ export default function BuildPage() {
                   autoRotate={cameraView === "orbit" && !prefersReducedMotion}
                   cameraView={cameraView}
                   onLoaded={() => {}}
+                  onReady={() => setAssemblyReady(true)}
                   resetKey={resetKey}
                   clearedComponents={clearedComponents}
                   debug={showDebugStatus}
@@ -1438,6 +1464,11 @@ export default function BuildPage() {
                   backgroundColor={backgroundColor}
                 />
               </Suspense>
+            )}
+            {selectedFrame && !assemblyReady && (
+              <div className="viewer-loading-state" role="status">
+                Preparing assembly geometry
+              </div>
             )}
             {selectedFrame && showFitOverlay && (
               <div className="viewer-fit-legend" role="status">

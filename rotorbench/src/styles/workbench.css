@@ -97,8 +97,12 @@
 }
 
 .build-status.is-ready > span,
-.preview-live-label > span {
+.preview-live-label.is-ready > span {
   background: #19a878;
+}
+
+.preview-live-label.is-loading > span {
+  background: var(--accent);
 }
 
 .home-workspace {

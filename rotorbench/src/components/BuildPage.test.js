@@ -20,6 +20,7 @@ jest.mock("./BabylonViewer.jsx", () => ({
   propellerDirection,
   showFitOverlay,
   fitOverlayStatus,
+  onReady,
 }) => (
   <div
     data-testid="assembly-viewer"
@@ -39,7 +40,11 @@ jest.mock("./BabylonViewer.jsx", () => ({
     data-receiver={assemblySpec?.receiver?.id || ""}
     data-fit-overlay={String(showFitOverlay)}
     data-fit-motor-conflict={String(Boolean(fitOverlayStatus?.motorConflict))}
-  />
+  >
+    <button type="button" onClick={() => onReady?.()}>
+      Assembly ready
+    </button>
+  </div>
 ));
 
 function LocationProbe() {
@@ -178,6 +183,26 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
   expect(screen.getByText("SpeedyBee BLS 35A Mini V2 current")).toBeInTheDocument();
   expect(screen.getByText("SpeedyBee F405 Mini input voltage")).toBeInTheDocument();
   expect(screen.getByText("Ready")).toBeInTheDocument();
+});
+
+test("marks the viewer live only after the normalized assembly is ready", async () => {
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/build", state: { build } }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(screen.getByText("Preparing")).toBeInTheDocument();
+  expect(screen.getByText("Preparing assembly geometry")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Assembly ready" }));
+  expect(screen.getByText("Live")).toBeInTheDocument();
+  expect(screen.queryByText("Preparing assembly geometry"))
+    .not.toBeInTheDocument();
 });
 
 test("orbit auto-rotation respects the reduced-motion preference", async () => {
