@@ -160,6 +160,7 @@ export function summarizeBuild(build) {
     hardwareReadinessLabel: hardwareReadiness.label,
     fcBoardName: hardwareReadiness.fcBoardName,
     fcBoardDocumented: hardwareReadiness.fcBoardDocumented,
+    fcParameterRequirements: hardwareReadiness.fcParameterRequirements,
     receiverWiringStatus: hardwareReadiness.wiringStatus,
     receiverPins: hardwareReadiness.receiverPins,
     radioHostTransport: hardwareReadiness.radioHostTransport,
@@ -526,6 +527,19 @@ export function comparisonRows(left, right) {
         ? `${right.fcBoardName} · ${right.fcBoardDocumented ? "documented" : "custom mapping"}`
         : "Not configured",
       format: (value) => value,
+    },
+    {
+      id: "ardupilot-parameters",
+      label: "ArduPilot receiver parameters",
+      left: left.fcParameterRequirements,
+      right: right.fcParameterRequirements,
+      format: (requirements) => (
+        Array.isArray(requirements) && requirements.length
+          ? requirements.map((requirement) => (
+              `${requirement.name}=${requirement.value}`
+            )).join(" · ")
+          : "None documented"
+      ),
     },
     {
       id: "radio-host",

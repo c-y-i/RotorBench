@@ -2237,6 +2237,15 @@ export default function BuildPage() {
                       ? "documented"
                       : "custom mapping"}
                   </small>
+                  {hardwareReadiness.fcParameterRequirements?.length > 0 && (
+                    <small>
+                      ArduPilot parameters: {hardwareReadiness.fcParameterRequirements
+                        .map((requirement) => (
+                          `${requirement.name}=${requirement.value}`
+                        ))
+                        .join(" · ")} · verify with imported snapshot
+                    </small>
+                  )}
                   <small>
                     Radio host: {hardwareReadiness.radioHostTransportLabel} ·{" "}
                     {hardwareReadiness.radioHostDocumented

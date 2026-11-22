@@ -669,6 +669,19 @@ export default function SavedConfigsPage() {
                                                         : " · custom mapping"}
                                                 </span>
                                             )}
+                                            {buildSummary.hasHardwareParts
+                                                && buildSummary.fcParameterRequirements?.length > 0 && (
+                                                <span
+                                                    className="is-wiring-documented"
+                                                    title="Documented receiver parameters; no controller writes performed"
+                                                >
+                                                    {buildSummary.fcParameterRequirements
+                                                        .map((requirement) => (
+                                                            `${requirement.name}=${requirement.value}`
+                                                        ))
+                                                        .join(" · ")}
+                                                </span>
+                                            )}
                                             {buildSummary.hasHardwareParts && (
                                                 <span className={`is-host-${buildSummary.radioHostDocumented ? "documented" : "unverified"}`}>
                                                     {buildSummary.radioHostTransportLabel}

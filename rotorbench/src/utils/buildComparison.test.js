@@ -48,6 +48,7 @@ test("comparison rows include all seven component categories", () => {
       "hardware-plan",
       "receiver-wiring",
       "board-map",
+      "ardupilot-parameters",
       "radio-host",
       "navigation-safety",
       "mission-controls",
@@ -339,6 +340,44 @@ test("saved build summaries and comparisons retain mission and launch controls",
     left: "Mission CH7 · Launch CH8 · 65% · 20° · 6 s",
     right: "Not configured",
   });
+});
+
+test("H743 summaries and comparisons retain ArduPilot receiver parameters", () => {
+  localStorage.clear();
+  const h743Build = {
+    id: "h743-compare",
+    name: "H743 wing",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-h743-wing-v3",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  localStorage.setItem(
+    "rotorbench:hardware-plan:h743-compare:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-matek-h743-wing-v3",
+      selectedReceiverId: "rx-radiomaster-rp4td-m",
+      firmwareFamily: "ardupilot",
+      profileId: "matek-h743-wing-v3-ardupilot",
+      receiverProtocol: "crsf",
+      receiverUart: "UART6",
+    }),
+  );
+  const summary = summarizeBuild(h743Build);
+  expect(summary.fcParameterRequirements).toHaveLength(2);
+  const parameterRow = comparisonRows(
+    summary,
+    summarizeBuild({ ...h743Build, id: "h743-empty" }),
+  ).find((row) => row.id === "ardupilot-parameters");
+  expect(parameterRow.format(parameterRow.left))
+    .toBe("BRD_ALT_CONFIG=1 · SERIAL7_PROTOCOL=23");
+  expect(parameterRow.format([])).toBe("None documented");
 });
 
 test("saved wing summaries retain catalogued servo output coverage", () => {

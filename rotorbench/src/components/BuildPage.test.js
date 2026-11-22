@@ -490,6 +490,9 @@ test("the T1 H743 starter loads the documented ArduPilot wing controller", async
   expect(viewer).toHaveAttribute("data-flight-controller", "fc-matek-h743-wing-v3");
   expect(screen.getByRole("button", { name: "Analyze" })).toBeEnabled();
   expect(screen.getAllByText(/Matek H743-WING V3/).length).toBeGreaterThan(0);
+  expect(screen.getByText(
+    /ArduPilot parameters: BRD_ALT_CONFIG=1 · SERIAL7_PROTOCOL=23/i,
+  )).toBeInTheDocument();
 });
 
 test("a PWM-only receiver does not claim a serial receiver route", async () => {

@@ -562,6 +562,18 @@ export default function AnalysisPage() {
                     : "Not selected"}
                 </dd>
               </div>
+              {hardwareReadiness.fcParameterRequirements?.length > 0 && (
+                <div>
+                  <dt>ArduPilot parameters</dt>
+                  <dd>
+                    {hardwareReadiness.fcParameterRequirements
+                      .map((requirement) => (
+                        `${requirement.name}=${requirement.value}`
+                      ))
+                      .join(" · ")}
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt>Radio</dt>
                 <dd>{hasHardwareSelection ? hardwareReadiness.radioTargetName : "Not selected"}</dd>
