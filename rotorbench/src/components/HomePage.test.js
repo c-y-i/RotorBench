@@ -129,6 +129,7 @@ test("starter platforms filter by frame size while preserving direct launch acti
   const filters = screen.getByRole("group", {
     name: "Filter starter platforms by frame size",
   });
+  expect(within(filters).getByText(/swipe/i)).toBeInTheDocument();
   expect(within(filters).getAllByRole("button")).toHaveLength(7);
   expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(19);
 

@@ -452,7 +452,15 @@ export default function HomePage() {
             role="group"
             aria-label="Filter starter platforms by frame size"
           >
-            <span className="starter-platform-filter-label">Frame size</span>
+            <span className="starter-platform-filter-label">
+              Frame size
+              <span
+                className="starter-platform-filter-hint"
+                aria-hidden="true"
+              >
+                · swipe
+              </span>
+            </span>
             {["all", ...platformSizes].map((size) => {
               const count = size === "all"
                 ? PLATFORM_PRESETS.length
