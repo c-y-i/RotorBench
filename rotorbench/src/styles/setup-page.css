@@ -2698,6 +2698,10 @@
   margin-top: 10px;
 }
 
+.elrs-device-menu {
+  margin-top: 10px;
+}
+
 .aerial-kit-session-unavailable {
   display: flex;
   align-items: flex-start;
@@ -3101,6 +3105,130 @@
   font-family: "IBM Plex Mono", monospace;
   font-size: 8px;
   line-height: 1.4;
+}
+
+.elrs-menu-identity,
+.elrs-menu-inventory {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.elrs-menu-identity dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.elrs-menu-identity dl > div {
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border-radius: 3px;
+}
+
+.elrs-menu-identity dt,
+.elrs-menu-diagnostics dt {
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.elrs-menu-identity dd,
+.elrs-menu-diagnostics dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.elrs-menu-inventory > section {
+  display: grid;
+  gap: 5px;
+}
+
+.elrs-menu-inventory h4 {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.elrs-menu-inventory dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.elrs-menu-inventory dl > div {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.elrs-menu-inventory dt {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.elrs-menu-inventory dt span {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.elrs-menu-inventory dt em {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.elrs-menu-inventory dd {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.elrs-menu-diagnostics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0;
+}
+
+.elrs-menu-diagnostics > div {
+  min-width: 0;
+  padding: 7px 8px;
+  background: var(--surface-raised);
+  border-radius: 3px;
 }
 
 .aerial-kit-rc-unavailable,
@@ -4026,6 +4154,12 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .elrs-menu-identity dl,
+  .elrs-menu-inventory dl,
+  .elrs-menu-diagnostics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .bench-runbook-footer {
     align-items: flex-start;
     flex-direction: column;
@@ -4192,6 +4326,12 @@
   }
 
   .aerial-kit-parameter-list {
+    grid-template-columns: 1fr;
+  }
+
+  .elrs-menu-identity dl,
+  .elrs-menu-inventory dl,
+  .elrs-menu-diagnostics {
     grid-template-columns: 1fr;
   }
 

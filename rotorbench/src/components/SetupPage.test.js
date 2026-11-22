@@ -274,6 +274,24 @@ test("opens the live Aerial Kit session from the plan claim ledger", async () =>
     .toHaveAttribute("open");
 });
 
+test("opens the ExpressLRS device menu from the plan claim ledger", async () => {
+  renderSetup();
+
+  const claimLedger = screen.getByRole("region", {
+    name: "What the plan can prove",
+  });
+  fireEvent.click(within(claimLedger).getByRole("button", {
+    name: "Radio menu",
+  }));
+
+  await waitFor(() => {
+    expect(document.getElementById("elrs-device-menu"))
+      .toHaveAttribute("open");
+  });
+  expect(screen.getByTestId("setup-bench-tools"))
+    .toHaveAttribute("open");
+});
+
 test("opens the evidence review from an ArduPilot parameter plan", () => {
   renderSetup();
 

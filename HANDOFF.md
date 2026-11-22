@@ -21,10 +21,11 @@ The UI and Aerial Kit-inspired configuration work now reaches the planning/evide
 * Empty Analysis now uses the same open workbench header and page-edge grid as Compare instead of a detached white utility band with inset cards.
 * Radio warnings now say when a dual-band receiver has only one of its documented bands configured by the selected transmitter, even when some shared coverage exists.
 * Bench tools now include a separate, opt-in Aerial Kit AKP session. It selects a port explicitly, sends only `HELLO`, `STATUS`, capability-gated `RC_CHANNELS`, user-triggered `PARAM_GET`, and capability-gated `PARAM_INFO` query frames, then polls status/RC at 2 Hz. It parses captured Aerial Kit fixtures, reports parser counters, distinguishes absent from zero capability words, shows fresh armed/autonomous/disarmed state, and converts stale or stopped sessions to `Unknown` rather than retaining an unsafe `Disarmed` display. A bounded parameter reader loads names and values; the metadata pass adds only board-reported type, group, range, and default facts, with secret current values redacted. Descriptions require separate `PARAM_HELP` requests and are not inferred. A downloadable `rotorbench.aerial-kit-live-status.v1` snapshot excludes serial-port identity and marks hardware verification, RF verification, writes, persistence, and flight readiness false. The same snapshot is recognized by evidence review as time-bounded live status, RC, and optionally observed parameter values; importing it later re-checks observation age and never substitutes for preflight.
+* Bench tools now include a separate read-only ExpressLRS menu reader. It identifies the module over CRSF, walks fields 1 through the advertised count, reassembles chunked settings, and displays selection/number/folder/info/text/command state without write or command affordances. The implementation emits only `DEVICE_PING` and `PARAMETER_READ` frames, bounds field/chunk counts, groups fields by reported parent folder, searches names/value labels, and downloads `rotorbench.elrs-device-menu.v1` without the device serial number or any write claim.
 
-Verification at this checkpoint: `68` frontend suites and `696` tests pass, the production build succeeds, and the Impeccable mechanical detector reports no findings. The AKP session is protocol- and lifecycle-tested against captured hello/status/parameter frames, chunked frame decoding, capability-gated RC requests, bounded parameter inventory and metadata reads, explicit command whitelisting, stale state, closed read streams, Web Serial unavailability, firmware-family changes, a mocked serial port, snapshot round-tripping, secret-value redaction, and axe. It has not yet been qualified against a physical board.
+Verification at this checkpoint: `70` frontend suites and `703` tests pass, the production build succeeds, and the Impeccable mechanical detector reports no findings. The AKP and ExpressLRS readers are protocol- and lifecycle-tested against captured/constructed hello, status, parameter, device-info, selection, number, folder, and chunk frames, explicit command whitelisting, stale state, closed read streams, Web Serial unavailability, firmware-family changes, mocked serial ports, snapshot round-tripping, secret-value redaction, and axe. Neither live reader has yet been qualified against a physical board.
 
-The next highest-value connection feature is a read-only ExpressLRS device-reported radio menu alongside the AKP flight-controller session. Keep writes in a future capability-gated phase; do not add writes, arming, flashing, output tests, or RF-pass claims until the session and hardware evidence support them.
+The next highest-value connection feature is importing the downloaded ExpressLRS menu inventory into evidence review and comparing reported fields with the staged radio plan. Keep writes in a future capability-gated phase; do not add writes, arming, flashing, output tests, or RF-pass claims until the session and hardware evidence support them.
 
 ## Current product state
 
@@ -636,6 +637,7 @@ A test build using the expanded catalog completed successfully and rendered a re
 | `rotorbench/src/components/BenchEvidenceReview.jsx` | Read-only import and review of Aerial Kit JSON evidence |
 | `rotorbench/src/components/WebSerialCapture.jsx` | Explicit opt-in read-only serial byte capture |
 | `rotorbench/src/components/AerialKitStatusSession.jsx` | Opt-in AKP identity, STATUS, and RC readback with stale-state handling |
+| `rotorbench/src/components/ElrsDeviceMenu.jsx` | Opt-in read-only ExpressLRS device menu inventory |
 | `rotorbench/src/components/ComparePage.js` | Two-build catalog comparison |
 | `rotorbench/src/data/flightControllerProfiles.js` | Board, firmware, channel, and validation profiles |
 | `rotorbench/src/data/radioProfiles.js` | Radio target, link, binding, and channel profiles |
@@ -658,6 +660,7 @@ A test build using the expanded catalog completed successfully and rendered a re
 | `rotorbench/src/utils/benchEvidenceAttachment.js` | Sanitized build evidence storage, revision scope, copy, removal, and summaries |
 | `rotorbench/src/utils/webSerialCapture.js` | Web Serial capability, byte formatting, and error copy |
 | `rotorbench/src/utils/aerialKitProtocol.js` | AKP framing, CRC, reply parsing, and read-only request correlation |
+| `rotorbench/src/utils/elrsRadioMenu.js` | CRSF device-menu framing, chunk reassembly, decoding, and read-only session |
 | `rotorbench/src/utils/crsfCapture.js` | Incremental CRSF framing, CRC, RC channels, and link statistics decoding |
 | `rotorbench/src/utils/hardwarePlanTransfer.js` | Validated combined FC/radio plan export/import |
 | `rotorbench/src/utils/hardwareReadiness.js` | Build-to-Setup hardware-plan restoration and readiness summary |

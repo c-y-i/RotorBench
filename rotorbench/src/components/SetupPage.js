@@ -45,6 +45,7 @@ import FlightControllerSetup from "./FlightControllerSetup";
 import RadioLinkSetup from "./RadioLinkSetup";
 import BenchRunbook from "./BenchRunbook";
 import AerialKitStatusSession from "./AerialKitStatusSession";
+import ElrsDeviceMenu from "./ElrsDeviceMenu";
 import WebSerialCapture from "./WebSerialCapture";
 import {
   createCombinedHardwarePlan,
@@ -163,6 +164,23 @@ export default function SetupPage() {
         block: "center",
       });
       session.querySelector("summary")?.focus();
+    });
+  };
+
+  const openElrsDeviceMenu = () => {
+    setSetupBenchToolsOpen(true);
+    requestAnimationFrame(() => {
+      const menu = document.getElementById("elrs-device-menu");
+      if (!menu) return;
+      menu.open = true;
+      const reducedMotion = window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      )?.matches;
+      menu.scrollIntoView?.({
+        behavior: reducedMotion ? "auto" : "smooth",
+        block: "center",
+      });
+      menu.querySelector("summary")?.focus();
     });
   };
 
@@ -859,6 +877,10 @@ export default function SetupPage() {
                   <Activity size={15} aria-hidden="true" />
                   Live FC status
                 </button>
+                <button type="button" onClick={openElrsDeviceMenu}>
+                  <RadioTower size={15} aria-hidden="true" />
+                  Radio menu
+                </button>
                 <button type="button" onClick={openEvidenceReview}>
                   Review readback
                   <ArrowRight size={15} aria-hidden="true" />
@@ -1141,6 +1163,15 @@ export default function SetupPage() {
             targetName={selectedFlightController?.name || fcProfile.label}
             channelMap={radioPlan.channelMap}
             onObservation={setLiveFcObservation}
+          />
+          <ElrsDeviceMenu
+            role={radioPlan.role}
+            targetName={radioTarget.name}
+            expectedBaud={
+              radioPlan.role === "rx"
+                ? radioTarget.serial.rxBaud
+                : radioTarget.serial.txBaud
+            }
           />
           <div className="serial-capture-deck">
             <div className="serial-capture-deck-header">

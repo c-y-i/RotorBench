@@ -26,14 +26,14 @@ RotorBench is a flight-bench workbench rather than a generic parts shopping cart
 
 Users work across Build, Setup, Saved, Compare, and Analysis. Hardware workflows happen props-off and may involve two Aerial Kit or ExpressLRS endpoints, a flight controller, serial adapters, internal logs, CRSF evidence, and `ak` command output. Imported files are selected locally and are not authenticity-verified.
 
-RotorBench does not flash, arm, or mutate hardware. Live Web Serial requires explicit port selection: CRSF capture is receive-only, while the Aerial Kit status session sends only `HELLO`, `STATUS`, and `RC_CHANNELS` query frames.
+RotorBench does not flash, arm, or mutate hardware. Live Web Serial requires explicit port selection: CRSF capture is receive-only; the Aerial Kit status session sends only `HELLO`, `STATUS`, `RC_CHANNELS`, and read-only parameter queries; and the ExpressLRS menu session sends only device pings and `PARAMETER_READ` chunks.
 
 ## Capabilities and Constraints
 
 - The frontend is React 18 and the backend is FastAPI. The runtime catalog is the shared `rotorbench/src/data/components.json`.
 - Catalog entries must preserve published versus estimated fields, provenance URLs, dimensions, mounting metadata, and honest unavailable-model states.
 - The assembly contract places four motors and propellers at frame mounts, stacks electronics in a defined order, and supports exploded inspection and measured fallbacks.
-- Setup provides Aerial Kit-inspired flight-controller and radio planners, firmware-backed limits, channel mapping, binding identity previews, copy-only runbooks, read-only CRSF observation, and a separate opt-in AKP status session for identity, fresh armed state, and RC readback.
+- Setup provides Aerial Kit-inspired flight-controller and radio planners, firmware-backed limits, channel mapping, binding identity previews, copy-only runbooks, read-only CRSF observation, a separate opt-in AKP status/parameter session, and a read-only ExpressLRS device-reported menu.
 - Evidence review supports CRSF observations, pair/bench/capture files, FC status and preflight, radio device status, endpoint diagnostics, TX parameters, calibration extrema, revision scopes, and attachment summaries.
 - Imported or live evidence never changes hardware readiness, never becomes flight authorization, and must remain visibly distinct from observed RF behavior.
 - Binding phrases and direct UIDs must not be persisted. A stable identity fingerprint may be stored for scope comparison.
