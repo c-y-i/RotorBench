@@ -169,6 +169,12 @@ test("starter platform search matches components and resets cleanly", async () =
   fireEvent.click(screen.getByRole("button", { name: "Clear starter search" }));
   expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(16);
 
+  fireEvent.change(search, { target: { value: "F722 900" } });
+  expect(screen.getAllByRole("button", { name: /^Open / })).toHaveLength(1);
+  expect(screen.getByRole("button", {
+    name: "Open 5-inch AOS F722 900MHz build",
+  })).toBeInTheDocument();
+
   fireEvent.change(search, { target: { value: "not-a-real-platform" } });
   expect(screen.getByText("No starter builds match")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Reset starter filters" }));

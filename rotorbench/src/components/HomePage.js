@@ -140,7 +140,7 @@ export default function HomePage() {
     ))
   ), []);
   const visiblePlatforms = useMemo(() => {
-    const query = starterQuery.trim().toLowerCase();
+    const queryTokens = starterQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return PLATFORM_PRESETS
       .filter((preset) => (
         platformSize === "all"
@@ -153,7 +153,8 @@ export default function HomePage() {
         )
       ))
       .filter((preset) => (
-        !query || starterPlatformSearchText(preset).includes(query)
+        queryTokens.length === 0
+        || queryTokens.every((token) => starterPlatformSearchText(preset).includes(token))
       ))
       .sort((left, right) => (
         (Number.parseFloat(left.name.match(/^[\d.]+/)?.[0]) || 0)
