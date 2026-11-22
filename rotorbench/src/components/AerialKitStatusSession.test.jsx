@@ -1091,6 +1091,8 @@ test("reads a waypoint inventory from advertised parameters without upload contr
   expect(screen.getByText("Active target WP 1")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Copy mission briefing" }))
     .toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Download mission route" }))
+    .toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", {
     name: /WP 0 37\.6774000/,
   }));

@@ -3850,14 +3850,14 @@
   line-height: 1.45;
 }
 
-.aerial-kit-mission-briefing {
+.aerial-kit-mission-action {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 7px 10px;
 }
 
-.aerial-kit-mission-briefing button {
+.aerial-kit-mission-action button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3876,12 +3876,12 @@
   cursor: pointer;
 }
 
-.aerial-kit-mission-briefing button:hover {
+.aerial-kit-mission-action button:hover {
   border-color: var(--ink);
   background: var(--surface-soft);
 }
 
-.aerial-kit-mission-briefing span {
+.aerial-kit-mission-action span {
   flex: 1 1 150px;
   min-height: 15px;
   color: var(--ink-soft);

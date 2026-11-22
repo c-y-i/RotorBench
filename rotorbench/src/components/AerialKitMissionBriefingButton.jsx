@@ -29,7 +29,7 @@ export default function AerialKitMissionBriefingButton({
   };
 
   return (
-    <div className="aerial-kit-mission-briefing">
+    <div className="aerial-kit-mission-action">
       <button type="button" onClick={copyBriefing}>
         <Copy size={15} aria-hidden="true" />
         Copy mission briefing

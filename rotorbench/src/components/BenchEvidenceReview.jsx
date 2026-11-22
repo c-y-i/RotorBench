@@ -34,6 +34,7 @@ import AerialKitMissionProximity from "./AerialKitMissionProximity";
 import AerialKitMissionRouteProgress from "./AerialKitMissionRouteProgress";
 import AerialKitMissionBriefingButton from "./AerialKitMissionBriefingButton";
 import AerialKitWaypointInspector from "./AerialKitWaypointInspector";
+import AerialKitMissionRouteDownloadButton from "./AerialKitMissionRouteDownloadButton";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -1620,6 +1621,11 @@ export default function BenchEvidenceReview({
                 inventory={evidence.fcEvidence.liveStatus.waypointInventory}
               />
               <AerialKitMissionBriefingButton
+                mission={evidence.fcEvidence.liveStatus.mission}
+                proximity={evidence.fcEvidence.liveStatus.missionProximity}
+                inventory={evidence.fcEvidence.liveStatus.waypointInventory}
+              />
+              <AerialKitMissionRouteDownloadButton
                 mission={evidence.fcEvidence.liveStatus.mission}
                 proximity={evidence.fcEvidence.liveStatus.missionProximity}
                 inventory={evidence.fcEvidence.liveStatus.waypointInventory}
