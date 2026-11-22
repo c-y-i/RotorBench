@@ -8,7 +8,9 @@ import {
   getAirframeMotorLayout,
   getBoardProfile,
   getMotorOutputByCorner,
+  getOrderedMotorOutputs,
   getPropellerDirectionForOutputMap,
+  getPropellerDirectionForWingLayout,
   supportsAerialKitLaunch,
   validateFlightControllerConfig,
 } from "../data/flightControllerProfiles";
@@ -200,9 +202,10 @@ export function summarizeHardwareReadiness({
       .join(" · ")
     : null;
   const motorOutputByCorner = getMotorOutputByCorner(motorLayout);
+  const motorOutputs = getOrderedMotorOutputs(motorLayout);
   const fcPropellerDirection = getPropellerDirectionForOutputMap(
     motorOutputByCorner,
-  );
+  ) || getPropellerDirectionForWingLayout(motorLayout);
   const fcAirframeSpec = AIRFRAMES.find(
     (airframe) => airframe.value === fcPlan.airframe,
   );
@@ -274,6 +277,7 @@ export function summarizeHardwareReadiness({
     fcMotorDirectionLabel: motorDirectionLabel,
     fcMotorOrder: motorOrder,
     fcMotorOutputByCorner: motorOutputByCorner,
+    fcMotorOutputs: motorOutputs,
     fcPropellerDirection,
     fcMotorLayoutSource: motorLayout
       ? fcPlan.firmwareFamily === "betaflight" ? "Betaflight" : "Aerial Kit"
@@ -397,6 +401,9 @@ export function sanitizeHardwareReadiness(readiness) {
     fcMotorDirectionLabel: readiness.fcMotorDirectionLabel || null,
     fcMotorOrder: readiness.fcMotorOrder || null,
     fcMotorOutputByCorner: readiness.fcMotorOutputByCorner || null,
+    fcMotorOutputs: Array.isArray(readiness.fcMotorOutputs)
+      ? readiness.fcMotorOutputs
+      : [],
     fcPropellerDirection: readiness.fcPropellerDirection || null,
     fcMotorLayoutSource: readiness.fcMotorLayoutSource || null,
     fcBatteryDividerRatio: readiness.fcBatteryDividerRatio ?? null,

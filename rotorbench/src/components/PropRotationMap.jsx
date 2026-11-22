@@ -34,6 +34,7 @@ export default function PropRotationMap({
   propeller = null,
   direction = "props-out",
   motorOutputByCorner = null,
+  motorOutputs = null,
   motorCount = 4,
 }) {
   const id = useId().replace(/:/g, "");
@@ -42,10 +43,16 @@ export default function PropRotationMap({
   const directionLabel = directionProfile === "props-in" ? "props in" : "props out";
   const isTwin = Number(motorCount) === 2;
   const rotationCorners = isTwin ? TWIN_MOTOR_ORDER : MOTOR_CORNER_ORDER;
-  const outputDescription = motorOutputByCorner
+  const hasOutputs = isTwin
+    ? Array.isArray(motorOutputs) && motorOutputs.length >= 2
+    : Boolean(motorOutputByCorner);
+  const outputFor = (corner, index) => (
+    motorOutputByCorner?.[corner] || (isTwin ? motorOutputs?.[index] : null)
+  );
+  const outputDescription = hasOutputs
     ? rotationCorners
-      .map((corner) => {
-        const mapping = motorOutputByCorner[corner];
+      .map((corner, index) => {
+        const mapping = outputFor(corner, index);
         return `${CORNER_LABELS[corner]} output ${mapping.output} (${mapping.spin})`;
       })
       .join(", ")
@@ -57,8 +64,8 @@ export default function PropRotationMap({
     `Propeller: ${propeller.name || propeller.id}`,
     `Direction: ${directionLabel}`,
     "",
-    ...rotationCorners.map((corner) => {
-      const output = motorOutputByCorner?.[corner];
+    ...rotationCorners.map((corner, index) => {
+      const output = outputFor(corner, index);
       return `- ${isTwin && corner === "upperLeft" ? "Left motor" : isTwin ? "Right motor" : CORNER_NAMES[corner]}: ${getPropellerHandedness(corner, directionProfile)}${
         output
           ? ` · output ${output.output} (${output.label})`
@@ -89,7 +96,7 @@ export default function PropRotationMap({
           <strong>Prop rotation map</strong>
           <small>{motor.name} · {propeller.name}</small>
         </span>
-        <em>{directionLabel} · {motorOutputByCorner ? "outputs mapped" : "CW / CCW"}</em>
+        <em>{directionLabel} · {hasOutputs ? "outputs mapped" : "CW / CCW"}</em>
       </summary>
       <div>
         <svg
@@ -107,7 +114,7 @@ export default function PropRotationMap({
               : directionProfile === "props-in"
                 ? "Front-left and rear-right propellers rotate clockwise. Front-right and rear-left propellers rotate counter-clockwise."
                 : "Front-left and rear-right propellers rotate counter-clockwise. Front-right and rear-left propellers rotate clockwise."}
-            {motorOutputByCorner ? ` Firmware outputs: ${outputDescription}.` : ""}
+            {hasOutputs ? ` Firmware outputs: ${outputDescription}.` : ""}
           </desc>
           <text className="prop-map-front" x="120" y="15" textAnchor="middle">
             FRONT
@@ -116,12 +123,13 @@ export default function PropRotationMap({
             className="prop-map-frame"
             d={isTwin ? "M36 90 204 90M90 90 120 125 150 90" : "M60 57 180 130M180 57 60 130"}
           />
-          {rotationCorners.map((corner) => {
+          {rotationCorners.map((corner, index) => {
             const [x, y] = isTwin
               ? corner === "upperLeft" ? [60, 100] : [180, 100]
               : CORNER_POSITIONS[corner];
             const handedness = getPropellerHandedness(corner, directionProfile);
             const clockwise = handedness === "CW";
+            const output = outputFor(corner, index);
             return (
               <g key={corner} transform={`translate(${x} ${y})`}>
                 <circle className="prop-map-motor" r="21" />
@@ -132,14 +140,14 @@ export default function PropRotationMap({
                     ? "M-14 0A14 14 0 1 1 0 14"
                     : "M14 0A14 14 0 1 0 0 14"}
                 />
-                {motorOutputByCorner && (
+                {output && (
                   <text
                     className="prop-map-output"
                     x="0"
                     y="-28"
                     textAnchor="middle"
                   >
-                    OUT {motorOutputByCorner[corner].output}
+                    OUT {output.output}
                   </text>
                 )}
                 <path
@@ -167,8 +175,10 @@ export default function PropRotationMap({
         </svg>
         <p>
           {isTwin ? "Twin-motor" : "Corner"} handedness follows the {directionLabel} assembly plan.
-          {motorOutputByCorner
-            ? " Output numbers follow the saved flight-controller QUAD X plan and are not hardware verification."
+          {hasOutputs
+            ? isTwin
+              ? " Output numbers follow the saved flight-controller wing mixer plan and are not hardware verification."
+              : " Output numbers follow the saved flight-controller QUAD X plan and are not hardware verification."
             : " Output numbers are omitted until a supported saved flight-controller map is available."}
           {" "}Confirm the flight-controller direction, airframe, and propeller
           markings before wiring or flight.

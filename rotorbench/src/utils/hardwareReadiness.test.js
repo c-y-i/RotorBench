@@ -248,6 +248,11 @@ test("mission and launch controls remain available outside Setup", () => {
     fcLaunchThrottle: 0.65,
     fcLaunchClimbDeg: 20,
     fcLaunchTimeoutS: 6,
+    fcMotorOutputs: [
+      { output: 1, label: "Left pusher", spin: "CCW" },
+      { output: 2, label: "Right pusher", spin: "CW" },
+    ],
+    fcPropellerDirection: "props-out",
     fcServoOutputs: [
       { output: 1, reversed: true, trimUs: 18, travelUs: 460 },
       { output: 2, reversed: false, trimUs: -12, travelUs: 520 },
@@ -262,6 +267,10 @@ test("mission and launch controls remain available outside Setup", () => {
     fcLaunchThrottle: 0.65,
     fcLaunchClimbDeg: 20,
     fcLaunchTimeoutS: 6,
+    fcMotorOutputs: [
+      { output: 1, label: "Left pusher", spin: "CCW" },
+      { output: 2, label: "Right pusher", spin: "CW" },
+    ],
     fcServoOutputs: [
       { output: 1, reversed: true, trimUs: 18, travelUs: 460 },
       { output: 2, reversed: false, trimUs: -12, travelUs: 520 },

@@ -411,6 +411,63 @@ test("the T1 Ranger starter loads a two-motor wing assembly", async () => {
   expect(screen.getByText("RIGHT")).toBeVisible();
 });
 
+test("a saved Aerial Kit wing plan maps the T1 left and right outputs", async () => {
+  const t1Build = {
+    id: "t1-saved-plan",
+    name: "T1 saved plan",
+    componentIds: {
+      frameId: "frame-heewing-t1-ranger",
+      motorId: "motor-heewing-fx1406-3150kv",
+      propellerId: "prop-heewing-fx3830-2",
+      escId: "esc-heewing-fx20a-bls-twin",
+      flightControllerId: "fc-matek-f405-wmn",
+      batteryId: "battery-cnhl-black-4s-1500-100c",
+      receiverId: "rx-radiomaster-rp4td-m",
+    },
+  };
+  localStorage.setItem(
+    "rotorbench:hardware-plan:t1-saved-plan:fc",
+    JSON.stringify({
+      planVersion: 3,
+      selectedFlightControllerId: "fc-matek-f405-wmn",
+      selectedReceiverId: "rx-radiomaster-rp4td-m",
+      firmwareFamily: "aerialkit",
+      profileId: "esp32dev",
+      airframe: "elevonwing",
+      armChannel: 6,
+      modeChannel: 5,
+      receiverProtocol: "crsf",
+      receiverUart: "UART2",
+      receiverBaud: 420000,
+    }),
+  );
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: "/build",
+      state: { build: t1Build },
+    }]}>
+      <BuildProvider>
+        <BuildPage />
+      </BuildProvider>
+    </MemoryRouter>,
+  );
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  const viewer = screen.getByTestId("assembly-viewer");
+  expect(viewer).toHaveAttribute("data-propeller-direction", "props-out");
+  fireEvent.click(screen.getByText("Prop rotation map"));
+  const map = screen.getByRole("img", {
+    name: "Propeller rotation for twin motors",
+  });
+  expect(map).toHaveAccessibleDescription(/UL output 1 \(CCW\).*UR output 2 \(CW\)/i);
+  expect(screen.getByText("OUT 1")).toBeVisible();
+  expect(screen.getByText("OUT 2")).toBeVisible();
+  expect(screen.getByText(/saved flight-controller wing mixer plan/i))
+    .toBeVisible();
+});
+
 test("the 5.5-inch XING2 6S preset exposes estimated geometry honestly", async () => {
   render(
     <MemoryRouter initialEntries={["/build?preset=source-55-xing2"]}>

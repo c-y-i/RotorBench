@@ -1383,10 +1383,26 @@ export function getMotorOutputByCorner(layout) {
   return Object.keys(outputByCorner).length === 4 ? outputByCorner : null;
 }
 
+export function getOrderedMotorOutputs(layout) {
+  if (!Array.isArray(layout?.motors) || layout.motors.length === 0) return [];
+  return layout.motors.map((motor) => ({
+    output: motor.output,
+    label: motor.label,
+    spin: motor.spin,
+  }));
+}
+
 export function getPropellerDirectionForOutputMap(outputByCorner) {
   const frontLeft = outputByCorner?.upperLeft;
   if (!frontLeft || !["CW", "CCW"].includes(frontLeft.spin)) return null;
   return frontLeft.spin === "CCW" ? "props-out" : "props-in";
+}
+
+export function getPropellerDirectionForWingLayout(layout) {
+  if (layout?.shape !== "wing" || layout.motors?.length !== 2) return null;
+  const leftMotor = layout.motors.find((motor) => /^left/i.test(motor.label));
+  if (!leftMotor || !["CW", "CCW"].includes(leftMotor.spin)) return null;
+  return leftMotor.spin === "CCW" ? "props-out" : "props-in";
 }
 
 export const RECEIVER_PROTOCOLS = [

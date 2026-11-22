@@ -1536,6 +1536,11 @@ export default function BuildPage() {
                 ? hardwareReadiness.fcMotorOutputByCorner
                 : null
             }
+            motorOutputs={
+              hardwareReadiness.configured
+                ? hardwareReadiness.fcMotorOutputs
+                : null
+            }
           />
           <AssemblyStackMap
             frame={assemblySpec.frame}

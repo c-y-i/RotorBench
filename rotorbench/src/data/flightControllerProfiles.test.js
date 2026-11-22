@@ -9,7 +9,9 @@ import {
   getCatalogBoardProfile,
   getChannelPreset,
   getMotorOutputByCorner,
+  getOrderedMotorOutputs,
   getPropellerDirectionForOutputMap,
+  getPropellerDirectionForWingLayout,
   supportsAerialKitLaunch,
   validateFlightControllerConfig,
 } from "./flightControllerProfiles";
@@ -143,6 +145,15 @@ test("Aerial Kit motor layouts preserve the firmware output order", () => {
   expect(getPropellerDirectionForOutputMap(
     getMotorOutputByCorner(getAirframeMotorLayout("quadx", "betaflight", "props-out")),
   )).toBe("props-out");
+  const aerialKitWing = getAirframeMotorLayout("elevonwing");
+  expect(getOrderedMotorOutputs(aerialKitWing)).toEqual([
+    { output: 1, label: "Left pusher", spin: "CCW" },
+    { output: 2, label: "Right pusher", spin: "CW" },
+  ]);
+  expect(getPropellerDirectionForWingLayout(aerialKitWing)).toBe("props-out");
+  expect(getPropellerDirectionForWingLayout(
+    getAirframeMotorLayout("elevonwingsingle"),
+  )).toBeNull();
   expect(getAirframeMotorLayout("quadp", "betaflight")).toBeNull();
   expect(getAirframeMotorLayout("quadx", "inav")).toBeNull();
   expect(getAirframeMotorLayout("unknown")).toBeNull();

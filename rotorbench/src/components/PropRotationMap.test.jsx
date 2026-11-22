@@ -57,6 +57,10 @@ test("twin-motor layouts show left and right prop directions", () => {
       motor={{ id: "motor-test", name: "Twin motor" }}
       propeller={{ id: "prop-test", name: "Twin propeller" }}
       motorCount={2}
+      motorOutputs={[
+        { output: 1, label: "Left pusher", spin: "CCW" },
+        { output: 2, label: "Right pusher", spin: "CW" },
+      ]}
       direction="props-out"
     />,
   );
@@ -67,6 +71,11 @@ test("twin-motor layouts show left and right prop directions", () => {
   );
   expect(screen.getByText("LEFT")).toBeInTheDocument();
   expect(screen.getByText("RIGHT")).toBeInTheDocument();
+  expect(screen.getByText("OUT 1")).toBeInTheDocument();
+  expect(screen.getByText("OUT 2")).toBeInTheDocument();
+  expect(screen.getByText("props out · outputs mapped")).toBeInTheDocument();
+  expect(screen.getByText(/saved flight-controller wing mixer plan/i))
+    .toBeInTheDocument();
   expect(screen.queryByText("UL")).not.toBeInTheDocument();
 });
 
