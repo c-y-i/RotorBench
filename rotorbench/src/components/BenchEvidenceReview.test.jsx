@@ -369,6 +369,36 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
         sectionMaxUs: [30, 31, 32, 33, 34],
         loadPermille: 123,
       },
+      motorTelemetry: {
+        status: "ok",
+        observedAt: new Date().toISOString(),
+        count: 2,
+        poles: 14,
+        motors: [
+          {
+            flags: 0x1f,
+            erpm: 100000,
+            rpm: 7142,
+            temperature: 40,
+            maxTemperature: 45,
+            millivolts: 24000,
+            milliamps: 18000,
+            packets: 100,
+            invalid: 2,
+          },
+          {
+            flags: 0,
+            erpm: 0,
+            rpm: 0,
+            temperature: 0,
+            maxTemperature: 0,
+            millivolts: 0,
+            milliamps: 0,
+            packets: 0,
+            invalid: 0,
+          },
+        ],
+      },
     }, "live-status.json"),
   );
 
@@ -395,6 +425,10 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
   expect(screen.getByText("1200 loops · 4 late")).toBeInTheDocument();
   expect(screen.getByText("503 / 496 / 612 µs")).toBeInTheDocument();
   expect(screen.getByText("12.3% · 123‰")).toBeInTheDocument();
+  expect(screen.getByText("1/2 answering")).toBeInTheDocument();
+  expect(screen.getByText("100000 eRPM")).toBeInTheDocument();
+  expect(screen.getByText("7142 RPM")).toBeInTheDocument();
+  expect(screen.getByText("Not heard")).toBeInTheDocument();
 });
 
 test("keeps a live snapshot with no preflight checklist unverified", async () => {

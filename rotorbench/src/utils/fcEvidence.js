@@ -221,6 +221,82 @@ function normalizedPerformanceWindow(value) {
   };
 }
 
+const MOTOR_TELEMETRY_FLAGS = Object.freeze([
+  { bit: 1 << 0, name: "measured" },
+  { bit: 1 << 1, name: "rpm" },
+  { bit: 1 << 2, name: "temperature" },
+  { bit: 1 << 3, name: "voltage" },
+  { bit: 1 << 4, name: "current" },
+]);
+
+function normalizedMotorTelemetry(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  if (!["ok", "none"].includes(value.status)) {
+    throw new Error("The Aerial Kit motor telemetry has an invalid status.");
+  }
+  if (value.status === "none") {
+    return {
+      status: "none",
+      count: 0,
+      poles: 0,
+      motors: [],
+      observedAtMs: timestampMilliseconds(value.observedAt),
+    };
+  }
+  const count = sensorNumber(value.count);
+  const poles = sensorNumber(value.poles);
+  if (
+    !Number.isInteger(count)
+    || count < 0
+    || count > 4
+    || !Number.isInteger(poles)
+    || !Array.isArray(value.motors)
+    || value.motors.length !== count
+  ) {
+    throw new Error("The Aerial Kit motor telemetry has an invalid motor list.");
+  }
+  const motors = value.motors.map((motor, index) => {
+    const flags = sensorNumber(motor?.flags);
+    if (!Number.isInteger(flags) || flags < 0 || flags > 0xff) {
+      throw new Error(`Motor telemetry entry ${index} has invalid flags.`);
+    }
+    const nullable = (bit, field) => (
+      (flags & bit) !== 0 ? sensorNumber(motor[field]) : null
+    );
+    const normalized = {
+      index,
+      flags,
+      flagNames: MOTOR_TELEMETRY_FLAGS
+        .filter((entry) => (flags & entry.bit) !== 0)
+        .map((entry) => entry.name),
+      measured: (flags & (1 << 0)) !== 0,
+      erpm: sensorNumber(motor.erpm),
+      rpm: nullable(1 << 1, "rpm"),
+      temperature: nullable(1 << 2, "temperature"),
+      maxTemperature: nullable(1 << 2, "maxTemperature"),
+      millivolts: nullable(1 << 3, "millivolts"),
+      milliamps: nullable(1 << 4, "milliamps"),
+      packets: sensorNumber(motor.packets),
+      invalid: sensorNumber(motor.invalid),
+    };
+    if (
+      normalized.erpm == null
+      || normalized.packets == null
+      || normalized.invalid == null
+    ) {
+      throw new Error(`Motor telemetry entry ${index} has incomplete fields.`);
+    }
+    return normalized;
+  });
+  return {
+    status: "ok",
+    count,
+    poles,
+    motors,
+    observedAtMs: timestampMilliseconds(value.observedAt),
+  };
+}
+
 function identityField(identity, name) {
   const match = String(identity).match(
     new RegExp(`(?:^|\\s)${name}=([^\\s]+)`),
@@ -528,6 +604,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     }
   }
   const performance = normalizedPerformanceWindow(payload.performance);
+  const motorTelemetry = normalizedMotorTelemetry(payload.motorTelemetry);
   return {
     kind: "fc-live-status",
     identity,
@@ -545,6 +622,7 @@ export function parseAerialKitLiveStatusJson(payload) {
     outputMetadata,
     preflight,
     performance,
+    motorTelemetry,
     observedAtMs: statusObservedAtMs,
     boundaries: payload.boundaries || null,
   };

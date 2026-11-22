@@ -15,10 +15,13 @@ export const AERIAL_KIT_FEATURE_SENSOR_INFO = 1 << 5;
 export const AERIAL_KIT_FEATURE_OUTPUT_INFO = 1 << 6;
 export const AERIAL_KIT_FEATURE_PREFLIGHT = 1 << 9;
 export const AERIAL_KIT_FEATURE_PERF = 1 << 12;
+export const AERIAL_KIT_FEATURE_MOTOR_TELEMETRY = 1 << 13;
 export const AERIAL_KIT_PARAMETER_READ_LIMIT = 255;
 export const AERIAL_KIT_PREFLIGHT_MAX_LINES = 32;
 export const AERIAL_KIT_PREFLIGHT_NAME_MAX = 24;
 export const AERIAL_KIT_PERF_SECTIONS = 5;
+export const AERIAL_KIT_MOTOR_MAX = 4;
+export const AERIAL_KIT_MOTOR_ENTRY_BYTES = 19;
 export const AERIAL_KIT_COMMANDS = Object.freeze({
   hello: 0x01,
   paramGet: 0x02,
@@ -30,6 +33,7 @@ export const AERIAL_KIT_COMMANDS = Object.freeze({
   outputInfo: 0x0f,
   preflight: 0x12,
   perf: 0x15,
+  motorTelemetry: 0x16,
 });
 
 export const AERIAL_KIT_SENSOR_TOPICS = Object.freeze([
@@ -72,6 +76,14 @@ const PREFLIGHT_VERDICTS = Object.freeze({
   1: { name: "pass", label: "Pass" },
   2: { name: "fact", label: "Reading" },
 });
+
+const MOTOR_FLAGS = Object.freeze([
+  { bit: 1 << 0, name: "measured" },
+  { bit: 1 << 1, name: "rpm" },
+  { bit: 1 << 2, name: "temperature" },
+  { bit: 1 << 3, name: "voltage" },
+  { bit: 1 << 4, name: "current" },
+]);
 
 export const AERIAL_KIT_PARAMETER_TYPES = Object.freeze({
   0: "float",
@@ -729,6 +741,80 @@ export function parseAerialKitPerf(payload) {
   return window;
 }
 
+export function parseAerialKitMotorTelemetry(payload) {
+  const bytes = asBytes(payload);
+  if (!bytes.length) {
+    throw new Error("Aerial Kit MOTOR_TELEMETRY payload is empty.");
+  }
+  if (bytes[0] === AERIAL_KIT_UNKNOWN_COMMAND) {
+    throw new Error(
+      "This firmware predates MOTOR_TELEMETRY and answered with the unknown-command status.",
+    );
+  }
+  if (bytes[0] === 1) {
+    if (bytes.length !== 1) {
+      throw new Error(
+        "A board with no motor telemetry path must answer with one status byte.",
+      );
+    }
+    return {
+      status: "none",
+      count: 0,
+      poles: 0,
+      motors: [],
+    };
+  }
+  if (bytes[0] !== 0) {
+    throw new Error(`MOTOR_TELEMETRY returned status ${bytes[0]}.`);
+  }
+  if (bytes.length < 3) {
+    throw new Error("MOTOR_TELEMETRY header is incomplete.");
+  }
+  const count = bytes[1];
+  const poles = bytes[2];
+  if (count > AERIAL_KIT_MOTOR_MAX) {
+    throw new Error(
+      `MOTOR_TELEMETRY reports ${count} motors; the protocol maximum is ${AERIAL_KIT_MOTOR_MAX}.`,
+    );
+  }
+  if (bytes.length !== 3 + count * AERIAL_KIT_MOTOR_ENTRY_BYTES) {
+    throw new Error(
+      `MOTOR_TELEMETRY with ${count} motors must carry ${3 + count * AERIAL_KIT_MOTOR_ENTRY_BYTES} bytes.`,
+    );
+  }
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const motors = Array.from({ length: count }, (_, index) => {
+    const offset = 3 + index * AERIAL_KIT_MOTOR_ENTRY_BYTES;
+    const flags = bytes[offset];
+    return {
+      index,
+      flags,
+      flagNames: namedBits(flags, MOTOR_FLAGS),
+      measured: (flags & (1 << 0)) !== 0,
+      erpm: view.getUint32(offset + 1, true),
+      rpm: (flags & (1 << 1))
+        ? view.getUint32(offset + 5, true)
+        : null,
+      temperature: (flags & (1 << 2)) ? bytes[offset + 9] : null,
+      maxTemperature: (flags & (1 << 2)) ? bytes[offset + 10] : null,
+      millivolts: (flags & (1 << 3))
+        ? view.getUint16(offset + 11, true)
+        : null,
+      milliamps: (flags & (1 << 4))
+        ? view.getUint16(offset + 13, true)
+        : null,
+      packets: view.getUint16(offset + 15, true),
+      invalid: view.getUint16(offset + 17, true),
+    };
+  });
+  return {
+    status: "ok",
+    count,
+    poles,
+    motors,
+  };
+}
+
 export function parseAerialKitSensorInfo(payload) {
   const bytes = asBytes(payload);
   if (!bytes.length) throw new Error("Aerial Kit SENSOR_INFO payload is empty.");
@@ -1141,6 +1227,7 @@ export function createAerialKitStatusEvidence({
   outputMetadata = null,
   preflight = null,
   performance = null,
+  motorTelemetry = null,
   statusObservedAtMs = null,
   rcObservedAtMs = null,
   baudRate = null,
@@ -1181,6 +1268,7 @@ export function createAerialKitStatusEvidence({
         ...(outputMetadata ? ["OUTPUT_INFO"] : []),
         ...(preflight ? ["PREFLIGHT"] : []),
         ...(performance ? ["PERF"] : []),
+        ...(motorTelemetry ? ["MOTOR_TELEMETRY"] : []),
       ],
     },
     hello,
@@ -1223,6 +1311,14 @@ export function createAerialKitStatusEvidence({
           ...performance,
           observedAt: Number.isFinite(performance.observedAtMs)
             ? new Date(performance.observedAtMs).toISOString()
+            : null,
+        }
+      : null,
+    motorTelemetry: motorTelemetry
+      ? {
+          ...motorTelemetry,
+          observedAt: Number.isFinite(motorTelemetry.observedAtMs)
+            ? new Date(motorTelemetry.observedAtMs).toISOString()
             : null,
         }
       : null,

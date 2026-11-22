@@ -11,6 +11,7 @@ import {
   parseAerialKitHello,
   parseAerialKitParamHelpSlice,
   parseAerialKitParamInfoPage,
+  parseAerialKitMotorTelemetry,
   parseAerialKitOutputInfo,
   parseAerialKitParamGet,
   parseAerialKitPerf,
@@ -336,6 +337,77 @@ test("parses the PERF window in its exact wire units", () => {
     .toThrow(/59-byte window/i);
   expect(() => parseAerialKitPerf(Uint8Array.of(0x7f)))
     .toThrow(/predates PERF/i);
+});
+
+test("parses motor telemetry without inventing stopped or measured fields", () => {
+  const bytes = new Uint8Array(3 + 2 * 19);
+  const view = new DataView(bytes.buffer);
+  bytes.set([0, 2, 14], 0);
+  bytes[3] = 0x1f;
+  view.setUint32(4, 100000, true);
+  view.setUint32(8, 7142, true);
+  bytes[12] = 40;
+  bytes[13] = 45;
+  view.setUint16(14, 24000, true);
+  view.setUint16(16, 18000, true);
+  view.setUint16(18, 100, true);
+  view.setUint16(20, 2, true);
+  bytes[22] = 0x01;
+  view.setUint32(23, 0, true);
+  view.setUint32(27, 9999, true);
+  bytes[31] = 88;
+  bytes[32] = 99;
+  view.setUint16(33, 1234, true);
+  view.setUint16(35, 5678, true);
+  view.setUint16(37, 0, true);
+  view.setUint16(39, 0, true);
+  expect(parseAerialKitMotorTelemetry(bytes)).toEqual({
+    status: "ok",
+    count: 2,
+    poles: 14,
+    motors: [
+      {
+        index: 0,
+        flags: 0x1f,
+        flagNames: ["measured", "rpm", "temperature", "voltage", "current"],
+        measured: true,
+        erpm: 100000,
+        rpm: 7142,
+        temperature: 40,
+        maxTemperature: 45,
+        millivolts: 24000,
+        milliamps: 18000,
+        packets: 100,
+        invalid: 2,
+      },
+      {
+        index: 1,
+        flags: 1,
+        flagNames: ["measured"],
+        measured: true,
+        erpm: 0,
+        rpm: null,
+        temperature: null,
+        maxTemperature: null,
+        millivolts: null,
+        milliamps: null,
+        packets: 0,
+        invalid: 0,
+      },
+    ],
+  });
+  expect(parseAerialKitMotorTelemetry(Uint8Array.of(1))).toEqual({
+    status: "none",
+    count: 0,
+    poles: 0,
+    motors: [],
+  });
+  expect(() => parseAerialKitMotorTelemetry(Uint8Array.of(1, 0)))
+    .toThrow(/one status byte/i);
+  expect(() => parseAerialKitMotorTelemetry(Uint8Array.of(0, 1, 14)))
+    .toThrow(/must carry 22 bytes/i);
+  expect(() => parseAerialKitMotorTelemetry(Uint8Array.of(0x7f)))
+    .toThrow(/predates MOTOR_TELEMETRY/i);
 });
 
 test("parses sensor presence without inventing a body for an absent sensor", () => {
@@ -701,6 +773,26 @@ test("creates a sanitized live-status evidence boundary", () => {
       loadPermille: 123,
       observedAtMs: 1250,
     },
+    motorTelemetry: {
+      status: "ok",
+      count: 1,
+      poles: 14,
+      motors: [{
+        index: 0,
+        flags: 0x1f,
+        flagNames: ["measured", "rpm", "temperature", "voltage", "current"],
+        measured: true,
+        erpm: 100000,
+        rpm: 7142,
+        temperature: 40,
+        maxTemperature: 45,
+        millivolts: 24000,
+        milliamps: 18000,
+        packets: 100,
+        invalid: 2,
+      }],
+      observedAtMs: 1250,
+    },
     connectionActive: true,
     nowMs: 1500,
   });
@@ -720,6 +812,7 @@ test("creates a sanitized live-status evidence boundary", () => {
         "PARAM_HELP",
         "PREFLIGHT",
         "PERF",
+        "MOTOR_TELEMETRY",
       ],
     },
     status: {
@@ -750,6 +843,16 @@ test("creates a sanitized live-status evidence boundary", () => {
       loops: 1200,
       loadPermille: 123,
       observedAt: "1970-01-01T00:00:01.250Z",
+    },
+    motorTelemetry: {
+      status: "ok",
+      count: 1,
+      poles: 14,
+      observedAt: "1970-01-01T00:00:01.250Z",
+      motors: [{
+        measured: true,
+        rpm: 7142,
+      }],
     },
     boundaries: {
       readOnlyQueriesOnly: true,

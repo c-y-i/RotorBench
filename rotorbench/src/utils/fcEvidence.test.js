@@ -189,6 +189,23 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       sectionMaxUs: [30, 31, 32, 33, 34],
       loadPermille: 123,
     },
+    motorTelemetry: {
+      status: "ok",
+      observedAt: "2026-11-22T10:00:00.000Z",
+      count: 1,
+      poles: 14,
+      motors: [{
+        flags: 0x1f,
+        erpm: 100000,
+        rpm: 7142,
+        temperature: 40,
+        maxTemperature: 45,
+        millivolts: 24000,
+        milliamps: 18000,
+        packets: 100,
+        invalid: 2,
+      }],
+    },
   });
 
   expect(parsed).toMatchObject({
@@ -266,6 +283,18 @@ test("normalizes a live AKP snapshot without upgrading stale state", () => {
       periodLastUs: 503,
       sectionAvgUsX10: [21, 22, 23, 24, 25],
       loadPermille: 123,
+    },
+    motorTelemetry: {
+      status: "ok",
+      count: 1,
+      poles: 14,
+      motors: [{
+        measured: true,
+        erpm: 100000,
+        rpm: 7142,
+        temperature: 40,
+        millivolts: 24000,
+      }],
     },
   });
 });

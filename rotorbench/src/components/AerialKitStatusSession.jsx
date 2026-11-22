@@ -24,6 +24,7 @@ import {
   AERIAL_KIT_FEATURE_OUTPUT_INFO,
   AERIAL_KIT_FEATURE_PREFLIGHT,
   AERIAL_KIT_FEATURE_PERF,
+  AERIAL_KIT_FEATURE_MOTOR_TELEMETRY,
   AERIAL_KIT_PARAMETER_READ_LIMIT,
   AERIAL_KIT_SENSOR_TOPICS,
   AerialKitReadOnlySession,
@@ -34,6 +35,7 @@ import {
   parseAerialKitParamHelpSlice,
   parseAerialKitParamGet,
   parseAerialKitParamInfoPage,
+  parseAerialKitMotorTelemetry,
   parseAerialKitPerf,
   parseAerialKitPreflightPage,
   parseAerialKitSensorInfo,
@@ -48,6 +50,7 @@ import {
 } from "../utils/webSerialCapture";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
+import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
 
 const STATUS_LABELS = {
   idle: "Not connected",
@@ -155,6 +158,9 @@ export default function AerialKitStatusSession({
   const [performance, setPerformance] = useState(null);
   const [perfState, setPerfState] = useState("idle");
   const [perfError, setPerfError] = useState("");
+  const [motorTelemetry, setMotorTelemetry] = useState(null);
+  const [motorState, setMotorState] = useState("idle");
+  const [motorError, setMotorError] = useState("");
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const pollBusyRef = useRef(false);
@@ -224,6 +230,9 @@ export default function AerialKitStatusSession({
     setPerformance(null);
     setPerfState("idle");
     setPerfError("");
+    setMotorTelemetry(null);
+    setMotorState("idle");
+    setMotorError("");
     observationRef.current = null;
     onObservation?.(null);
   };
@@ -849,6 +858,53 @@ export default function AerialKitStatusSession({
     }
   };
 
+  const readMotorTelemetry = async () => {
+    const session = sessionRef.current;
+    if (!activeRef.current || !session) return;
+    if (
+      hello.features != null
+      && (hello.features & AERIAL_KIT_FEATURE_MOTOR_TELEMETRY) === 0
+    ) {
+      setMotorError(
+        "The HELLO capability word does not claim MOTOR_TELEMETRY, so RotorBench did not ask for ESC telemetry.",
+      );
+      setMotorState("error");
+      return;
+    }
+    if (pollBusyRef.current) {
+      setMotorError("Wait for the current STATUS/RC poll to finish.");
+      return;
+    }
+    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    pollBusyRef.current = true;
+    setMotorError("");
+    setMotorState("reading");
+    try {
+      const telemetry = parseAerialKitMotorTelemetry(
+        await session.request(AERIAL_KIT_COMMANDS.motorTelemetry),
+      );
+      if (!mountedRef.current) return;
+      setMotorTelemetry({
+        ...telemetry,
+        observedAtMs: Date.now(),
+      });
+      setMotorState("ready");
+      setMessage(
+        telemetry.status === "none"
+          ? "The board reports no ESC telemetry path."
+          : "Read ESC telemetry without arming, spinning, or testing a motor.",
+      );
+      setProtocolStats({ ...session.stats });
+    } catch (readError) {
+      if (!mountedRef.current) return;
+      setMotorState("error");
+      setMotorError(readError.message);
+    } finally {
+      pollBusyRef.current = false;
+      if (activeRef.current) schedulePoll(session, hello);
+    }
+  };
+
   const connect = async () => {
     if (!supportedBrowser || !firmwareSupported || activeRef.current) return;
     resetObservation();
@@ -942,6 +998,7 @@ export default function AerialKitStatusSession({
       outputMetadata: outputInfo,
       preflight,
       performance,
+      motorTelemetry,
       connectionActive: sessionState === "monitoring",
       nowMs: Date.now(),
     });
@@ -1003,7 +1060,7 @@ export default function AerialKitStatusSession({
   });
   const rcAgeMs = lastRcAt == null ? null : Math.max(0, clockNow - lastRcAt);
   const canDownload = Boolean(
-    hello || liveStatus || rc || preflight || performance,
+    hello || liveStatus || rc || preflight || performance || motorTelemetry,
   );
   const metadataClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_PARAM_INFO) !== 0;
@@ -1015,6 +1072,8 @@ export default function AerialKitStatusSession({
     || (hello.features & AERIAL_KIT_FEATURE_PREFLIGHT) !== 0;
   const perfClaimed = hello?.features == null
     || (hello.features & AERIAL_KIT_FEATURE_PERF) !== 0;
+  const motorTelemetryClaimed = hello?.features == null
+    || (hello.features & AERIAL_KIT_FEATURE_MOTOR_TELEMETRY) !== 0;
   const busy = ["selecting", "connecting", "stopping"].includes(sessionState);
   const active = ["connecting", "monitoring"].includes(sessionState);
 
@@ -1028,7 +1087,7 @@ export default function AerialKitStatusSession({
         <span>
           <strong>Aerial Kit flight status</strong>
           <small>
-            Experimental · explicit port selection · HELLO / STATUS / RC / PARAM_GET
+            Read-only AKP status, parameters, preflight, and telemetry
           </small>
         </span>
         <em>Queries only</em>
@@ -1395,6 +1454,90 @@ export default function AerialKitStatusSession({
                 )}
                 {performance?.status === "ok" && (
                   <AerialKitPerformanceReadings performance={performance} />
+                )}
+              </section>
+            )}
+
+            {hello && (
+              <section
+                className="aerial-kit-motors"
+                aria-label="Aerial Kit ESC telemetry"
+              >
+                <div className="aerial-kit-section-heading">
+                  <strong>ESC telemetry</strong>
+                  <span>
+                    {motorState === "reading"
+                      ? "Reading"
+                      : motorState === "ready"
+                        ? motorTelemetry.status === "none"
+                          ? "No telemetry path"
+                          : `${motorTelemetry.motors.filter((motor) => motor.measured).length}/${motorTelemetry.count} answering`
+                        : motorState === "error"
+                          ? "Read stopped"
+                          : !motorTelemetryClaimed
+                            ? "Not claimed"
+                            : "Not read"}
+                  </span>
+                </div>
+                <div className="aerial-kit-parameter-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      !active
+                      || sessionState !== "monitoring"
+                      || motorState === "reading"
+                      || !motorTelemetryClaimed
+                    }
+                    onClick={readMotorTelemetry}
+                  >
+                    <Activity size={15} aria-hidden="true" />
+                    Read ESC telemetry
+                  </button>
+                  <span>
+                    {motorTelemetry?.observedAtMs
+                      ? `Observed ${ageLabel(motorTelemetry.observedAtMs, clockNow)}`
+                      : "User-triggered read"}
+                  </span>
+                </div>
+                <p>
+                  Flags decide which fields are readings. An unmeasured motor is
+                  not shown as stopped, and missing RPM, temperature, voltage, or
+                  current remains not reported.
+                </p>
+                {motorError && (
+                  <div className="aerial-kit-rc-unavailable" role="note">
+                    <ShieldAlert size={16} aria-hidden="true" />
+                    <span>
+                      <strong>ESC telemetry unavailable</strong>
+                      <small>{motorError}</small>
+                    </span>
+                  </div>
+                )}
+                {motorTelemetry?.status === "none" && (
+                  <div className="aerial-kit-preflight-empty" role="note">
+                    <Activity size={16} aria-hidden="true" />
+                    <span>
+                      <strong>No ESC telemetry path</strong>
+                      <small>
+                        This build cannot hear its ESCs. RotorBench does not replace
+                        that answer with a list of stopped motors.
+                      </small>
+                    </span>
+                  </div>
+                )}
+                {motorTelemetry?.status === "ok" && (
+                  <>
+                    <p className="aerial-kit-motor-poles">
+                      Pole count reported by the board:{" "}
+                      {motorTelemetry.poles || "unknown"}.{" "}
+                      {motorTelemetry.poles
+                        ? "Mechanical RPM is only shown where its flag is set."
+                        : "Mechanical RPM is not derived without a pole count."}
+                    </p>
+                    <AerialKitMotorTelemetryReadings
+                      telemetry={motorTelemetry}
+                    />
+                  </>
                 )}
               </section>
             )}

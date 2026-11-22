@@ -17,6 +17,7 @@ const HELLO_PAYLOAD_WITH_RC = "0161657269616c6b69742d66343035002e003000d10100009
 const HELLO_PAYLOAD_TWO_PARAMETERS = "0161657269616c6b69742d663430350002003000f1010000920638cf";
 const HELLO_PAYLOAD_WITH_PREFLIGHT = "0161657269616c6b69742d663430350002003000f1030000920638cf";
 const HELLO_PAYLOAD_WITH_PERF = "0161657269616c6b69742d663430350002003000f1130000920638cf";
+const HELLO_PAYLOAD_WITH_MOTORS = "0161657269616c6b69742d663430350002003000f1330000920638cf";
 const STATUS_REPLY = "aa550185160101030b7d00d8ff84038768111f3f0ef90228283c3c8598";
 
 function setSerial(value) {
@@ -52,8 +53,27 @@ function rcReply() {
   return buildAerialKitFrame(0x8d, payload);
 }
 
+function motorTelemetryReply(status = 0) {
+  if (status === 1) return buildAerialKitFrame(0x96, Uint8Array.of(1));
+  const payload = new Uint8Array(3 + 2 * 19);
+  const view = new DataView(payload.buffer);
+  payload.set([0, 2, 14], 0);
+  payload[3] = 0x1f;
+  view.setUint32(4, 100000, true);
+  view.setUint32(8, 7142, true);
+  payload[12] = 40;
+  payload[13] = 45;
+  view.setUint16(14, 24000, true);
+  view.setUint16(16, 18000, true);
+  view.setUint16(18, 100, true);
+  view.setUint16(20, 2, true);
+  payload[22] = 0;
+  return buildAerialKitFrame(0x96, payload);
+}
+
 function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
   perfStatus = 0,
+  motorStatus = 0,
 } = {}) {
   const waiters = [];
   const queued = [];
@@ -238,6 +258,9 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
         });
         view.setUint16(57, 123, true);
         deliver(buildAerialKitFrame(0x95, payload));
+      }
+      else if (command === 0x16) {
+        deliver(motorTelemetryReply(motorStatus));
       }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
@@ -551,6 +574,64 @@ test("keeps a zeroed profiler window distinct from measured performance", async 
   expect(await screen.findByText("No profiler in this build"))
     .toBeInTheDocument();
   expect(screen.queryByText("503 / 496 / 612 µs")).not.toBeInTheDocument();
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("reads ESC telemetry without inventing stopped or missing values", async () => {
+  const { port, writer } = createPort(HELLO_PAYLOAD_WITH_MOTORS);
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read ESC telemetry",
+  }));
+
+  expect(await screen.findByText("1/2 answering")).toBeInTheDocument();
+  expect(screen.getByText("100000 eRPM")).toBeInTheDocument();
+  expect(screen.getByText("7142 RPM")).toBeInTheDocument();
+  expect(screen.getByText("40 / 45 °C")).toBeInTheDocument();
+  expect(screen.getByText("24000 mV · 18000 mA")).toBeInTheDocument();
+  expect(screen.getByText("Not heard")).toBeInTheDocument();
+  expect(screen.getByText(/No ESC telemetry in this window/)).toBeInTheDocument();
+  expect(screen.getByText(/Pole count reported by the board: 14/))
+    .toBeInTheDocument();
+
+  const commands = writer.write.mock.calls.map(([frame]) => frame[3]);
+  expect(commands).toContain(0x16);
+  expect(commands).not.toContain(0x10);
+  expect(commands).not.toContain(0x11);
+
+  await act(async () => {
+    await userEvent.click(screen.getByRole("button", { name: "Stop session" }));
+  });
+});
+
+test("keeps a missing ESC telemetry path distinct from stopped motors", async () => {
+  const { port } = createPort(HELLO_PAYLOAD_WITH_MOTORS, { motorStatus: 1 });
+  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
+
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByRole("button", {
+    name: "Connect and monitor",
+  }));
+  expect(await screen.findByText("Monitoring")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", {
+    name: "Read ESC telemetry",
+  }));
+
+  expect(await screen.findByText("No ESC telemetry path")).toBeInTheDocument();
+  expect(screen.getByText(/does not replace that answer with a list of stopped motors/i))
+    .toBeInTheDocument();
+  expect(screen.queryByText("Motor 1")).not.toBeInTheDocument();
 
   await act(async () => {
     await userEvent.click(screen.getByRole("button", { name: "Stop session" }));

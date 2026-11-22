@@ -26,6 +26,7 @@ import FcParameterSnapshot from "./FcParameterSnapshot";
 import RadioParameterSnapshot from "./RadioParameterSnapshot";
 import AerialKitSensorReadings from "./AerialKitSensorReadings";
 import AerialKitPerformanceReadings from "./AerialKitPerformanceReadings";
+import AerialKitMotorTelemetryReadings from "./AerialKitMotorTelemetryReadings";
 import {
   buildFcEvidencePlanPatch,
   buildRadioEvidencePlanPatch,
@@ -1332,6 +1333,48 @@ export default function BenchEvidenceReview({
                 <AerialKitPerformanceReadings
                   performance={evidence.fcEvidence.liveStatus.performance}
                 />
+              )}
+            </section>
+          )}
+
+          {evidence.fcEvidence?.liveStatus?.motorTelemetry && (
+            <section
+              className="aerial-kit-motors"
+              aria-label="Imported Aerial Kit ESC telemetry"
+            >
+              <div className="aerial-kit-section-heading">
+                <strong>Imported ESC telemetry</strong>
+                <span>
+                  {evidence.fcEvidence.liveStatus.motorTelemetry.status === "none"
+                    ? "No telemetry path"
+                    : `${evidence.fcEvidence.liveStatus.motorTelemetry.motors.filter((motor) => motor.measured).length}/${evidence.fcEvidence.liveStatus.motorTelemetry.count} answering`}
+                </span>
+              </div>
+              <p>
+                Per-output fields follow the imported flags. Missing RPM,
+                temperature, voltage, or current remains not reported, and an
+                unmeasured motor is not treated as stopped.
+              </p>
+              {evidence.fcEvidence.liveStatus.motorTelemetry.status === "none" ? (
+                <div className="aerial-kit-preflight-empty" role="note">
+                  <Activity size={16} aria-hidden="true" />
+                  <span>
+                    <strong>No ESC telemetry path</strong>
+                    <small>
+                      The imported snapshot contains no motor readings.
+                    </small>
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <p className="aerial-kit-motor-poles">
+                    Pole count reported by the board:{" "}
+                    {evidence.fcEvidence.liveStatus.motorTelemetry.poles || "unknown"}.
+                  </p>
+                  <AerialKitMotorTelemetryReadings
+                    telemetry={evidence.fcEvidence.liveStatus.motorTelemetry}
+                  />
+                </>
               )}
             </section>
           )}
