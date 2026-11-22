@@ -476,6 +476,7 @@ const BabylonViewer = ({
   const engineRef = useRef(null);
   const cameraRef = useRef(null);
   const autoRotateRef = useRef(autoRotate);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const explodedRef = useRef(exploded);
   const showFitOverlayRef = useRef(showFitOverlay);
   const fitOverlayStatusRef = useRef(fitOverlayStatus);
@@ -501,8 +502,17 @@ const BabylonViewer = ({
   const SAMPLE_CAMERA = { alpha: 7.85, beta: 1.2, radius: 460 };
 
   useEffect(() => {
-    autoRotateRef.current = autoRotate;
-  }, [autoRotate]);
+    autoRotateRef.current = autoRotate && !prefersReducedMotion;
+  }, [autoRotate, prefersReducedMotion]);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return undefined;
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(motionQuery.matches);
+    updatePreference();
+    motionQuery.addEventListener?.("change", updatePreference);
+    return () => motionQuery.removeEventListener?.("change", updatePreference);
+  }, []);
 
   const disposeFitOverlay = (scene) => {
     if (!scene) return;
