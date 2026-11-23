@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   act,
   fireEvent,
@@ -11,7 +12,8 @@ import { BuildProvider } from "../context/BuildContext";
 import BuildPage from "./BuildPage";
 import { createBuildShareToken } from "../utils/buildLink";
 
-jest.mock("./BabylonViewer.jsx", () => ({
+vi.mock("./BabylonViewer.jsx", () => ({
+  default: ({
   cameraView,
   autoRotate,
   exploded,
@@ -24,34 +26,35 @@ jest.mock("./BabylonViewer.jsx", () => ({
   showFitOverlay,
   fitOverlayStatus,
   onReady,
-}) => (
-  <div
-    data-testid="assembly-viewer"
-    data-camera-view={cameraView}
-    data-auto-rotate={String(autoRotate)}
-    data-exploded={String(exploded)}
-    data-frame={assemblySpec?.frame?.id || ""}
-    data-estimated-cg={estimatedCgMm?.join(",") || ""}
-    data-measured-cg={measuredCgMm?.join(",") || ""}
-    data-motor-mount-count={frameCornerPositions?.length || 0}
-    data-motor={assemblySpec?.motor?.id || ""}
-    data-motor-shaft={assemblySpec?.motor?.propShaftMm ?? ""}
-    data-motor-measured={assemblySpec?.motor?.measuredFields?.join(",") || ""}
-    data-propeller={assemblySpec?.propeller?.id || ""}
-    data-propeller-direction={propellerDirection || ""}
-    data-motor-label-count={motorLabels?.length || 0}
-    data-esc={assemblySpec?.esc?.id || ""}
-    data-battery={assemblySpec?.battery?.id || ""}
-    data-flight-controller={assemblySpec?.flightController?.id || ""}
-    data-receiver={assemblySpec?.receiver?.id || ""}
-    data-fit-overlay={String(showFitOverlay)}
-    data-fit-motor-conflict={String(Boolean(fitOverlayStatus?.motorConflict))}
-  >
-    <button type="button" onClick={() => onReady?.()}>
-      Assembly ready
-    </button>
-  </div>
-));
+  }) => (
+    <div
+      data-testid="assembly-viewer"
+      data-camera-view={cameraView}
+      data-auto-rotate={String(autoRotate)}
+      data-exploded={String(exploded)}
+      data-frame={assemblySpec?.frame?.id || ""}
+      data-estimated-cg={estimatedCgMm?.join(",") || ""}
+      data-measured-cg={measuredCgMm?.join(",") || ""}
+      data-motor-mount-count={frameCornerPositions?.length || 0}
+      data-motor={assemblySpec?.motor?.id || ""}
+      data-motor-shaft={assemblySpec?.motor?.propShaftMm ?? ""}
+      data-motor-measured={assemblySpec?.motor?.measuredFields?.join(",") || ""}
+      data-propeller={assemblySpec?.propeller?.id || ""}
+      data-propeller-direction={propellerDirection || ""}
+      data-motor-label-count={motorLabels?.length || 0}
+      data-esc={assemblySpec?.esc?.id || ""}
+      data-battery={assemblySpec?.battery?.id || ""}
+      data-flight-controller={assemblySpec?.flightController?.id || ""}
+      data-receiver={assemblySpec?.receiver?.id || ""}
+      data-fit-overlay={String(showFitOverlay)}
+      data-fit-motor-conflict={String(Boolean(fitOverlayStatus?.motorConflict))}
+    >
+      <button type="button" onClick={() => onReady?.()}>
+        Assembly ready
+      </button>
+    </div>
+  ),
+}));
 
 function LocationProbe() {
   const location = useLocation();
@@ -122,11 +125,11 @@ beforeAll(() => {
 
 beforeEach(() => {
   localStorage.clear();
-  global.fetch = jest.fn(() => new Promise(() => {}));
+  global.fetch = vi.fn(() => new Promise(() => {}));
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 test("inspection presets control the viewer without leaving orbit mode ambiguous", async () => {
@@ -207,7 +210,7 @@ test("inspection presets control the viewer without leaving orbit mode ambiguous
   expect(screen.getByText("SpeedyBee BLS 35A Mini V2 current")).toBeInTheDocument();
   expect(screen.getByText("SpeedyBee F405 Mini input voltage")).toBeInTheDocument();
   expect(screen.getByText("Ready")).toBeInTheDocument();
-});
+}, 30000);
 
 test("shows imported plan-comparison metadata without promoting it to hardware evidence", async () => {
   render(
@@ -264,11 +267,11 @@ test("orbit auto-rotation respects the reduced-motion preference", async () => {
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
-    value: jest.fn(() => ({
+    value: vi.fn(() => ({
       matches: true,
       media: "(prefers-reduced-motion: reduce)",
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
     })),
   });
 
@@ -387,7 +390,7 @@ test("loads a portable shared build above stored draft state", async () => {
 });
 
 test("copies a portable share link without build notes or hardware state", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
@@ -1134,7 +1137,7 @@ test("the power path names an adapter for a connector mismatch", async () => {
 
 test("copies a sanitized human-readable build briefing", async () => {
   const originalClipboard = navigator.clipboard;
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },

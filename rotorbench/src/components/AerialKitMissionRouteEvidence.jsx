@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import AerialKitRouteSketch from "./AerialKitRouteSketch";
 import AerialKitWaypointInspector from "./AerialKitWaypointInspector";
 import AerialKitWaypointRouteSummary from "./AerialKitWaypointRouteSummary";

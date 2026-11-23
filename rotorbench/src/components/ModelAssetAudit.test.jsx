@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import ModelAssetAudit, { createModelSourceReport } from "./ModelAssetAudit";
 import { getA11yViolations } from "../test/a11y";
@@ -31,7 +31,7 @@ test("omits the audit when no modeled parts are selected", () => {
 });
 
 test("copies a portable model-source report without promoting fallback geometry", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },

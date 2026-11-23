@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { RotateCcw, Ruler, Settings2 } from "lucide-react";
 import {
   GEOMETRY_CATEGORY_FIELDS,
@@ -258,6 +258,13 @@ export default function MeasuredGeometryPanel({
               key={summary.key}
               type="button"
               className={summary.key === activePart.key ? "is-active" : ""}
+              aria-label={`${summary.label} ${summary.part.name} ${
+                summary.measuredCount
+                  ? `${summary.measuredCount}/${summary.fields.length} measured`
+                  : summary.missingCount
+                    ? `${summary.missingCount} missing`
+                    : "Catalog"
+              }`}
               aria-pressed={summary.key === activePart.key}
               aria-controls={activeId}
               onClick={() => setActivePartKey(summary.key)}

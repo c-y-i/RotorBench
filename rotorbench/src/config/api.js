@@ -2,7 +2,7 @@
  * API base URL strategy:
  * - Production default: same-origin (empty string) so requests go to /api
  * - Development default: localhost backend
- * - Override with REACT_APP_API_BASE when needed
+ * - Override with VITE_API_BASE when needed
  */
 
 const normalizeBase = (value) => {
@@ -10,8 +10,8 @@ const normalizeBase = (value) => {
   return value.trim().replace(/\/+$/, "");
 };
 
-const envBase = normalizeBase(process.env.REACT_APP_API_BASE);
+const envBase = normalizeBase(import.meta.env.VITE_API_BASE);
 const API_BASE =
-  envBase || (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "");
+  envBase || (import.meta.env.DEV ? "http://localhost:8000" : "");
 
 export default API_BASE;

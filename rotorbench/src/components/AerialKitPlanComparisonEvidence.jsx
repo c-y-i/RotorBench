@@ -1,4 +1,3 @@
-import React from "react";
 
 const STATUS_LABELS = {
   pass: "Matches plan",

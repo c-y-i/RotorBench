@@ -1,4 +1,3 @@
-import React from "react";
 
 function measuredValue(value, suffix) {
   return value == null ? "Not reported" : `${value}${suffix}`;

@@ -1,4 +1,3 @@
-import React from "react";
 
 function distanceLabel(value) {
   if (value == null) return "—";

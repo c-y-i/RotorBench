@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import {
   act,
   render,
@@ -177,17 +177,17 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
     else queued.push(value);
   };
   const reader = {
-    read: jest.fn(() => {
+    read: vi.fn(() => {
       if (queued.length) return Promise.resolve({ value: queued.shift(), done: false });
       return new Promise((resolve) => waiters.push(resolve));
     }),
-    cancel: jest.fn(async () => {
+    cancel: vi.fn(async () => {
       waiters.splice(0).forEach((resolve) => resolve({ value: undefined, done: true }));
     }),
-    releaseLock: jest.fn(),
+    releaseLock: vi.fn(),
   };
   const writer = {
-    write: jest.fn(async (frame) => {
+    write: vi.fn(async (frame) => {
       const command = frame[3];
       if (command === 0x01) {
         deliver(buildAerialKitFrame(0x81, bytes(helloPayload)));
@@ -429,13 +429,13 @@ function createPort(helloPayload = HELLO_PAYLOAD_WITH_RC, {
       }
       else throw new Error(`Unexpected command 0x${command.toString(16)}`);
     }),
-    releaseLock: jest.fn(),
+    releaseLock: vi.fn(),
   };
   const port = {
-    open: jest.fn().mockResolvedValue(undefined),
-    close: jest.fn().mockResolvedValue(undefined),
-    readable: { getReader: jest.fn(() => reader) },
-    writable: { getWriter: jest.fn(() => writer) },
+    open: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    readable: { getReader: vi.fn(() => reader) },
+    writable: { getWriter: vi.fn(() => writer) },
   };
   return { port, reader, writer };
 }
@@ -444,22 +444,22 @@ afterEach(() => {
   setSerial(originalSerial);
 });
 
-test("explains when Web Serial is unavailable", () => {
+test("explains when Web Serial is unavailable", async () => {
   setSerial(undefined);
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
-  userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
 
   expect(screen.getByText("Web Serial is unavailable")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Connect and monitor" }))
     .not.toBeInTheDocument();
 });
 
-test("does not offer AKP queries for a different firmware family", () => {
-  setSerial({ requestPort: jest.fn() });
+test("does not offer AKP queries for a different firmware family", async () => {
+  setSerial({ requestPort: vi.fn() });
   const { rerender } = render(
     <AerialKitStatusSession firmwareFamily="betaflight" />,
   );
-  userEvent.click(screen.getByText("Aerial Kit flight status"));
+  await userEvent.click(screen.getByText("Aerial Kit flight status"));
 
   expect(screen.getByText(/AKP live status is not available/i))
     .toBeInTheDocument();
@@ -475,8 +475,8 @@ test("does not offer AKP queries for a different firmware family", () => {
 
 test("queries HELLO, STATUS, and RC without issuing a mutation command", async () => {
   const { port, reader, writer } = createPort();
-  const requestPort = jest.fn().mockResolvedValue(port);
-  const onObservation = jest.fn();
+  const requestPort = vi.fn().mockResolvedValue(port);
+  const onObservation = vi.fn();
   setSerial({ requestPort });
   const { container } = render(
     <AerialKitStatusSession
@@ -534,7 +534,7 @@ test("queries HELLO, STATUS, and RC without issuing a mutation command", async (
 
 test("does not ask for RC when HELLO explicitly omits that capability", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_NO_RC);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -554,7 +554,7 @@ test("does not ask for RC when HELLO explicitly omits that capability", async ()
 
 test("reads a bounded parameter inventory with PARAM_GET only", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -584,7 +584,7 @@ test("reads a bounded parameter inventory with PARAM_GET only", async () => {
 
 test("reads capability-gated parameter metadata without requesting help", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -621,7 +621,7 @@ test("filters live parameters by board-reported metadata groups", async () => {
   const { port } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS, {
     parameterGroups: [1, 4],
   });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -659,7 +659,7 @@ test("filters live parameters by board-reported metadata groups", async () => {
 });
 
 test("compares live board-reported parameters with the staged FC plan", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
@@ -686,7 +686,7 @@ test("compares live board-reported parameters with the staged FC plan", async ()
       },
     ],
   });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(
     <AerialKitStatusSession
       firmwareFamily="aerialkit"
@@ -767,7 +767,7 @@ test("compares live board-reported parameters with the staged FC plan", async ()
 
 test("reads sensor presence and output descriptors without testing outputs", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_TWO_PARAMETERS);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -810,7 +810,7 @@ test("reads sensor presence and output descriptors without testing outputs", asy
 
 test("reads the board preflight checklist without issuing a state change", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_WITH_PREFLIGHT);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -840,7 +840,7 @@ test("reads the board preflight checklist without issuing a state change", async
 
 test("reads the loop performance window in board-reported units", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_WITH_PERF);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -872,7 +872,7 @@ test("reads the loop performance window in board-reported units", async () => {
 
 test("keeps a zeroed profiler window distinct from measured performance", async () => {
   const { port } = createPort(HELLO_PAYLOAD_WITH_PERF, { perfStatus: 1 });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -895,7 +895,7 @@ test("keeps a zeroed profiler window distinct from measured performance", async 
 
 test("reads ESC telemetry without inventing stopped or missing values", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_WITH_MOTORS);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -929,7 +929,7 @@ test("reads ESC telemetry without inventing stopped or missing values", async ()
 
 test("keeps a missing ESC telemetry path distinct from stopped motors", async () => {
   const { port } = createPort(HELLO_PAYLOAD_WITH_MOTORS, { motorStatus: 1 });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -953,7 +953,7 @@ test("keeps a missing ESC telemetry path distinct from stopped motors", async ()
 
 test("streams telemetry at the agreed rate and stops explicitly", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_WITH_MOTORS);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -992,7 +992,7 @@ test("keeps a declined telemetry stream distinct from a running stream", async (
     telemetryAgreedHz: 0,
     telemetryPushCount: 0,
   });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1019,7 +1019,7 @@ test("marks a silent telemetry stream stale instead of keeping it live", async (
   const { port } = createPort(HELLO_PAYLOAD_WITH_MOTORS, {
     telemetryPushCount: 1,
   });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1045,7 +1045,7 @@ test("marks a silent telemetry stream stale instead of keeping it live", async (
 
 test("reads mission status without exposing mission-changing verbs", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_WITH_MISSION);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1083,7 +1083,7 @@ test("reads mission status without exposing mission-changing verbs", async () =>
 
 test("keeps a no-navigator mission refusal distinct from an empty mission", async () => {
   const { port } = createPort(HELLO_PAYLOAD_WITH_MISSION, { missionStatus: 2 });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1106,7 +1106,7 @@ test("keeps a no-navigator mission refusal distinct from an empty mission", asyn
 
 test("reads calibration-session status without exposing calibration verbs", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_WITH_CALIBRATION);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1147,7 +1147,7 @@ test("keeps no calibration session distinct from zeroed measurements", async () 
     calibrationRejected: 0,
     calibrationResults: [0, 0, 0, 0, 0, 0],
   });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1176,7 +1176,7 @@ test("does not present calibration results after an armed refusal", async () => 
     calibrationActive: false,
     calibrationResults: [1, 2, 3, 4, 5, 6],
   });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1208,7 +1208,7 @@ test("reads a waypoint inventory from advertised parameters without upload contr
       { name: "wp1_lon", value: "-122.4000000" },
     ],
   });
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   const { container } = render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1272,7 +1272,7 @@ test("reads a waypoint inventory from advertised parameters without upload contr
 
 test("reads bounded log samples while retaining holes, completion, and record versions", async () => {
   const { port, writer } = createPort(HELLO_PAYLOAD_WITH_MOTORS);
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(<AerialKitStatusSession firmwareFamily="aerialkit" />);
 
   await userEvent.click(screen.getByText("Aerial Kit flight status"));
@@ -1304,10 +1304,10 @@ test("reads bounded log samples while retaining holes, completion, and record ve
   const originalCreateObjectUrl = URL.createObjectURL;
   const originalRevokeObjectUrl = URL.revokeObjectURL;
   const originalAnchorClick = HTMLAnchorElement.prototype.click;
-  const createObjectUrl = jest.fn(() => "blob:log-sample");
-  const anchorClick = jest.fn();
+  const createObjectUrl = vi.fn(() => "blob:log-sample");
+  const anchorClick = vi.fn();
   URL.createObjectURL = createObjectUrl;
-  URL.revokeObjectURL = jest.fn();
+  URL.revokeObjectURL = vi.fn();
   HTMLAnchorElement.prototype.click = anchorClick;
   try {
     await userEvent.click(screen.getByRole("button", {

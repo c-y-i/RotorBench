@@ -7,8 +7,8 @@ RotorBench helps FPV drone enthusiasts design, analyze, and optimize their drone
 ## Prerequisites
 
 - **Python 3.8+** (for backend)
-- **Node.js 14+** (for frontend)
-- **npm or yarn** (package manager)
+- **Node.js 22.13+** (for frontend; Node 22 LTS recommended)
+- **npm 10+**
 
 ## Installation
 
@@ -43,10 +43,7 @@ pip install -r requirements.txt
 cd ../rotorbench
 
 # Install dependencies
-npm install
-
-# Or with yarn:
-yarn install
+npm ci
 ```
 
 ## Running the Application
@@ -94,15 +91,27 @@ The frontend will start at: **http://localhost:3000**
 
 **Backend:** FastAPI, Pydantic, Uvicorn
 
-**Frontend:** React, React Router, Recharts, Babylon.js, CSS3
+**Frontend:** React, React Router, Vite, Recharts, Babylon.js, CSS3
+
+**Frontend tooling:** Vitest, Testing Library, ESLint
 
 ## Testing
 
-Run the comprehensive test suite:
+Run the frontend checks:
+
+```bash
+cd rotorbench
+npm run lint
+npm test
+npm run build
+npm audit
+```
+
+Run the backend contract suite:
 
 ```bash
 cd backend
-python test_api.py
+.venv/bin/python -m unittest discover -s tests -v
 ```
 
 

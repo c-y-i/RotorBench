@@ -1,4 +1,3 @@
-import React from "react";
 
 function distanceValue(value) {
   if (!Number.isFinite(value)) return "Unavailable";

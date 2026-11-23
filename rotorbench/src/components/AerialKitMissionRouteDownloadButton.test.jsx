@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AerialKitMissionRouteDownloadButton from "./AerialKitMissionRouteDownloadButton";
@@ -31,8 +31,8 @@ const proximity = {
 };
 
 test("downloads a validated route without sending anything to hardware", async () => {
-  const createObjectURL = jest.fn(() => "blob:mission-route");
-  const revokeObjectURL = jest.fn();
+  const createObjectURL = vi.fn(() => "blob:mission-route");
+  const revokeObjectURL = vi.fn();
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
     value: createObjectURL,
@@ -41,7 +41,7 @@ test("downloads a validated route without sending anything to hardware", async (
     configurable: true,
     value: revokeObjectURL,
   });
-  const click = jest.spyOn(HTMLAnchorElement.prototype, "click")
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click")
     .mockImplementation(() => {});
   render(<AerialKitMissionRouteDownloadButton
     mission={mission}

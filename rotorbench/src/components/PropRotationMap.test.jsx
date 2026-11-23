@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   fireEvent,
   render,
@@ -105,7 +106,7 @@ test("saved flight-controller outputs label the corresponding corners", () => {
 });
 
 test("flags flight-controller output spin that conflicts with prop direction", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
@@ -148,7 +149,7 @@ test("flags flight-controller output spin that conflicts with prop direction", a
 });
 
 test("copies a portable prop-map handoff with the output mapping and boundary", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },

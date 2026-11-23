@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BenchEvidenceReview from "./BenchEvidenceReview";
@@ -133,6 +133,7 @@ const radioStatusEvidence = {
 function evidenceFile(value, name = "pair.json") {
   return {
     name,
+    type: "application/json",
     text: async () => JSON.stringify(value),
   };
 }
@@ -174,6 +175,7 @@ function observationEvidence(role, name) {
 function textEvidenceFile(value, name) {
   return {
     name,
+    type: "text/plain",
     text: async () => value,
   };
 }
@@ -187,7 +189,7 @@ test("reviews a complete pair file without claiming RotorBench observed hardware
     <BenchEvidenceReview expectedUid="10:73:a1:1f:a8:0f" />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(pairEvidence),
   );
@@ -204,7 +206,7 @@ test("reviews a complete pair file without claiming RotorBench observed hardware
 });
 
 test("shows Aerial Kit firmware capabilities as compiled claims, not hardware proof", async () => {
-  const onEvidenceChange = jest.fn();
+  const onEvidenceChange = vi.fn();
   render(
     <BenchEvidenceReview
       expectedFc={{ firmwareFamily: "aerialkit" }}
@@ -212,7 +214,7 @@ test("shows Aerial Kit firmware capabilities as compiled claims, not hardware pr
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile({
       protocol: "akp",
@@ -248,7 +250,7 @@ test("shows Aerial Kit firmware capabilities as compiled claims, not hardware pr
 test("reviews a downloaded live AKP snapshot as time-bounded evidence", async () => {
   render(<BenchEvidenceReview expectedFc={{ firmwareFamily: "aerialkit" }} />);
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile({
       schema: "rotorbench.aerial-kit-live-status.v1",
@@ -657,7 +659,7 @@ test("reviews a downloaded live AKP snapshot as time-bounded evidence", async ()
 test("keeps a live snapshot with no preflight checklist unverified", async () => {
   render(<BenchEvidenceReview expectedFc={{ firmwareFamily: "aerialkit" }} />);
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile({
       schema: "rotorbench.aerial-kit-live-status.v1",
@@ -731,7 +733,7 @@ test("reviews a downloaded mission route as validated planning evidence", async 
   }).artifact;
   render(<BenchEvidenceReview expectedFc={{ firmwareFamily: "aerialkit" }} />);
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(artifact, "mission-route.json"),
   );
@@ -786,7 +788,7 @@ test("reviews a downloaded plan comparison against the current FC plan", async (
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(artifact, "plan-comparison.json"),
   );
@@ -874,7 +876,7 @@ test("reviews a validated standalone bounded log artifact", async () => {
   });
   render(<BenchEvidenceReview expectedFc={{ firmwareFamily: "aerialkit" }} />);
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(exported, "log-sample.json"),
   );
@@ -902,7 +904,7 @@ test("reviews an RX ExpressLRS menu inventory without calling it TX", async () =
     expectedSettings={{ packetRateMode: "100-full" }}
   />);
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile({
       schema: "rotorbench.elrs-device-menu.v1",
@@ -955,7 +957,7 @@ test("reviews an RX ExpressLRS menu inventory without calling it TX", async () =
 test("a plan UID mismatch is shown as a failed check", async () => {
   render(<BenchEvidenceReview expectedUid="aa:bb:cc:dd:ee:ff" />);
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(pairEvidence),
   );
@@ -985,7 +987,7 @@ test("correlates one report with TX and RX boot diagnostics", async () => {
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile(pairEvidence, "pair.json"),
@@ -1016,14 +1018,14 @@ test("correlates one report with TX and RX boot diagnostics", async () => {
 
 test("downloads a sanitized portable review summary", async () => {
   render(<BenchEvidenceReview expectedUid="10:73:a1:1f:a8:0f" />);
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(pairEvidence),
   );
   await screen.findByText("Required RF gates are present in the file");
 
-  const createObjectURL = jest.fn(() => "blob:bench-review");
-  const revokeObjectURL = jest.fn();
+  const createObjectURL = vi.fn(() => "blob:bench-review");
+  const revokeObjectURL = vi.fn();
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
     value: createObjectURL,
@@ -1032,7 +1034,7 @@ test("downloads a sanitized portable review summary", async () => {
     configurable: true,
     value: revokeObjectURL,
   });
-  const click = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 
   await userEvent.click(screen.getByRole("button", { name: "Download review" }));
 
@@ -1065,7 +1067,7 @@ test("explicitly attaches a sanitized evidence summary to the current build", as
       evidenceScope={evidenceScope}
     />,
   );
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(pairEvidence),
   );
@@ -1304,8 +1306,9 @@ test("invalid JSON is rejected without retaining prior evidence", async () => {
   render(<BenchEvidenceReview />);
   const input = screen.getByLabelText("Choose hardware evidence files");
 
-  userEvent.upload(input, {
+  await userEvent.upload(input, {
     name: "bad.json",
+    type: "application/json",
     text: async () => "{",
   });
   expect(await screen.findByRole("alert")).toHaveTextContent(/not valid JSON/i);
@@ -1314,7 +1317,7 @@ test("invalid JSON is rejected without retaining prior evidence", async () => {
 
 test("native CRSF observation reports expose timing and integrity diagnostics", async () => {
   render(<BenchEvidenceReview />);
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile({
       schema: "rotorbench.crsf-observation.v1",
@@ -1382,7 +1385,7 @@ test("correlates matching TX and RX observations without claiming RF", async () 
     <BenchEvidenceReview targetName="Aerial Kit ELRS USB TX Rev A3" />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     [
       observationEvidence("tx", "tx-observation.json"),
@@ -1410,7 +1413,7 @@ test("reviews imported flight-controller status and preflight evidence", async (
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile(fcStatusEvidence, "fc-status.json"),
@@ -1438,7 +1441,7 @@ test("does not call Betaflight MSP status a receiver-link pass", async () => {
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile({
@@ -1464,7 +1467,7 @@ test("filters imported evidence to failed and unverified review items", async ()
       expectedFc={{ firmwareFamily: "betaflight" }}
     />,
   );
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile({
@@ -1505,7 +1508,7 @@ test("shows fresh FC RC channels without claiming RF verification", async () => 
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile({
@@ -1546,7 +1549,7 @@ test("recognizes a standalone FC RC observation without completing FC evidence",
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile({
       protocol: "betaflight",
@@ -1577,7 +1580,7 @@ test("reviews radio device status without exposing serial identity", async () =>
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(radioStatusEvidence, "tx-status.json"),
   );
@@ -1603,7 +1606,7 @@ test("names a radio endpoint mismatch instead of falling back to the generic RF 
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     evidenceFile(radioStatusEvidence, "tx-status.json"),
   );
@@ -1622,7 +1625,7 @@ test("compares an imported FC parameter snapshot with the staged plan", async ()
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile(
       "arm_channel=6 status=0\nrc_min=180 status=0",
@@ -1648,7 +1651,7 @@ test("does not call a partial FC parameter snapshot a plan match", async () => {
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile("arm_channel=5 status=0", "fc-params.txt"),
   );
@@ -1679,7 +1682,7 @@ test("reviews Mission Planner parameters for the documented H743 receiver path",
     />,
   );
 
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile(
       "BRD_ALT_CONFIG,1\nSERIAL7_PROTOCOL,23",
@@ -1705,7 +1708,7 @@ test("reviews Mission Planner parameters for the documented H743 receiver path",
 });
 
 test("adopts only selected observed FC values through an explicit local action", async () => {
-  const adopt = jest.fn();
+  const adopt = vi.fn();
   const evidenceScope = createBenchEvidenceScope({
     build: { componentIds: { flightControllerId: "fc-a" } },
     flightControllerPlan: { planVersion: 3, firmwareFamily: "aerialkit" },
@@ -1724,7 +1727,7 @@ test("adopts only selected observed FC values through an explicit local action",
       onAdoptPlanPatch={adopt}
     />,
   );
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile(
       "arm_channel=5 status=0\narm_hold_ms=750 status=0",
@@ -1768,10 +1771,10 @@ test("blocks observed-value adoption after the reviewed plan scope changes", asy
     <BenchEvidenceReview
       evidenceScope={initialScope}
       expectedFc={expectedFc}
-      onAdoptPlanPatch={jest.fn()}
+      onAdoptPlanPatch={vi.fn()}
     />,
   );
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     textEvidenceFile("arm_channel=5 status=0", "fc-params.txt"),
   );
@@ -1781,7 +1784,7 @@ test("blocks observed-value adoption after the reviewed plan scope changes", asy
     <BenchEvidenceReview
       evidenceScope={changedScope}
       expectedFc={expectedFc}
-      onAdoptPlanPatch={jest.fn()}
+      onAdoptPlanPatch={vi.fn()}
     />,
   );
 
@@ -1792,7 +1795,7 @@ test("blocks observed-value adoption after the reviewed plan scope changes", asy
 });
 
 test("adopts observed TX radio settings independently from FC evidence", async () => {
-  const adopt = jest.fn();
+  const adopt = vi.fn();
   const evidenceScope = createBenchEvidenceScope({
     build: { componentIds: { receiverId: "rx-a" } },
     radioPlan: { planVersion: 3, targetId: "aerialkit-elrs-rev-a3", role: "tx" },
@@ -1830,7 +1833,7 @@ test("adopts observed TX radio settings independently from FC evidence", async (
       onAdoptPlanPatch={adopt}
     />,
   );
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile(pairEvidence, "pair.json"),
@@ -1886,10 +1889,10 @@ test("blocks radio adoption without matching endpoint identity evidence", async 
           packetRateMode: "250",
         },
       }}
-      onAdoptPlanPatch={jest.fn()}
+      onAdoptPlanPatch={vi.fn()}
     />,
   );
-  userEvent.upload(
+  await userEvent.upload(
     screen.getByLabelText("Choose hardware evidence files"),
     [
       evidenceFile(pairEvidence, "pair.json"),

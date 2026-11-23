@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -8,7 +8,7 @@ import AnalysisPage, {
 } from "./AnalysisPage";
 import { createBenchEvidenceScope } from "../utils/benchEvidenceAttachment";
 
-jest.mock("recharts", () => {
+vi.mock("recharts", () => {
   const Container = ({ children }) => <div>{children}</div>;
   const Empty = () => null;
 
@@ -101,29 +101,29 @@ beforeEach(() => {
   sessionStorage.clear();
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
-    value: jest.fn(() => "blob:analysis-report"),
+    value: vi.fn(() => "blob:analysis-report"),
   });
   Object.defineProperty(URL, "revokeObjectURL", {
     configurable: true,
-    value: jest.fn(),
+    value: vi.fn(),
   });
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => analysis,
   });
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
   delete global.fetch;
 });
 
 test("renders the completed analysis and opens the browser print dialog", async () => {
-  const printSpy = jest.spyOn(window, "print").mockImplementation(() => {});
+  const printSpy = vi.spyOn(window, "print").mockImplementation(() => {});
   renderAnalysis();
 
   const printButton = await screen.findByRole("button", { name: /print report/i });
-  const anchorClick = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
   expect(screen.getByText(/3.5-inch bench quad/)).toBeInTheDocument();
   expect(screen.getByRole("note", { name: "Build note" }))
     .toHaveTextContent("Verify receiver UART direction before the bench run.");
@@ -196,7 +196,7 @@ test("analysis receives build-local measured geometry", async () => {
 });
 
 test("copies a configuration link without claiming analysis was shared", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },

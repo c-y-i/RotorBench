@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import componentsData from "../data/components.json";
 import MeasuredGeometryPanel from "./MeasuredGeometryPanel";
@@ -22,7 +22,7 @@ test("renders accessible measured fields and resets them to catalog values", () 
     "propShaftMm",
     5,
   );
-  const onChange = jest.fn((category, partId, field, value) => {
+  const onChange = vi.fn((category, partId, field, value) => {
     overrides = setMeasuredGeometryValue(
       overrides,
       category,
@@ -31,7 +31,7 @@ test("renders accessible measured fields and resets them to catalog values", () 
       value,
     );
   });
-  const onReset = jest.fn();
+  const onReset = vi.fn();
   const { rerender } = render(
     <MeasuredGeometryPanel
       parts={[{ category: "motors", label: "Motor", part: motor }]}
@@ -82,8 +82,8 @@ test("shows one focused part at a time and exposes measurement coverage", () => 
         { category: "motors", label: "Motor", part: motor },
       ]}
       overrides={overrides}
-      onChange={jest.fn()}
-      onReset={jest.fn()}
+      onChange={vi.fn()}
+      onReset={vi.fn()}
     />,
   );
 
@@ -115,13 +115,13 @@ test("clearing a measured value commits only after focus leaves the field", () =
     "propShaftMm",
     5,
   );
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(
     <MeasuredGeometryPanel
       parts={[{ category: "motors", label: "Motor", part: motor }]}
       overrides={overrides}
       onChange={onChange}
-      onReset={jest.fn()}
+      onReset={vi.fn()}
     />,
   );
 
@@ -138,7 +138,7 @@ test("clearing a measured value commits only after focus leaves the field", () =
 
 test("vector measurements accept axes one at a time", () => {
   const overrides = normalizeGeometryOverrides(null);
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const motorWithoutDimensions = {
     ...motor,
     dimensionsMm: undefined,
@@ -153,7 +153,7 @@ test("vector measurements accept axes one at a time", () => {
       }]}
       overrides={overrides}
       onChange={onChange}
-      onReset={jest.fn()}
+      onReset={vi.fn()}
     />,
   );
 

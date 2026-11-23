@@ -1,4 +1,3 @@
-import React from "react";
 
 function number(value, digits = 0) {
   return value == null ? "—" : Number(value).toFixed(digits);

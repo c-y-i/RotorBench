@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import AssemblyCenterOfGravity from "./AssemblyCenterOfGravity";
 import { getA11yViolations } from "../test/a11y";
@@ -37,12 +38,12 @@ const parts = {
 };
 
 test("renders and copies a transparent catalog-mass CG estimate", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
   });
-  const onMeasuredCgChange = jest.fn();
+  const onMeasuredCgChange = vi.fn();
   const { container } = render(
     <AssemblyCenterOfGravity
       parts={parts}

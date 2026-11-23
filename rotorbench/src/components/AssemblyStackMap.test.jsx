@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import AssemblyStackMap from "./AssemblyStackMap";
 import { getA11yViolations } from "../test/a11y";
@@ -87,7 +87,7 @@ test("has no structural WCAG A or AA violations", async () => {
       battery={battery}
       motor={motor}
       propeller={propeller}
-      onToggleComponent={jest.fn()}
+      onToggleComponent={vi.fn()}
     />,
   );
 
@@ -125,7 +125,7 @@ test("labels a published footprint when only the board planform is known", () =>
 });
 
 test("toggles component visibility through the 3D layer controls", () => {
-  const onToggleComponent = jest.fn();
+  const onToggleComponent = vi.fn();
   render(
     <AssemblyStackMap
       frame={frame}

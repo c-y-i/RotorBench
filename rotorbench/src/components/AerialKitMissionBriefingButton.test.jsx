@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AerialKitMissionBriefingButton from "./AerialKitMissionBriefingButton";
@@ -30,7 +30,7 @@ const proximity = {
 
 test("copies the validated mission briefing without a hardware claim", async () => {
   const originalClipboard = navigator.clipboard;
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },

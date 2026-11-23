@@ -1,4 +1,3 @@
-import React from "react";
 import { buildAerialKitRouteSketch } from "../utils/aerialKitWaypoints";
 
 export default function AerialKitRouteSketch({

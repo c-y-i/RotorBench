@@ -12,7 +12,7 @@ export default class RouteErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.error("Route rendering failed", error, info);
     }
   }

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useEffect, useMemo, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
@@ -36,7 +36,7 @@ import {
   Zap,
 } from "lucide-react";
 import { PLATFORM_PRESETS } from "../data/platformPresets";
-const sampleAssembly = process.env.PUBLIC_URL + "/assets/sample_assembly.glb";
+const sampleAssembly = `${import.meta.env.BASE_URL}assets/sample_assembly.glb`;
 const BabylonViewer = lazy(() => import("./BabylonViewer"));
 const TwoDViewer = lazy(() => import("./TwoDViewer"));
 const PLATFORM_FIT_LABELS = {

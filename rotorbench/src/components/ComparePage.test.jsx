@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ComparePage from "./ComparePage";
@@ -309,7 +310,7 @@ test("loads a two-build comparison from portable tokens", () => {
 });
 
 test("copies a comparison link and reports malformed shared links", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },

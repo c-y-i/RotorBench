@@ -1,4 +1,3 @@
-import React from "react";
 import "../styles/setup-section-nav.css";
 
 export default function SetupSectionNav({ label, items = [] }) {

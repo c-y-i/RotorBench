@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import SavedConfigsPage from "./SavedConfigsPage";
@@ -521,7 +522,7 @@ test("saved builds can be sorted by planning totals and isolated by envelope", a
 });
 
 test("saved builds copy sanitized portable share links", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },

@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import AerialKitRouteSketch from "./AerialKitRouteSketch";
 import { buildAerialKitWaypointInventory } from "../utils/aerialKitWaypoints";
@@ -43,7 +43,7 @@ test("does not compress the route when the board position is far outside", () =>
 });
 
 test("shares a selectable waypoint marker with an accessible local selection", () => {
-  const onSelectWaypoint = jest.fn();
+  const onSelectWaypoint = vi.fn();
   const { container } = render(<AerialKitRouteSketch
     inventory={inventory}
     activeWaypointIndex={1}

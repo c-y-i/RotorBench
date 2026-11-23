@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { BuildProvider } from "../context/BuildContext";
@@ -6,17 +7,19 @@ import { getA11yViolations } from "../test/a11y";
 import { PLATFORM_PRESETS } from "../data/platformPresets";
 import { summarizeBuild } from "../utils/buildComparison";
 
-jest.mock("./BabylonViewer", () => () => <div data-testid="home-assembly-viewer" />);
-jest.mock("./TwoDViewer", () => function MockTwoDViewer({
-  clearedComponents = [],
-}) {
-  return (
-    <div
-      data-testid="home-two-d-viewer"
-      data-cleared={clearedComponents.join(",")}
-    />
-  );
-});
+vi.mock("./BabylonViewer", () => ({
+  default: () => <div data-testid="home-assembly-viewer" />,
+}));
+vi.mock("./TwoDViewer", () => ({
+  default: function MockTwoDViewer({ clearedComponents = [] }) {
+    return (
+      <div
+        data-testid="home-two-d-viewer"
+        data-cleared={clearedComponents.join(",")}
+      />
+    );
+  },
+}));
 
 function LocationProbe() {
   const location = useLocation();
@@ -36,11 +39,11 @@ function renderHome(initialEntries = ["/"]) {
 
 beforeEach(() => {
   localStorage.clear();
-  global.fetch = jest.fn(() => new Promise(() => {}));
+  global.fetch = vi.fn(() => new Promise(() => {}));
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 test("offers all complete source-backed platforms from an empty overview", async () => {
@@ -118,11 +121,11 @@ test("exposes a mobile starter-gallery expansion without removing builds from da
 test("defers the 3D runtime until the preview approaches the viewport", async () => {
   const originalIntersectionObserver = global.IntersectionObserver;
   let intersectionCallback;
-  global.IntersectionObserver = jest.fn(function MockObserver(callback) {
+  global.IntersectionObserver = vi.fn(function MockObserver(callback) {
     intersectionCallback = callback;
   });
-  global.IntersectionObserver.prototype.observe = jest.fn();
-  const disconnect = jest.fn();
+  global.IntersectionObserver.prototype.observe = vi.fn();
+  const disconnect = vi.fn();
   global.IntersectionObserver.prototype.disconnect = disconnect;
 
   try {

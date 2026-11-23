@@ -1,4 +1,4 @@
-import React, { useId } from "react";
+import { useId } from "react";
 import { Eye, EyeOff, Layers } from "lucide-react";
 import {
   getBatteryPlacementMm,

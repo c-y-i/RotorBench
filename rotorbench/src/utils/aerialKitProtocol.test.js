@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   AERIAL_KIT_COMMANDS,
   AERIAL_KIT_SYNC1,
@@ -1001,13 +1002,13 @@ test("becomes unknown, not disarmed, when STATUS is stale", () => {
 });
 
 test("reports a closed AKP read stream instead of silently staying live", async () => {
-  const onClose = jest.fn();
+  const onClose = vi.fn();
   const session = new AerialKitReadOnlySession({
     reader: {
-      read: jest.fn().mockResolvedValue({ value: undefined, done: true }),
-      cancel: jest.fn(),
+      read: vi.fn().mockResolvedValue({ value: undefined, done: true }),
+      cancel: vi.fn(),
     },
-    writer: { write: jest.fn() },
+    writer: { write: vi.fn() },
     onClose,
   });
 

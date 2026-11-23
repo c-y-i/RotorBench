@@ -1,15 +1,32 @@
+import { vi } from "vitest";
 import { act, render, screen } from '@testing-library/react';
 import App, { RouteLoading } from './App';
 import { getA11yViolations } from './test/a11y';
 
-jest.mock('./components/HomePage', () => () => <div>Home</div>);
-jest.mock('./components/BuildPage', () => () => <div>Build</div>);
-jest.mock('./components/SetupPage', () => () => <div>Setup</div>);
-jest.mock('./components/ComparePage', () => () => <div>Compare</div>);
-jest.mock('./components/AnalysisPage', () => () => <div>Analysis</div>);
-jest.mock('./components/UserProfilePage', () => () => <div>Profile</div>);
-jest.mock('./components/SavedConfigsPage', () => () => <div>Saved</div>);
-jest.mock('./components/LegalPage', () => () => <div>Legal</div>);
+vi.mock("./components/HomePage", () => ({
+  default: () => <div>Home</div>,
+}));
+vi.mock("./components/BuildPage", () => ({
+  default: () => <div>Build</div>,
+}));
+vi.mock("./components/SetupPage", () => ({
+  default: () => <div>Setup</div>,
+}));
+vi.mock("./components/ComparePage", () => ({
+  default: () => <div>Compare</div>,
+}));
+vi.mock("./components/AnalysisPage", () => ({
+  default: () => <div>Analysis</div>,
+}));
+vi.mock("./components/UserProfilePage", () => ({
+  default: () => <div>Profile</div>,
+}));
+vi.mock("./components/SavedConfigsPage", () => ({
+  default: () => <div>Saved</div>,
+}));
+vi.mock("./components/LegalPage", () => ({
+  default: () => <div>Legal</div>,
+}));
 
 async function settleLazyRoute() {
   await act(async () => {

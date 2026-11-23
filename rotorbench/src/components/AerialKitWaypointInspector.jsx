@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { greatCircleDistanceM } from "../utils/aerialKitWaypoints";
 
 function distanceLabel(value) {
@@ -79,6 +79,11 @@ export default function AerialKitWaypointInspector({
             <button
               key={slot.index}
               type="button"
+              aria-label={`WP ${slot.index}${isActive ? " Active" : ""} ${
+                slot.complete
+                  ? `${slot.lat.toFixed(7)}, ${slot.lon.toFixed(7)}`
+                  : slot.errors.join(" · ")
+              }`}
               aria-pressed={isSelected}
               onClick={() => {
                 if (selectedWaypointIndex === undefined) {

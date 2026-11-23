@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import {
   act,
   render,
@@ -67,17 +67,17 @@ function createPort() {
     ]),
   };
   const reader = {
-    read: jest.fn(() => {
+    read: vi.fn(() => {
       if (queued.length) return Promise.resolve({ value: queued.shift(), done: false });
       return new Promise((resolve) => waiters.push(resolve));
     }),
-    cancel: jest.fn(async () => {
+    cancel: vi.fn(async () => {
       waiters.splice(0).forEach((resolve) => resolve({ value: undefined, done: true }));
     }),
-    releaseLock: jest.fn(),
+    releaseLock: vi.fn(),
   };
   const writer = {
-    write: jest.fn(async (frame) => {
+    write: vi.fn(async (frame) => {
       const type = frame[2];
       if (type === ELRS_FRAME_TYPE.devicePing) {
         const info = encodeElrsExtendedFrame(
@@ -117,13 +117,13 @@ function createPort() {
       }
       throw new Error(`Unexpected CRSF type 0x${type.toString(16)}`);
     }),
-    releaseLock: jest.fn(),
+    releaseLock: vi.fn(),
   };
   const port = {
-    open: jest.fn().mockResolvedValue(undefined),
-    close: jest.fn().mockResolvedValue(undefined),
-    readable: { getReader: jest.fn(() => reader) },
-    writable: { getWriter: jest.fn(() => writer) },
+    open: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    readable: { getReader: vi.fn(() => reader) },
+    writable: { getWriter: vi.fn(() => writer) },
   };
   return { port, reader, writer };
 }
@@ -132,10 +132,10 @@ afterEach(() => {
   setSerial(originalSerial);
 });
 
-test("explains the read-only boundary when Web Serial is unavailable", () => {
+test("explains the read-only boundary when Web Serial is unavailable", async () => {
   setSerial(undefined);
   render(<ElrsDeviceMenu />);
-  userEvent.click(screen.getByText("ExpressLRS device menu"));
+  await userEvent.click(screen.getByText("ExpressLRS device menu"));
 
   expect(screen.getByText("Web Serial is unavailable")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Read device menu" }))
@@ -144,7 +144,7 @@ test("explains the read-only boundary when Web Serial is unavailable", () => {
 
 test("reads an ExpressLRS device menu without write or command frames", async () => {
   const { port, reader, writer } = createPort();
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   const { container } = render(
     <ElrsDeviceMenu
       role="rx"

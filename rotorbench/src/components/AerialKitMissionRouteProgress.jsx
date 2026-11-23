@@ -1,4 +1,3 @@
-import React from "react";
 import { buildAerialKitMissionRouteProgress } from "../utils/aerialKitWaypoints";
 
 function distanceLabel(value) {

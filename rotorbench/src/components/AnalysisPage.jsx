@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useBuild } from "../context/BuildContext";
 import "../styles/home.css";
@@ -306,7 +306,7 @@ export default function AnalysisPage() {
     if (!analysis || !portablePlanComparison || !analysisPlanActionRef.current) {
       return undefined;
     }
-    let marker = null;
+    let marker;
     try {
       marker = JSON.parse(
         window.sessionStorage.getItem(ANALYSIS_PLAN_RETURN_FOCUS_KEY) || "null",

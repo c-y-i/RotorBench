@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Box, Check, Clipboard } from "lucide-react";
 import { summarizeModelSources } from "../utils/modelAssets";
 

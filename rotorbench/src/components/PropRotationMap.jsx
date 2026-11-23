@@ -1,4 +1,4 @@
-import React, { useId, useState } from "react";
+import { useId, useState } from "react";
 import { Clipboard, Fan } from "lucide-react";
 import {
   MOTOR_CORNER_ORDER,

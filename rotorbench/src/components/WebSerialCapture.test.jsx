@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import React from "react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -60,22 +61,22 @@ test("opens and stops two explicitly selected endpoints from one session command
   const makePort = () => {
     let finishRead;
     const reader = {
-      read: jest.fn(() => new Promise((resolve) => {
+      read: vi.fn(() => new Promise((resolve) => {
         finishRead = resolve;
       })),
-      cancel: jest.fn(async () => finishRead?.({ value: undefined, done: true })),
-      releaseLock: jest.fn(),
+      cancel: vi.fn(async () => finishRead?.({ value: undefined, done: true })),
+      releaseLock: vi.fn(),
     };
     return {
-      open: jest.fn().mockResolvedValue(undefined),
-      close: jest.fn().mockResolvedValue(undefined),
-      readable: { getReader: jest.fn(() => reader) },
+      open: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn().mockResolvedValue(undefined),
+      readable: { getReader: vi.fn(() => reader) },
       reader,
     };
   };
   const txPort = makePort();
   const rxPort = makePort();
-  const requestPort = jest.fn()
+  const requestPort = vi.fn()
     .mockResolvedValueOnce(txPort)
     .mockResolvedValueOnce(rxPort);
   setSerial({ requestPort });
@@ -134,7 +135,7 @@ test("captures bytes only after an explicit port selection and never writes", as
     ),
   ]);
   const reader = {
-    read: jest.fn()
+    read: vi.fn()
       .mockResolvedValueOnce({
         value: captured,
         done: false,
@@ -142,17 +143,17 @@ test("captures bytes only after an explicit port selection and never writes", as
       .mockImplementationOnce(() => new Promise((resolve) => {
         finishRead = resolve;
       })),
-    cancel: jest.fn(async () => finishRead?.({ value: undefined, done: true })),
-    releaseLock: jest.fn(),
+    cancel: vi.fn(async () => finishRead?.({ value: undefined, done: true })),
+    releaseLock: vi.fn(),
   };
-  const writer = { write: jest.fn() };
+  const writer = { write: vi.fn() };
   const port = {
-    open: jest.fn().mockResolvedValue(undefined),
-    close: jest.fn().mockResolvedValue(undefined),
-    readable: { getReader: jest.fn(() => reader) },
-    writable: { getWriter: jest.fn(() => writer) },
+    open: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    readable: { getReader: vi.fn(() => reader) },
+    writable: { getWriter: vi.fn(() => writer) },
   };
-  const requestPort = jest.fn().mockResolvedValue(port);
+  const requestPort = vi.fn().mockResolvedValue(port);
   setSerial({ requestPort });
   render(
     <React.StrictMode>
@@ -225,8 +226,8 @@ test("captures bytes only after an explicit port selection and never writes", as
   expect(screen.getByText("Outside plan · 170–1811")).toBeInTheDocument();
   expect(port.writable.getWriter).not.toHaveBeenCalled();
 
-  const createObjectURL = jest.fn(() => "blob:crsf-evidence");
-  const revokeObjectURL = jest.fn();
+  const createObjectURL = vi.fn(() => "blob:crsf-evidence");
+  const revokeObjectURL = vi.fn();
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
     value: createObjectURL,
@@ -235,7 +236,7 @@ test("captures bytes only after an explicit port selection and never writes", as
     configurable: true,
     value: revokeObjectURL,
   });
-  const anchorClick = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
   await userEvent.click(screen.getByRole("button", { name: "Download evidence" }));
   expect(createObjectURL).toHaveBeenCalledTimes(1);
   expect(anchorClick).toHaveBeenCalledTimes(1);
@@ -252,18 +253,18 @@ test("captures bytes only after an explicit port selection and never writes", as
 test("exports a stopped capture even when no valid frames arrived", async () => {
   let finishRead;
   const reader = {
-    read: jest.fn(() => new Promise((resolve) => {
+    read: vi.fn(() => new Promise((resolve) => {
       finishRead = resolve;
     })),
-    cancel: jest.fn(async () => finishRead?.({ value: undefined, done: true })),
-    releaseLock: jest.fn(),
+    cancel: vi.fn(async () => finishRead?.({ value: undefined, done: true })),
+    releaseLock: vi.fn(),
   };
   const port = {
-    open: jest.fn().mockResolvedValue(undefined),
-    close: jest.fn().mockResolvedValue(undefined),
-    readable: { getReader: jest.fn(() => reader) },
+    open: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+    readable: { getReader: vi.fn(() => reader) },
   };
-  setSerial({ requestPort: jest.fn().mockResolvedValue(port) });
+  setSerial({ requestPort: vi.fn().mockResolvedValue(port) });
   render(
     <WebSerialCapture
       expectedBaud={400000}
@@ -285,14 +286,14 @@ test("exports a stopped capture even when no valid frames arrived", async () => 
     expect(screen.getByRole("button", { name: "Download evidence" })).toBeEnabled();
   });
 
-  const click = jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
-    value: jest.fn(() => "blob:crsf-failure"),
+    value: vi.fn(() => "blob:crsf-failure"),
   });
   Object.defineProperty(URL, "revokeObjectURL", {
     configurable: true,
-    value: jest.fn(),
+    value: vi.fn(),
   });
   await userEvent.click(screen.getByRole("button", { name: "Download evidence" }));
   expect(click).toHaveBeenCalledTimes(1);

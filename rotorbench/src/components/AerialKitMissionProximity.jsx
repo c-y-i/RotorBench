@@ -1,4 +1,3 @@
-import React from "react";
 
 const REASONS = {
   "no-active-waypoint": "No mission is currently flying a waypoint.",

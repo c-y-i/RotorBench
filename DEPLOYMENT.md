@@ -6,10 +6,12 @@ Our team example is `rotor.nori.fish`.
 
 ## 1) One-time server prep
 
-### Install Node.js 20 LTS
+### Install Node.js 22 LTS
+
+The frontend requires Node `22.13+`.
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 node -v
 npm -v
@@ -31,7 +33,10 @@ python migrate_legacy_data.py
 ```bash
 cd /home/ubuntu/RotorBench/rotorbench
 npm ci
+npm run lint
+npm test
 npm run build
+npm audit
 ```
 
 Expected output dir:
@@ -123,6 +128,8 @@ python migrate_legacy_data.py
 
 cd /home/ubuntu/RotorBench/rotorbench
 npm ci
+npm run lint
+npm test
 npm run build
 
 sudo systemctl restart rotorbench

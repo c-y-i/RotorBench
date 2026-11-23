@@ -1,4 +1,3 @@
-import React from "react";
 import "../styles/home.css";
 import "../styles/analysis.css";
 import { Scale, ShieldAlert, TriangleAlert, UserRound } from "lucide-react";

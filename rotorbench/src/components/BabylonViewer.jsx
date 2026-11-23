@@ -1,19 +1,23 @@
-import React, { useEffect, useRef, useState } from "react";
-import {
-  ArcRotateCamera,
-  Color3,
-  DynamicTexture,
-  Engine,
-  HemisphericLight,
-  Mesh,
-  MeshBuilder,
-  Scene,
-  SceneLoader,
-  StandardMaterial,
-  TransformNode,
-  Vector3,
-} from "@babylonjs/core";
-import "@babylonjs/loaders/glTF";
+import { useEffect, useRef, useState } from "react";
+import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera.js";
+import { Engine } from "@babylonjs/core/Engines/engine.js";
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.js";
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture.js";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
+import { Color3 } from "@babylonjs/core/Maths/math.color.js";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
+import { CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder.js";
+import { CreateCylinder } from "@babylonjs/core/Meshes/Builders/cylinderBuilder.js";
+import { CreateDisc } from "@babylonjs/core/Meshes/Builders/discBuilder.js";
+import { CreateLines } from "@babylonjs/core/Meshes/Builders/linesBuilder.js";
+import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder.js";
+import { CreateTorus } from "@babylonjs/core/Meshes/Builders/torusBuilder.js";
+import { Mesh } from "@babylonjs/core/Meshes/mesh.js";
+import { TransformNode } from "@babylonjs/core/Meshes/transformNode.js";
+import { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader.js";
+import { Scene } from "@babylonjs/core/scene.js";
+import "@babylonjs/loaders/glTF/glTFFileLoader.js";
+import "@babylonjs/loaders/glTF/2.0/index.js";
 import {
   getBatteryPlacementMm,
   getExplodedOffsetMm,
@@ -191,7 +195,7 @@ const createFrameFallback = (scene, frame = {}) => {
   const edge = createMaterial(scene, "frame_edge", "#53d7c8", true);
 
   if (frame.airframeShape === "wing") {
-    const wing = MeshBuilder.CreateCylinder("frame_fallback_wing", {
+    const wing = CreateCylinder("frame_fallback_wing", {
       height: Math.max(height * 0.1, 0.008),
       diameter: 1,
       tessellation: 64,
@@ -205,7 +209,7 @@ const createFrameFallback = (scene, frame = {}) => {
     wing.position.y = height * 0.55;
     wing.material = carbon;
 
-    const fuselage = MeshBuilder.CreateBox("frame_fallback_fuselage", {
+    const fuselage = CreateBox("frame_fallback_fuselage", {
       width: Math.max(width * 0.08, 0.03),
       height: Math.max(height * 0.55, 0.025),
       depth: Math.max(depth * 0.78, 0.2),
@@ -216,7 +220,7 @@ const createFrameFallback = (scene, frame = {}) => {
 
     const nacelleWidth = Math.max(width * 0.025, 0.014);
     mounts.forEach((mount, index) => {
-      const nacelle = MeshBuilder.CreateBox(`frame_fallback_nacelle_${index}`, {
+      const nacelle = CreateBox(`frame_fallback_nacelle_${index}`, {
         width: nacelleWidth,
         height: Math.max(height * 0.14, 0.007),
         depth: Math.max(depth * 0.28, 0.08),
@@ -239,7 +243,7 @@ const createFrameFallback = (scene, frame = {}) => {
     return root;
   }
 
-  const deck = MeshBuilder.CreateBox("frame_fallback_deck", {
+  const deck = CreateBox("frame_fallback_deck", {
     width: Math.min(width * 0.34, 0.08),
     height: Math.max(height * 0.22, 0.004),
     depth: Math.min(depth * 0.4, 0.1),
@@ -253,7 +257,7 @@ const createFrameFallback = (scene, frame = {}) => {
     const dx = mount.x;
     const dz = mount.z;
     const length = Math.hypot(dx, dz);
-    const arm = MeshBuilder.CreateBox(`frame_fallback_arm_${index}`, {
+    const arm = CreateBox(`frame_fallback_arm_${index}`, {
       width: length,
       height: Math.max(height * 0.12, 0.0025),
       depth: armThickness,
@@ -263,7 +267,7 @@ const createFrameFallback = (scene, frame = {}) => {
     arm.rotation.y = -Math.atan2(dz, dx);
     arm.material = carbon;
 
-    const cap = MeshBuilder.CreateCylinder(`frame_fallback_mount_${index}`, {
+    const cap = CreateCylinder(`frame_fallback_mount_${index}`, {
       height: 0.002,
       diameter: Math.max(armThickness * 1.7, 0.012),
       tessellation: 24,
@@ -282,7 +286,7 @@ const createMotorFallback = (scene, motor = {}, position, index) => {
   const dimensions = getFallbackDimensionsMm("motor", motor).map((value) => value * MM_TO_SCENE);
   const root = new TransformNode(`motor_${index}_root`, scene);
   root.position = position;
-  const body = MeshBuilder.CreateCylinder(`motor_${index}_fallback_body`, {
+  const body = CreateCylinder(`motor_${index}_fallback_body`, {
     height: Math.max(dimensions[1] * 0.62, 0.012),
     diameter: Math.max(dimensions[0], 0.018),
     tessellation: 28,
@@ -291,7 +295,7 @@ const createMotorFallback = (scene, motor = {}, position, index) => {
   body.position.y = dimensions[1] * 0.31;
   body.material = createMaterial(scene, `motor_${index}_body_mat`, "#485a55");
 
-  const cap = MeshBuilder.CreateCylinder(`motor_${index}_fallback_cap`, {
+  const cap = CreateCylinder(`motor_${index}_fallback_cap`, {
     height: Math.max(dimensions[1] * 0.18, 0.004),
     diameter: Math.max(dimensions[0] * 0.72, 0.015),
     tessellation: 28,
@@ -300,7 +304,7 @@ const createMotorFallback = (scene, motor = {}, position, index) => {
   cap.position.y = dimensions[1] * 0.59;
   cap.material = createMaterial(scene, `motor_${index}_cap_mat`, "#d4b23c");
 
-  const shaft = MeshBuilder.CreateCylinder(`motor_${index}_fallback_shaft`, {
+  const shaft = CreateCylinder(`motor_${index}_fallback_shaft`, {
     height: Math.max(dimensions[1] * 0.22, 0.005),
     diameter: 0.004,
     tessellation: 16,
@@ -315,7 +319,7 @@ const createMotorFallback = (scene, motor = {}, position, index) => {
 
 const createMotorLabel = (scene, root, motorLabel, index) => {
   if (!root || !motorLabel) return null;
-  const plane = MeshBuilder.CreatePlane(
+  const plane = CreatePlane(
     `motor_label_${index}`,
     { width: 0.045, height: 0.018 },
     scene,
@@ -378,7 +382,7 @@ const createPropellerFallback = (
   const bladeMaterial = createMaterial(scene, `prop_${index}_blade_mat`, variant === "CW" ? "#f1f3e9" : "#9ce5d8");
   const hubMaterial = createMaterial(scene, `prop_${index}_hub_mat`, "#212a27");
 
-  const hub = MeshBuilder.CreateCylinder(`prop_${index}_fallback_hub`, {
+  const hub = CreateCylinder(`prop_${index}_fallback_hub`, {
     height: Math.max(dimensions[1] * 0.35, 0.003),
     diameter: Math.max(
       getPropellerHubDiameterMm(propeller) * MM_TO_SCENE,
@@ -391,7 +395,7 @@ const createPropellerFallback = (
 
   const bladeCount = Math.max(Number(propeller.bladeCount) || 3, 2);
   for (let bladeIndex = 0; bladeIndex < bladeCount; bladeIndex += 1) {
-    const blade = MeshBuilder.CreateBox(`prop_${index}_fallback_blade_${bladeIndex}`, {
+    const blade = CreateBox(`prop_${index}_fallback_blade_${bladeIndex}`, {
       width: dimensions[0] * 0.44,
       height: Math.max(dimensions[1] * 0.14, 0.0018),
       depth: Math.max(dimensions[0] * 0.065, 0.005),
@@ -416,7 +420,7 @@ const createBoardFallback = (scene, type, part = {}, level, label) => {
   const dimensions = getFallbackDimensionsMm(fallbackType, part).map((value) => value * MM_TO_SCENE);
   const root = new TransformNode(`${type}_fallback_root`, scene);
   root.position.y = level;
-  const board = MeshBuilder.CreateBox(`${type}_fallback_board`, {
+  const board = CreateBox(`${type}_fallback_board`, {
     width: Math.max(dimensions[0], 0.02),
     height: Math.max(dimensions[1], 0.003),
     depth: Math.max(dimensions[2], 0.02),
@@ -438,7 +442,7 @@ const createServoFallback = (scene, hardware, position, index) => {
   const root = new TransformNode(`servo_${index}_root`, scene);
   root.position = position;
 
-  const body = MeshBuilder.CreateBox(`servo_${index}_fallback_body`, {
+  const body = CreateBox(`servo_${index}_fallback_body`, {
     width: Math.max(width, 0.018),
     height: Math.max(height, 0.009),
     depth: Math.max(depth, 0.02),
@@ -447,7 +451,7 @@ const createServoFallback = (scene, hardware, position, index) => {
   body.position.y = Math.max(height, 0.009) * 0.5;
   body.material = createMaterial(scene, `servo_${index}_body_mat`, "#526963");
 
-  const horn = MeshBuilder.CreateCylinder(`servo_${index}_fallback_horn`, {
+  const horn = CreateCylinder(`servo_${index}_fallback_horn`, {
     height: 0.002,
     diameter: Math.max(width * 0.5, 0.009),
     tessellation: 18,
@@ -461,12 +465,12 @@ const createServoFallback = (scene, hardware, position, index) => {
   return root;
 };
 
-const createBatteryFallback = (scene, battery = {}, placement) => {
+const createBatteryFallback = (scene, _battery = {}, placement) => {
   const root = new TransformNode("battery_fallback_root", scene);
   const [originX, originY, originZ] = toSceneVectorMm(placement.origin);
   root.position = new Vector3(originX, originY, originZ);
   const [width, height, depth] = placement.size.map((value) => value * MM_TO_SCENE);
-  const body = MeshBuilder.CreateBox("battery_fallback_body", {
+  const body = CreateBox("battery_fallback_body", {
     width: Math.max(width, 0.02),
     height: Math.max(height, 0.012),
     depth: Math.max(depth, 0.02),
@@ -623,7 +627,7 @@ const BabylonViewer = ({
 
     const sweepDiameter = getPropellerSweepDiameterMm(assemblySpec.propeller || {}) * scale;
     (scene.__propellerRoots || []).forEach((root, index) => {
-      const ring = MeshBuilder.CreateTorus(
+      const ring = CreateTorus(
         `__fit_overlay_prop_${index}`,
         {
           diameter: sweepDiameter,
@@ -637,7 +641,7 @@ const BabylonViewer = ({
       ring.material = propellerMaterial;
       ring.metadata = { viewerFitOverlay: true };
 
-      const sweep = MeshBuilder.CreateDisc(
+      const sweep = CreateDisc(
         `__fit_overlay_sweep_${index}`,
         { radius: sweepDiameter / 2, tessellation: 72 },
         scene,
@@ -653,7 +657,7 @@ const BabylonViewer = ({
     const mountOutline = getMotorMountOutlineMm(assemblySpec.motor || {});
     if (mountOutline) {
       (scene.__motorRoots || []).forEach((root, index) => {
-        const outline = MeshBuilder.CreateLines(
+        const outline = CreateLines(
           `__fit_overlay_mount_${index}`,
           {
             points: mountOutline.map(
@@ -716,7 +720,7 @@ const BabylonViewer = ({
       );
       material.disableLighting = true;
       material.alpha = 0.96;
-      const disc = MeshBuilder.CreateDisc(
+      const disc = CreateDisc(
         `__cg_marker_${name}_disc`,
         { radius: diameter * 0.33, tessellation: 32 },
         scene,
@@ -730,7 +734,7 @@ const BabylonViewer = ({
       disc.alwaysSelectAsActiveMesh = true;
       disc.metadata = { viewerCgMarker: name };
 
-      const ring = MeshBuilder.CreateTorus(
+      const ring = CreateTorus(
         `__cg_marker_${name}_ring`,
         {
           diameter,
@@ -752,7 +756,7 @@ const BabylonViewer = ({
           [center.add(new Vector3(-arm, 0, 0)), center.add(new Vector3(arm, 0, 0))],
           [center.add(new Vector3(0, 0, -arm)), center.add(new Vector3(0, 0, arm))],
         ].forEach((points, index) => {
-          const cross = MeshBuilder.CreateLines(
+          const cross = CreateLines(
             `__cg_marker_measured_cross_${index}`,
             { points },
             scene,
@@ -770,7 +774,7 @@ const BabylonViewer = ({
     addMarker("estimated", estimatedCgMm, "#d5ff4f", 0.038);
     if (measured) {
       addMarker("measured", measured, "#67d8cb", 0.03);
-      const connector = MeshBuilder.CreateLines(
+      const connector = CreateLines(
         "__cg_marker_comparison_line",
         {
           points: [
@@ -1471,7 +1475,7 @@ const BabylonViewer = ({
         if (!sceneInstance || sceneInstance.isDisposed) {
           return null;
         }
-        const result = await SceneLoader.ImportMeshAsync(null, "", normalizedUrl, sceneInstance);
+        const result = await ImportMeshAsync(null, "", normalizedUrl, sceneInstance);
         if (scene.__currentLoadSession !== loadSession) {
           result.meshes.forEach(m => {
             if (!m.name.startsWith("__")) m.dispose();

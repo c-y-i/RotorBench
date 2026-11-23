@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BenchRunbook from "./BenchRunbook";
@@ -14,7 +14,7 @@ const runbook = buildBenchRunbook(
 beforeEach(() => {
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
-    value: { writeText: jest.fn().mockResolvedValue(undefined) },
+    value: { writeText: vi.fn().mockResolvedValue(undefined) },
   });
 });
 

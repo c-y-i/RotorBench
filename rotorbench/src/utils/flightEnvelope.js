@@ -33,7 +33,7 @@ export function summarizeTakeoffWeight(weightG, flightEnvelope) {
     ? formatGrams(minimum)
     : `${minimum}–${formatGrams(maximum)}`;
   let status = "within";
-  let difference = "";
+  let difference;
   let shortLabel = `Within ${publishedRange} envelope`;
 
   if (weight < minimum) {

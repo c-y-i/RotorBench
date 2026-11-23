@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   fireEvent,
   render,
@@ -102,7 +103,7 @@ test("renders a local flight-controller configuration plan", () => {
 });
 
 test("plans and previews the Aerial Kit Actual-rate curve", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.getByRole("heading", { name: "Rate feel" })).toBeInTheDocument();
@@ -138,7 +139,7 @@ test("plans and previews the Aerial Kit Actual-rate curve", async () => {
 });
 
 test("plans Aerial Kit filter chains against the requested loop clamp", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.getByRole("heading", { name: "Filter chains" }))
@@ -175,7 +176,7 @@ test("plans Aerial Kit filter chains against the requested loop clamp", async ()
 });
 
 test("plans the Aerial Kit dynamic notch gate and analysis resolution", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(<FlightControllerSetup onChange={onChange} />);
   const notchDetails = screen.getByText("Dynamic notch bank").closest("details");
 
@@ -214,7 +215,7 @@ test("plans the Aerial Kit dynamic notch gate and analysis resolution", async ()
 });
 
 test("aligns Aerial Kit RC smoothing with the nominal radio link", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(
     <FlightControllerSetup
       onChange={onChange}
@@ -255,7 +256,7 @@ test("aligns Aerial Kit RC smoothing with the nominal radio link", async () => {
 });
 
 test("previews Aerial Kit feed-forward shaping at the radio plan rate", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(
     <FlightControllerSetup
       onChange={onChange}
@@ -291,7 +292,7 @@ test("previews Aerial Kit feed-forward shaping at the radio plan rate", async ()
 });
 
 test("plans Aerial Kit static feed-forward and I-term relax independently", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.getByText("PID response")).toBeInTheDocument();
@@ -320,7 +321,7 @@ test("plans Aerial Kit static feed-forward and I-term relax independently", asyn
 });
 
 test("plans Aerial Kit D_MAX only above the axis D at rest", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.getByText("D response")).toBeInTheDocument();
@@ -350,7 +351,7 @@ test("plans Aerial Kit D_MAX only above the axis D at rest", async () => {
 });
 
 test("plans Aerial Kit anti-gravity on roll and pitch only", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.getByText("Anti-gravity")).toBeInTheDocument();
@@ -378,7 +379,7 @@ test("plans Aerial Kit anti-gravity on roll and pitch only", async () => {
 });
 
 test("stages Aerial Kit baseline P and I gains from source defaults", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.getByText("Baseline PID")).toBeInTheDocument();
@@ -418,7 +419,7 @@ test("stages Aerial Kit baseline P and I gains from source defaults", async () =
 });
 
 test("plans Aerial Kit fixed-wing lost-link descent only for wing airframes", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.queryByLabelText("Lost-link bank")).not.toBeInTheDocument();
@@ -492,7 +493,7 @@ test("shows the selected Aerial Kit airframe motor output map", () => {
 });
 
 test("Aerial Kit wings expose source-backed servo output planning", async () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   const { container } = render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.queryByRole("heading", { name: "Servo outputs" }))
@@ -910,7 +911,7 @@ test("selecting SpeedyBee F405 V4 exposes its documented 30x30 mapping", () => {
 
 test("copies the full serial allocation with a planning boundary", async () => {
   const originalClipboard = navigator.clipboard;
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
@@ -1037,8 +1038,8 @@ test("selecting Matek H743-WING exposes the ArduPilot UART and servo map", () =>
 
 test("copies the H743 ArduPilot parameter plan without writing hardware", async () => {
   const originalClipboard = navigator.clipboard;
-  const writeText = jest.fn().mockResolvedValue(undefined);
-  const openEvidenceReview = jest.fn();
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  const openEvidenceReview = vi.fn();
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
@@ -1291,7 +1292,7 @@ test("SBUS wiring adds the documented inverter step", () => {
 });
 
 test("configuration changes reach the parent callback", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
   fireEvent.change(screen.getByLabelText("Arm channel"), {
     target: { value: "7" },
@@ -1350,7 +1351,7 @@ test("choosing Betaflight switches to its documented bench channel preset", () =
 });
 
 test("Betaflight exposes its source-backed Stage 2 landing throttle", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
   expect(screen.queryByLabelText("Stage 2 landing throttle"))
     .not.toBeInTheDocument();
@@ -1388,7 +1389,7 @@ test("INAV requires an explicit channel map instead of inheriting Betaflight", (
 });
 
 test("returning to Aerial Kit removes control roles its firmware cannot register", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
   fireEvent.change(screen.getByLabelText("Firmware family"), {
     target: { value: "betaflight" },
@@ -1508,7 +1509,7 @@ test("Aerial Kit exposes its velocity switch and omits unsupported control roles
 });
 
 test("workspace controller profiles expose bounded system-ID excitation", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
   fireEvent.change(screen.getByLabelText("Board profile"), {
     target: { value: "weact-f405" },
@@ -1550,7 +1551,7 @@ test("blank numeric safety fields remain invalid instead of becoming zero", () =
 });
 
 test("receiver calibration changes reach the parent plan", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
 
   fireEvent.change(screen.getByLabelText("Full low"), {
@@ -1565,7 +1566,7 @@ test("receiver calibration changes reach the parent plan", () => {
 });
 
 test("battery telemetry parameters reach the parent plan", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
 
   fireEvent.change(screen.getByLabelText("ADC divider ratio"), {
@@ -1588,7 +1589,7 @@ test("battery telemetry parameters reach the parent plan", () => {
 });
 
 test("critical-pack return reaches the parent plan with the documented latch copy", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
 
   fireEvent.click(screen.getByRole("checkbox", {
@@ -1603,7 +1604,7 @@ test("critical-pack return reaches the parent plan with the documented latch cop
 });
 
 test("geofence settings reach the parent plan with trigger semantics", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
 
   fireEvent.click(screen.getByRole("checkbox", {
@@ -1633,7 +1634,7 @@ test("geofence settings reach the parent plan with trigger semantics", () => {
 });
 
 test("mission switch is optional, scoped to Aerial Kit, and lands in the channel map", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
 
   const mission = screen.getByLabelText("Mission channel");
@@ -1655,7 +1656,7 @@ test("mission switch is optional, scoped to Aerial Kit, and lands in the channel
 });
 
 test("hand-launch planning is wing-only and reaches the parent plan", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
   expect(screen.queryByLabelText("Launch channel")).not.toBeInTheDocument();
 
@@ -1701,7 +1702,7 @@ test("hand-launch planning is wing-only and reaches the parent plan", () => {
 });
 
 test("board alignment order and angles reach the parent plan", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
 
   expect(screen.getByRole("note", {
@@ -1723,7 +1724,7 @@ test("board alignment order and angles reach the parent plan", () => {
 });
 
 test("control-loop request derives its loop timing without claiming the observed rate", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
 
   fireEvent.change(screen.getByLabelText("Requested gyro rate"), {
@@ -1744,7 +1745,7 @@ test("control-loop request derives its loop timing without claiming the observed
 });
 
 test("workspace Aerial Kit boards expose workspace switches instead of velocity", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<FlightControllerSetup onChange={onChange} />);
   fireEvent.change(screen.getByLabelText("Board profile"), {
     target: { value: "weact-f405" },
@@ -1776,19 +1777,19 @@ test("standalone FC plan export carries the board-specific wiring checklist", ()
   const originalBlob = global.Blob;
   const originalCreateObjectUrl = URL.createObjectURL;
   const originalRevokeObjectUrl = URL.revokeObjectURL;
-  const blobMock = jest.fn(function MockBlob(parts) {
+  const blobMock = vi.fn(function MockBlob(parts) {
     this.parts = parts;
   });
-  const clickMock = jest.spyOn(HTMLAnchorElement.prototype, "click")
+  const clickMock = vi.spyOn(HTMLAnchorElement.prototype, "click")
     .mockImplementation(() => {});
   global.Blob = blobMock;
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
-    value: jest.fn(() => "blob:fc-plan"),
+    value: vi.fn(() => "blob:fc-plan"),
   });
   Object.defineProperty(URL, "revokeObjectURL", {
     configurable: true,
-    value: jest.fn(),
+    value: vi.fn(),
   });
 
   try {

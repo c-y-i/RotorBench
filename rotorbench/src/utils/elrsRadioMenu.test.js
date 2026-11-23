@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { CrsfStreamParser } from "./crsfCapture";
 import {
   ELRS_ADDRESS,
@@ -176,11 +177,11 @@ test("identifies a radio and walks only read-only menu requests", async () => {
     else queued.push(value);
   };
   const reader = {
-    read: jest.fn(() => {
+    read: vi.fn(() => {
       if (queued.length) return Promise.resolve({ value: queued.shift(), done: false });
       return new Promise((resolve) => waiters.push(resolve));
     }),
-    cancel: jest.fn(async () => {
+    cancel: vi.fn(async () => {
       waiters.splice(0).forEach((resolve) => resolve({ value: undefined, done: true }));
     }),
   };
@@ -209,7 +210,7 @@ test("identifies a radio and walks only read-only menu requests", async () => {
     ]),
   };
   const writer = {
-    write: jest.fn(async (frame) => {
+    write: vi.fn(async (frame) => {
       const type = frame[2];
       if (type === ELRS_FRAME_TYPE.devicePing) {
         const info = Uint8Array.from([

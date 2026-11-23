@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Clipboard, ExternalLink, FileText } from "lucide-react";
 import { getCatalogModelEntry } from "../utils/modelAssets";
 

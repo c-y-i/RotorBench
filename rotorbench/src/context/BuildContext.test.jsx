@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { BuildProvider, useBuild } from "./BuildContext";
 
@@ -28,7 +29,7 @@ test("loads valid persisted build context", () => {
 });
 
 test("discards malformed persisted state without logging errors", async () => {
-  const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   localStorage.setItem("currentBuild", "{");
   localStorage.setItem("analysisResults", "not-json");
   render(

@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import {
   act,
   fireEvent,
@@ -20,125 +21,133 @@ import {
   parseCombinedHardwarePlanJson,
 } from "../utils/hardwarePlanTransfer";
 
-jest.mock("./FlightControllerSetup", () => function MockFlightControllerSetup(props = {}) {
-  const {
-    selectedFlightController,
-    buildMotorCount,
-    buildServoCount,
-    value,
-    onOpenEvidenceReview,
-  } = props;
-  return (
-    <div>
-      <h3 id="fc-plan-summary-title" tabIndex={-1}>Plan summary</h3>
-      Flight controller panel: {selectedFlightController?.name || "none"} / motors {buildMotorCount ?? "unknown"} / servos {buildServoCount ?? "unknown"} / arm {value?.armChannel ?? "none"}
-      <button type="button" onClick={onOpenEvidenceReview}>
-        Review mock parameters
-      </button>
-    </div>
-  );
-});
-jest.mock("./RadioLinkSetup", () => function MockRadioLinkSetup(props = {}) {
-  const { receiverName, controlRoles, value, onChange } = props;
-  return (
-    <div>
-      Radio panel: {receiverName || "none"} / roles {(controlRoles || []).join(",") || "all"} / packet {value?.packetRateMode || "none"}
-      <button
-        type="button"
-        onClick={() => onChange?.({
-          ...value,
-          bindingPhrase: "conflicting phrase",
-          uid: "10:73:a1:1f:a8:0f",
-        })}
-      >
-        Set invalid radio binding
-      </button>
-    </div>
-  );
-});
-jest.mock("./BenchRunbook", () => function MockBenchRunbook(props = {}) {
-  const {
-    runbook,
-    expectedUid,
-    onAdoptPlanPatch,
-    onEvidenceChange,
-    open,
-  } = props;
-  return (
-    <div data-testid="mock-bench-runbook" data-open={String(Boolean(open))}>
-      Bench runbook: {runbook.stages.length} stages · plan UID: {expectedUid || "none"}
-      <button
-        type="button"
-        onClick={() => onEvidenceChange?.({
-          fcEvidence: {
-            identity: {
-              product: "aerialkit-f405",
-              protocolVersion: 49,
-              features: 0x11d,
-              featureNames: ["PARAM_INFO", "APPLIES_ON_WRITE", "GATES_ON_ARMED"],
-            },
-          },
-        })}
-      >
-        Import mock FC identity
-      </button>
-      <button
-        type="button"
-        onClick={() => onAdoptPlanPatch?.({
-          source: "fc",
-          values: { armChannel: 5, armHoldMs: 750 },
-          count: 2,
-        })}
-      >
-        Adopt mock FC values
-      </button>
-      <button
-        type="button"
-        onClick={() => onAdoptPlanPatch?.({
-          source: "radio",
-          values: { packetRateMode: "100-full", powerDbm: -14 },
-          count: 2,
-        })}
-      >
-        Adopt mock radio values
-      </button>
-    </div>
-  );
-});
-const mockCaptureStart = jest.fn().mockResolvedValue(true);
-const mockCaptureStop = jest.fn().mockResolvedValue(true);
-jest.mock("./WebSerialCapture", () => {
-  const React = require("react");
-  return React.forwardRef(function MockWebSerialCapture({
-    expectedBaud,
-    role,
-    targetName,
-    captureSessionId,
-    onCaptureStateChange,
-  }, ref) {
-    const [status, setStatus] = React.useState("port-selected");
-    React.useImperativeHandle(ref, () => ({
-      preparePort: jest.fn().mockResolvedValue(true),
-      startCapture: async () => {
-        const started = await mockCaptureStart(role);
-        if (started) setStatus("capturing");
-        return started;
-      },
-      stopCapture: async () => {
-        const stopped = await mockCaptureStop(role);
-        if (stopped) setStatus("stopped");
-        return stopped;
-      },
-    }));
-    React.useEffect(() => {
-      onCaptureStateChange?.(status);
-    }, [onCaptureStateChange, status]);
+vi.mock("./FlightControllerSetup", () => ({
+  default: function MockFlightControllerSetup(props = {}) {
+    const {
+      selectedFlightController,
+      buildMotorCount,
+      buildServoCount,
+      value,
+      onOpenEvidenceReview,
+    } = props;
     return (
       <div>
-        Read-only serial capture: {expectedBaud} / {role} / {targetName} / {captureSessionId}
+        <h3 id="fc-plan-summary-title" tabIndex={-1}>Plan summary</h3>
+        Flight controller panel: {selectedFlightController?.name || "none"} / motors {buildMotorCount ?? "unknown"} / servos {buildServoCount ?? "unknown"} / arm {value?.armChannel ?? "none"}
+        <button type="button" onClick={onOpenEvidenceReview}>
+          Review mock parameters
+        </button>
       </div>
     );
-  });
+  },
+}));
+vi.mock("./RadioLinkSetup", () => ({
+  default: function MockRadioLinkSetup(props = {}) {
+    const { receiverName, controlRoles, value, onChange } = props;
+    return (
+      <div>
+        Radio panel: {receiverName || "none"} / roles {(controlRoles || []).join(",") || "all"} / packet {value?.packetRateMode || "none"}
+        <button
+          type="button"
+          onClick={() => onChange?.({
+            ...value,
+            bindingPhrase: "conflicting phrase",
+            uid: "10:73:a1:1f:a8:0f",
+          })}
+        >
+          Set invalid radio binding
+        </button>
+      </div>
+    );
+  },
+}));
+vi.mock("./BenchRunbook", () => ({
+  default: function MockBenchRunbook(props = {}) {
+    const {
+      runbook,
+      expectedUid,
+      onAdoptPlanPatch,
+      onEvidenceChange,
+      open,
+    } = props;
+    return (
+      <div data-testid="mock-bench-runbook" data-open={String(Boolean(open))}>
+        Bench runbook: {runbook.stages.length} stages · plan UID: {expectedUid || "none"}
+        <button
+          type="button"
+          onClick={() => onEvidenceChange?.({
+            fcEvidence: {
+              identity: {
+                product: "aerialkit-f405",
+                protocolVersion: 49,
+                features: 0x11d,
+                featureNames: ["PARAM_INFO", "APPLIES_ON_WRITE", "GATES_ON_ARMED"],
+              },
+            },
+          })}
+        >
+          Import mock FC identity
+        </button>
+        <button
+          type="button"
+          onClick={() => onAdoptPlanPatch?.({
+            source: "fc",
+            values: { armChannel: 5, armHoldMs: 750 },
+            count: 2,
+          })}
+        >
+          Adopt mock FC values
+        </button>
+        <button
+          type="button"
+          onClick={() => onAdoptPlanPatch?.({
+            source: "radio",
+            values: { packetRateMode: "100-full", powerDbm: -14 },
+            count: 2,
+          })}
+        >
+          Adopt mock radio values
+        </button>
+      </div>
+    );
+  },
+}));
+const mockCaptureStart = vi.fn().mockResolvedValue(true);
+const mockCaptureStop = vi.fn().mockResolvedValue(true);
+vi.mock("./WebSerialCapture", async () => {
+  const React = await vi.importActual("react");
+  return {
+    default: React.forwardRef(function MockWebSerialCapture({
+      expectedBaud,
+      role,
+      targetName,
+      captureSessionId,
+      onCaptureStateChange,
+    }, ref) {
+      const [status, setStatus] = React.useState("port-selected");
+      React.useImperativeHandle(ref, () => ({
+        preparePort: vi.fn().mockResolvedValue(true),
+        startCapture: async () => {
+          const started = await mockCaptureStart(role);
+          if (started) setStatus("capturing");
+          return started;
+        },
+        stopCapture: async () => {
+          const stopped = await mockCaptureStop(role);
+          if (stopped) setStatus("stopped");
+          return stopped;
+        },
+      }));
+      React.useEffect(() => {
+        onCaptureStateChange?.(status);
+      }, [onCaptureStateChange, status]);
+      return (
+        <div>
+          Read-only serial capture: {expectedBaud} / {role} / {targetName} / {captureSessionId}
+        </div>
+      );
+    }),
+  };
 });
 
 function renderSetup(initialEntries = ["/setup"]) {
@@ -441,7 +450,7 @@ test("surfaces stale ArduPilot metadata without staging the plan", async () => {
 });
 
 test("copies a sanitized human-readable hardware plan summary", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
@@ -509,7 +518,7 @@ test("does not restore binding material from a local draft", async () => {
 });
 
 test("copies the capture-session procedure with both endpoint rates", async () => {
-  const writeText = jest.fn().mockResolvedValue(undefined);
+  const writeText = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },

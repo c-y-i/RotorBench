@@ -1084,14 +1084,21 @@ export function parseBenchEvidenceBundle(
         let snapshot;
         try {
           snapshot = parseRadioParameterText(document.text);
-        } catch {
+        } catch (snapshotError) {
+          jsonError.cause = snapshotError;
           throw jsonError;
         }
         if (!snapshot.role) {
-          throw new Error("The parameter snapshot does not identify a TX or RX endpoint.");
+          throw new Error(
+            "The parameter snapshot does not identify a TX or RX endpoint.",
+            { cause: jsonError },
+          );
         }
         if (parameterSnapshotsByRole[snapshot.role]) {
-          throw new Error(`More than one ${snapshot.role.toUpperCase()} parameter snapshot was selected.`);
+          throw new Error(
+            `More than one ${snapshot.role.toUpperCase()} parameter snapshot was selected.`,
+            { cause: jsonError },
+          );
         }
         parameterSnapshotsByRole[snapshot.role] = snapshot;
         continue;
@@ -1222,9 +1229,16 @@ export function parseBenchEvidenceBundle(
           fcPreflight = parseFcPreflightText(document.text);
         } catch (preflightError) {
           if (fcPreflight || /verdict=/i.test(document.text || "")) {
-            throw new Error(`${document.name || "Evidence file"}: ${preflightError.message}`);
+            throw new Error(`${document.name || "Evidence file"}: ${preflightError.message}`, {
+              cause: preflightError,
+            });
           }
-          throw new Error(`${document.name || "Evidence file"}: ${error.message}`);
+          const parseError = new Error(
+            `${document.name || "Evidence file"}: ${error.message}`,
+            { cause: preflightError },
+          );
+          parseError.parseCause = error;
+          throw parseError;
         }
       }
     }

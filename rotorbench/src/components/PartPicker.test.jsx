@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import PartPicker from "./PartPicker";
 import { getA11yViolations } from "../test/a11y";
@@ -49,7 +50,7 @@ test("filters catalog results by compatibility and model availability", () => {
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={(part) => ({ ok: part.id === "frame-a", reason: "Wrong prop size" })}
       placeholder="Choose a frame"
     />,
@@ -74,7 +75,7 @@ test("sorts catalog results with available 3D models first", () => {
       category="frames"
       parts={[parts[1], parts[0]]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "" })}
       placeholder="Choose a frame"
     />,
@@ -113,7 +114,7 @@ test("wing frames expose wingspan and motor count instead of wheelbase copy", ()
         sourceUrl: "https://www.heewing.com/products/t1-ranger-kit",
       }]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
       placeholder="Choose a frame"
     />,
@@ -130,7 +131,7 @@ test("verified physical checks are distinct from missing fit data", () => {
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={(part) => part.id === "frame-a"
         ? { ok: true, verified: true, reason: "Stack pattern matches." }
         : { ok: true, verified: false, reason: "Stack pattern is not catalogued." }}
@@ -159,7 +160,7 @@ test("ESC metadata exposes a published planform without implying thickness", () 
         sourceUrl: "https://example.com/tekko",
       }]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
       placeholder="Choose an ESC"
     />,
@@ -185,7 +186,7 @@ test("ESC metadata derives a footprint from a complete catalog envelope", () => 
         sourceUrl: "https://example.com/tekko32-50a",
       }]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
       placeholder="Choose an ESC"
     />,
@@ -201,7 +202,7 @@ test("recently selected parts are available through an explicit filter", () => {
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
       placeholder="Choose a frame"
     />,
@@ -235,7 +236,7 @@ test("receiver metadata exposes published dual-band and telemetry details", () =
         estimatedFields: ["currentDraw", "channels", "mounting_point"],
       }]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({
         ok: true,
         verified: false,
@@ -271,7 +272,7 @@ test("receiver metadata distinguishes PWM-capable outputs", () => {
         sourceUrl: "https://example.com/er6",
       }]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
       placeholder="Choose a receiver"
     />,
@@ -305,7 +306,7 @@ test("flight-controller metadata distinguishes documented and custom mappings", 
         },
       ]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({
         ok: true,
         verified: false,
@@ -352,7 +353,7 @@ test("flight-controller firmware facets expose output budgets before selection",
         },
       ]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({
         ok: true,
         verified: false,
@@ -434,7 +435,7 @@ test("receiver radio facets isolate bands and PWM-capable outputs", () => {
         },
       ]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Review." })}
       placeholder="Choose a receiver"
     />,
@@ -485,7 +486,7 @@ test("humanizes estimated field names for catalog review", () => {
         estimatedFields: ["dimensionsMm", "currentDraw", "mounting_point"],
       }]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       placeholder="Choose a receiver"
     />,
   );
@@ -502,7 +503,7 @@ test("verified-fit and conflict filters keep evidence states separate", () => {
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={(part) => part.id === "frame-a"
         ? { ok: true, verified: true, reason: "Stack pattern matches." }
         : { ok: false, verified: false, reason: "Propeller clearance conflict." }}
@@ -527,7 +528,7 @@ test("source-backed filtering excludes legacy catalog entries", () => {
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
       placeholder="Choose a frame"
     />,
@@ -547,7 +548,7 @@ test("source review exposes manufacturer links without selecting a part", () => 
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
       placeholder="Choose a frame"
     />,
@@ -597,7 +598,7 @@ test("propeller options expose missing thrust data before selection", () => {
         },
       ]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       placeholder="Choose a propeller"
     />,
   );
@@ -624,7 +625,7 @@ test("motor options disclose prop-specific tests that are not normalized", () =>
         },
       ]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       placeholder="Choose a motor"
     />,
   );
@@ -640,7 +641,7 @@ test("catalog options can be sorted by price without hiding conflicts", () => {
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={(part) => part.id === "frame-a"
         ? { ok: true, verified: true, reason: "Stack pattern matches." }
         : { ok: false, verified: false, reason: "Propeller clearance conflict." }}
@@ -692,7 +693,7 @@ test("evidence sort favors product sources and fewer estimated fields", () => {
         },
       ]}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
       placeholder="Choose a frame"
     />,
@@ -717,7 +718,7 @@ test("empty catalog results can reset the search and filters in one action", () 
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
       placeholder="Choose a frame"
     />,
@@ -741,7 +742,7 @@ test("keyboard arrows move through catalog options without tabbing through each 
       category="frames"
       parts={parts}
       value=""
-      onChange={jest.fn()}
+      onChange={vi.fn()}
       compatibility={() => ({ ok: true, verified: false, reason: "Not catalogued." })}
       placeholder="Choose a frame"
     />,

@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import TwoDViewer, {
   buildSchematicExportMetadata,
@@ -200,8 +201,8 @@ test("exports a self-contained standalone SVG with source mount coordinates", ()
 test("downloads the schematic without implying hardware verification", () => {
   const originalCreateObjectURL = URL.createObjectURL;
   const originalRevokeObjectURL = URL.revokeObjectURL;
-  const createObjectURL = jest.fn(() => "blob:assembly-schematic");
-  const revokeObjectURL = jest.fn();
+  const createObjectURL = vi.fn(() => "blob:assembly-schematic");
+  const revokeObjectURL = vi.fn();
   let downloadedAnchor = null;
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
@@ -211,7 +212,7 @@ test("downloads the schematic without implying hardware verification", () => {
     configurable: true,
     value: revokeObjectURL,
   });
-  const click = jest.spyOn(HTMLAnchorElement.prototype, "click")
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click")
     .mockImplementation(function captureAnchor() {
       downloadedAnchor = this;
     });

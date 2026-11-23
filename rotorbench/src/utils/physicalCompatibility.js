@@ -246,7 +246,7 @@ export function summarizePowerPath(battery, esc) {
   const batteryConnector = String(battery?.dischargeConnector || "").trim().toUpperCase();
   const escConnector = String(esc?.includedPowerConnector || "").trim().toUpperCase();
   let displayState = "pending";
-  let label = "Select battery and ESC";
+  let label;
 
   if (!battery) {
     label = "Select battery";

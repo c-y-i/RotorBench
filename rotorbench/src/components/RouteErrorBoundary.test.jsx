@@ -1,3 +1,4 @@
+import { vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import RouteErrorBoundary from "./RouteErrorBoundary";
 
@@ -6,7 +7,7 @@ function BrokenView() {
 }
 
 test("route error boundary explains a failed view and offers reload", () => {
-  const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
   render(
     <RouteErrorBoundary resetKey="/build">
       <BrokenView />

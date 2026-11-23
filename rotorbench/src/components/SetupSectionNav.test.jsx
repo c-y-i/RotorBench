@@ -1,4 +1,4 @@
-import React from "react";
+import { vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import SetupSectionNav from "./SetupSectionNav";
 import { getA11yViolations } from "../test/a11y";
@@ -27,7 +27,7 @@ function renderTargets() {
 }
 
 beforeEach(() => {
-  Element.prototype.scrollIntoView = jest.fn();
+  Element.prototype.scrollIntoView = vi.fn();
 });
 
 afterEach(() => {
@@ -41,7 +41,7 @@ afterEach(() => {
 test("jumps to the selected section and focuses its heading", () => {
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
-    value: jest.fn(() => ({ matches: false })),
+    value: vi.fn(() => ({ matches: false })),
   });
   renderTargets();
 
@@ -57,7 +57,7 @@ test("jumps to the selected section and focuses its heading", () => {
 test("uses instant scrolling when reduced motion is requested", () => {
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
-    value: jest.fn(() => ({ matches: true })),
+    value: vi.fn(() => ({ matches: true })),
   });
   renderTargets();
 

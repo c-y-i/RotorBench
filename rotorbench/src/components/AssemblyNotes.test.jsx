@@ -1,7 +1,6 @@
-import React from "react";
+import { vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import AssemblyNotes, {
-  createAssemblyNotesText,
   getAssemblyNotes,
 } from "./AssemblyNotes";
 import componentsData from "../data/components.json";
@@ -124,7 +123,7 @@ test("receiver notes surface source-backed PWM output count", () => {
 test("copies a source-labelled handoff without upgrading the planning boundary", async () => {
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
-    value: { writeText: jest.fn().mockResolvedValue(undefined) },
+    value: { writeText: vi.fn().mockResolvedValue(undefined) },
   });
   render(<AssemblyNotes {...sourceParts} />);
 

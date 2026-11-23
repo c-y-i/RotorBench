@@ -1,4 +1,3 @@
-import React from "react";
 import { TriangleAlert } from "lucide-react";
 import "../styles/saved.css";
 
