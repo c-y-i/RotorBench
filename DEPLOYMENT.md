@@ -34,10 +34,12 @@ python migrate_legacy_data.py
 cd /home/ubuntu/RotorBench/rotorbench
 npm ci
 npm run lint
-npm test
 npm run build
 npm audit
 ```
+
+Run `npm test` on a development machine or CI runner. The full 900-test jsdom
+suite is not part of the production deployment path.
 
 Expected output dir:
 
@@ -129,7 +131,6 @@ python migrate_legacy_data.py
 cd /home/ubuntu/RotorBench/rotorbench
 npm ci
 npm run lint
-npm test
 npm run build
 
 sudo systemctl restart rotorbench
